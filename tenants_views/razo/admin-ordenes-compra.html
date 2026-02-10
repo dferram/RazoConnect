@@ -54,6 +54,16 @@
               </select>
             </div>
             <div class="filtro-item">
+              <label for="filtroOrigen" class="form-label"
+                >Filtrar por origen</label
+              >
+              <select id="filtroOrigen" class="form-input">
+                <option value="">Todas las órdenes</option>
+                <option value="backorder">Backorders (Automáticas)</option>
+                <option value="manual">Manuales</option>
+              </select>
+            </div>
+            <div class="filtro-item">
               <label for="filtroEstatus" class="form-label"
                 >Filtrar por estatus</label
               >
@@ -493,6 +503,7 @@
         const ordenesTable = document.getElementById("ordenesTable");
         const ordenesTableBody = document.getElementById("ordenesTableBody");
         const filtroEstatus = document.getElementById("filtroEstatus");
+        const filtroOrigen = document.getElementById("filtroOrigen");
         const filtroAdmin = document.getElementById("filtroAdmin");
         const filtroAdminContainer = document.getElementById("filtroAdminContainer");
         const detalleModal = document.getElementById("detalleModal");
@@ -503,6 +514,7 @@
           loadOrdenes();
           filtroEstatus.addEventListener("change", loadOrdenes);
           filtroAdmin.addEventListener("change", loadOrdenes);
+          filtroOrigen.addEventListener("change", loadOrdenes);
 
           const btnAutoGenerar = document.getElementById("btn-auto-generar");
           if (btnAutoGenerar) {
@@ -658,10 +670,12 @@
             emptyState.style.display = "none";
 
             const estatus = filtroEstatus.value;
+            const origen = filtroOrigen.value;
             const adminId = filtroAdmin.value;
             let url = '/admin/ordenes-compra?';
             const params = [];
             if (estatus) params.push(`estatus=${estatus}`);
+            if (origen) params.push(`origen=${origen}`);
             if (adminId) params.push(`adminId=${adminId}`);
             url += params.join('&');
 
