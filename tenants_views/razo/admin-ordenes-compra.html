@@ -110,6 +110,26 @@
               </h2>
               <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end;">
                 <button
+                  id="btn-agrupar-ordenes"
+                  type="button"
+                  class="btn"
+                  style="
+                    background: #10b981;
+                    color: #fff;
+                    padding: 0.5rem 1rem;
+                    border: none;
+                    border-radius: 0.5rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                    display: none;
+                  "
+                  onmouseover="this.style.background='#059669'"
+                  onmouseout="this.style.background='#10b981'"
+                >
+                  <i class="bi bi-collection"></i> Agrupar Seleccionadas (<span id="contadorSeleccionadas">0</span>)
+                </button>
+                <button
                   id="btn-auto-generar"
                   type="button"
                   class="btn"
@@ -150,6 +170,9 @@
               >
                 <thead>
                   <tr>
+                    <th style="width: 40px; text-align: center;">
+                      <input type="checkbox" id="selectAllCheckbox" style="cursor: pointer;" />
+                    </th>
                     <th style="width: 50px;">ID</th>
                     <th style="width: 90px;">Origen</th>
                     <th style="width: 110px;">Proveedor</th>
@@ -780,7 +803,12 @@
             // Determinar el nombre del admin para la columna ADMIN
             const adminNombre = orden.admin_nombre || orden.propietarioNombre || '-';
 
+            const puedeAgrupar = ['Borrador', 'Pendiente'].includes(orden.estatus) && !orden.grupo_id;
+            
             row.innerHTML = `
+              <td style="text-align: center;">
+                ${puedeAgrupar ? `<input type="checkbox" class="orden-checkbox" data-orden-id="${orden.ordenCompraId}" data-proveedor-id="${orden.proveedorId}" style="cursor: pointer;" />` : ''}
+              </td>
               <td style="font-weight: 600; color: #374151; font-size: 0.875rem;">#${
                 orden.ordenCompraId
               }</td>
@@ -2048,6 +2076,169 @@
           } catch (e) {
             console.error('Error guardando folio OC:', e);
           }
+        }
+
+        // ============================================
+        // GROUPING FUNCTIONALITY
+        // ============================================
+        
+        let selectedOrders = new Set();
+        const btnAgrupar = document.getElementById('btn-agrupar-ordenes');
+        const contadorSeleccionadas = document.getElementById('contadorSeleccionadas');
+        const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+
+        // Handle individual checkbox changes
+        document.addEventListener('change', function(e) {
+          if (e.target.classList.contains('orden-checkbox')) {
+            const ordenId = parseInt(e.target.dataset.ordenId);
+            const proveedorId = parseInt(e.target.dataset.proveedorId);
+            
+            if (e.target.checked) {
+              selectedOrders.add(JSON.stringify({ ordenId, proveedorId }));
+            } else {
+              selectedOrders.delete(JSON.stringify({ ordenId, proveedorId }));
+            }
+            
+            updateGroupingUI();
+          }
+        });
+
+        // Handle select all checkbox
+        if (selectAllCheckbox) {
+          selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.orden-checkbox');
+            checkboxes.forEach(cb => {
+              cb.checked = selectAllCheckbox.checked;
+              const ordenId = parseInt(cb.dataset.ordenId);
+              const proveedorId = parseInt(cb.dataset.proveedorId);
+              
+              if (selectAllCheckbox.checked) {
+                selectedOrders.add(JSON.stringify({ ordenId, proveedorId }));
+              } else {
+                selectedOrders.delete(JSON.stringify({ ordenId, proveedorId }));
+              }
+            });
+            
+            updateGroupingUI();
+          });
+        }
+
+        function updateGroupingUI() {
+          const count = selectedOrders.size;
+          contadorSeleccionadas.textContent = count;
+          
+          if (count >= 2) {
+            btnAgrupar.style.display = 'inline-block';
+          } else {
+            btnAgrupar.style.display = 'none';
+          }
+        }
+
+        // Handle grouping button click
+        if (btnAgrupar) {
+          btnAgrupar.addEventListener('click', async function() {
+            if (selectedOrders.size < 2) {
+              Swal.fire({
+                icon: 'warning',
+                title: 'Selección insuficiente',
+                text: 'Debes seleccionar al menos 2 órdenes para agrupar',
+                confirmButtonColor: '#F97316'
+              });
+              return;
+            }
+
+            // Parse selected orders
+            const ordersArray = Array.from(selectedOrders).map(str => JSON.parse(str));
+            const ordenIds = ordersArray.map(o => o.ordenId);
+            
+            // Check if all orders have the same supplier
+            const proveedores = new Set(ordersArray.map(o => o.proveedorId));
+            if (proveedores.size > 1) {
+              Swal.fire({
+                icon: 'error',
+                title: 'Proveedores diferentes',
+                text: 'Solo puedes agrupar órdenes del mismo proveedor. Por favor, selecciona órdenes de un solo proveedor.',
+                confirmButtonColor: '#F97316'
+              });
+              return;
+            }
+
+            // Ask for group name
+            const { value: nombreGrupo } = await Swal.fire({
+              title: 'Agrupar Órdenes de Compra',
+              html: `
+                <p style="margin-bottom: 1rem;">Se agruparán <strong>${ordenIds.length} órdenes</strong> del mismo proveedor.</p>
+                <input id="swal-input-nombre" class="swal2-input" placeholder="Nombre del grupo (opcional)" style="width: 80%;">
+                <textarea id="swal-input-notas" class="swal2-textarea" placeholder="Notas adicionales (opcional)" style="width: 80%; margin-top: 0.5rem;"></textarea>
+              `,
+              focusConfirm: false,
+              showCancelButton: true,
+              confirmButtonText: 'Agrupar',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#10b981',
+              cancelButtonColor: '#6b7280',
+              preConfirm: () => {
+                return {
+                  nombre: document.getElementById('swal-input-nombre').value,
+                  notas: document.getElementById('swal-input-notas').value
+                };
+              }
+            });
+
+            if (!nombreGrupo) return;
+
+            try {
+              Swal.fire({
+                title: 'Agrupando órdenes...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                  Swal.showLoading();
+                }
+              });
+
+              const response = await API.apiCall('/admin/ordenes-compra/agrupar', {
+                method: 'POST',
+                body: JSON.stringify({
+                  ordenIds: ordenIds,
+                  nombreGrupo: nombreGrupo.nombre || null,
+                  notas: nombreGrupo.notas || null
+                })
+              });
+
+              if (!response.ok) {
+                throw new Error(response.data?.message || 'Error al agrupar órdenes');
+              }
+
+              await Swal.fire({
+                icon: 'success',
+                title: '¡Grupo creado!',
+                text: `Se agruparon ${ordenIds.length} órdenes exitosamente`,
+                confirmButtonColor: '#F97316'
+              });
+
+              // Clear selection and reload
+              selectedOrders.clear();
+              selectAllCheckbox.checked = false;
+              updateGroupingUI();
+              
+              // Redirect to group detail page
+              const grupoId = response.data?.grupo?.grupoid;
+              if (grupoId) {
+                window.location.href = `admin-orden-agrupada-detalle.html?id=${grupoId}`;
+              } else {
+                await loadOrdenes();
+              }
+
+            } catch (error) {
+              console.error('Error agrupando órdenes:', error);
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'No se pudo agrupar las órdenes',
+                confirmButtonColor: '#F97316'
+              });
+            }
+          });
         }
       })();
     </script>

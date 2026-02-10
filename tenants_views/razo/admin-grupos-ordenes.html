@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grupos de Órdenes - Admin RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <!-- SWEETALERT2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+    <link rel="stylesheet" href="css/mobile-responsive.css" />
+  </head>
+  <body data-page-title="Grupos de Órdenes de Compra">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content" style="display: grid; gap: 1.5rem">
+          <!-- Filtros -->
+          <section
+            class="admin-card"
+            style="
+              padding: 1.5rem;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 1rem;
+              align-items: flex-end;
+            "
+          >
+            <div class="filtro-item">
+              <label for="filtroEstatus" class="form-label">Filtrar por estatus</label>
+              <select id="filtroEstatus" class="form-input">
+                <option value="">Todos</option>
+                <option value="borrador">Borrador</option>
+                <option value="confirmada">Confirmada</option>
+                <option value="recibida">Recibida</option>
+                <option value="cancelada">Cancelada</option>
+              </select>
+            </div>
+            <div
+              style="
+                padding: 0.75rem 1rem;
+                background: #f0f9ff;
+                border-radius: 0.5rem;
+                border-left: 4px solid #0ea5e9;
+              "
+            >
+              <p style="margin: 0; font-size: 0.875rem; color: #0369a1">
+                ℹ️ Los grupos consolidan múltiples órdenes del mismo proveedor para facilitar la gestión
+              </p>
+            </div>
+          </section>
+
+          <!-- Tabla de Grupos -->
+          <section class="admin-card" style="padding: 1.5rem">
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+              "
+            >
+              <h2
+                style="
+                  margin: 0;
+                  font-size: 1.2rem;
+                  color: var(--razo-orange, #ff6b35);
+                "
+              >
+                Grupos de Órdenes de Compra
+              </h2>
+              <span id="resultadosBadge" class="admin-badge secondary">0 RESULTADOS</span>
+            </div>
+
+            <div
+              id="loadingState"
+              class="loading"
+              style="display: none; min-height: 120px"
+            >
+              <div class="spinner"></div>
+            </div>
+
+            <div style="overflow-x: auto">
+              <table
+                class="admin-table"
+                id="gruposTable"
+                style="display: none; font-size: 0.875rem"
+              >
+                <thead>
+                  <tr>
+                    <th style="width: 50px">ID</th>
+                    <th>Nombre del Grupo</th>
+                    <th style="width: 150px">Proveedor</th>
+                    <th style="width: 100px; text-align: center">Órdenes</th>
+                    <th style="width: 120px; text-align: right">Total</th>
+                    <th style="width: 100px">Creado</th>
+                    <th style="width: 100px">Admin</th>
+                    <th style="width: 100px">Estatus</th>
+                    <th style="width: 150px">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="gruposTableBody">
+                  <!-- Rows will be inserted here -->
+                </tbody>
+              </table>
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none">
+              <div class="empty-state-icon">📦</div>
+              <h3 class="empty-state-title">No hay grupos de órdenes</h3>
+              <p class="empty-state-text">
+                Los grupos se crean cuando agrupas múltiples órdenes del mismo proveedor desde la página de Órdenes de Compra.
+              </p>
+              <button
+                onclick="window.location.href='admin-ordenes-compra.html'"
+                class="btn btn-primary"
+              >
+                Ir a Órdenes de Compra
+              </button>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/api.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        // Authentication check
+        const adminToken = localStorage.getItem("razoconnect_admin_token");
+        if (!adminToken) {
+          window.location.href = "/login.html";
+        }
+
+        let gruposData = [];
+
+        // Elements
+        const loadingState = document.getElementById("loadingState");
+        const emptyState = document.getElementById("emptyState");
+        const gruposTable = document.getElementById("gruposTable");
+        const gruposTableBody = document.getElementById("gruposTableBody");
+        const filtroEstatus = document.getElementById("filtroEstatus");
+
+        // Load groups on page load
+        document.addEventListener("DOMContentLoaded", function () {
+          loadGrupos();
+          filtroEstatus.addEventListener("change", loadGrupos);
+        });
+
+        async function loadGrupos() {
+          try {
+            loadingState.style.display = "flex";
+            emptyState.style.display = "none";
+            gruposTable.style.display = "none";
+
+            const estatus = filtroEstatus.value;
+            const queryParams = estatus ? `?estatus=${estatus}` : "";
+
+            const response = await API.apiCall(`/admin/ordenes-compra/grupos${queryParams}`, {
+              method: "GET",
+            });
+
+            if (!response.ok) {
+              throw new Error(response.data?.message || "Error al cargar grupos");
+            }
+
+            gruposData = response.data.grupos || [];
+
+            loadingState.style.display = "none";
+
+            if (gruposData.length === 0) {
+              emptyState.style.display = "block";
+            } else {
+              gruposTable.style.display = "table";
+              renderGrupos();
+            }
+          } catch (error) {
+            console.error("Error cargando grupos:", error);
+            loadingState.style.display = "none";
+            emptyState.style.display = "block";
+
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: error.message || "No se pudieron cargar los grupos",
+              confirmButtonColor: "#F97316",
+            });
+          }
+        }
+
+        function renderGrupos() {
+          gruposTableBody.innerHTML = "";
+
+          // Update badge
+          const badge = document.getElementById("resultadosBadge");
+          badge.textContent = `${gruposData.length} RESULTADO${
+            gruposData.length !== 1 ? "S" : ""
+          }`;
+
+          gruposData.forEach((grupo) => {
+            const row = document.createElement("tr");
+
+            const estatusBadgeClass = getEstatusBadgeClass(grupo.estatus);
+
+            const fechaCreacion = grupo.created_at
+              ? new Date(grupo.created_at).toLocaleDateString("es-MX", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "-";
+
+            const nombreGrupo = grupo.nombre_grupo || `Grupo #${grupo.grupoid}`;
+            const proveedorNombre = grupo.proveedor_nombre || "N/A";
+            const adminNombre = grupo.admin_nombre || "N/A";
+
+            row.innerHTML = `
+              <td style="font-weight: 600; color: #374151; font-size: 0.875rem;">#${
+                grupo.grupoid
+              }</td>
+              <td style="font-weight: 500; color: #111827;">
+                <i class="bi bi-collection"></i> ${nombreGrupo}
+              </td>
+              <td style="color: #6b7280;">${proveedorNombre}</td>
+              <td style="text-align: center; font-weight: 600; color: #374151;">
+                ${parseInt(grupo.total_ordenes || 0)}
+              </td>
+              <td style="text-align: right; font-weight: 600; color: #10b981;">
+                $${parseFloat(grupo.total_general || 0).toLocaleString("es-MX", {
+                  minimumFractionDigits: 2,
+                })}
+              </td>
+              <td style="color: #6b7280; font-size: 0.875rem;">${fechaCreacion}</td>
+              <td style="color: #6b7280; font-size: 0.875rem;">${adminNombre.split(" ")[0]}</td>
+              <td>
+                <span class="admin-badge ${estatusBadgeClass}" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                  ${grupo.estatus.toUpperCase()}
+                </span>
+              </td>
+              <td>
+                <div style="display: flex; gap: 0.25rem; justify-content: center; flex-wrap: wrap;">
+                  <button 
+                    class="btn btn-primary" 
+                    onclick="verDetalle(${grupo.grupoid})"
+                    title="Ver Detalle"
+                    style="padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 60px;">
+                    Ver
+                  </button>
+                  ${
+                    grupo.estatus !== "recibida"
+                      ? `
+                    <button 
+                      class="btn btn-secondary" 
+                      onclick="desagrupar(${grupo.grupoid})"
+                      title="Desagrupar"
+                      style="padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 60px;">
+                      <i class="bi bi-x-circle"></i>
+                    </button>
+                  `
+                      : ""
+                  }
+                </div>
+              </td>
+            `;
+
+            gruposTableBody.appendChild(row);
+          });
+        }
+
+        window.verDetalle = function (grupoId) {
+          window.location.href = `admin-orden-agrupada-detalle.html?id=${grupoId}`;
+        };
+
+        window.desagrupar = async function (grupoId) {
+          const result = await Swal.fire({
+            title: "¿Desagrupar órdenes?",
+            text: "Las órdenes volverán a estar separadas y el grupo se eliminará",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, desagrupar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#dc2626",
+            cancelButtonColor: "#6b7280",
+          });
+
+          if (!result.isConfirmed) return;
+
+          try {
+            Swal.fire({
+              title: "Desagrupando...",
+              allowOutsideClick: false,
+              didOpen: () => {
+                Swal.showLoading();
+              },
+            });
+
+            const response = await API.apiCall(`/admin/ordenes-compra/grupos/${grupoId}`, {
+              method: "DELETE",
+            });
+
+            if (!response.ok) {
+              throw new Error(response.data?.message || "Error al desagrupar");
+            }
+
+            await Swal.fire({
+              icon: "success",
+              title: "Grupo eliminado",
+              text: "Las órdenes han sido desagrupadas exitosamente",
+              confirmButtonColor: "#F97316",
+            });
+
+            await loadGrupos();
+          } catch (error) {
+            console.error("Error desagrupando:", error);
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: error.message || "No se pudo desagrupar las órdenes",
+              confirmButtonColor: "#F97316",
+            });
+          }
+        };
+
+        function getEstatusBadgeClass(estatus) {
+          const estatusLower = (estatus || "").toLowerCase();
+          if (estatusLower === "borrador") return "secondary";
+          if (estatusLower === "confirmada") return "warning";
+          if (estatusLower === "recibida") return "success";
+          if (estatusLower === "cancelada") return "danger";
+          return "secondary";
+        }
+      })();
+    </script>
+  </body>
+</html>

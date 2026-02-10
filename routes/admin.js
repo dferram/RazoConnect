@@ -28,6 +28,9 @@ const inventarioReportesController = require("../controllers/inventarioReportesC
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
+const ordenesGruposController = require("../controllers/ordenesGruposController");
+const gruposOrdenesPDFController = require("../controllers/gruposOrdenesPDFController");
+const gruposOrdenesExcelController = require("../controllers/gruposOrdenesExcelController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const uploadProductImages = require("../middlewares/uploadProductImages");
@@ -1190,6 +1193,64 @@ router.post(
   authorizeAdmin,
   upload.single("evidencia"),
   adminController.subirEvidenciaRecepcionOC
+);
+
+/**
+ * Rutas de Agrupación de Órdenes de Compra
+ */
+router.post(
+  "/ordenes-compra/agrupar",
+  authenticate,
+  authorizeAdmin,
+  ordenesGruposController.agruparOrdenes
+);
+router.get(
+  "/ordenes-compra/grupos",
+  authenticate,
+  authorizeAdmin,
+  ordenesGruposController.getAllGrupos
+);
+router.get(
+  "/ordenes-compra/grupos/:id",
+  authenticate,
+  authorizeAdmin,
+  ordenesGruposController.getGrupoDetalle
+);
+router.get(
+  "/ordenes-compra/grupos/:id/consolidado",
+  authenticate,
+  authorizeAdmin,
+  ordenesGruposController.getGrupoConsolidado
+);
+router.get(
+  "/ordenes-compra/grupos/:id/pdf-proveedor",
+  authenticate,
+  authorizeAdmin,
+  gruposOrdenesPDFController.generarPDFProveedorGrupo
+);
+router.get(
+  "/ordenes-compra/grupos/:id/pdf-interno",
+  authenticate,
+  authorizeAdmin,
+  gruposOrdenesPDFController.generarPDFInternoGrupo
+);
+router.get(
+  "/ordenes-compra/grupos/:id/excel-proveedor",
+  authenticate,
+  authorizeAdmin,
+  gruposOrdenesExcelController.generarExcelProveedorGrupo
+);
+router.get(
+  "/ordenes-compra/grupos/:id/excel-interno",
+  authenticate,
+  authorizeAdmin,
+  gruposOrdenesExcelController.generarExcelInternoGrupo
+);
+router.delete(
+  "/ordenes-compra/grupos/:id",
+  authenticate,
+  authorizeAdmin,
+  ordenesGruposController.desagruparOrdenes
 );
 
 /**
