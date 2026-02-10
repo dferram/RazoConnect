@@ -27,6 +27,7 @@ const cuponesController = require("../controllers/cuponesController");
 const inventarioReportesController = require("../controllers/inventarioReportesController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
+const reasignarOrdenController = require("../controllers/reasignarOrdenController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const uploadProductImages = require("../middlewares/uploadProductImages");
@@ -1165,6 +1166,14 @@ router.post(
   authenticate,
   authorizeAdmin,
   adminController.recibirItemOrdenCompra
+);
+
+// Reasignar orden de compra (solo super admin)
+router.patch(
+  "/ordenes-compra/:id/reasignar",
+  authenticate,
+  authorizeSuperAdmin,
+  reasignarOrdenController.reasignarOrdenCompra
 );
 
 router.post(

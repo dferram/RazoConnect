@@ -11394,7 +11394,7 @@ const validarRecepcionCompra = async (req, res) => {
  */
 const getAllOrdenesCompra = async (req, res) => {
   try {
-    const { estatus, adminId } = req.query;
+    const { estatus, adminId, origen } = req.query;
     const userRole = req.user.rol;
     const userId = req.user.id;
     const { tenant_id } = req.tenant;
@@ -11408,14 +11408,15 @@ const getAllOrdenesCompra = async (req, res) => {
         oc.Estatus,
         oc.OrigenOC,
         oc.usuario_creador_id,
+        oc.admin_creador_id,
         p.NombreEmpresa as ProveedorNombre,
         COUNT(doc.DetalleOC_ID) as TotalProductos,
-        a.nombre as PropietarioNombre,
+        a.nombre as AdminNombre,
         CONCAT(c.Nombre, ' ', c.Apellido) as NombreCliente
       FROM OrdenesDeCompra oc
       INNER JOIN Proveedores p ON oc.ProveedorID = p.ProveedorID
       LEFT JOIN DetallesOrdenCompra doc ON oc.OrdenCompraID = doc.OrdenCompraID
-      LEFT JOIN Administradores a ON oc.usuario_creador_id = a.adminid
+      LEFT JOIN Administradores a ON oc.admin_creador_id = a.adminid
       LEFT JOIN Pedidos ped ON oc.pedido_origen_id = ped.PedidoID
       LEFT JOIN Clientes c ON ped.ClienteID = c.ClienteID
       WHERE oc.tenant_id = $1
@@ -11424,15 +11425,15 @@ const getAllOrdenesCompra = async (req, res) => {
     const values = [tenant_id];
     let paramIndex = 2;
 
-    // REGLA DE VISIBILIDAD: Admin solo ve sus registros + backorders del sistema (NULL), SuperAdmin ve todos o filtra por adminId
+    // REGLA DE VISIBILIDAD: Admin solo ve sus órdenes (admin_creador_id), SuperAdmin ve todas o filtra por adminId
     if (userRole === 'admin') {
-      // Admin ve sus propias órdenes + backorders generados por el sistema (usuario_creador_id IS NULL)
-      query += ` AND (oc.usuario_creador_id = $${paramIndex} OR oc.usuario_creador_id IS NULL)`;
+      // Admin solo ve sus propias órdenes (basado en admin_creador_id)
+      query += ` AND oc.admin_creador_id = $${paramIndex}`;
       values.push(userId);
       paramIndex++;
     } else if (userRole === 'superadmin' && adminId) {
       // SuperAdmin filtrando por un admin específico
-      query += ` AND oc.usuario_creador_id = $${paramIndex}`;
+      query += ` AND oc.admin_creador_id = $${paramIndex}`;
       values.push(parseInt(adminId));
       paramIndex++;
     }
@@ -11449,10 +11450,21 @@ const getAllOrdenesCompra = async (req, res) => {
       }
     }
 
+    // Filtrar por origen (backorder o manual)
+    if (origen) {
+      if (origen === 'backorder') {
+        // Órdenes generadas automáticamente por backorder
+        query += ` AND oc.OrigenOC = 'backorder'`;
+      } else if (origen === 'manual') {
+        // Órdenes creadas manualmente (OrigenOC es NULL o 'manual')
+        query += ` AND (oc.OrigenOC IS NULL OR oc.OrigenOC = 'manual')`;
+      }
+    }
+
     query += `
       GROUP BY oc.OrdenCompraID, oc.ProveedorID, oc.FechaCreacion, 
                oc.FechaEntregaEsperada, oc.Estatus, oc.OrigenOC, oc.usuario_creador_id,
-               p.NombreEmpresa, a.nombre, c.Nombre, c.Apellido
+               oc.admin_creador_id, p.NombreEmpresa, a.nombre, c.Nombre, c.Apellido
       ORDER BY oc.FechaCreacion DESC
     `;
 
@@ -11472,7 +11484,9 @@ const getAllOrdenesCompra = async (req, res) => {
           origenOC: row.origenoc,
           totalProductos: parseInt(row.totalproductos),
           usuarioCreadorId: row.usuario_creador_id,
-          propietarioNombre: row.propietarionombre || 'Sin asignar',
+          adminCreadorId: row.admin_creador_id,
+          admin_nombre: row.adminnombre || 'Sin asignar',
+          propietarioNombre: row.adminnombre || 'Sin asignar',
           nombreCliente: row.nombrecliente || null,
         })),
         total: result.rows.length,
@@ -11501,7 +11515,7 @@ const getAdministradoresOrdenesCompra = async (req, res) => {
         a.nombre,
         a.rol
       FROM Administradores a
-      INNER JOIN OrdenesDeCompra oc ON a.adminid = oc.usuario_creador_id
+      INNER JOIN OrdenesDeCompra oc ON a.adminid = oc.admin_creador_id
       WHERE oc.tenant_id = $1
       ORDER BY a.nombre ASC
     `;
@@ -11741,12 +11755,12 @@ const recibirInventario = async (req, res) => {
 
     const { tenant_id } = req.tenant;
     // Verificar que la orden existe y validar propiedad
-    let ordenCheckQuery = "SELECT OrdenCompraID, Estatus, usuario_creador_id FROM OrdenesDeCompra WHERE OrdenCompraID = $1 AND tenant_id = $2";
+    let ordenCheckQuery = "SELECT OrdenCompraID, Estatus, usuario_creador_id, admin_creador_id FROM OrdenesDeCompra WHERE OrdenCompraID = $1 AND tenant_id = $2";
     let ordenCheckParams = [ordenCompraId, tenant_id];
 
-    // REGLA DE VISIBILIDAD: Admin solo puede recibir inventario de sus propias órdenes
+    // REGLA DE VISIBILIDAD: Admin solo puede recibir inventario de sus propias órdenes (basado en admin_creador_id)
     if (userRole === 'admin') {
-      ordenCheckQuery += " AND usuario_creador_id = $3";
+      ordenCheckQuery += " AND admin_creador_id = $3";
       ordenCheckParams.push(userId);
     }
 
@@ -11761,6 +11775,7 @@ const recibirInventario = async (req, res) => {
     }
 
     const estatusAnterior = (ordenCheck.rows[0].estatus || "").toString();
+    const adminCreadorId = ordenCheck.rows[0].admin_creador_id; // ID del admin dueño de la orden
     const productosActualizados = [];
     const alertasSeguridad = [];
 
@@ -11849,9 +11864,8 @@ const recibirInventario = async (req, res) => {
       );
 
       // 3.5. Registrar en inventarios_admin (UPSERT)
-      const adminIdRegistro = Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0
-        ? usuarioRecibeId
-        : adminId || null;
+      // CRÍTICO: Usar admin_creador_id de la orden para asignar el stock al dueño correcto
+      const adminIdRegistro = adminCreadorId || usuarioRecibeId || adminId || null;
 
       if (adminIdRegistro) {
         await client.query(
@@ -11861,8 +11875,10 @@ const recibirInventario = async (req, res) => {
            DO UPDATE SET 
              cantidad = inventarios_admin.cantidad + $3,
              ultima_actualizacion = CURRENT_TIMESTAMP`,
-          [adminIdRegistro, detalle.varianteid, cantidadAumentar, adminIdRegistro, tenant_id]
+          [adminIdRegistro, detalle.varianteid, cantidadAumentar, usuarioRecibeId, tenant_id]
         );
+        
+        console.log(`📦 [STOCK ASSIGNMENT] Inventario asignado al Admin ID ${adminIdRegistro} (OC #${ordenCompraId})`);
       }
 
       // 4. Registrar movimiento en Log_Inventario
@@ -12356,8 +12372,8 @@ const crearOrdenCompra = async (req, res) => {
 
     // 1. Crear la orden de compra
     const ordenQuery = `
-      INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus, usuario_creador_id, tenant_id)
-      VALUES ($1, $2, 'Pendiente', $3, $4)
+      INSERT INTO OrdenesDeCompra (ProveedorID, FechaEntregaEsperada, Estatus, usuario_creador_id, tenant_id, admin_creador_id)
+      VALUES ($1, $2, 'Pendiente', $3, $4, $5)
       RETURNING OrdenCompraID, ProveedorID, FechaCreacion, FechaEntregaEsperada, Estatus
     `;
 
@@ -12366,6 +12382,7 @@ const crearOrdenCompra = async (req, res) => {
       fechaEntregaEsperada,
       req.user.id,
       tenant_id,
+      req.user.id, // admin_creador_id - el admin que crea la orden es el dueño
     ]);
 
     const ordenCompra = ordenResult.rows[0];
