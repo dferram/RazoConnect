@@ -132,8 +132,8 @@ const getGrupoDetalle = async (req, res) => {
         og.notas,
         og.created_at,
         og.updated_at,
-        p.nombre as proveedor_nombre,
-        p.contacto as proveedor_contacto,
+        p.nombreempresa as proveedor_nombre,
+        p.contactonombre as proveedor_contacto,
         p.telefono as proveedor_telefono,
         p.email as proveedor_email,
         a.nombre as admin_nombre
@@ -254,7 +254,7 @@ const getAllGrupos = async (req, res) => {
         og.estatus,
         og.nombre_grupo,
         og.created_at,
-        p.nombreproveedor as proveedor_nombre,
+        p.nombreempresa as proveedor_nombre,
         a.nombre as admin_nombre,
         COUNT(oc.ordencompraid) as total_ordenes,
         COALESCE(SUM(oc.total), 0) as total_general
@@ -274,7 +274,7 @@ const getAllGrupos = async (req, res) => {
 
     query += `
       GROUP BY og.grupoid, og.proveedorid, og.estatus, og.nombre_grupo, 
-               og.created_at, p.nombreproveedor, a.nombre
+               og.created_at, p.nombreempresa, a.nombre
       ORDER BY og.created_at DESC
     `;
 
@@ -368,8 +368,8 @@ const getGrupoConsolidado = async (req, res) => {
         og.grupoid,
         og.nombre_grupo,
         og.created_at,
-        p.nombre as proveedor_nombre,
-        p.contacto as proveedor_contacto,
+        p.nombreempresa as proveedor_nombre,
+        p.contactonombre as proveedor_contacto,
         p.telefono as proveedor_telefono,
         p.email as proveedor_email
       FROM ordenes_grupos og
