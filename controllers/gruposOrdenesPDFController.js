@@ -20,7 +20,7 @@ async function generarPDFProveedorGrupo(req, res) {
                 og.nombre_grupo,
                 og.created_at,
                 og.estatus,
-                p.nombre as proveedor_nombre,
+                p.nombreproveedor as proveedor_nombre,
                 p.contacto as proveedor_contacto,
                 p.telefono as proveedor_telefono,
                 p.email as proveedor_email,
@@ -305,7 +305,7 @@ async function generarPDFInternoGrupo(req, res) {
                 og.nombre_grupo,
                 og.created_at,
                 og.estatus,
-                p.nombre as proveedor_nombre,
+                p.nombreproveedor as proveedor_nombre,
                 a.nombre as admin_nombre
             FROM ordenes_grupos og
             LEFT JOIN proveedores p ON og.proveedorid = p.proveedorid

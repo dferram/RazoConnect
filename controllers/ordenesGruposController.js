@@ -254,7 +254,7 @@ const getAllGrupos = async (req, res) => {
         og.estatus,
         og.nombre_grupo,
         og.created_at,
-        p.nombre as proveedor_nombre,
+        p.nombreproveedor as proveedor_nombre,
         a.nombre as admin_nombre,
         COUNT(oc.ordencompraid) as total_ordenes,
         COALESCE(SUM(oc.total), 0) as total_general
@@ -274,7 +274,7 @@ const getAllGrupos = async (req, res) => {
 
     query += `
       GROUP BY og.grupoid, og.proveedorid, og.estatus, og.nombre_grupo, 
-               og.created_at, p.nombre, a.nombre
+               og.created_at, p.nombreproveedor, a.nombre
       ORDER BY og.created_at DESC
     `;
 

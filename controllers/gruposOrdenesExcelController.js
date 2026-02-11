@@ -17,7 +17,7 @@ async function generarExcelProveedorGrupo(req, res) {
                 og.grupoid,
                 og.nombre_grupo,
                 og.created_at,
-                p.nombre as proveedor_nombre
+                p.nombreproveedor as proveedor_nombre
             FROM ordenes_grupos og
             LEFT JOIN proveedores p ON og.proveedorid = p.proveedorid
             WHERE og.grupoid = $1 AND og.tenant_id = $2`,
@@ -211,7 +211,7 @@ async function generarExcelInternoGrupo(req, res) {
                 og.grupoid,
                 og.nombre_grupo,
                 og.created_at,
-                p.nombre as proveedor_nombre
+                p.nombreproveedor as proveedor_nombre
             FROM ordenes_grupos og
             LEFT JOIN proveedores p ON og.proveedorid = p.proveedorid
             WHERE og.grupoid = $1 AND og.tenant_id = $2`,
