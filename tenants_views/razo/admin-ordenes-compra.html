@@ -202,6 +202,9 @@
                 pedido y registrar la recepción de inventario.
               </p>
             </div>
+
+            <!-- Paginación -->
+            <div id="paginationWrapper"></div>
           </section>
         </div>
       </main>
@@ -507,6 +510,7 @@
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
+    <script src="js/pagination-component.js"></script>
     <script>
       (function () {
         "use strict";
@@ -518,7 +522,9 @@
         }
 
         let ordenesData = [];
+        let ordenesFiltered = [];
         let currentUserRole = null;
+        let paginador = null;
 
         // Elements
         const loadingState = document.getElementById("loadingState");
@@ -533,6 +539,15 @@
 
         // Cargar órdenes al inicio
         document.addEventListener("DOMContentLoaded", function () {
+          // Inicializar paginador
+          paginador = new PaginationComponent({
+            containerId: 'paginationWrapper',
+            registrosPorPagina: 15,
+            onPageChange: (pagina) => {
+              renderOrdenes();
+            }
+          });
+          
           verifyAndLoadAdmin();
           loadOrdenes();
           filtroEstatus.addEventListener("change", loadOrdenes);
@@ -727,6 +742,7 @@
             }
 
             ordenesData = response.data.data?.ordenes || [];
+            ordenesFiltered = [...ordenesData];
 
             console.log("🔍 FRONTEND - ordenesData recibido:", ordenesData);
             console.log(
@@ -736,11 +752,13 @@
 
             loadingState.style.display = "none";
 
-            if (ordenesData.length === 0) {
+            if (ordenesFiltered.length === 0) {
               console.log("🔍 FRONTEND - Mostrando empty state");
               emptyState.style.display = "block";
+              paginador.render(0, 1);
             } else {
               console.log("🔍 FRONTEND - Renderizando órdenes");
+              paginador.reset();
               renderOrdenes();
               ordenesTable.style.display = "block";
             }
@@ -756,13 +774,23 @@
         function renderOrdenes() {
           ordenesTableBody.innerHTML = "";
 
+          // Calcular paginación
+          const paginaActual = paginador.getCurrentPage();
+          const itemsPorPagina = paginador.getItemsPerPage();
+          const inicio = (paginaActual - 1) * itemsPorPagina;
+          const fin = inicio + itemsPorPagina;
+          const ordenesPagina = ordenesFiltered.slice(inicio, fin);
+
           // Actualizar badge de resultados
           const badge = document.getElementById("resultadosBadge");
-          badge.textContent = `${ordenesData.length} RESULTADO${
-            ordenesData.length !== 1 ? "S" : ""
+          badge.textContent = `${ordenesFiltered.length} RESULTADO${
+            ordenesFiltered.length !== 1 ? "S" : ""
           }`;
 
-          ordenesData.forEach((orden) => {
+          // Renderizar paginación
+          paginador.render(ordenesFiltered.length, paginaActual);
+
+          ordenesPagina.forEach((orden) => {
             const row = document.createElement("tr");
 
             const estatusBadgeClass = getEstatusBadgeClass(orden.estatus);
