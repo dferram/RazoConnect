@@ -162,11 +162,11 @@
               <div class="spinner"></div>
             </div>
 
-            <div style="overflow-x: auto">
+            <div style="overflow-x: auto; width: 100%;">
               <table
                 class="admin-table"
                 id="ordenesTable"
-                style="display: none; font-size: 0.875rem;"
+                style="display: none; font-size: 0.875rem; min-width: 1200px; width: 100%;"
               >
                 <thead>
                   <tr>
@@ -671,14 +671,20 @@
           try {
             const response = await API.apiCall('/admin/ordenes-compra/administradores', { method: 'GET' });
             if (response.ok && response.data) {
-              const admins = response.data;
+              // El backend retorna { success: true, data: [...] }
+              const admins = Array.isArray(response.data) ? response.data : (response.data.data || []);
               filtroAdmin.innerHTML = '<option value="">Todos los administradores</option>';
-              admins.forEach(admin => {
-                const option = document.createElement('option');
-                option.value = admin.adminid;
-                option.textContent = `${admin.nombre} (${admin.rol === 'superadmin' ? 'Super Admin' : 'Admin'})`;
-                filtroAdmin.appendChild(option);
-              });
+              
+              if (admins.length > 0) {
+                admins.forEach(admin => {
+                  const option = document.createElement('option');
+                  option.value = admin.adminid;
+                  option.textContent = `${admin.nombre} (${admin.rol === 'superadmin' ? 'Super Admin' : 'Admin'})`;
+                  filtroAdmin.appendChild(option);
+                });
+              } else {
+                console.log('No hay administradores con órdenes de compra');
+              }
             }
           } catch (error) {
             console.error('Error cargando lista de administradores:', error);
