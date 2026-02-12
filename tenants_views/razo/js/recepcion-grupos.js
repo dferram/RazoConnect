@@ -74,10 +74,19 @@ async function renderizarOrdenesGrupo() {
 }
 
 /**
- * Agregar botones de exportación PDF/Excel
+ * Agregar botones de exportación PDF/Excel (solo para grupos)
  */
 function agregarBotonesExportacion(container) {
+  // Solo agregar botones si estamos en modo grupo
+  if (!grupoActual || !grupoActual.grupoid) {
+    console.log('[GRUPO] No se agregan botones - no es un grupo');
+    return;
+  }
+
+  console.log('[GRUPO] Agregando botones de exportación para grupo:', grupoActual.grupoid);
+  
   const botonesDiv = document.createElement('div');
+  botonesDiv.id = 'botonesExportacionGrupo';
   botonesDiv.style.cssText = 'display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap;';
   botonesDiv.innerHTML = `
     <button id="btnPDFProveedor" class="btn" style="background: #10b981; color: white;">
@@ -223,19 +232,28 @@ async function renderizarOrdenEnGrupo(orden, container) {
     method: 'GET'
   });
 
-  console.log(`[GRUPO] Respuesta API para orden ${orden.ordencompraid}:`, detallesResp);
+  console.log(`[GRUPO] ========== AUDITORÍA ORDEN ${orden.ordencompraid} ==========`);
+  console.log(`[GRUPO] Respuesta completa:`, detallesResp);
+  console.log(`[GRUPO] detallesResp.ok:`, detallesResp.ok);
+  console.log(`[GRUPO] detallesResp.data:`, detallesResp.data);
 
   if (!detallesResp.ok) {
-    console.error(`[GRUPO] Error cargando orden ${orden.ordencompraid}:`, detallesResp);
+    console.error(`[GRUPO] ❌ Error cargando orden ${orden.ordencompraid}:`, detallesResp);
     return;
   }
 
-  // El endpoint devuelve { orden, detalles }
+  // El endpoint devuelve { success, data: { orden, detalles } }
   const responseData = detallesResp.data || {};
+  console.log(`[GRUPO] responseData keys:`, Object.keys(responseData));
+  console.log(`[GRUPO] responseData.detalles:`, responseData.detalles);
+  
   const items = responseData.detalles || [];
-  console.log(`[GRUPO] Orden ${orden.ordencompraid} - Items recibidos:`, items.length);
+  console.log(`[GRUPO] ✅ Items recibidos:`, items.length);
+  
   if (items.length > 0) {
-    console.log(`[GRUPO] Orden ${orden.ordencompraid} - Primer item:`, items[0]);
+    console.log(`[GRUPO] Primer item completo:`, JSON.stringify(items[0], null, 2));
+  } else {
+    console.warn(`[GRUPO] ⚠️ Array de items está vacío`);
   }
 
   // Crear sección para esta orden
@@ -286,18 +304,24 @@ async function renderizarOrdenEnGrupo(orden, container) {
 
   // Poblar tabla con productos
   const tbody = document.getElementById(`tbody-orden-${orden.ordencompraid}`);
+  console.log(`[GRUPO] Poblando tabla para orden ${orden.ordencompraid}, items:`, items.length);
+  
   if (items.length === 0) {
+    console.warn(`[GRUPO] ⚠️ No hay items para mostrar en orden ${orden.ordencompraid}`);
     tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 2rem; color: #6b7280;">No hay productos en esta orden</td></tr>';
   } else {
     let productosAgregados = 0;
-    items.forEach(item => {
+    items.forEach((item, index) => {
+      console.log(`[GRUPO] Procesando item ${index + 1}/${items.length}:`, item);
       const tr = crearFilaProducto(item, orden.ordencompraid);
       if (tr) {
         tbody.appendChild(tr);
         productosAgregados++;
+      } else {
+        console.log(`[GRUPO] Item ${index + 1} omitido (ya recibido o null)`);
       }
     });
-    console.log(`[GRUPO] Orden ${orden.ordencompraid} - Productos mostrados: ${productosAgregados}`);
+    console.log(`[GRUPO] ✅ Orden ${orden.ordencompraid} - Productos mostrados: ${productosAgregados}/${items.length}`);
     
     if (productosAgregados === 0) {
       tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 2rem; color: #6b7280;">Todos los productos de esta orden ya fueron recibidos</td></tr>';
@@ -317,13 +341,18 @@ function crearFilaProducto(item, ordenId) {
   const porRecibirPzas = item.cantidadPendiente || Math.max(0, solicitadoPzas - recibidoPzas);
   const piezasPorPaquete = item.piezasPorPaquete || 1;
 
-  console.log(`[GRUPO] Producto: ${item.nombreProducto}, Solicitado: ${solicitadoPzas}, Recibido: ${recibidoPzas}, Pendiente: ${porRecibirPzas}`);
+  console.log(`[GRUPO] 📦 Producto: ${item.nombreProducto}`);
+  console.log(`[GRUPO]    - Solicitado: ${solicitadoPzas}`);
+  console.log(`[GRUPO]    - Recibido: ${recibidoPzas}`);
+  console.log(`[GRUPO]    - Pendiente: ${porRecibirPzas}`);
 
   // Solo mostrar si hay pendientes por recibir
   if (porRecibirPzas <= 0) {
-    console.log(`[GRUPO] Producto ${item.nombreProducto} omitido - ya recibido completamente`);
+    console.log(`[GRUPO] ⏭️ Producto ${item.nombreProducto} omitido - ya recibido completamente`);
     return null;
   }
+  
+  console.log(`[GRUPO] ✅ Creando fila para producto ${item.nombreProducto}`);
 
   tr.innerHTML = `
     <td>
@@ -364,3 +393,24 @@ function crearFilaProducto(item, ordenId) {
 
 // Exportar funciones
 window.cargarGrupoCompleto = cargarGrupoCompleto;
+
+// Limpiar botones de grupo cuando se carga una orden individual
+window.addEventListener('DOMContentLoaded', () => {
+  // Observar cambios en el select de órdenes
+  const ocSelect = document.getElementById('ocSelect');
+  if (ocSelect) {
+    ocSelect.addEventListener('change', () => {
+      // Si no es un grupo, eliminar botones de exportación de grupo
+      const selected = ocSelect.options[ocSelect.selectedIndex];
+      const esGrupo = selected?.dataset?.esGrupo === 'true';
+      
+      if (!esGrupo) {
+        const botonesGrupo = document.getElementById('botonesExportacionGrupo');
+        if (botonesGrupo) {
+          console.log('[GRUPO] Eliminando botones de grupo - orden individual seleccionada');
+          botonesGrupo.remove();
+        }
+      }
+    });
+  }
+});
