@@ -107,11 +107,10 @@
                     <th>Nombre del Grupo</th>
                     <th style="width: 150px">Proveedor</th>
                     <th style="width: 100px; text-align: center">Órdenes</th>
-                    <th style="width: 120px; text-align: right">Total</th>
                     <th style="width: 100px">Creado</th>
                     <th style="width: 100px">Admin</th>
                     <th style="width: 100px">Estatus</th>
-                    <th style="width: 150px">Acciones</th>
+                    <th style="width: 180px">Acciones</th>
                   </tr>
                 </thead>
                 <tbody id="gruposTableBody">
@@ -247,11 +246,6 @@
               <td style="text-align: center; font-weight: 600; color: #374151;">
                 ${parseInt(grupo.total_ordenes || 0)}
               </td>
-              <td style="text-align: right; font-weight: 600; color: #10b981;">
-                $${parseFloat(grupo.total_general || 0).toLocaleString("es-MX", {
-                  minimumFractionDigits: 2,
-                })}
-              </td>
               <td style="color: #6b7280; font-size: 0.875rem;">${fechaCreacion}</td>
               <td style="color: #6b7280; font-size: 0.875rem;">${adminNombre.split(" ")[0]}</td>
               <td>
@@ -272,6 +266,13 @@
                     grupo.estatus !== "recibida"
                       ? `
                     <button 
+                      class="btn" 
+                      onclick="editarGrupo(${grupo.grupoid})"
+                      title="Editar Grupo"
+                      style="padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 60px; background: #3b82f6; color: white;">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button 
                       class="btn btn-secondary" 
                       onclick="desagrupar(${grupo.grupoid})"
                       title="Desagrupar"
@@ -290,6 +291,10 @@
         }
 
         window.verDetalle = function (grupoId) {
+          window.location.href = `admin-orden-agrupada-detalle.html?id=${grupoId}`;
+        };
+
+        window.editarGrupo = function (grupoId) {
           window.location.href = `admin-orden-agrupada-detalle.html?id=${grupoId}`;
         };
 

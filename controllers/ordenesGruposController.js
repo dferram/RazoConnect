@@ -175,6 +175,7 @@ const getGrupoDetalle = async (req, res) => {
     const ordenesResult = await pool.query(ordenesQuery, [id, tenant_id]);
 
     const detallesPromises = ordenesResult.rows.map(async (orden) => {
+
       const detallesQuery = `
         SELECT 
           doc.detalleoc_id,
@@ -183,18 +184,18 @@ const getGrupoDetalle = async (req, res) => {
           doc.cantidadrecibida,
           doc.costounitario,
           pv.productoid,
-          p.nombre as producto_nombre,
-          p.sku,
-          p.imagen_url,
-          pv.dimensionesfisicas,
-          pv.color,
+          p.nombreproducto as producto_nombre,
+          p.sku_maestro as sku,
+          NULL as imagen_url,
+          pv.dimensiones as dimensionesfisicas,
+          pv.color_nombre as color,
           doc.piezasporpaquete,
           doc.cantidadsolicitada * doc.piezasporpaquete as total_piezas
         FROM detallesordencompra doc
         LEFT JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
         LEFT JOIN productos p ON pv.productoid = p.productoid
         WHERE doc.ordencompraid = $1
-        ORDER BY p.nombre ASC
+        ORDER BY p.nombreproducto ASC
       `;
 
       const detallesResult = await pool.query(detallesQuery, [orden.ordencompraid]);
@@ -489,11 +490,12 @@ const getGrupoConsolidado = async (req, res) => {
     const productosQuery = `
       SELECT 
         p.productoid,
-        p.nombre as producto_nombre,
-        p.sku,
+        p.nombreproducto as producto_nombre,
+        p.sku_maestro as sku,
         pv.varianteid,
-        pv.dimensionesfisicas,
-        pv.color,
+        pv.sku as variante_sku,
+        pv.dimensiones as dimensionesfisicas,
+        pv.color_nombre as color,
         doc.piezasporpaquete,
         SUM(doc.cantidadsolicitada) as total_paquetes,
         AVG(doc.costounitario) as costo_promedio,
@@ -503,9 +505,9 @@ const getGrupoConsolidado = async (req, res) => {
       LEFT JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
       LEFT JOIN productos p ON pv.productoid = p.productoid
       WHERE oc.grupo_id = $1 AND oc.tenant_id = $2
-      GROUP BY p.productoid, p.nombre, p.sku, pv.varianteid, 
-               pv.dimensionesfisicas, pv.color, doc.piezasporpaquete
-      ORDER BY p.nombre ASC
+      GROUP BY p.productoid, p.nombreproducto, p.sku_maestro, pv.varianteid, 
+               pv.sku, pv.dimensiones, pv.color_nombre, doc.piezasporpaquete
+      ORDER BY p.nombreproducto ASC
     `;
 
     const productosResult = await pool.query(productosQuery, [id, tenant_id]);
