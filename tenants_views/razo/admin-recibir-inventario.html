@@ -86,7 +86,10 @@
                 margin-bottom: 0.75rem;
               "
             >
-              <h2 style="margin: 0; font-size: 1.1rem">Auditoría de Recepción</h2>
+              <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                <h2 style="margin: 0; font-size: 1.1rem">Auditoría de Recepción</h2>
+                <span id="tipoBadge" style="display: none;"></span>
+              </div>
               <span id="ocBadge" class="admin-badge secondary">—</span>
             </div>
 
@@ -691,23 +694,56 @@
           return label.includes(text);
         });
 
+        // Filtrar grupos
+        const grupos = (state.grupos || []).filter((g) => {
+          if (!text) return true;
+          const nombreGrupo = (g.nombre_grupo || `Grupo #${g.grupoid}`).toLowerCase();
+          const proveedor = (g.proveedor_nombre || '').toLowerCase();
+          return nombreGrupo.includes(text) || proveedor.includes(text);
+        });
+
         ocSelect.innerHTML = "";
         const placeholder = document.createElement("option");
         placeholder.value = "";
-        placeholder.textContent = ordenes.length
-          ? "Selecciona una OC…"
+        placeholder.textContent = (ordenes.length + grupos.length)
+          ? "Selecciona una OC o Grupo…"
           : "No hay OCs con ese filtro";
         ocSelect.appendChild(placeholder);
 
-        for (const oc of ordenes) {
-          const opt = document.createElement("option");
-          opt.value = String(oc.ordenCompraId);
-          opt.textContent = buildOptionLabel(oc);
-          opt.dataset.proveedorNombre = safeText(oc.proveedorNombre);
-          opt.dataset.fechaCreacion = safeText(oc.fechaCreacion);
-          opt.dataset.fechaEntrega = safeText(oc.fechaEntregaEsperada);
-          opt.dataset.estatus = safeText(oc.estatus);
-          ocSelect.appendChild(opt);
+        // Agregar grupos primero con color morado
+        if (grupos.length > 0) {
+          const optgroupGrupos = document.createElement("optgroup");
+          optgroupGrupos.label = "📦 Grupos de Órdenes";
+          for (const grupo of grupos) {
+            const opt = document.createElement("option");
+            opt.value = `GRUPO-${grupo.grupoid}`;
+            opt.textContent = `🟣 ${grupo.nombre_grupo || `Grupo #${grupo.grupoid}`} (${grupo.total_ordenes || 0} órdenes)`;
+            opt.style.color = "#8b5cf6";
+            opt.style.fontWeight = "600";
+            opt.dataset.esGrupo = "true";
+            opt.dataset.grupoId = String(grupo.grupoid);
+            opt.dataset.proveedorNombre = safeText(grupo.proveedor_nombre);
+            opt.dataset.totalOrdenes = String(grupo.total_ordenes || 0);
+            optgroupGrupos.appendChild(opt);
+          }
+          ocSelect.appendChild(optgroupGrupos);
+        }
+
+        // Agregar órdenes individuales
+        if (ordenes.length > 0) {
+          const optgroupOrdenes = document.createElement("optgroup");
+          optgroupOrdenes.label = "📋 Órdenes Individuales";
+          for (const oc of ordenes) {
+            const opt = document.createElement("option");
+            opt.value = String(oc.ordenCompraId);
+            opt.textContent = buildOptionLabel(oc);
+            opt.dataset.proveedorNombre = safeText(oc.proveedorNombre);
+            opt.dataset.fechaCreacion = safeText(oc.fechaCreacion);
+            opt.dataset.fechaEntrega = safeText(oc.fechaEntregaEsperada);
+            opt.dataset.estatus = safeText(oc.estatus);
+            optgroupOrdenes.appendChild(opt);
+          }
+          ocSelect.appendChild(optgroupOrdenes);
         }
 
         ocSelect.disabled = false;
@@ -717,6 +753,7 @@
         ocSelect.disabled = true;
         ocSelect.innerHTML = "<option value=\"\">Cargando órdenes…</option>";
         try {
+          // Cargar órdenes individuales
           const resp = await apiCall("/admin/ordenes-compra?estatus=Pendiente,Parcial", {
             method: "GET",
           });
@@ -728,6 +765,21 @@
           state.ordenes = Array.isArray(resp.data?.data?.ordenes)
             ? resp.data.data.ordenes
             : [];
+
+          // Cargar grupos de órdenes
+          try {
+            const respGrupos = await apiCall("/admin/ordenes-compra/grupos", {
+              method: "GET",
+            });
+            if (respGrupos.ok && Array.isArray(respGrupos.data?.grupos)) {
+              state.grupos = respGrupos.data.grupos;
+            } else {
+              state.grupos = [];
+            }
+          } catch (error) {
+            console.warn('No se pudieron cargar grupos:', error);
+            state.grupos = [];
+          }
 
           renderOrdenes(ocSearch.value);
 
@@ -1487,10 +1539,75 @@
           return;
         }
 
-        ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "—");
-        ocMeta.textContent = "—";
-        ocBadge.textContent = `OC #${safeText(id)} · Cargando…`;
-        await loadRecepcion(id);
+        // Detectar si es un grupo
+        const esGrupo = selected?.dataset?.esGrupo === "true";
+        
+        if (esGrupo) {
+          // Es un grupo - cargar órdenes del grupo
+          const grupoId = selected?.dataset?.grupoId;
+          ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "—");
+          ocMeta.textContent = `📦 Grupo con ${selected?.dataset?.totalOrdenes || 0} órdenes`;
+          ocBadge.textContent = `Cargando grupo...`;
+          
+          try {
+            const respGrupo = await apiCall(`/admin/ordenes-compra/grupos/${grupoId}`, {
+              method: "GET",
+            });
+            
+            if (respGrupo.ok && respGrupo.data?.ordenes) {
+              const ordenesGrupo = respGrupo.data.ordenes;
+              
+              // Mostrar badge de grupo
+              const tipoBadge = document.getElementById('tipoBadge');
+              if (tipoBadge) {
+                tipoBadge.innerHTML = '<i class="bi bi-collection"></i> GRUPO DE ÓRDENES';
+                tipoBadge.className = 'admin-badge';
+                tipoBadge.style.cssText = 'display: inline-flex; align-items: center; gap: 0.25rem; background: #8b5cf6; color: white; font-size: 0.75rem; padding: 0.25rem 0.75rem;';
+              }
+              
+              // Reemplazar el select con las órdenes del grupo
+              ocSelect.innerHTML = "";
+              const placeholder = document.createElement("option");
+              placeholder.value = "";
+              placeholder.textContent = "Selecciona una orden del grupo...";
+              ocSelect.appendChild(placeholder);
+              
+              for (const orden of ordenesGrupo) {
+                const opt = document.createElement("option");
+                opt.value = String(orden.ordencompraid);
+                opt.textContent = `OC #${orden.ordencompraid} — ${orden.estatus || 'Pendiente'}`;
+                opt.style.color = "#8b5cf6";
+                opt.dataset.proveedorNombre = safeText(respGrupo.data.grupo.proveedor_nombre);
+                opt.dataset.esOrdenDeGrupo = "true";
+                opt.dataset.grupoId = grupoId;
+                ocSelect.appendChild(opt);
+              }
+              
+              ocBadge.textContent = `📦 ${respGrupo.data.grupo.nombre_grupo || `Grupo #${grupoId}`}`;
+              ocBadge.className = 'admin-badge';
+              ocBadge.style.background = '#8b5cf6';
+              ocBadge.style.color = 'white';
+              
+              setEmpty("Selecciona una orden del grupo para empezar a recibir.");
+            }
+          } catch (error) {
+            console.error('Error cargando grupo:', error);
+            setEmpty("Error al cargar las órdenes del grupo.");
+          }
+        } else {
+          // Es una orden individual
+          ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "—");
+          ocMeta.textContent = "—";
+          ocBadge.textContent = `OC #${safeText(id)} · Cargando…`;
+          
+          // Limpiar badge de grupo si existía
+          const tipoBadge = document.getElementById('tipoBadge');
+          if (tipoBadge) {
+            tipoBadge.style.display = 'none';
+          }
+          
+          await loadRecepcion(id);
+        }
       });
 
       loadOrdenes();

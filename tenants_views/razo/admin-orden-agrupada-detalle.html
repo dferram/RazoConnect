@@ -520,8 +520,9 @@
         }
 
         function recibirGrupoCompleto() {
-          // Redirigir a la página de recepción consolidada del grupo
-          window.location.href = `admin-recibir-grupo.html?id=${grupoId}`;
+          // Redirigir a la página de recepción de inventario
+          // El usuario podrá seleccionar el grupo desde el select
+          window.location.href = `admin-recibir-inventario.html`;
         }
 
         async function generarPDFProveedor() {
