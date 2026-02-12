@@ -55,7 +55,10 @@ async function renderizarOrdenesGrupo() {
   const recepcionSplit = document.getElementById('recepcionSplit');
   if (!recepcionSplit) return;
 
-  recepcionSplit.innerHTML = '';
+  // Ocultar las tablas originales de recepción individual
+  const paneles = recepcionSplit.querySelectorAll('.recepcion-panel');
+  paneles.forEach(panel => panel.style.display = 'none');
+
   recepcionSplit.style.display = 'block';
 
   // Ocultar mensajes de vacío/loading
@@ -418,6 +421,19 @@ function limpiarEstadoGrupo() {
   if (botonesGrupo) {
     botonesGrupo.remove();
     console.log('[GRUPO] Botones de grupo eliminados');
+  }
+  
+  // Eliminar todas las secciones de órdenes del grupo
+  const recepcionSplit = document.getElementById('recepcionSplit');
+  if (recepcionSplit) {
+    const seccionesGrupo = recepcionSplit.querySelectorAll('.admin-card');
+    seccionesGrupo.forEach(seccion => seccion.remove());
+    console.log(`[GRUPO] ${seccionesGrupo.length} secciones de grupo eliminadas`);
+    
+    // Mostrar nuevamente las tablas originales de recepción individual
+    const paneles = recepcionSplit.querySelectorAll('.recepcion-panel');
+    paneles.forEach(panel => panel.style.display = '');
+    console.log('[GRUPO] Tablas de recepción individual restauradas');
   }
   
   // Ocultar badge de grupo

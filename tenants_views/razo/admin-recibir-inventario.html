@@ -1449,10 +1449,6 @@
         setLoading(true);
         recepcionEmpty.style.display = "none";
         recepcionSplit.style.display = "none";
-        
-        // Limpiar solo elementos específicos del grupo (no destruir las tablas)
-        const seccionesGrupo = recepcionSplit.querySelectorAll('.admin-card');
-        seccionesGrupo.forEach(seccion => seccion.remove());
 
         sesionRecepcion = [];
         renderizarTablaSesion();
@@ -1502,6 +1498,15 @@
           ocBadge.textContent = `OC #${safeText(state.orden.ordenCompraId)} · ${safeText(
             state.orden.estatus
           )}`;
+
+          // CRUCIAL: Asegurar que las tablas estén visibles antes de renderizar
+          const paneles = recepcionSplit.querySelectorAll('.recepcion-panel');
+          paneles.forEach(panel => {
+            // Restaurar display inline
+            panel.style.display = '';
+            // Eliminar clase d-none de Bootstrap si existe
+            panel.classList.remove('d-none');
+          });
 
           recepcionSplit.style.display = "block";
           renderSplit();
