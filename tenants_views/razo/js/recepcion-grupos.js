@@ -247,7 +247,10 @@ async function renderizarOrdenEnGrupo(orden, container) {
   console.log(`[GRUPO] ✅ Orden ${orden.ordencompraid} - Productos encontrados:`, items.length);
   
   if (items.length > 0) {
-    console.log(`[GRUPO] ✅ Primer producto:`, items[0].nombreProducto);
+    console.log(`[GRUPO] ✅ Primer producto completo:`, items[0]);
+    console.log(`[GRUPO] 📸 Imagen del primer producto:`, items[0].imagen);
+    console.log(`[GRUPO] 🏷️ Categoría del primer producto:`, items[0].categoria);
+    console.log(`[GRUPO] 🎨 Color del primer producto:`, items[0].color);
   } else {
     console.warn(`[GRUPO] ⚠️ No hay productos para orden ${orden.ordencompraid}`);
   }
@@ -350,13 +353,26 @@ function crearFilaProducto(item, ordenId) {
   
   console.log(`[GRUPO] ✅ Creando fila para producto ${item.nombreProducto}`);
 
+  const imagenUrl = item.imagen || '';
+  const categoria = item.categoria || 'Sin categoría';
+  const color = item.color || 'N/A';
+  
+  console.log(`[GRUPO] 🖼️ Renderizando producto ${item.nombreProducto}:`);
+  console.log(`[GRUPO]    - Imagen URL: ${imagenUrl || 'SIN IMAGEN'}`);
+  console.log(`[GRUPO]    - Categoría: ${categoria}`);
+  console.log(`[GRUPO]    - Color: ${color}`);
+
   tr.innerHTML = `
     <td>
-      <div style="width: 50px; height: 50px; background: #e5e7eb; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;"><i class="bi bi-image" style="color: #9ca3af;"></i></div>
+      ${imagenUrl ? 
+        `<img src="${imagenUrl}" alt="${item.nombreProducto}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 0.5rem;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" /><div style="display: none; width: 50px; height: 50px; background: #e5e7eb; border-radius: 0.5rem; align-items: center; justify-content: center;"><i class="bi bi-image" style="color: #9ca3af;"></i></div>` 
+        : 
+        `<div style="width: 50px; height: 50px; background: #e5e7eb; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;"><i class="bi bi-image" style="color: #9ca3af;"></i></div>`
+      }
     </td>
     <td style="font-weight: 500;">${item.nombreProducto || 'Sin nombre'}</td>
-    <td>N/A</td>
-    <td>N/A</td>
+    <td>${categoria}</td>
+    <td>${color}</td>
     <td>${item.dimensiones || 'N/A'}</td>
     <td style="text-align: center; font-weight: 600; color: #f97316;">${solicitadoPzas}</td>
     <td style="text-align: center; font-weight: 600; color: #10b981;">${porRecibirPzas}</td>
@@ -387,5 +403,32 @@ function crearFilaProducto(item, ordenId) {
   return tr;
 }
 
+/**
+ * Limpiar completamente el estado del grupo
+ */
+function limpiarEstadoGrupo() {
+  console.log('[GRUPO] Limpiando estado completo del grupo');
+  
+  // Resetear variables globales
+  grupoActual = null;
+  ordenesDelGrupoActual = [];
+  
+  // Eliminar botones de exportación si existen
+  const botonesGrupo = document.getElementById('botonesExportacionGrupo');
+  if (botonesGrupo) {
+    botonesGrupo.remove();
+    console.log('[GRUPO] Botones de grupo eliminados');
+  }
+  
+  // Ocultar badge de grupo
+  const tipoBadge = document.getElementById('tipoBadge');
+  if (tipoBadge) {
+    tipoBadge.style.display = 'none';
+  }
+  
+  console.log('[GRUPO] Estado del grupo limpiado correctamente');
+}
+
 // Exportar funciones
 window.cargarGrupoCompleto = cargarGrupoCompleto;
+window.limpiarEstadoGrupo = limpiarEstadoGrupo;

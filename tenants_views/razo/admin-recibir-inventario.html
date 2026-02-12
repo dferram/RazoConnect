@@ -1449,6 +1449,10 @@
         setLoading(true);
         recepcionEmpty.style.display = "none";
         recepcionSplit.style.display = "none";
+        
+        // Limpiar solo elementos específicos del grupo (no destruir las tablas)
+        const seccionesGrupo = recepcionSplit.querySelectorAll('.admin-card');
+        seccionesGrupo.forEach(seccion => seccion.remove());
 
         sesionRecepcion = [];
         renderizarTablaSesion();
@@ -1586,30 +1590,27 @@
           // Es una orden individual - LIMPIAR ESTADO DE GRUPO
           console.log('[GRUPOS] Cambiando a orden individual - limpiando estado de grupo');
           
-          // Eliminar botones de grupo si existen
-          const botonesGrupo = document.getElementById('botonesExportacionGrupo');
-          if (botonesGrupo) {
-            botonesGrupo.remove();
-            console.log('[GRUPOS] Botones de grupo eliminados');
+          // Llamar a la función de limpieza del módulo de grupos
+          if (typeof limpiarEstadoGrupo === 'function') {
+            limpiarEstadoGrupo();
+          } else {
+            // Fallback manual si la función no está disponible
+            const botonesGrupo = document.getElementById('botonesExportacionGrupo');
+            if (botonesGrupo) {
+              botonesGrupo.remove();
+            }
+            const tipoBadge = document.getElementById('tipoBadge');
+            if (tipoBadge) {
+              tipoBadge.style.display = 'none';
+            }
           }
           
-          // Limpiar contenedor de recepción
-          const recepcionSplit = document.getElementById('recepcionSplit');
-          if (recepcionSplit) {
-            recepcionSplit.innerHTML = '';
-            recepcionSplit.style.display = 'none';
-          }
           // Es una orden individual
           ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "—");
           ocMeta.textContent = "—";
           ocBadge.textContent = `OC #${safeText(id)} · Cargando…`;
           
-          // Limpiar badge de grupo si existía
-          const tipoBadge = document.getElementById('tipoBadge');
-          if (tipoBadge) {
-            tipoBadge.style.display = 'none';
-          }
-          
+          // loadRecepcion se encargará de limpiar y renderizar el contenedor
           await loadRecepcion(id);
         }
       });

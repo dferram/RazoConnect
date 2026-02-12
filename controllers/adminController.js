@@ -11647,11 +11647,30 @@ const getDetallesOrdenCompra = async (req, res) => {
         pv.dimensiones,
         pv.medidaid,
         pv.tipoproductoid,
+        pv.color_nombre,
         COALESCE(pv.stock, 0) AS stockvariante,
-        pr.nombreproducto
+        pr.nombreproducto,
+        c.nombre AS categoria_nombre,
+        COALESCE(
+          (
+            SELECT pvi.url_imagen 
+            FROM producto_variante_imagenes pvi 
+            WHERE pvi.varianteid = pv.varianteid 
+            ORDER BY pvi.orden ASC 
+            LIMIT 1
+          ),
+          (
+            SELECT pi.url_imagen 
+            FROM producto_imagenes pi 
+            WHERE pi.productoid = pv.productoid 
+            ORDER BY pi.orden ASC 
+            LIMIT 1
+          )
+        ) AS imagen_url
       FROM detallesordencompra doc
       INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
       INNER JOIN productos pr ON pv.productoid = pr.productoid
+      LEFT JOIN categorias c ON pr.categoriaid = c.categoriaid
       WHERE doc.ordencompraid = $1
         AND doc.tenant_id = $2
       ORDER BY pr.nombreproducto ASC
@@ -11687,6 +11706,9 @@ const getDetallesOrdenCompra = async (req, res) => {
           sku: row.sku,
           dimensiones: row.dimensiones,
           medidaId: row.medidaid,
+          categoria: row.categoria_nombre,
+          color: row.color_nombre,
+          imagen: row.imagen_url,
           cantidadSolicitada: row.cantidadsolicitada,
           cantidadRecibida: row.cantidadrecibida,
           cantidadPendiente: row.cantidadsolicitada - row.cantidadrecibida,
