@@ -64,9 +64,151 @@ async function renderizarOrdenesGrupo() {
   if (recepcionEmpty) recepcionEmpty.style.display = 'none';
   if (recepcionLoading) recepcionLoading.style.display = 'none';
 
+  // Agregar botones de exportación al inicio
+  agregarBotonesExportacion(recepcionSplit);
+
   // Renderizar cada orden del grupo
   for (const orden of ordenesDelGrupoActual) {
     await renderizarOrdenEnGrupo(orden, recepcionSplit);
+  }
+}
+
+/**
+ * Agregar botones de exportación PDF/Excel
+ */
+function agregarBotonesExportacion(container) {
+  const botonesDiv = document.createElement('div');
+  botonesDiv.style.cssText = 'display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap;';
+  botonesDiv.innerHTML = `
+    <button id="btnPDFProveedor" class="btn" style="background: #10b981; color: white;">
+      <i class="bi bi-file-pdf"></i> PDF Proveedor
+    </button>
+    <button id="btnPDFInterno" class="btn" style="background: #f97316; color: white;">
+      <i class="bi bi-file-pdf"></i> PDF Interno
+    </button>
+    <button id="btnExcelProveedor" class="btn" style="background: #059669; color: white;">
+      <i class="bi bi-file-excel"></i> Excel Proveedor
+    </button>
+    <button id="btnExcelInterno" class="btn" style="background: #ea580c; color: white;">
+      <i class="bi bi-file-excel"></i> Excel Interno
+    </button>
+  `;
+  container.appendChild(botonesDiv);
+
+  // Agregar event listeners
+  setTimeout(() => {
+    document.getElementById('btnPDFProveedor')?.addEventListener('click', () => descargarPDF('proveedor'));
+    document.getElementById('btnPDFInterno')?.addEventListener('click', () => descargarPDF('interno'));
+    document.getElementById('btnExcelProveedor')?.addEventListener('click', () => descargarExcel('proveedor'));
+    document.getElementById('btnExcelInterno')?.addEventListener('click', () => descargarExcel('interno'));
+  }, 100);
+}
+
+/**
+ * Descargar PDF del grupo
+ */
+async function descargarPDF(tipo) {
+  if (!grupoActual) return;
+
+  try {
+    Swal.fire({
+      title: 'Generando PDF...',
+      text: `Preparando PDF ${tipo === 'proveedor' ? 'para el proveedor' : 'interno'}`,
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+
+    const endpoint = tipo === 'proveedor' 
+      ? `/admin/ordenes-compra/grupos/${grupoActual.grupoid}/pdf-proveedor`
+      : `/admin/ordenes-compra/grupos/${grupoActual.grupoid}/pdf-interno`;
+
+    const response = await API.apiCall(endpoint, {
+      method: 'GET',
+      responseType: 'blob'
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al generar PDF');
+    }
+
+    const blob = response.data;
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Grupo-${grupoActual.grupoid}-${tipo}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'PDF Generado',
+      text: 'El archivo se ha descargado correctamente',
+      confirmButtonColor: '#F97316'
+    });
+  } catch (error) {
+    console.error('Error descargando PDF:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo generar el PDF',
+      confirmButtonColor: '#F97316'
+    });
+  }
+}
+
+/**
+ * Descargar Excel del grupo
+ */
+async function descargarExcel(tipo) {
+  if (!grupoActual) return;
+
+  try {
+    Swal.fire({
+      title: 'Generando Excel...',
+      text: `Preparando Excel ${tipo === 'proveedor' ? 'para el proveedor' : 'interno'}`,
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+
+    const endpoint = tipo === 'proveedor'
+      ? `/admin/ordenes-compra/grupos/${grupoActual.grupoid}/excel-proveedor`
+      : `/admin/ordenes-compra/grupos/${grupoActual.grupoid}/excel-interno`;
+
+    const response = await API.apiCall(endpoint, {
+      method: 'GET',
+      responseType: 'blob'
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al generar Excel');
+    }
+
+    const blob = response.data;
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Grupo-${grupoActual.grupoid}-${tipo}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Excel Generado',
+      text: 'El archivo se ha descargado correctamente',
+      confirmButtonColor: '#F97316'
+    });
+  } catch (error) {
+    console.error('Error descargando Excel:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo generar el Excel',
+      confirmButtonColor: '#F97316'
+    });
   }
 }
 
@@ -88,9 +230,13 @@ async function renderizarOrdenEnGrupo(orden, container) {
     return;
   }
 
-  const items = detallesResp.data?.items || [];
+  // El endpoint devuelve { orden, detalles }
+  const responseData = detallesResp.data || {};
+  const items = responseData.detalles || [];
   console.log(`[GRUPO] Orden ${orden.ordencompraid} - Items recibidos:`, items.length);
-  console.log(`[GRUPO] Orden ${orden.ordencompraid} - Primer item:`, items[0]);
+  if (items.length > 0) {
+    console.log(`[GRUPO] Orden ${orden.ordencompraid} - Primer item:`, items[0]);
+  }
 
   // Crear sección para esta orden
   const seccionOrden = document.createElement('div');
@@ -165,35 +311,35 @@ async function renderizarOrdenEnGrupo(orden, container) {
 function crearFilaProducto(item, ordenId) {
   const tr = document.createElement('tr');
   
+  // Mapear campos del endpoint
   const solicitadoPzas = item.cantidadSolicitada || 0;
   const recibidoPzas = item.cantidadRecibida || 0;
-  const porRecibirPzas = Math.max(0, solicitadoPzas - recibidoPzas);
+  const porRecibirPzas = item.cantidadPendiente || Math.max(0, solicitadoPzas - recibidoPzas);
+  const piezasPorPaquete = item.piezasPorPaquete || 1;
 
-  console.log(`[GRUPO] Producto: ${item.nombre}, Solicitado: ${solicitadoPzas}, Recibido: ${recibidoPzas}, Por recibir: ${porRecibirPzas}`);
+  console.log(`[GRUPO] Producto: ${item.nombreProducto}, Solicitado: ${solicitadoPzas}, Recibido: ${recibidoPzas}, Pendiente: ${porRecibirPzas}`);
 
   // Solo mostrar si hay pendientes por recibir
   if (porRecibirPzas <= 0) {
-    console.log(`[GRUPO] Producto ${item.nombre} omitido - ya recibido completamente`);
+    console.log(`[GRUPO] Producto ${item.nombreProducto} omitido - ya recibido completamente`);
     return null;
   }
 
-  const imagenUrl = item.imagen || item.imagenUrl || '';
-
   tr.innerHTML = `
     <td>
-      ${imagenUrl ? `<img src="${imagenUrl}" alt="${item.nombre}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 0.5rem;">` : '<div style="width: 50px; height: 50px; background: #e5e7eb; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;"><i class="bi bi-image" style="color: #9ca3af;"></i></div>'}
+      <div style="width: 50px; height: 50px; background: #e5e7eb; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center;"><i class="bi bi-image" style="color: #9ca3af;"></i></div>
     </td>
-    <td style="font-weight: 500;">${item.nombre || item.productoNombre || 'Sin nombre'}</td>
-    <td>${item.categoria || item.categoriaNombre || 'N/A'}</td>
-    <td>${item.color || item.colorNombre || 'N/A'}</td>
-    <td>${item.dimensiones || item.dimensionesFisicas || 'N/A'}</td>
+    <td style="font-weight: 500;">${item.nombreProducto || 'Sin nombre'}</td>
+    <td>N/A</td>
+    <td>N/A</td>
+    <td>${item.dimensiones || 'N/A'}</td>
     <td style="text-align: center; font-weight: 600; color: #f97316;">${solicitadoPzas}</td>
     <td style="text-align: center; font-weight: 600; color: #10b981;">${porRecibirPzas}</td>
     <td>
       <input 
         type="number" 
         class="form-input cantidad-hoy" 
-        data-detalle-id="${item.detalleId || item.detalleOcId}"
+        data-detalle-id="${item.detalleId}"
         data-orden-id="${ordenId}"
         min="0" 
         max="${porRecibirPzas}"
@@ -204,7 +350,7 @@ function crearFilaProducto(item, ordenId) {
     <td>
       <button 
         class="btn btn-sm btn-agregar-sesion" 
-        data-detalle-id="${item.detalleId || item.detalleOcId}"
+        data-detalle-id="${item.detalleId}"
         data-orden-id="${ordenId}"
         style="background: #10b981; color: white; width: 100%;"
       >
