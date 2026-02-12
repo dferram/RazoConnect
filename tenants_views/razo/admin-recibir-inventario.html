@@ -771,28 +771,49 @@
             const respGrupos = await apiCall("/admin/ordenes-compra/grupos", {
               method: "GET",
             });
+            console.log('[GRUPOS] Respuesta API:', respGrupos);
             if (respGrupos.ok && Array.isArray(respGrupos.data?.grupos)) {
               state.grupos = respGrupos.data.grupos;
+              console.log('[GRUPOS] Grupos cargados:', state.grupos.length);
             } else {
+              console.warn('[GRUPOS] No hay grupos o formato incorrecto:', respGrupos.data);
               state.grupos = [];
             }
           } catch (error) {
-            console.warn('No se pudieron cargar grupos:', error);
+            console.error('[GRUPOS] Error cargando grupos:', error);
             state.grupos = [];
           }
 
           renderOrdenes(ocSearch.value);
 
           const params = new URLSearchParams(window.location.search);
-          const ordenIdParam = params.get("ordenId");
-          const ordenId = Number.parseInt(ordenIdParam, 10);
-          if (Number.isInteger(ordenId) && ordenId > 0) {
-            const hasOption = Array.from(ocSelect.options).some(
-              (o) => String(o.value) === String(ordenId)
+          
+          // Verificar si viene grupo_id en URL
+          const grupoIdParam = params.get("grupo_id");
+          if (grupoIdParam) {
+            console.log('[GRUPOS] Auto-seleccionando grupo:', grupoIdParam);
+            const grupoValue = `GRUPO-${grupoIdParam}`;
+            const hasGrupo = Array.from(ocSelect.options).some(
+              (o) => String(o.value) === grupoValue
             );
-            if (hasOption) {
-              ocSelect.value = String(ordenId);
+            if (hasGrupo) {
+              ocSelect.value = grupoValue;
               ocSelect.dispatchEvent(new Event("change"));
+            } else {
+              console.warn('[GRUPOS] Grupo no encontrado en select:', grupoValue);
+            }
+          } else {
+            // Verificar si viene ordenId en URL
+            const ordenIdParam = params.get("ordenId");
+            const ordenId = Number.parseInt(ordenIdParam, 10);
+            if (Number.isInteger(ordenId) && ordenId > 0) {
+              const hasOption = Array.from(ocSelect.options).some(
+                (o) => String(o.value) === String(ordenId)
+              );
+              if (hasOption) {
+                ocSelect.value = String(ordenId);
+                ocSelect.dispatchEvent(new Event("change"));
+              }
             }
           }
         } catch (error) {
@@ -1556,6 +1577,7 @@
             
             if (respGrupo.ok && respGrupo.data?.ordenes) {
               const ordenesGrupo = respGrupo.data.ordenes;
+              console.log('[GRUPOS] Órdenes del grupo cargadas:', ordenesGrupo.length);
               
               // Mostrar badge de grupo
               const tipoBadge = document.getElementById('tipoBadge');
