@@ -108,6 +108,14 @@
                   <i class="bi bi-file-earmark-excel"></i> Excel Interno
                 </button>
                 <button
+                  id="btnRecibirGrupo"
+                  class="btn"
+                  style="background: #8b5cf6; color: white;"
+                  title="Recibir inventario del grupo completo"
+                >
+                  <i class="bi bi-box-arrow-in-down"></i> Recibir Grupo
+                </button>
+                <button
                   id="btnEditarGrupo"
                   class="btn"
                   style="background: #3b82f6; color: white;"
@@ -140,8 +148,9 @@
                 <div class="admin-stat-value" id="totalPiezas">0</div>
               </div>
               <div class="admin-stat-card">
-                <div class="admin-stat-label">Valor Total</div>
-                <div class="admin-stat-value" style="color: #10b981;" id="totalGeneral">$0.00</div>
+                <div class="admin-stat-label">Costo Total de Compra</div>
+                <div class="admin-stat-value" style="color: #dc2626;" id="totalGeneral">$0.00</div>
+                <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">(Lo que pagas al proveedor)</div>
               </div>
             </div>
 
@@ -378,15 +387,19 @@
             const creadorNombre =
               orden.admin_creador_nombre || orden.usuario_creador_nombre || "Sistema";
 
-            const totalOrden = parseFloat(orden.total || 0);
+            // Calcular total sumando costounitario * cantidadsolicitada
+            const totalOrden = orden.detalles.reduce(
+              (sum, d) => sum + (parseFloat(d.costounitario || 0) * parseInt(d.cantidadsolicitada || 0)),
+              0
+            );
             const totalPaquetes = orden.detalles.reduce(
-              (sum, d) => sum + parseInt(d.cantidadpaquetes || 0),
+              (sum, d) => sum + parseInt(d.cantidadsolicitada || 0),
               0
             );
             const totalPiezas = orden.detalles.reduce(
               (sum, d) =>
                 sum +
-                parseInt(d.cantidadpaquetes || 0) * parseInt(d.piezasporpaquete || 1),
+                parseInt(d.cantidadsolicitada || 0) * parseInt(d.piezasporpaquete || 1),
               0
             );
 
@@ -441,11 +454,11 @@
                           ${detalle.color ? `<br/><span style="color: #9ca3af;">${detalle.color}</span>` : ""}
                         </td>
                         <td style="text-align: center; font-weight: 600;">
-                          ${parseInt(detalle.cantidadpaquetes || 0).toLocaleString("es-MX")}
+                          ${parseInt(detalle.cantidadsolicitada || 0).toLocaleString("es-MX")}
                         </td>
                         <td style="text-align: center; color: #6b7280;">
                           ${(
-                            parseInt(detalle.cantidadpaquetes || 0) *
+                            parseInt(detalle.cantidadsolicitada || 0) *
                             parseInt(detalle.piezasporpaquete || 1)
                           ).toLocaleString("es-MX")}
                         </td>
@@ -455,7 +468,7 @@
                           })}
                         </td>
                         <td style="text-align: right; font-weight: 600; color: #111827;">
-                          $${parseFloat(detalle.subtotal || 0).toLocaleString("es-MX", {
+                          $${(parseFloat(detalle.costounitario || 0) * parseInt(detalle.cantidadsolicitada || 0)).toLocaleString("es-MX", {
                             minimumFractionDigits: 2,
                           })}
                         </td>
@@ -481,8 +494,8 @@
                   )}</div>
                 </div>
                 <div style="text-align: center;">
-                  <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Total</div>
-                  <div style="font-size: 1.25rem; font-weight: 700; color: #10b981;">$${totalOrden.toLocaleString(
+                  <div style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Costo Total</div>
+                  <div style="font-size: 1.25rem; font-weight: 700; color: #dc2626;">$${totalOrden.toLocaleString(
                     "es-MX",
                     { minimumFractionDigits: 2 }
                   )}</div>
@@ -499,10 +512,16 @@
           document.getElementById("btnPDFInterno").addEventListener("click", generarPDFInterno);
           document.getElementById("btnExcelProveedor").addEventListener("click", generarExcelProveedor);
           document.getElementById("btnExcelInterno").addEventListener("click", generarExcelInterno);
+          document.getElementById("btnRecibirGrupo").addEventListener("click", recibirGrupoCompleto);
           document.getElementById("btnEditarGrupo").addEventListener("click", abrirModalEditarGrupo);
           document.getElementById("btnDesagrupar").addEventListener("click", desagruparOrdenes);
           document.getElementById("btnAgregarOrdenesGrupo").addEventListener("click", agregarOrdenesAlGrupo);
           document.getElementById("selectAllOrdenes").addEventListener("change", toggleSelectAllOrdenes);
+        }
+
+        function recibirGrupoCompleto() {
+          // Redirigir a la página de recepción consolidada del grupo
+          window.location.href = `admin-recibir-grupo.html?id=${grupoId}`;
         }
 
         async function generarPDFProveedor() {

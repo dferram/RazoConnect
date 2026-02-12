@@ -33,21 +33,21 @@ async function generarExcelProveedorGrupo(req, res) {
         // Obtener productos CONSOLIDADOS
         const productosQuery = await db.query(
             `SELECT 
-                p.sku,
-                p.nombre as producto_nombre,
-                pv.dimensionesfisicas,
-                pv.color,
-                tp.piezasporpaquete,
-                SUM(doc.cantidadpaquetes) as total_paquetes,
-                SUM(doc.subtotal) as subtotal_total
+                p.sku_maestro as sku,
+                p.nombreproducto as producto_nombre,
+                pv.dimensiones as dimensionesfisicas,
+                pv.color_nombre as color,
+                doc.piezasporpaquete,
+                SUM(doc.cantidadsolicitada) as total_paquetes,
+                AVG(doc.costounitario) as costo_promedio,
+                SUM(doc.cantidadsolicitada * doc.costounitario) as subtotal_total
             FROM ordenesdecompra oc
             INNER JOIN detallesordencompra doc ON oc.ordencompraid = doc.ordencompraid
-            LEFT JOIN productos p ON doc.productoid = p.productoid
             LEFT JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
-            LEFT JOIN cat_tamanopaquetes tp ON doc.tamanoid = tp.tamanaid
+            LEFT JOIN productos p ON pv.productoid = p.productoid
             WHERE oc.grupo_id = $1 AND oc.tenant_id = $2
-            GROUP BY p.sku, p.nombre, pv.dimensionesfisicas, pv.color, tp.piezasporpaquete
-            ORDER BY p.nombre ASC`,
+            GROUP BY p.sku_maestro, p.nombreproducto, pv.dimensiones, pv.color_nombre, doc.piezasporpaquete
+            ORDER BY p.nombreproducto ASC`,
             [grupoId, tenant_id]
         );
 
@@ -231,10 +231,10 @@ async function generarExcelInternoGrupo(req, res) {
                 oc.fechacreacion,
                 oc.total,
                 a.nombre as admin_creador_nombre,
-                u.nombre as usuario_creador_nombre
+                au.nombre as usuario_creador_nombre
             FROM ordenesdecompra oc
             LEFT JOIN administradores a ON oc.admin_creador_id = a.adminid
-            LEFT JOIN usuarios u ON oc.usuario_creador_id = u.usuarioid
+            LEFT JOIN administradores au ON oc.usuario_creador_id = au.adminid
             WHERE oc.grupo_id = $1 AND oc.tenant_id = $2
             ORDER BY oc.fechacreacion ASC`,
             [grupoId, tenant_id]
@@ -321,19 +321,18 @@ async function generarExcelInternoGrupo(req, res) {
             // Obtener detalles de la orden
             const detallesQuery = await db.query(
                 `SELECT 
-                    p.sku,
-                    p.nombre as producto_nombre,
-                    pv.dimensionesfisicas,
-                    pv.color,
-                    doc.cantidadpaquetes,
-                    tp.piezasporpaquete,
-                    doc.subtotal
+                    p.sku_maestro as sku,
+                    p.nombreproducto as producto_nombre,
+                    pv.dimensiones as dimensionesfisicas,
+                    pv.color_nombre as color,
+                    doc.cantidadsolicitada,
+                    doc.piezasporpaquete,
+                    doc.costounitario
                 FROM detallesordencompra doc
-                LEFT JOIN productos p ON doc.productoid = p.productoid
                 LEFT JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
-                LEFT JOIN cat_tamanopaquetes tp ON doc.tamanoid = tp.tamanaid
+                LEFT JOIN productos p ON pv.productoid = p.productoid
                 WHERE doc.ordencompraid = $1
-                ORDER BY p.nombre ASC`,
+                ORDER BY p.nombreproducto ASC`,
                 [orden.ordencompraid]
             );
 
@@ -343,10 +342,11 @@ async function generarExcelInternoGrupo(req, res) {
             let totalValorOrden = 0;
 
             detalles.forEach((det, index) => {
-                const cantidadPaquetes = parseInt(det.cantidadpaquetes || 0);
+                const cantidadPaquetes = parseInt(det.cantidadsolicitada || 0);
                 const piezasPorPaquete = parseInt(det.piezasporpaquete || 1);
                 const totalPiezas = cantidadPaquetes * piezasPorPaquete;
-                const subtotal = parseFloat(det.subtotal || 0);
+                const costoUnitario = parseFloat(det.costounitario || 0);
+                const subtotal = costoUnitario * cantidadPaquetes;
                 const costoPorPieza = totalPiezas > 0 ? subtotal / totalPiezas : 0;
 
                 totalPiezasOrden += totalPiezas;

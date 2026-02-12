@@ -41,27 +41,23 @@ async function generarPDFProveedorGrupo(req, res) {
         const productosQuery = await db.query(
             `SELECT 
                 p.productoid,
-                p.nombre as producto_nombre,
-                p.sku,
+                p.nombreproducto as producto_nombre,
+                p.sku_maestro as sku,
                 pv.varianteid,
-                pv.dimensionesfisicas,
-                pv.color,
-                tp.tamanoid,
-                tp.nombre as tamano_nombre,
-                tp.piezasporpaquete,
-                SUM(doc.cantidadpaquetes) as total_paquetes,
+                pv.dimensiones as dimensionesfisicas,
+                pv.color_nombre as color,
+                doc.piezasporpaquete,
+                SUM(doc.cantidadsolicitada) as total_paquetes,
                 AVG(doc.costounitario) as costo_promedio,
-                SUM(doc.subtotal) as subtotal_total
+                SUM(doc.cantidadsolicitada * doc.costounitario) as subtotal_total
             FROM ordenesdecompra oc
             INNER JOIN detallesordencompra doc ON oc.ordencompraid = doc.ordencompraid
-            LEFT JOIN productos p ON doc.productoid = p.productoid
             LEFT JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
-            LEFT JOIN cat_tamanopaquetes tp ON doc.tamanoid = tp.tamanoid
+            LEFT JOIN productos p ON pv.productoid = p.productoid
             WHERE oc.grupo_id = $1 AND oc.tenant_id = $2
-            GROUP BY p.productoid, p.nombre, p.sku, pv.varianteid, 
-                     pv.dimensionesfisicas, pv.color, tp.tamanoid, 
-                     tp.nombre, tp.piezasporpaquete
-            ORDER BY p.nombre ASC`,
+            GROUP BY p.productoid, p.nombreproducto, p.sku_maestro, pv.varianteid, 
+                     pv.dimensiones, pv.color_nombre, doc.piezasporpaquete
+            ORDER BY p.nombreproducto ASC`,
             [grupoId, tenant_id]
         );
 
@@ -244,7 +240,7 @@ async function generarPDFProveedorGrupo(req, res) {
         doc.fontSize(11)
            .font('Helvetica-Bold')
            .fillColor('#F97316')
-           .text('RESUMEN DE LA ORDEN', boxX + 5, yPos + 8, { width: boxWidth - 10, align: 'center' });
+           .text('RESUMEN FINANCIERO', boxX + 5, yPos + 8, { width: boxWidth - 10, align: 'center' });
         
         // Línea separadora
         doc.moveTo(boxX + 10, yPos + 22)
@@ -267,7 +263,7 @@ async function generarPDFProveedorGrupo(req, res) {
         doc.fontSize(9)
            .font('Helvetica')
            .fillColor('#666666')
-           .text('TOTAL:', boxX + 10, yPos + 48);
+           .text('COSTO TOTAL:', boxX + 10, yPos + 48);
         
         doc.fontSize(14)
            .font('Helvetica-Bold')
@@ -332,10 +328,10 @@ async function generarPDFInternoGrupo(req, res) {
                 oc.usuario_creador_id,
                 oc.admin_creador_id,
                 a.nombre as admin_creador_nombre,
-                u.nombre as usuario_creador_nombre
+                au.nombre as usuario_creador_nombre
             FROM ordenesdecompra oc
             LEFT JOIN administradores a ON oc.admin_creador_id = a.adminid
-            LEFT JOIN usuarios u ON oc.usuario_creador_id = u.usuarioid
+            LEFT JOIN administradores au ON oc.usuario_creador_id = au.adminid
             WHERE oc.grupo_id = $1 AND oc.tenant_id = $2
             ORDER BY oc.fechacreacion ASC`,
             [grupoId, tenant_id]
@@ -447,24 +443,21 @@ async function generarPDFInternoGrupo(req, res) {
             // Obtener detalles de la orden
             const detallesQuery = await db.query(
                 `SELECT 
-                    doc.detalleocid,
-                    doc.productoid,
-                    doc.cantidadpaquetes,
+                    doc.detalleoc_id,
+                    doc.varianteid,
+                    doc.cantidadsolicitada,
                     doc.costounitario,
-                    doc.subtotal,
-                    p.nombre as producto_nombre,
-                    p.sku,
-                    pv.varianteid,
-                    pv.dimensionesfisicas,
-                    pv.color,
-                    tp.piezasporpaquete,
-                    tp.nombre as tamano_nombre
+                    doc.piezasporpaquete,
+                    pv.productoid,
+                    p.nombreproducto as producto_nombre,
+                    p.sku_maestro as sku,
+                    pv.dimensiones as dimensionesfisicas,
+                    pv.color_nombre as color
                 FROM detallesordencompra doc
-                LEFT JOIN productos p ON doc.productoid = p.productoid
                 LEFT JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
-                LEFT JOIN cat_tamanopaquetes tp ON doc.tamanoid = tp.tamanoid
+                LEFT JOIN productos p ON pv.productoid = p.productoid
                 WHERE doc.ordencompraid = $1
-                ORDER BY p.nombre ASC`,
+                ORDER BY p.nombreproducto ASC`,
                 [orden.ordencompraid]
             );
 
@@ -501,10 +494,11 @@ async function generarPDFInternoGrupo(req, res) {
                        .fillAndStroke('#F9F9F9', '#F9F9F9');
                 }
 
-                const cantidadPaquetes = parseInt(det.cantidadpaquetes || 0);
+                const cantidadPaquetes = parseInt(det.cantidadsolicitada || 0);
                 const piezasPorPaquete = parseInt(det.piezasporpaquete || 1);
                 const totalPiezas = cantidadPaquetes * piezasPorPaquete;
-                const subtotal = parseFloat(det.subtotal || 0);
+                const costoUnitario = parseFloat(det.costounitario || 0);
+                const subtotal = costoUnitario * cantidadPaquetes;
                 const costoPorPieza = totalPiezas > 0 ? subtotal / totalPiezas : 0;
 
                 totalPiezasOrden += totalPiezas;

@@ -208,7 +208,18 @@ const getGrupoDetalle = async (req, res) => {
 
     const ordenesConDetalles = await Promise.all(detallesPromises);
 
-    const totalGeneral = ordenesConDetalles.reduce((sum, orden) => sum + parseFloat(orden.total || 0), 0);
+    // Calcular total sumando costounitario * cantidadsolicitada de cada detalle
+    let totalGeneral = 0;
+    ordenesConDetalles.forEach(orden => {
+      orden.detalles.forEach(detalle => {
+        const costo = parseFloat(detalle.costounitario || 0);
+        const cantidad = parseInt(detalle.cantidadsolicitada || 0);
+        const subtotal = costo * cantidad;
+        totalGeneral += subtotal;
+        console.log(`[GRUPO ${id}] Detalle: ${detalle.producto_nombre} - Costo: $${costo} x ${cantidad} = $${subtotal}`);
+      });
+    });
+    console.log(`[GRUPO ${id}] TOTAL GENERAL CALCULADO: $${totalGeneral}`);
     const totalPaquetes = ordenesConDetalles.reduce((sum, orden) => {
       return sum + orden.detalles.reduce((s, d) => s + parseInt(d.cantidadsolicitada || 0), 0);
     }, 0);
@@ -218,7 +229,7 @@ const getGrupoDetalle = async (req, res) => {
       }, 0);
     }, 0);
 
-    res.json({
+    const response = {
       grupo: {
         ...grupo,
         totalOrdenes: ordenesConDetalles.length,
@@ -227,7 +238,10 @@ const getGrupoDetalle = async (req, res) => {
         totalPiezas
       },
       ordenes: ordenesConDetalles
-    });
+    };
+
+    console.log(`[GRUPO ${id}] Respuesta enviada - Total General: $${response.grupo.totalGeneral}`);
+    res.json(response);
 
   } catch (error) {
     console.error('❌ [ERROR] Error al obtener grupo:', error);
