@@ -108,6 +108,14 @@
                   <i class="bi bi-file-earmark-excel"></i> Excel Interno
                 </button>
                 <button
+                  id="btnEditarGrupo"
+                  class="btn"
+                  style="background: #3b82f6; color: white;"
+                  title="Agregar más órdenes al grupo"
+                >
+                  <i class="bi bi-plus-circle"></i> Editar Grupo
+                </button>
+                <button
                   id="btnDesagrupar"
                   class="btn btn-secondary"
                   title="Desagrupar órdenes"
@@ -158,6 +166,84 @@
           </section>
         </div>
       </main>
+    </div>
+
+    <!-- Modal Editar Grupo -->
+    <div id="modalEditarGrupo" class="modal">
+      <div class="modal-content" style="max-width: 1200px; width: 95%;">
+        <div class="modal-header">
+          <h2 class="modal-title">
+            <i class="bi bi-plus-circle"></i> Agregar Órdenes al Grupo
+          </h2>
+          <button class="modal-close-btn" onclick="cerrarModalEditarGrupo()">
+            &times;
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Info del grupo -->
+          <div style="background: #f8fafc; padding: 1rem; border-radius: 0.75rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+              <div>
+                <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Proveedor</p>
+                <p style="font-weight: 600; color: #1f2937" id="modalProveedorNombre"></p>
+              </div>
+              <div>
+                <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.25rem;">Órdenes Actuales</p>
+                <p style="font-weight: 600; color: #1f2937" id="modalOrdenesActuales"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div id="modalLoadingState" class="loading" style="min-height: 200px; display: none;">
+            <div class="spinner"></div>
+          </div>
+
+          <!-- Órdenes disponibles -->
+          <div id="modalOrdenesContainer" style="display: none;">
+            <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">
+              Órdenes Disponibles del Mismo Proveedor
+            </h3>
+            <div style="overflow-x: auto;">
+              <table class="admin-table" style="min-width: 100%;">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">
+                      <input type="checkbox" id="selectAllOrdenes" style="cursor: pointer;" />
+                    </th>
+                    <th>ID</th>
+                    <th>Fecha Creación</th>
+                    <th>Origen</th>
+                    <th>Estatus</th>
+                    <th>Productos</th>
+                    <th style="text-align: right;">Total</th>
+                  </tr>
+                </thead>
+                <tbody id="modalOrdenesBody">
+                  <!-- Rows will be inserted here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div id="modalEmptyState" class="empty-state" style="display: none; min-height: 200px;">
+            <div class="empty-state-icon">📦</div>
+            <h3 class="empty-state-title">No hay órdenes disponibles</h3>
+            <p class="empty-state-text">No se encontraron órdenes del mismo proveedor que puedan agregarse a este grupo.</p>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 1rem; padding: 1.5rem; border-top: 1px solid #e5e7eb; background: #f9fafb; margin-top: 1.5rem; margin-bottom: 1rem;">
+          <button class="btn btn-secondary" onclick="cerrarModalEditarGrupo()">
+            Cancelar
+          </button>
+          <button id="btnAgregarOrdenesGrupo" class="btn btn-primary" style="background: #3b82f6;">
+            <i class="bi bi-plus-circle"></i> Agregar Órdenes Seleccionadas
+          </button>
+        </div>
+      </div>
     </div>
 
     <script src="js/layout.js" defer></script>
@@ -413,7 +499,10 @@
           document.getElementById("btnPDFInterno").addEventListener("click", generarPDFInterno);
           document.getElementById("btnExcelProveedor").addEventListener("click", generarExcelProveedor);
           document.getElementById("btnExcelInterno").addEventListener("click", generarExcelInterno);
+          document.getElementById("btnEditarGrupo").addEventListener("click", abrirModalEditarGrupo);
           document.getElementById("btnDesagrupar").addEventListener("click", desagruparOrdenes);
+          document.getElementById("btnAgregarOrdenesGrupo").addEventListener("click", agregarOrdenesAlGrupo);
+          document.getElementById("selectAllOrdenes").addEventListener("change", toggleSelectAllOrdenes);
         }
 
         async function generarPDFProveedor() {
@@ -598,6 +687,160 @@
           loadingState.style.display = "none";
           errorState.style.display = "block";
           document.getElementById("errorMessage").textContent = message;
+        }
+
+        // Funciones del modal de editar grupo
+        let ordenesDisponibles = [];
+
+        async function abrirModalEditarGrupo() {
+          const modal = document.getElementById("modalEditarGrupo");
+          const modalLoadingState = document.getElementById("modalLoadingState");
+          const modalOrdenesContainer = document.getElementById("modalOrdenesContainer");
+          const modalEmptyState = document.getElementById("modalEmptyState");
+
+          modal.style.display = "flex";
+          modalLoadingState.style.display = "flex";
+          modalOrdenesContainer.style.display = "none";
+          modalEmptyState.style.display = "none";
+
+          // Llenar info del grupo
+          document.getElementById("modalProveedorNombre").textContent = grupoData.proveedor_nombre || "N/A";
+          document.getElementById("modalOrdenesActuales").textContent = `${grupoData.totalOrdenes || 0} órdenes`;
+
+          try {
+            // Cargar órdenes disponibles del mismo proveedor
+            const response = await API.apiCall(
+              `/admin/ordenes-compra?proveedorId=${grupoData.proveedorid}&estatus=Pendiente`,
+              { method: "GET" }
+            );
+
+            if (!response.ok) {
+              throw new Error("Error al cargar órdenes disponibles");
+            }
+
+            // Filtrar órdenes que NO estén en ningún grupo
+            const todasOrdenes = response.data.data?.ordenes || [];
+            ordenesDisponibles = todasOrdenes.filter(orden => !orden.grupoId);
+
+            modalLoadingState.style.display = "none";
+
+            if (ordenesDisponibles.length === 0) {
+              modalEmptyState.style.display = "flex";
+            } else {
+              renderOrdenesDisponibles();
+              modalOrdenesContainer.style.display = "block";
+            }
+          } catch (error) {
+            console.error("Error cargando órdenes:", error);
+            modalLoadingState.style.display = "none";
+            modalEmptyState.style.display = "flex";
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: "No se pudieron cargar las órdenes disponibles",
+              confirmButtonColor: "#F97316",
+            });
+          }
+        }
+
+        window.cerrarModalEditarGrupo = function() {
+          document.getElementById("modalEditarGrupo").style.display = "none";
+          document.getElementById("selectAllOrdenes").checked = false;
+        };
+
+        function renderOrdenesDisponibles() {
+          const tbody = document.getElementById("modalOrdenesBody");
+          tbody.innerHTML = "";
+
+          ordenesDisponibles.forEach(orden => {
+            const fechaCreacion = new Date(orden.fechaCreacion).toLocaleDateString("es-MX", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            });
+
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>
+                <input type="checkbox" class="orden-checkbox" value="${orden.ordenCompraId}" style="cursor: pointer;" />
+              </td>
+              <td><strong>#${orden.ordenCompraId}</strong></td>
+              <td>${fechaCreacion}</td>
+              <td>
+                <span class="admin-badge ${orden.origenOC === 'backorder' ? 'info' : 'secondary'}" style="font-size: 0.75rem;">
+                  ${orden.origenOC === 'backorder' ? 'Backorder' : 'Manual'}
+                </span>
+              </td>
+              <td>
+                <span class="admin-badge ${getEstatusBadgeClass(orden.estatus)}" style="font-size: 0.75rem;">
+                  ${orden.estatus}
+                </span>
+              </td>
+              <td>${orden.totalProductos || 0} productos</td>
+              <td style="text-align: right; font-weight: 600;">$${parseFloat(orden.total || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}</td>
+            `;
+            tbody.appendChild(row);
+          });
+        }
+
+        function toggleSelectAllOrdenes(e) {
+          const checkboxes = document.querySelectorAll(".orden-checkbox");
+          checkboxes.forEach(cb => cb.checked = e.target.checked);
+        }
+
+        async function agregarOrdenesAlGrupo() {
+          const checkboxes = document.querySelectorAll(".orden-checkbox:checked");
+          const ordenIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+          if (ordenIds.length === 0) {
+            Swal.fire({
+              icon: "warning",
+              title: "Selección requerida",
+              text: "Debes seleccionar al menos una orden para agregar al grupo",
+              confirmButtonColor: "#F97316",
+            });
+            return;
+          }
+
+          try {
+            Swal.fire({
+              title: "Agregando órdenes...",
+              allowOutsideClick: false,
+              didOpen: () => {
+                Swal.showLoading();
+              },
+            });
+
+            const response = await API.apiCall(
+              `/admin/ordenes-compra/grupos/${grupoId}/agregar-ordenes`,
+              {
+                method: "PUT",
+                body: JSON.stringify({ ordenIds }),
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error(response.data?.message || "Error al agregar órdenes");
+            }
+
+            await Swal.fire({
+              icon: "success",
+              title: "Órdenes agregadas",
+              text: `Se agregaron ${response.data.ordenesAgregadas} órdenes al grupo exitosamente`,
+              confirmButtonColor: "#F97316",
+            });
+
+            cerrarModalEditarGrupo();
+            await loadGrupoDetalle(); // Recargar datos del grupo
+          } catch (error) {
+            console.error("Error agregando órdenes:", error);
+            Swal.fire({
+              icon: "error",
+              title: "Error",
+              text: error.message || "No se pudieron agregar las órdenes al grupo",
+              confirmButtonColor: "#F97316",
+            });
+          }
         }
       })();
     </script>

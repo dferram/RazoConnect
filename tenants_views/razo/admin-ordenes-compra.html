@@ -53,6 +53,15 @@
                 <option value="">Todos los administradores</option>
               </select>
             </div>
+            <!-- Filtro de Proveedor -->
+            <div class="filtro-item">
+              <label for="filtroProveedor" class="form-label"
+                >Filtrar por Proveedor</label
+              >
+              <select id="filtroProveedor" class="form-input">
+                <option value="">Todos los proveedores</option>
+              </select>
+            </div>
             <div class="filtro-item">
               <label for="filtroOrigen" class="form-label"
                 >Filtrar por origen</label
@@ -74,6 +83,7 @@
                 <option value="Completada">Completadas</option>
               </select>
             </div>
+            <!-- Alert de backorder -->
             <div
               style="
                 padding: 0.75rem 1rem;
@@ -86,6 +96,44 @@
                 ℹ️ Las órdenes de backorder se generan automáticamente cuando un
                 pedido excede el stock disponible
               </p>
+            </div>
+            <!-- Alert de agrupación -->
+            <div
+              id="alertAgrupacion"
+              style="
+                padding: 0.75rem 1rem;
+                background: #fef3c7;
+                border-radius: 0.5rem;
+                border-left: 4px solid #F97316;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 1rem;
+              "
+            >
+              <p style="margin: 0; font-size: 0.875rem; color: #92400e; flex: 1;">
+                💡 <strong>Tip:</strong> Puedes agrupar múltiples órdenes del mismo proveedor para consolidar tu pedido. Selecciona las órdenes y haz clic en "Agrupar Órdenes".
+              </p>
+              <button
+                onclick="cerrarAlertAgrupacion()"
+                style="
+                  background: transparent;
+                  border: none;
+                  color: #92400e;
+                  font-size: 1.25rem;
+                  cursor: pointer;
+                  padding: 0;
+                  line-height: 1;
+                  width: 24px;
+                  height: 24px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+                title="Cerrar"
+              >
+                ×
+              </button>
             </div>
           </section>
 
@@ -129,7 +177,7 @@
                 >
                   <i class="bi bi-collection"></i> Agrupar Seleccionadas (<span id="contadorSeleccionadas">0</span>)
                 </button>
-                <button
+                <!-- <button
                   id="btn-auto-generar"
                   type="button"
                   class="btn"
@@ -147,7 +195,7 @@
                   onmouseout="this.style.background='#4f46e5'"
                 >
                   🤖 Generar Sugerencias
-                </button>
+                </button> -->
                 <span id="resultadosBadge" class="admin-badge secondary"
                   >0 RESULTADOS</span
                 >
@@ -534,8 +582,26 @@
         const filtroEstatus = document.getElementById("filtroEstatus");
         const filtroOrigen = document.getElementById("filtroOrigen");
         const filtroAdmin = document.getElementById("filtroAdmin");
+        const filtroProveedor = document.getElementById("filtroProveedor");
         const filtroAdminContainer = document.getElementById("filtroAdminContainer");
         const detalleModal = document.getElementById("detalleModal");
+        const alertAgrupacion = document.getElementById("alertAgrupacion");
+
+        // Función para cerrar alert de agrupación
+        window.cerrarAlertAgrupacion = function() {
+          if (alertAgrupacion) {
+            alertAgrupacion.style.display = 'none';
+            localStorage.setItem('razoconnect_alert_agrupacion_cerrado', 'true');
+          }
+        };
+
+        // Verificar si el alert debe mostrarse
+        function verificarAlertAgrupacion() {
+          const alertCerrado = localStorage.getItem('razoconnect_alert_agrupacion_cerrado');
+          if (alertCerrado === 'true' && alertAgrupacion) {
+            alertAgrupacion.style.display = 'none';
+          }
+        }
 
         // Cargar órdenes al inicio
         document.addEventListener("DOMContentLoaded", function () {
@@ -548,11 +614,14 @@
             }
           });
           
+          verificarAlertAgrupacion();
           verifyAndLoadAdmin();
+          loadProveedores();
           loadOrdenes();
           filtroEstatus.addEventListener("change", loadOrdenes);
           filtroAdmin.addEventListener("change", loadOrdenes);
           filtroOrigen.addEventListener("change", loadOrdenes);
+          filtroProveedor.addEventListener("change", loadOrdenes);
 
           const btnAutoGenerar = document.getElementById("btn-auto-generar");
           if (btnAutoGenerar) {
@@ -686,8 +755,16 @@
           try {
             const response = await API.apiCall('/admin/ordenes-compra/administradores', { method: 'GET' });
             if (response.ok && response.data) {
-              // El backend retorna { success: true, data: [...] }
-              const admins = Array.isArray(response.data) ? response.data : (response.data.data || []);
+              // Manejar diferentes estructuras de respuesta
+              let admins = [];
+              if (Array.isArray(response.data)) {
+                admins = response.data;
+              } else if (response.data.data && Array.isArray(response.data.data)) {
+                admins = response.data.data;
+              } else if (response.data.administradores && Array.isArray(response.data.administradores)) {
+                admins = response.data.administradores;
+              }
+              
               filtroAdmin.innerHTML = '<option value="">Todos los administradores</option>';
               
               if (admins.length > 0) {
@@ -706,6 +783,42 @@
           }
         }
 
+        // Cargar lista de proveedores para el filtro
+        async function loadProveedores() {
+          try {
+            const response = await API.apiCall('/admin/proveedores', { method: 'GET' });
+            console.log('Response proveedores:', response);
+            if (response.ok && response.data) {
+              let proveedores = [];
+              
+              // El backend retorna: { success: true, data: { proveedores: [...], total: N } }
+              if (response.data.data && response.data.data.proveedores && Array.isArray(response.data.data.proveedores)) {
+                proveedores = response.data.data.proveedores;
+              } else if (response.data.proveedores && Array.isArray(response.data.proveedores)) {
+                proveedores = response.data.proveedores;
+              } else if (Array.isArray(response.data)) {
+                proveedores = response.data;
+              }
+              
+              console.log('Proveedores procesados:', proveedores);
+              filtroProveedor.innerHTML = '<option value="">Todos los proveedores</option>';
+              
+              if (proveedores.length > 0) {
+                proveedores.forEach(proveedor => {
+                  const option = document.createElement('option');
+                  option.value = proveedor.proveedorid;
+                  option.textContent = proveedor.nombreempresa || proveedor.nombre;
+                  filtroProveedor.appendChild(option);
+                });
+              } else {
+                console.warn('No se encontraron proveedores');
+              }
+            }
+          } catch (error) {
+            console.error('Error cargando lista de proveedores:', error);
+          }
+        }
+
         // Cargar órdenes de compra
         async function loadOrdenes() {
           try {
@@ -716,11 +829,13 @@
             const estatus = filtroEstatus.value;
             const origen = filtroOrigen.value;
             const adminId = filtroAdmin.value;
+            const proveedorId = filtroProveedor.value;
             let url = '/admin/ordenes-compra?';
             const params = [];
             if (estatus) params.push(`estatus=${estatus}`);
             if (origen) params.push(`origen=${origen}`);
             if (adminId) params.push(`adminId=${adminId}`);
+            if (proveedorId) params.push(`proveedorId=${proveedorId}`);
             url += params.join('&');
 
             const response = await API.apiCall(url, { method: "GET" });

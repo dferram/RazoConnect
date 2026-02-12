@@ -1246,6 +1246,12 @@ router.get(
   authorizeAdmin,
   gruposOrdenesExcelController.generarExcelInternoGrupo
 );
+router.put(
+  "/ordenes-compra/grupos/:id/agregar-ordenes",
+  authenticate,
+  authorizeAdmin,
+  ordenesGruposController.agregarOrdenesAGrupo
+);
 router.delete(
   "/ordenes-compra/grupos/:id",
   authenticate,

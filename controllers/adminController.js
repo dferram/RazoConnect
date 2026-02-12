@@ -11394,7 +11394,7 @@ const validarRecepcionCompra = async (req, res) => {
  */
 const getAllOrdenesCompra = async (req, res) => {
   try {
-    const { estatus, adminId, origen } = req.query;
+    const { estatus, adminId, origen, proveedorId } = req.query;
     const userRole = req.user.rol;
     const userId = req.user.id;
     const { tenant_id } = req.tenant;
@@ -11459,6 +11459,13 @@ const getAllOrdenesCompra = async (req, res) => {
         // Órdenes creadas manualmente (OrigenOC es NULL o 'manual')
         query += ` AND (oc.OrigenOC IS NULL OR oc.OrigenOC = 'manual')`;
       }
+    }
+
+    // Filtrar por proveedor
+    if (proveedorId) {
+      query += ` AND oc.ProveedorID = $${paramIndex}`;
+      values.push(parseInt(proveedorId));
+      paramIndex++;
     }
 
     query += `
