@@ -422,6 +422,7 @@
     
     <script src="js/admin-recibir-inventario.js" defer></script>
     <script src="js/admin-recibir-inventario-enhanced.js" defer></script>
+    <script src="js/recepcion-grupos.js" defer></script>
     <script src="js/layout.js" defer></script>
     <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/api.js"></script>
@@ -1564,57 +1565,15 @@
         const esGrupo = selected?.dataset?.esGrupo === "true";
         
         if (esGrupo) {
-          // Es un grupo - cargar órdenes del grupo
+          // Es un grupo - cargar TODAS las órdenes simultáneamente
           const grupoId = selected?.dataset?.grupoId;
-          ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "—");
-          ocMeta.textContent = `📦 Grupo con ${selected?.dataset?.totalOrdenes || 0} órdenes`;
-          ocBadge.textContent = `Cargando grupo...`;
+          console.log('[GRUPOS] Cargando grupo completo:', grupoId);
           
-          try {
-            const respGrupo = await apiCall(`/admin/ordenes-compra/grupos/${grupoId}`, {
-              method: "GET",
-            });
-            
-            if (respGrupo.ok && respGrupo.data?.ordenes) {
-              const ordenesGrupo = respGrupo.data.ordenes;
-              console.log('[GRUPOS] Órdenes del grupo cargadas:', ordenesGrupo.length);
-              
-              // Mostrar badge de grupo
-              const tipoBadge = document.getElementById('tipoBadge');
-              if (tipoBadge) {
-                tipoBadge.innerHTML = '<i class="bi bi-collection"></i> GRUPO DE ÓRDENES';
-                tipoBadge.className = 'admin-badge';
-                tipoBadge.style.cssText = 'display: inline-flex; align-items: center; gap: 0.25rem; background: #8b5cf6; color: white; font-size: 0.75rem; padding: 0.25rem 0.75rem;';
-              }
-              
-              // Reemplazar el select con las órdenes del grupo
-              ocSelect.innerHTML = "";
-              const placeholder = document.createElement("option");
-              placeholder.value = "";
-              placeholder.textContent = "Selecciona una orden del grupo...";
-              ocSelect.appendChild(placeholder);
-              
-              for (const orden of ordenesGrupo) {
-                const opt = document.createElement("option");
-                opt.value = String(orden.ordencompraid);
-                opt.textContent = `OC #${orden.ordencompraid} — ${orden.estatus || 'Pendiente'}`;
-                opt.style.color = "#8b5cf6";
-                opt.dataset.proveedorNombre = safeText(respGrupo.data.grupo.proveedor_nombre);
-                opt.dataset.esOrdenDeGrupo = "true";
-                opt.dataset.grupoId = grupoId;
-                ocSelect.appendChild(opt);
-              }
-              
-              ocBadge.textContent = `📦 ${respGrupo.data.grupo.nombre_grupo || `Grupo #${grupoId}`}`;
-              ocBadge.className = 'admin-badge';
-              ocBadge.style.background = '#8b5cf6';
-              ocBadge.style.color = 'white';
-              
-              setEmpty("Selecciona una orden del grupo para empezar a recibir.");
-            }
-          } catch (error) {
-            console.error('Error cargando grupo:', error);
-            setEmpty("Error al cargar las órdenes del grupo.");
+          if (typeof cargarGrupoCompleto === 'function') {
+            await cargarGrupoCompleto(grupoId);
+          } else {
+            console.error('[GRUPOS] Función cargarGrupoCompleto no disponible');
+            setEmpty('Error: Módulo de grupos no cargado');
           }
         } else {
           // Es una orden individual
