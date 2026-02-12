@@ -1569,6 +1569,13 @@
           const grupoId = selected?.dataset?.grupoId;
           console.log('[GRUPOS] Cargando grupo completo:', grupoId);
           
+          // Limpiar cualquier recepción previa
+          const recepcionSplit = document.getElementById('recepcionSplit');
+          if (recepcionSplit) {
+            recepcionSplit.innerHTML = '';
+            recepcionSplit.style.display = 'none';
+          }
+          
           if (typeof cargarGrupoCompleto === 'function') {
             await cargarGrupoCompleto(grupoId);
           } else {
@@ -1576,6 +1583,22 @@
             setEmpty('Error: Módulo de grupos no cargado');
           }
         } else {
+          // Es una orden individual - LIMPIAR ESTADO DE GRUPO
+          console.log('[GRUPOS] Cambiando a orden individual - limpiando estado de grupo');
+          
+          // Eliminar botones de grupo si existen
+          const botonesGrupo = document.getElementById('botonesExportacionGrupo');
+          if (botonesGrupo) {
+            botonesGrupo.remove();
+            console.log('[GRUPOS] Botones de grupo eliminados');
+          }
+          
+          // Limpiar contenedor de recepción
+          const recepcionSplit = document.getElementById('recepcionSplit');
+          if (recepcionSplit) {
+            recepcionSplit.innerHTML = '';
+            recepcionSplit.style.display = 'none';
+          }
           // Es una orden individual
           ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "—");
           ocMeta.textContent = "—";

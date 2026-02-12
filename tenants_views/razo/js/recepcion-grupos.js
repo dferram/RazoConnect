@@ -232,28 +232,24 @@ async function renderizarOrdenEnGrupo(orden, container) {
     method: 'GET'
   });
 
-  console.log(`[GRUPO] ========== AUDITORÍA ORDEN ${orden.ordencompraid} ==========`);
-  console.log(`[GRUPO] Respuesta completa:`, detallesResp);
-  console.log(`[GRUPO] detallesResp.ok:`, detallesResp.ok);
-  console.log(`[GRUPO] detallesResp.data:`, detallesResp.data);
-
   if (!detallesResp.ok) {
     console.error(`[GRUPO] ❌ Error cargando orden ${orden.ordencompraid}:`, detallesResp);
     return;
   }
 
-  // El endpoint devuelve { success, data: { orden, detalles } }
-  const responseData = detallesResp.data || {};
-  console.log(`[GRUPO] responseData keys:`, Object.keys(responseData));
-  console.log(`[GRUPO] responseData.detalles:`, responseData.detalles);
+  // CORRECCIÓN CRÍTICA: API.apiCall devuelve {ok, status, data}
+  // donde data = {success: true, data: {orden, detalles}}
+  // Por lo tanto necesitamos acceder a detallesResp.data.data.detalles
+  const serverResponse = detallesResp.data || {};
+  const actualData = serverResponse.data || {};
+  const items = actualData.detalles || [];
   
-  const items = responseData.detalles || [];
-  console.log(`[GRUPO] ✅ Items recibidos:`, items.length);
+  console.log(`[GRUPO] ✅ Orden ${orden.ordencompraid} - Productos encontrados:`, items.length);
   
   if (items.length > 0) {
-    console.log(`[GRUPO] Primer item completo:`, JSON.stringify(items[0], null, 2));
+    console.log(`[GRUPO] ✅ Primer producto:`, items[0].nombreProducto);
   } else {
-    console.warn(`[GRUPO] ⚠️ Array de items está vacío`);
+    console.warn(`[GRUPO] ⚠️ No hay productos para orden ${orden.ordencompraid}`);
   }
 
   // Crear sección para esta orden
@@ -393,24 +389,3 @@ function crearFilaProducto(item, ordenId) {
 
 // Exportar funciones
 window.cargarGrupoCompleto = cargarGrupoCompleto;
-
-// Limpiar botones de grupo cuando se carga una orden individual
-window.addEventListener('DOMContentLoaded', () => {
-  // Observar cambios en el select de órdenes
-  const ocSelect = document.getElementById('ocSelect');
-  if (ocSelect) {
-    ocSelect.addEventListener('change', () => {
-      // Si no es un grupo, eliminar botones de exportación de grupo
-      const selected = ocSelect.options[ocSelect.selectedIndex];
-      const esGrupo = selected?.dataset?.esGrupo === 'true';
-      
-      if (!esGrupo) {
-        const botonesGrupo = document.getElementById('botonesExportacionGrupo');
-        if (botonesGrupo) {
-          console.log('[GRUPO] Eliminando botones de grupo - orden individual seleccionada');
-          botonesGrupo.remove();
-        }
-      }
-    });
-  }
-});

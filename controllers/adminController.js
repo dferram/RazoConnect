@@ -7006,7 +7006,9 @@ const getTamanosPaquetes = async (req, res) => {
 
     res.json({
       success: true,
-      data: tamanos,
+      data: {
+        tamanos: tamanos
+      },
     });
   } catch (error) {
     console.error("Error al obtener tamaños de paquetes:", error);
@@ -11631,6 +11633,7 @@ const getDetallesOrdenCompra = async (req, res) => {
     }
 
     // Obtener detalles de productos
+    const { tenant_id } = req.tenant;
     const detallesQuery = `
       SELECT 
         doc.detalleoc_id,
@@ -11650,10 +11653,17 @@ const getDetallesOrdenCompra = async (req, res) => {
       INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
       INNER JOIN productos pr ON pv.productoid = pr.productoid
       WHERE doc.ordencompraid = $1
+        AND doc.tenant_id = $2
       ORDER BY pr.nombreproducto ASC
     `;
 
-    const detallesResult = await db.query(detallesQuery, [ordenCompraId]);
+    console.log(`[getDetallesOrdenCompra] Buscando detalles para orden ${ordenCompraId}, tenant ${tenant_id}`);
+    const detallesResult = await db.query(detallesQuery, [ordenCompraId, tenant_id]);
+    console.log(`[getDetallesOrdenCompra] Detalles encontrados: ${detallesResult.rows.length}`);
+    
+    if (detallesResult.rows.length === 0) {
+      console.warn(`[getDetallesOrdenCompra] ⚠️ No se encontraron detalles para orden ${ordenCompraId}`);
+    }
 
     res.json({
       success: true,
