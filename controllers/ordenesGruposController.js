@@ -210,11 +210,11 @@ const getGrupoDetalle = async (req, res) => {
 
     const totalGeneral = ordenesConDetalles.reduce((sum, orden) => sum + parseFloat(orden.total || 0), 0);
     const totalPaquetes = ordenesConDetalles.reduce((sum, orden) => {
-      return sum + orden.detalles.reduce((s, d) => s + parseInt(d.cantidadpaquetes || 0), 0);
+      return sum + orden.detalles.reduce((s, d) => s + parseInt(d.cantidadsolicitada || 0), 0);
     }, 0);
     const totalPiezas = ordenesConDetalles.reduce((sum, orden) => {
       return sum + orden.detalles.reduce((s, d) => {
-        return s + (parseInt(d.cantidadpaquetes || 0) * parseInt(d.piezasporpaquete || 1));
+        return s + (parseInt(d.cantidadsolicitada || 0) * parseInt(d.piezasporpaquete || 1));
       }, 0);
     }, 0);
 

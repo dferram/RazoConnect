@@ -264,6 +264,16 @@ const apiCall = async (endpoint, options = {}) => {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
     
+    // Si se solicita blob, retornar directamente sin parsear JSON
+    if (options.responseType === 'blob') {
+      return {
+        ok: response.ok,
+        status: response.status,
+        blob: () => response.blob(),
+        data: null
+      };
+    }
+    
     // Clone response para poder leer el texto sin consumir el stream
     const responseClone = response.clone();
     const responseText = await responseClone.text();

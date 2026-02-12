@@ -516,12 +516,25 @@
               },
             });
 
-            // Open PDF in new tab using backend endpoint
-            const token = localStorage.getItem('razoconnect_admin_token');
-            window.open(
-              `/api/admin/ordenes-compra/grupos/${grupoId}/pdf-proveedor?token=${token}`,
-              '_blank'
-            );
+            const response = await API.apiCall(`/admin/ordenes-compra/grupos/${grupoId}/pdf-proveedor`, {
+              method: 'GET',
+              responseType: 'blob'
+            });
+
+            if (!response.ok) {
+              throw new Error('Error al generar PDF');
+            }
+
+            // Crear blob y descargar
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Grupo_${grupoId}_Proveedor.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
 
             Swal.close();
           } catch (error) {
@@ -546,12 +559,25 @@
               },
             });
 
-            // Open PDF in new tab using backend endpoint
-            const token = localStorage.getItem('razoconnect_admin_token');
-            window.open(
-              `/api/admin/ordenes-compra/grupos/${grupoId}/pdf-interno?token=${token}`,
-              '_blank'
-            );
+            const response = await API.apiCall(`/admin/ordenes-compra/grupos/${grupoId}/pdf-interno`, {
+              method: 'GET',
+              responseType: 'blob'
+            });
+
+            if (!response.ok) {
+              throw new Error('Error al generar PDF');
+            }
+
+            // Crear blob y descargar
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Grupo_${grupoId}_Interno.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
 
             Swal.close();
           } catch (error) {
@@ -576,9 +602,25 @@
               },
             });
 
-            // Download Excel using backend endpoint
-            const token = localStorage.getItem('razoconnect_admin_token');
-            window.location.href = `/api/admin/ordenes-compra/grupos/${grupoId}/excel-proveedor?token=${token}`;
+            const response = await API.apiCall(`/admin/ordenes-compra/grupos/${grupoId}/excel-proveedor`, {
+              method: 'GET',
+              responseType: 'blob'
+            });
+
+            if (!response.ok) {
+              throw new Error('Error al generar Excel');
+            }
+
+            // Crear blob y descargar
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Grupo_${grupoId}_Proveedor.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
 
             setTimeout(() => {
               Swal.close();
@@ -605,9 +647,25 @@
               },
             });
 
-            // Download Excel using backend endpoint
-            const token = localStorage.getItem('razoconnect_admin_token');
-            window.location.href = `/api/admin/ordenes-compra/grupos/${grupoId}/excel-interno?token=${token}`;
+            const response = await API.apiCall(`/admin/ordenes-compra/grupos/${grupoId}/excel-interno`, {
+              method: 'GET',
+              responseType: 'blob'
+            });
+
+            if (!response.ok) {
+              throw new Error('Error al generar Excel');
+            }
+
+            // Crear blob y descargar
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Grupo_${grupoId}_Interno.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
 
             setTimeout(() => {
               Swal.close();
