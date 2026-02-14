@@ -567,8 +567,8 @@ async function exportarPDF() {
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`OC #${state.orden.ordenCompraId || ''}`, 260, 15);
-    doc.text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, 260, 20);
+    doc.text(`OC #${state.orden.ordenCompraId || ''}`, 240, 12);
+    doc.text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, 240, 17);
     doc.text(`Proveedor: ${state.orden.proveedorNombre || 'N/A'}`, 40, 25);
 
     // Table data
@@ -667,8 +667,15 @@ async function exportarPDF() {
       }
     });
 
-    // Financial summary
-    const summaryY = doc.lastAutoTable.finalY + 10;
+    // Financial summary with page break handling
+    const summaryHeight = 45; // Total height needed for summary box (10 + 4*7 + margins)
+    let summaryY = doc.lastAutoTable.finalY + 10;
+    
+    // Check if there's enough space on current page (A4 landscape = 210mm height, margin bottom ~15mm)
+    if (summaryY + summaryHeight > 195) {
+      doc.addPage();
+      summaryY = 20; // Start near top of new page
+    }
     
     doc.setFillColor(249, 115, 22);
     doc.rect(10, summaryY, 120, 10, 'F');
