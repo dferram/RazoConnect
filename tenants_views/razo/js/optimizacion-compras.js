@@ -139,27 +139,64 @@ class OptimizacionComprasManager {
           </div>
         </div>
 
+        <div class="alert alert-info mb-3" style="background: #E0F2FE; border: 1px solid #0EA5E9; border-radius: 0.5rem;">
+          <h6 style="color: #0369A1; font-weight: 600; margin-bottom: 0.5rem;">
+            <i class="bi bi-info-circle me-2"></i>
+            Desglose de Órdenes (Se mantiene la separación)
+          </h6>
+          <p class="mb-0" style="color: #075985; font-size: 0.9rem;">
+            Al agrupar, cada orden mantiene su identidad individual. El admin podrá ver quién pidió qué en el detalle del grupo.
+          </p>
+        </div>
+
         <div class="table-responsive mb-3">
           <table class="table table-sm" style="border: 1px solid #f5f1ed; border-radius: 0.5rem; overflow: hidden;">
             <thead style="background: #f5f1ed;">
               <tr>
                 <th style="color: #6b5d57; font-weight: 600;">Orden ID</th>
-                <th style="color: #6b5d57; font-weight: 600;">Cantidad Solicitada</th>
-                <th style="color: #6b5d57; font-weight: 600;">Paquetes Necesarios</th>
-                <th style="color: #6b5d57; font-weight: 600;">Piezas a Comprar</th>
-                <th style="color: #6b5d57; font-weight: 600;">Fecha Creación</th>
+                <th style="color: #6b5d57; font-weight: 600;">Solicitado</th>
+                <th style="color: #6b5d57; font-weight: 600;">A Comprar (Separado)</th>
+                <th style="color: #6b5d57; font-weight: 600;">Fecha</th>
               </tr>
             </thead>
             <tbody>
               ${oportunidad.ordenesDetalle.map(orden => `
                 <tr>
-                  <td><strong>#${orden.ordenCompraId}</strong></td>
-                  <td>${orden.cantidadSolicitada} pzas</td>
-                  <td>${orden.paquetesNecesarios} paquetes</td>
-                  <td>${orden.piezasAComprar} pzas</td>
-                  <td>${new Date(orden.fechaCreacion).toLocaleDateString('es-MX')}</td>
+                  <td>
+                    <strong style="color: #F97316;">#${orden.ordenCompraId}</strong>
+                  </td>
+                  <td>
+                    <strong>${orden.cantidadSolicitada}</strong> pzas
+                    <br>
+                    <small style="color: #999;">(${orden.paquetesNecesarios} paquetes)</small>
+                  </td>
+                  <td>
+                    <span style="color: #DC2626; font-weight: 600;">${orden.piezasAComprar} pzas</span>
+                    <br>
+                    <small style="color: #999;">Desperdicio: ${orden.piezasAComprar - orden.cantidadSolicitada} pzas</small>
+                  </td>
+                  <td>
+                    <small>${new Date(orden.fechaCreacion).toLocaleDateString('es-MX', { 
+                      day: '2-digit', 
+                      month: 'short',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</small>
+                  </td>
                 </tr>
               `).join('')}
+              <tr style="background: #D1FAE5; font-weight: 600;">
+                <td colspan="2" style="text-align: right; color: #16A34A;">
+                  <i class="bi bi-check-circle me-1"></i>
+                  Total Agrupado:
+                </td>
+                <td colspan="2" style="color: #16A34A;">
+                  ${oportunidad.totalAgrupado} pzas
+                  <small style="color: #059669; margin-left: 0.5rem;">
+                    (Ahorro: ${oportunidad.ahorroPiezas} pzas)
+                  </small>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>

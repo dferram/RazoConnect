@@ -134,36 +134,74 @@ class OptimizationService {
     try {
       await client.query('BEGIN');
 
+      // Validar que todas las órdenes sean del mismo proveedor
+      const validacionQuery = `
+        SELECT 
+          COUNT(DISTINCT proveedorid) as proveedores_distintos,
+          MIN(proveedorid) as proveedor_id,
+          COUNT(*) as total_ordenes
+        FROM ordenesdecompra
+        WHERE ordencompraid = ANY($1::int[])
+          AND tenant_id = $2
+          AND estatus IN ('Borrador', 'Pendiente')
+          AND grupo_id IS NULL
+      `;
+
+      const validacion = await client.query(validacionQuery, [ordenesIds, tenantId]);
+      const { proveedores_distintos, proveedor_id, total_ordenes } = validacion.rows[0];
+
+      if (parseInt(proveedores_distintos) > 1) {
+        await client.query('ROLLBACK');
+        throw new Error('Las órdenes seleccionadas pertenecen a diferentes proveedores');
+      }
+
+      if (parseInt(total_ordenes) !== ordenesIds.length) {
+        await client.query('ROLLBACK');
+        throw new Error('Algunas órdenes no existen, ya están agrupadas o no están en estado válido');
+      }
+
+      // Crear grupo usando la misma estructura que el sistema manual
       const grupoResult = await client.query(
-        `INSERT INTO grupos_ordenes (nombre, descripcion, tenant_id, admin_creador_id, fecha_creacion)
-         VALUES ($1, $2, $3, $4, NOW())
-         RETURNING grupoid`,
+        `INSERT INTO ordenes_grupos (
+          proveedorid,
+          admin_creador_id,
+          tenant_id,
+          estatus,
+          nombre_grupo,
+          notas
+        ) VALUES ($1, $2, $3, 'borrador', $4, $5)
+        RETURNING grupoid`,
         [
-          `Grupo Optimizado - ${new Date().toLocaleDateString('es-MX')}`,
-          'Grupo creado automáticamente por optimización de compras',
+          proveedor_id,
+          adminCreadorId,
           tenantId,
-          adminCreadorId
+          `Grupo Optimizado - ${new Date().toLocaleDateString('es-MX')}`,
+          'Grupo creado automáticamente por optimización de compras'
         ]
       );
 
       const grupoId = grupoResult.rows[0].grupoid;
 
-      for (const ordenId of ordenesIds) {
-        await client.query(
-          `UPDATE ordenesdecompra 
-           SET grupoid = $1, estatus = 'Agrupada'
-           WHERE ordencompraid = $2 AND tenant_id = $3`,
-          [grupoId, ordenId, tenantId]
-        );
-      }
+      // Actualizar órdenes para asignarles el grupo_id (mantiene separación individual)
+      const updateResult = await client.query(
+        `UPDATE ordenesdecompra 
+         SET grupo_id = $1
+         WHERE ordencompraid = ANY($2::int[])
+           AND tenant_id = $3
+         RETURNING ordencompraid`,
+        [grupoId, ordenesIds, tenantId]
+      );
 
       await client.query('COMMIT');
 
-      console.log(`✅ [OptimizationService] Grupo consolidado creado: ${grupoId} con ${ordenesIds.length} órdenes`);
+      console.log(`✅ [OptimizationService] Grupo consolidado creado: ${grupoId} con ${updateResult.rowCount} órdenes`);
+      console.log(`   📋 Órdenes agrupadas: ${ordenesIds.join(', ')}`);
+      console.log(`   🏢 Proveedor ID: ${proveedor_id}`);
 
       return {
         grupoId,
-        ordenesAgrupadas: ordenesIds.length
+        ordenesAgrupadas: updateResult.rowCount,
+        proveedorId: proveedor_id
       };
 
     } catch (error) {
