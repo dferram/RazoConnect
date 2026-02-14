@@ -1260,6 +1260,22 @@ router.delete(
 );
 
 /**
+ * Rutas de Optimización de Compras (Consolidación)
+ */
+router.get(
+  "/ordenes/sugerencias-optimizacion",
+  authenticate,
+  authorizeAdmin,
+  adminController.getSugerenciasOptimizacion
+);
+router.post(
+  "/ordenes/crear-grupo-optimizado",
+  authenticate,
+  authorizeAdmin,
+  adminController.crearGrupoOptimizado
+);
+
+/**
  * Rutas de Bitácora de Auditoría (Solo Super Admin)
  */
 router.get(
