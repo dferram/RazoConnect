@@ -149,7 +149,8 @@
                     <th class="py-4 px-6">Producto (SKU)</th>
                     <th class="py-4 px-6">Movimiento</th>
                     <th class="py-4 px-6">Cantidad</th>
-                    <th class="py-4 px-6">Motivo</th>
+                    <th class="py-4 px-6">Saldo</th>
+                    <th class="py-4 px-6">Motivo / Referencia</th>
                     <th class="py-4 px-6">Usuario</th>
                   </tr>
                 </thead>
@@ -310,27 +311,43 @@
 
       function buildMovimientoRow(m) {
         const tipo = (m.tipoMovimiento || "").toString().toUpperCase();
+        const tipoOriginal = (m.tipoOriginal || tipo).toString().toUpperCase();
         const isEntrada = tipo === "ENTRADA";
-        const badgeClass = isEntrada
-          ? "bg-green-100 text-green-800"
-          : "bg-red-100 text-red-800";
-        const badgeText = isEntrada ? "Entrada" : "Salida";
-        const badgeIcon = isEntrada ? "⬆" : "⬇";
+        
+        // Colores según tipo de movimiento
+        let badgeClass, badgeText, badgeIcon;
+        if (tipoOriginal === 'AJUSTE') {
+          badgeClass = "bg-orange-100 text-orange-800";
+          badgeText = "Ajuste";
+          badgeIcon = "⚙️";
+        } else if (isEntrada) {
+          badgeClass = "bg-green-100 text-green-800";
+          badgeText = "Entrada";
+          badgeIcon = "⬆";
+        } else {
+          badgeClass = "bg-red-100 text-red-800";
+          badgeText = "Salida";
+          badgeIcon = "⬇";
+        }
+        
         const { fecha, hora } = formatDateParts(m.fecha);
         const cantidad = Number.isFinite(Number(m.cantidad)) ? Number(m.cantidad) : 0;
-        const isExcepcion = m.esExcepcion === true;
 
         const productoNombre = (m.productoNombre || "—").toString();
         const sku = (m.sku || "—").toString();
         const motivo = m.motivo ? m.motivo.toString() : "—";
+        
+        const stockPrevio = Number.isFinite(Number(m.stockPrevio)) ? Number(m.stockPrevio) : 0;
+        const stockPosterior = Number.isFinite(Number(m.stockPosterior)) ? Number(m.stockPosterior) : 0;
 
-        const usuario = m.usuario || (m.usuarioId ? `#${m.usuarioId}` : "—");
+        const usuario = m.usuario || "Sistema";
         const usuarioText = (usuario || "—").toString();
         const initial = getUserInitial(usuarioText);
 
         const tr = document.createElement("tr");
-        tr.className = `border-b ${isExcepcion ? "bg-yellow-50" : ""}`;
+        tr.className = "border-b hover:bg-gray-50";
 
+        // Fecha/Hora
         const tdFecha = document.createElement("td");
         tdFecha.className = "py-4 px-6";
         const fechaDiv = document.createElement("div");
@@ -342,6 +359,7 @@
         tdFecha.appendChild(fechaDiv);
         tdFecha.appendChild(horaDiv);
 
+        // Producto
         const tdProd = document.createElement("td");
         tdProd.className = "py-4 px-6";
         const prodDiv = document.createElement("div");
@@ -353,10 +371,9 @@
         tdProd.appendChild(prodDiv);
         tdProd.appendChild(skuDiv);
 
+        // Tipo de Movimiento
         const tdTipo = document.createElement("td");
         tdTipo.className = "py-4 px-6";
-        const tipoWrap = document.createElement("div");
-        tipoWrap.className = "flex items-center gap-2";
         const tipoBadge = document.createElement("span");
         tipoBadge.className = `inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${badgeClass}`;
         const iconSpan = document.createElement("span");
@@ -365,29 +382,62 @@
         textSpan.textContent = badgeText;
         tipoBadge.appendChild(iconSpan);
         tipoBadge.appendChild(textSpan);
-        tipoWrap.appendChild(tipoBadge);
+        tdTipo.appendChild(tipoBadge);
 
-        if (isExcepcion) {
-          const excBadge = document.createElement("span");
-          excBadge.className =
-            "inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800";
-          excBadge.textContent = "Excepción";
-          tipoWrap.appendChild(excBadge);
-        }
-
-        tdTipo.appendChild(tipoWrap);
-
+        // Cantidad
         const tdCantidad = document.createElement("td");
         tdCantidad.className = "py-4 px-6";
         const qtySpan = document.createElement("span");
-        qtySpan.className = "font-bold text-gray-900";
-        qtySpan.textContent = String(cantidad);
+        qtySpan.className = `font-bold ${isEntrada ? 'text-green-600' : 'text-red-600'}`;
+        qtySpan.textContent = `${isEntrada ? '+' : '-'}${cantidad}`;
         tdCantidad.appendChild(qtySpan);
 
-        const tdMotivo = document.createElement("td");
-        tdMotivo.className = "py-4 px-6 text-gray-700";
-        tdMotivo.textContent = motivo;
+        // Saldo (Stock Posterior)
+        const tdSaldo = document.createElement("td");
+        tdSaldo.className = "py-4 px-6";
+        const saldoDiv = document.createElement("div");
+        saldoDiv.className = "text-gray-900 font-semibold";
+        saldoDiv.textContent = stockPosterior.toLocaleString('es-MX');
+        const previoDiv = document.createElement("div");
+        previoDiv.className = "text-gray-500 text-xs";
+        previoDiv.textContent = `Anterior: ${stockPrevio.toLocaleString('es-MX')}`;
+        tdSaldo.appendChild(saldoDiv);
+        tdSaldo.appendChild(previoDiv);
 
+        // Motivo / Referencia
+        const tdMotivo = document.createElement("td");
+        tdMotivo.className = "py-4 px-6";
+        const motivoDiv = document.createElement("div");
+        motivoDiv.className = "text-gray-900";
+        motivoDiv.textContent = motivo;
+        tdMotivo.appendChild(motivoDiv);
+        
+        // Si hay referencia, agregar link
+        if (m.referenciaTipo && m.referenciaId) {
+          const refDiv = document.createElement("div");
+          refDiv.className = "text-xs mt-1";
+          
+          const refLink = document.createElement("a");
+          refLink.className = "text-blue-600 hover:text-blue-800 hover:underline";
+          refLink.textContent = m.referenciaId;
+          
+          // Determinar URL según tipo de referencia
+          if (m.referenciaTipo === 'ORDEN_COMPRA') {
+            const ocId = m.referenciaId.replace('OC-', '');
+            refLink.href = `/admin-recibir-inventario.html?ordenId=${ocId}`;
+          } else if (m.referenciaTipo === 'PEDIDO') {
+            const pedId = m.referenciaId.replace('PED-', '');
+            refLink.href = `/admin-pedidos.html?pedidoId=${pedId}`;
+          } else if (m.referenciaTipo === 'REMISION') {
+            const remId = m.referenciaId.replace('REM-', '');
+            refLink.href = `/admin-remisiones.html?remisionId=${remId}`;
+          }
+          
+          refDiv.appendChild(refLink);
+          tdMotivo.appendChild(refDiv);
+        }
+
+        // Usuario
         const tdUser = document.createElement("td");
         tdUser.className = "py-4 px-6";
         const userWrap = document.createElement("div");
@@ -397,7 +447,7 @@
           "h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-700 text-xs font-semibold";
         avatar.textContent = initial;
         const userNameDiv = document.createElement("div");
-        userNameDiv.className = "text-gray-900";
+        userNameDiv.className = "text-gray-900 text-sm";
         userNameDiv.textContent = usuarioText;
         userWrap.appendChild(avatar);
         userWrap.appendChild(userNameDiv);
@@ -407,6 +457,7 @@
         tr.appendChild(tdProd);
         tr.appendChild(tdTipo);
         tr.appendChild(tdCantidad);
+        tr.appendChild(tdSaldo);
         tr.appendChild(tdMotivo);
         tr.appendChild(tdUser);
 
