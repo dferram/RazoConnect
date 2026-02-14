@@ -1,4 +1,5 @@
 const pool = require('../db');
+const kardexService = require('../services/kardexService');
 
 /**
  * CONTROLADOR DE REMISIONES
@@ -266,6 +267,54 @@ exports.generarRemision = async (req, res) => {
           tenant_id
         ]
       );
+
+      // 6.5. CRÍTICO: Descontar stock de inventarios_admin
+      // Obtener el admin_id del pedido para descontar del inventario correcto
+      const adminQuery = await client.query(
+        `SELECT agenteid FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2`,
+        [pedido_id, tenant_id]
+      );
+      
+      // Si hay agente, obtener su admin_id; si no, usar admin por defecto
+      let adminIdStock = 1; // Default admin
+      if (adminQuery.rows.length > 0 && adminQuery.rows[0].agenteid) {
+        const agenteQuery = await client.query(
+          `SELECT admin_id FROM agentesdeventas WHERE agenteid = $1`,
+          [adminQuery.rows[0].agenteid]
+        );
+        if (agenteQuery.rows.length > 0 && agenteQuery.rows[0].admin_id) {
+          adminIdStock = agenteQuery.rows[0].admin_id;
+        }
+      }
+
+      // Descontar stock
+      await client.query(
+        `UPDATE inventarios_admin 
+         SET cantidad = GREATEST(0, cantidad - $1),
+             ultima_actualizacion = NOW()
+         WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4`,
+        [item.piezas_surtidas, item.variante_id, adminIdStock, tenant_id]
+      );
+
+      console.log(`📦 [STOCK DEDUCTION] Descontadas ${item.piezas_surtidas} piezas de variante ${item.variante_id} del Admin ${adminIdStock}`);
+
+      // 6.6. Registrar movimiento en Kardex
+      try {
+        await kardexService.registrarMovimiento({
+          varianteId: item.variante_id,
+          adminId: adminIdStock,
+          tenantId: tenant_id,
+          tipo: 'SALIDA',
+          cantidad: -item.piezas_surtidas, // Negativo para salidas
+          motivo: 'VENTA',
+          referenciaTipo: 'REMISION',
+          referenciaId: `REM-${remision.remision_id}`,
+          observaciones: `Surtido en remisión ${folio}. Pedido #${pedido_id}. ${item.cantidad_paquetes} paquete(s) x ${item.piezas_surtidas / item.cantidad_paquetes} piezas`,
+          ipOrigen: null
+        }, client);
+      } catch (kardexError) {
+        console.error('⚠️ [KARDEX] Error al registrar movimiento de salida:', kardexError.message);
+      }
 
       // 7. Actualizar cantidad surtida en detallesdelpedido
       await client.query(

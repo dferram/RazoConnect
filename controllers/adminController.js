@@ -17,6 +17,7 @@ const inventoryService = require("../services/inventoryService");
 const auditService = require("../services/auditService");
 const auditLogger = require("../services/auditLogger");
 const SmartStockService = require("../services/SmartStockService");
+const kardexService = require("../services/kardexService");
 const {
   procesarImagenesColor,
   guardarImagenesColor,
@@ -2806,7 +2807,7 @@ const recepcionarMercancia = async (req, res) => {
 const getMovimientosInventario = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
-    const where = [`p.tenant_id = $1`];
+    const where = [`mi.tenant_id = $1`];
     const values = [tenant_id];
 
     const varianteIdRaw = req.query.varianteId;
@@ -2819,18 +2820,17 @@ const getMovimientosInventario = async (req, res) => {
         });
       }
       values.push(varianteId);
-      where.push(`li.varianteid = $${values.length}`);
+      where.push(`mi.variante_id = $${values.length}`);
     }
 
     const tipoRaw = (req.query.tipo || "").toString().trim().toUpperCase();
-    if (tipoRaw === "ENTRADA") {
-      where.push("li.cantidadcambiado > 0");
-    } else if (tipoRaw === "SALIDA") {
-      where.push("li.cantidadcambiado < 0");
+    if (tipoRaw && ['ENTRADA', 'SALIDA', 'AJUSTE', 'MERMA', 'ADICION'].includes(tipoRaw)) {
+      values.push(tipoRaw);
+      where.push(`mi.tipo = $${values.length}`);
     } else if (tipoRaw) {
       return res.status(400).json({
         success: false,
-        message: "tipo inválido (usa ENTRADA o SALIDA)",
+        message: "tipo inválido (usa ENTRADA, SALIDA, AJUSTE, MERMA o ADICION)",
       });
     }
 
@@ -2842,7 +2842,9 @@ const getMovimientosInventario = async (req, res) => {
         `(
           pv.sku ILIKE ${p} OR
           COALESCE(p.nombreproducto, '') ILIKE ${p} OR
-          COALESCE(li.motivo, '') ILIKE ${p} OR
+          COALESCE(mi.motivo, '') ILIKE ${p} OR
+          COALESCE(mi.observaciones, '') ILIKE ${p} OR
+          COALESCE(mi.referencia_id, '') ILIKE ${p} OR
           COALESCE(pv.dimensiones, '') ILIKE ${p}
         )`
       );
@@ -2851,114 +2853,84 @@ const getMovimientosInventario = async (req, res) => {
     const fechaInicioRaw = (req.query.fechaInicio || "").toString().trim();
     if (fechaInicioRaw) {
       values.push(fechaInicioRaw);
-      where.push(`li.fecha >= $${values.length}::timestamp`);
+      where.push(`mi.fecha_movimiento >= $${values.length}::timestamp`);
     }
 
     const fechaFinRaw = (req.query.fechaFin || "").toString().trim();
     if (fechaFinRaw) {
       values.push(fechaFinRaw);
-      where.push(`li.fecha <= $${values.length}::timestamp`);
+      where.push(`mi.fecha_movimiento <= $${values.length}::timestamp`);
     }
 
     const limitRaw = Number.parseInt(req.query.limit, 10);
     const limit = Number.isInteger(limitRaw)
-      ? Math.min(Math.max(limitRaw, 1), 50)
+      ? Math.min(Math.max(limitRaw, 1), 100)
       : 50;
     values.push(limit);
     const limitParam = `$${values.length}`;
 
     const whereSql = `WHERE ${where.join(" AND ")}`;
 
-    let rows = [];
-
-    try {
-      const r = await db.query(
-        `SELECT
-           li.logid,
-           li.fecha,
-           li.varianteid,
-           li.cantidadcambiado,
-           ABS(li.cantidadcambiado) AS cantidad,
-           li.motivo,
-           li.nuevostock,
-           li.usuarioid,
-           li.es_excepcion,
-           pv.sku,
-           pv.dimensiones,
-           p.productoid,
-           p.nombreproducto,
-           COALESCE(
-             NULLIF(TRIM(a.nombre), ''),
-             NULLIF(TRIM(av.nombre || ' ' || av.apellido), ''),
-             NULL
-           ) AS usuario
-         FROM log_inventario li
-         INNER JOIN producto_variantes pv ON pv.varianteid = li.varianteid
-         INNER JOIN productos p ON p.productoid = pv.productoid
-         LEFT JOIN administradores a ON a.adminid = li.usuarioid
-         LEFT JOIN agentesdeventas av ON av.agenteid = li.usuarioid
-         ${whereSql}
-         ORDER BY li.fecha DESC
-         LIMIT ${limitParam}`,
-        values
-      );
-      rows = r.rows || [];
-    } catch (error) {
-      // Si la columna es_excepcion aún no existe, hacer fallback sin romper.
-      if (error && error.code === "42703") {
-        const r = await db.query(
-          `SELECT
-             li.logid,
-             li.fecha,
-             li.varianteid,
-             li.cantidadcambiado,
-             ABS(li.cantidadcambiado) AS cantidad,
-             li.motivo,
-             li.nuevostock,
-             li.usuarioid,
-             pv.sku,
-             pv.dimensiones,
-             p.productoid,
-             p.nombreproducto,
-             COALESCE(
-               NULLIF(TRIM(a.nombre), ''),
-               NULLIF(TRIM(av.nombre || ' ' || av.apellido), ''),
-               NULL
-             ) AS usuario
-           FROM log_inventario li
-           INNER JOIN producto_variantes pv ON pv.varianteid = li.varianteid
-           INNER JOIN productos p ON p.productoid = pv.productoid
-           LEFT JOIN administradores a ON a.adminid = li.usuarioid
-           LEFT JOIN agentesdeventas av ON av.agenteid = li.usuarioid
-           ${whereSql}
-           ORDER BY li.fecha DESC
-           LIMIT ${limitParam}`,
-          values
-        );
-        rows = r.rows || [];
-      } else {
-        throw error;
-      }
-    }
+    const r = await db.query(
+      `SELECT
+         mi.movimiento_id,
+         mi.fecha_movimiento,
+         mi.variante_id,
+         mi.admin_id,
+         mi.tipo,
+         mi.cantidad,
+         mi.stock_previo,
+         mi.stock_posterior,
+         mi.motivo,
+         mi.observaciones,
+         mi.referencia_tipo,
+         mi.referencia_id,
+         pv.sku,
+         pv.dimensiones,
+         p.productoid,
+         p.nombreproducto,
+         COALESCE(a.nombre, 'Sistema') AS usuario
+       FROM movimientos_inventario mi
+       INNER JOIN producto_variantes pv ON pv.varianteid = mi.variante_id
+       INNER JOIN productos p ON p.productoid = pv.productoid
+       LEFT JOIN administradores a ON a.adminid = mi.admin_id
+       ${whereSql}
+       ORDER BY mi.fecha_movimiento DESC
+       LIMIT ${limitParam}`,
+      values
+    );
+    
+    const rows = r.rows || [];
 
     const movimientos = (rows || []).map((r) => {
-      const cantidadCambiado = Number.parseInt(r.cantidadcambiado, 10) || 0;
-      const tipoMovimiento = cantidadCambiado >= 0 ? "ENTRADA" : "SALIDA";
+      const cantidad = Number.parseInt(r.cantidad, 10) || 0;
+      const tipo = (r.tipo || '').toString().toUpperCase();
+      
+      // Mapear tipos antiguos a nuevos para compatibilidad
+      let tipoMovimiento = tipo;
+      if (tipo === 'MERMA' || tipo === 'ADICION') {
+        tipoMovimiento = tipo === 'MERMA' ? 'SALIDA' : 'ENTRADA';
+      }
+      
       return {
-        logId: r.logid,
-        fecha: r.fecha,
-        varianteId: r.varianteid,
+        movimientoId: r.movimiento_id,
+        fecha: r.fecha_movimiento,
+        varianteId: r.variante_id,
         productoId: r.productoid,
         productoNombre: r.nombreproducto,
         sku: r.sku,
         dimensiones: r.dimensiones,
         tipoMovimiento,
-        cantidad: Number.parseInt(r.cantidad, 10) || 0,
+        tipoOriginal: tipo,
+        cantidad: Math.abs(cantidad),
+        stockPrevio: Number.parseInt(r.stock_previo, 10) || 0,
+        stockPosterior: Number.parseInt(r.stock_posterior, 10) || 0,
         motivo: r.motivo || "",
-        nuevoStock: Number.parseInt(r.nuevostock, 10) || 0,
-        usuarioId: r.usuarioid ?? null,
-        usuario: r.usuario || null,
-        esExcepcion: r.es_excepcion === true,
+        observaciones: r.observaciones || null,
+        referenciaTipo: r.referencia_tipo || null,
+        referenciaId: r.referencia_id || null,
+        adminId: r.admin_id ?? null,
+        usuario: r.usuario || 'Sistema',
       };
     });
 
@@ -11918,6 +11890,24 @@ const recibirInventario = async (req, res) => {
         );
         
         console.log(`📦 [STOCK ASSIGNMENT] Inventario asignado al Admin ID ${adminIdRegistro} (OC #${ordenCompraId})`);
+
+        // 3.6. Registrar movimiento en Kardex
+        try {
+          await kardexService.registrarMovimiento({
+            varianteId: detalle.varianteid,
+            adminId: adminIdRegistro,
+            tenantId: tenant_id,
+            tipo: 'ENTRADA',
+            cantidad: cantidadAumentar,
+            motivo: 'COMPRA',
+            referenciaTipo: 'ORDEN_COMPRA',
+            referenciaId: `OC-${ordenCompraId}`,
+            observaciones: `Recepción de ${cantidadRecibida} paquete${cantidadRecibida === 1 ? '' : 's'} x ${piezasPorPaquete} piezas. SKU: ${detalle.sku}`,
+            ipOrigen: req.ip || req.connection?.remoteAddress
+          }, client);
+        } catch (kardexError) {
+          console.error('⚠️ [KARDEX] Error al registrar movimiento de entrada:', kardexError.message);
+        }
       }
 
       // 4. Registrar movimiento en Log_Inventario
