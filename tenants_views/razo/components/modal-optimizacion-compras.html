@@ -1,0 +1,53 @@
+<div class="modal fade" id="modalOptimizacionCompras" tabindex="-1" aria-labelledby="modalOptimizacionLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content" style="border-radius: 1rem; border: 2px solid #F97316;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #F97316 0%, #FB923C 100%); color: white; border-radius: 1rem 1rem 0 0;">
+        <h5 class="modal-title" id="modalOptimizacionLabel">
+          <i class="bi bi-lightbulb-fill me-2"></i>
+          💡 Oportunidades de Ahorro Detectadas
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <div class="modal-body" style="padding: 2rem;">
+        <div id="resumenOptimizacion" class="alert alert-info" style="background: #FFF7ED; border: 2px solid #F97316; border-radius: 0.75rem; margin-bottom: 1.5rem;">
+          <div class="d-flex align-items-center justify-content-between">
+            <div>
+              <h6 class="mb-2" style="color: #F97316; font-weight: 600;">
+                <i class="bi bi-graph-up-arrow me-2"></i>
+                Resumen de Optimización
+              </h6>
+              <p class="mb-0" style="color: #6b5d57;">
+                <strong id="totalOportunidades">0</strong> oportunidades encontradas • 
+                Ahorro potencial: <strong id="ahorroTotal" style="color: #16A34A;">0 piezas</strong> • 
+                <strong id="ordenesAfectadas">0</strong> órdenes pueden agruparse
+              </p>
+            </div>
+            <div>
+              <button id="btnAgruparTodas" class="btn btn-success" style="border-radius: 0.5rem; font-weight: 600;">
+                <i class="bi bi-check-circle me-1"></i>
+                Agrupar Todas
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="listaOportunidades" style="max-height: 60vh; overflow-y: auto;">
+        </div>
+
+        <div id="noOportunidades" class="text-center py-5" style="display: none;">
+          <i class="bi bi-check-circle" style="font-size: 4rem; color: #16A34A;"></i>
+          <h5 class="mt-3" style="color: #6b5d57;">¡Todo optimizado!</h5>
+          <p style="color: #999;">No se encontraron oportunidades de consolidación en este momento.</p>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="border-top: 2px solid #f5f1ed; padding: 1.5rem; margin-top: 1.5rem; margin-bottom: 1rem;">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="border-radius: 0.5rem;">
+          <i class="bi bi-x-circle me-1"></i>
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -419,6 +419,9 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de Optimización de Compras -->
+    <div id="modal-optimizacion-container"></div>
     
     <script src="js/admin-recibir-inventario.js" defer></script>
     <script src="js/admin-recibir-inventario-enhanced.js" defer></script>
@@ -429,6 +432,15 @@
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
+    <script src="js/optimizacion-compras.js"></script>
+    <script>
+      fetch('components/modal-optimizacion-compras.html')
+        .then(response => response.text())
+        .then(html => {
+          document.getElementById('modal-optimizacion-container').innerHTML = html;
+        })
+        .catch(error => console.error('Error cargando modal de optimización:', error));
+    </script>
     <script>
       const ocSearch = document.getElementById("ocSearch");
       const ocSelect = document.getElementById("ocSelect");
