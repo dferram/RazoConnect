@@ -491,6 +491,35 @@
                   </select>
                 </div>
 
+                <!-- Filtro de Tipo de Ingreso -->
+                <div class="form-group" style="margin: 0;">
+                  <label for="filtroTipoIngreso" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">
+                    Tipo de Ingreso
+                  </label>
+                  <select id="filtroTipoIngreso" class="form-input" style="font-size: 0.9rem;">
+                    <option value="todos">Todos los tipos</option>
+                    <option value="conteo_inicial">Conteo Inicial</option>
+                    <option value="entrada_almacen">Entrada de Almacén</option>
+                    <option value="ajuste">Ajuste de Inventario</option>
+                  </select>
+                </div>
+
+                <!-- Filtro de Fecha Desde -->
+                <div class="form-group" style="margin: 0;">
+                  <label for="filtroFechaDesde" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">
+                    Fecha Desde
+                  </label>
+                  <input type="date" id="filtroFechaDesde" class="form-input" style="font-size: 0.9rem;">
+                </div>
+
+                <!-- Filtro de Fecha Hasta -->
+                <div class="form-group" style="margin: 0;">
+                  <label for="filtroFechaHasta" class="form-label" style="font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">
+                    Fecha Hasta
+                  </label>
+                  <input type="date" id="filtroFechaHasta" class="form-input" style="font-size: 0.9rem;">
+                </div>
+
                 <!-- Botón de Aplicar Filtros -->
                 <div style="display: flex; align-items: flex-end;">
                   <button
@@ -965,19 +994,28 @@
           const proveedorEl = document.getElementById('filtroProveedor');
           const adminEl = document.getElementById('filtroAdmin');
           const searchEl = document.getElementById('searchInput');
+          const tipoIngresoEl = document.getElementById('filtroTipoIngreso');
+          const fechaDesdeEl = document.getElementById('filtroFechaDesde');
+          const fechaHastaEl = document.getElementById('filtroFechaHasta');
 
           const stock = stockEl?.value;
           const categoria = categoriaEl?.value;
           const proveedor = proveedorEl?.value;
           const admin = adminEl?.value;
           const search = searchEl?.value.trim();
+          const tipoIngreso = tipoIngresoEl?.value;
+          const fechaDesde = fechaDesdeEl?.value;
+          const fechaHasta = fechaHastaEl?.value;
 
           console.log('🔍 [FILTROS DEBUG] Elementos encontrados:', {
             stockEl: !!stockEl,
             categoriaEl: !!categoriaEl,
             proveedorEl: !!proveedorEl,
             adminEl: !!adminEl,
-            searchEl: !!searchEl
+            searchEl: !!searchEl,
+            tipoIngresoEl: !!tipoIngresoEl,
+            fechaDesdeEl: !!fechaDesdeEl,
+            fechaHastaEl: !!fechaHastaEl
           });
 
           console.log('🔍 [FILTROS DEBUG] Select de categoría:', {
@@ -988,7 +1026,7 @@
             selectedOption: categoriaEl?.options[categoriaEl?.selectedIndex]?.text
           });
 
-          console.log('🔍 [FILTROS] Valores capturados:', { stock, categoria, proveedor, admin, search });
+          console.log('🔍 [FILTROS] Valores capturados:', { stock, categoria, proveedor, admin, search, tipoIngreso, fechaDesde, fechaHasta });
 
           const params = new URLSearchParams();
           if (stock && stock !== 'todos' && stock !== 'undefined') params.append('stock', stock);
@@ -996,6 +1034,9 @@
           if (proveedor && proveedor !== 'todos' && proveedor !== 'undefined') params.append('proveedor', proveedor);
           if (admin && admin !== 'todos' && admin !== 'undefined') params.append('admin_id', admin);
           if (search) params.append('search', search);
+          if (tipoIngreso && tipoIngreso !== 'todos') params.append('tipo_ingreso', tipoIngreso);
+          if (fechaDesde) params.append('fecha_desde', fechaDesde);
+          if (fechaHasta) params.append('fecha_hasta', fechaHasta);
 
           const url = `${API_BASE_URL}/admin/inventario${params.toString() ? '?' + params.toString() : ''}`;
           console.log('🌐 [FILTROS] URL de consulta:', url);
