@@ -14,7 +14,7 @@ async function loadLandingConfig() {
   try {
     const response = await fetch('/api/admin/landing-config', {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
       }
     });
 
@@ -134,7 +134,7 @@ async function saveOrder() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
       },
       body: JSON.stringify({
         section: activeTab,
@@ -271,7 +271,7 @@ async function saveItem() {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
       },
       body: JSON.stringify(data)
     });
@@ -318,7 +318,7 @@ async function deleteItem(section, id) {
     const response = await fetch(`/api/admin/landing-config/${id}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
       }
     });
 
@@ -398,7 +398,7 @@ async function uploadImageToCloudinary(file) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
       },
       body: JSON.stringify({
         folder: 'landing_config',

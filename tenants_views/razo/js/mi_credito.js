@@ -888,7 +888,7 @@
           }
         });
 
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('razoconnect_admin_token');
         if (!token) {
           throw new Error('No hay sesión activa');
         }

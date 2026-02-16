@@ -36,7 +36,7 @@ const buscarProducto = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/inventario/buscar-producto?sku=${encodeURIComponent(sku)}`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             }
         });
 
@@ -148,7 +148,7 @@ const cargarMotivos = async () => {
     try {
         const response = await fetch(`${API_BASE_URL}/inventario/motivos-ajuste?tipo=${tipo}`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             }
         });
 
@@ -232,7 +232,7 @@ const registrarAjuste = async (e) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             },
             body: JSON.stringify({
                 sku: productoSeleccionado.sku,
