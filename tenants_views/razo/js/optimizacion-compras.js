@@ -8,7 +8,7 @@ class OptimizacionComprasManager {
     try {
       const response = await fetch('/api/admin/ordenes/sugerencias-optimizacion', {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
         }
       });
 
@@ -294,7 +294,7 @@ class OptimizacionComprasManager {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
         },
         body: JSON.stringify({ ordenesIds })
       });

@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function cargarOrdenCompra() {
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('razoconnect_admin_token');
     const response = await fetch(`/api/admin/ordenes-compra/${ordenCompraId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
@@ -185,7 +185,7 @@ async function buscarProductos(e) {
   clearTimeout(timeoutBusqueda);
   timeoutBusqueda = setTimeout(async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('razoconnect_admin_token');
       const response = await fetch(`/api/admin/productos/buscar?q=${encodeURIComponent(query)}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -258,7 +258,7 @@ async function confirmarAgregarProducto() {
   }
 
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('razoconnect_admin_token');
     const response = await fetch(`/api/admin/orden-compra/${ordenCompraId}/items`, {
       method: 'PUT',
       headers: {
@@ -321,7 +321,7 @@ async function confirmarEditarProducto() {
   }
 
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('razoconnect_admin_token');
     const response = await fetch(`/api/admin/orden-compra/${ordenCompraId}/items`, {
       method: 'PUT',
       headers: {
@@ -372,7 +372,7 @@ async function eliminarProducto(e) {
   if (!result.isConfirmed) return;
 
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('razoconnect_admin_token');
     const response = await fetch(`/api/admin/orden-compra/${ordenCompraId}/items`, {
       method: 'PUT',
       headers: {
@@ -440,7 +440,7 @@ async function mostrarAlertaBackorders(backorders) {
 
 async function cancelarBackorder(pedidoId, detalleId) {
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('razoconnect_admin_token');
     await fetch('/api/admin/orden-compra/cancelar-backorder', {
       method: 'POST',
       headers: {
