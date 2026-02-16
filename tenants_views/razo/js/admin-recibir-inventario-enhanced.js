@@ -367,7 +367,7 @@ async function exportarExcel() {
 
       // Cantidad
       const cellE = worksheet.getCell(`E${currentRow}`);
-      cellE.value = item.cantidadPiezas;
+      cellE.value = item.cantidadPiezas.toLocaleString('es-MX');
       cellE.alignment = { horizontal: 'center', vertical: 'middle' };
       cellE.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
 
@@ -419,7 +419,7 @@ async function exportarExcel() {
     totalLabelCell.border = { top: { style: 'medium' }, left: { style: 'thin' }, bottom: { style: 'medium' }, right: { style: 'thin' } };
 
     const totalPiezasCell = worksheet.getCell(`E${currentRow}`);
-    totalPiezasCell.value = totalPiezas;
+    totalPiezasCell.value = totalPiezas.toLocaleString('es-MX');
     totalPiezasCell.font = { name: 'Arial', size: 12, bold: true };
     totalPiezasCell.alignment = { horizontal: 'center', vertical: 'middle' };
     totalPiezasCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } };
@@ -461,7 +461,7 @@ async function exportarExcel() {
     currentRow++;
     worksheet.getCell(`B${currentRow}`).value = 'Total Piezas Recibidas:';
     worksheet.getCell(`B${currentRow}`).font = { bold: true };
-    worksheet.getCell(`C${currentRow}`).value = totalPiezas;
+    worksheet.getCell(`C${currentRow}`).value = totalPiezas.toLocaleString('es-MX');
     worksheet.getCell(`C${currentRow}`).alignment = { horizontal: 'right' };
 
     currentRow++;
@@ -503,7 +503,7 @@ async function exportarExcel() {
 
     Swal.fire({
       icon: 'success',
-      title: '✅ Excel Generado',
+      title: 'Excel Generado',
       text: 'El reporte ha sido descargado exitosamente.',
       confirmButtonColor: '#F97316'
     });
@@ -606,7 +606,7 @@ async function exportarPDF() {
       totalVentaEsperada += item.totalVenta;
     });
 
-    // MISIÓN 4: Add table WITHOUT footer (totals will be added separately at the end)
+    // Add table WITHOUT footer (totals will be added separately at the end)
     doc.autoTable({
       startY: 35,
       head: [['SKU', 'Producto', 'Categoría', 'Variante', 'Cantidad\n(Piezas)', 'Costo\nUnit.', 'Total\nCosto', 'Precio\nVenta', 'Total\nVenta']],
@@ -719,7 +719,7 @@ async function exportarPDF() {
 
     Swal.fire({
       icon: 'success',
-      title: '✅ PDF Generado',
+      title: 'PDF Generado',
       text: 'El reporte ha sido descargado exitosamente.',
       confirmButtonColor: '#F97316'
     });

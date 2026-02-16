@@ -654,6 +654,77 @@ async function descargarReportePDF(sesionId, nombreSesion) {
             );
         }
 
+        // RESUMEN FINANCIERO GENERAL
+        if (validados.length > 0) {
+            // Calculate grand totals from validated items only
+            let granTotalPiezas = 0;
+            let granTotalCosto = 0;
+            let granTotalVenta = 0;
+
+            validados.forEach(item => {
+                const cantidad = item.cantidad_final || item.conteo_a || 0;
+                const costo = parseFloat(item.costounitario) || 0;
+                const precio = parseFloat(item.preciounitario) || 0;
+                
+                granTotalPiezas += cantidad;
+                granTotalCosto += cantidad * costo;
+                granTotalVenta += cantidad * precio;
+            });
+
+            const margen = granTotalVenta - granTotalCosto;
+
+            // Check if we need a new page for the summary
+            const summaryHeight = 50;
+            if (yPosition + summaryHeight > 190) {
+                doc.addPage();
+                dibujarEncabezado(doc);
+                yPosition = 40;
+            }
+
+            // Draw financial summary box
+            const boxX = 10;
+            const boxWidth = 120;
+            const boxHeight = 45;
+
+            doc.setFillColor(249, 115, 22);
+            doc.rect(boxX, yPosition, boxWidth, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('RESUMEN FINANCIERO', boxX + boxWidth / 2, yPosition + 7, { align: 'center' });
+
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+
+            let detailY = yPosition + 15;
+            doc.text('Total Piezas Validadas:', boxX + 5, detailY);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${granTotalPiezas.toLocaleString('es-MX')} pzas`, boxX + 80, detailY);
+
+            detailY += 7;
+            doc.setFont('helvetica', 'bold');
+            doc.text('Valor Total de Costo:', boxX + 5, detailY);
+            doc.setTextColor(220, 38, 38);
+            doc.text(`$${granTotalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + 80, detailY);
+
+            detailY += 7;
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Valor Total de Venta:', boxX + 5, detailY);
+            doc.setTextColor(16, 185, 129);
+            doc.text(`$${granTotalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + 80, detailY);
+
+            detailY += 7;
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Margen:', boxX + 5, detailY);
+            doc.setTextColor(margen >= 0 ? 16 : 220, margen >= 0 ? 185 : 38, margen >= 0 ? 129 : 38);
+            doc.text(`$${margen.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + 80, detailY);
+
+            yPosition += boxHeight + 5;
+        }
+
         const pageCount = doc.internal.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
