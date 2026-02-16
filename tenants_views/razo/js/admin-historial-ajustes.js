@@ -411,8 +411,20 @@ const exportarExcel = () => {
         return;
     }
 
+    // Calcular totales
+    let totalPiezasMerma = 0;
+    let totalPiezasAdicion = 0;
+
     const datosExcel = movimientosData.map(m => {
         const fecha = new Date(m.fecha_movimiento);
+        const cantidad = parseInt(m.cantidad, 10) || 0;
+        
+        if (m.tipo === 'MERMA') {
+            totalPiezasMerma += cantidad;
+        } else if (m.tipo === 'ADICION') {
+            totalPiezasAdicion += cantidad;
+        }
+        
         return {
             'ID': m.movimiento_id,
             'Fecha': fecha.toLocaleDateString('es-MX'),
@@ -431,6 +443,83 @@ const exportarExcel = () => {
             'Email Admin': m.admin_email,
             'IP Origen': m.ip_origen || ''
         };
+    });
+
+    // Agregar filas de totales
+    const diferenciaNeta = totalPiezasAdicion - totalPiezasMerma;
+    
+    datosExcel.push({});
+    datosExcel.push({
+        'ID': '',
+        'Fecha': '',
+        'Hora': '',
+        'Tipo': 'RESUMEN DE AJUSTES',
+        'SKU': '',
+        'Producto': '',
+        'Dimensiones': '',
+        'Cantidad': '',
+        'Stock Previo': '',
+        'Stock Posterior': '',
+        'Impacto': '',
+        'Motivo': '',
+        'Observaciones': '',
+        'Admin': '',
+        'Email Admin': '',
+        'IP Origen': ''
+    });
+    datosExcel.push({
+        'ID': '',
+        'Fecha': '',
+        'Hora': '',
+        'Tipo': 'Total Mermas',
+        'SKU': '',
+        'Producto': '',
+        'Dimensiones': '',
+        'Cantidad': totalPiezasMerma,
+        'Stock Previo': '',
+        'Stock Posterior': '',
+        'Impacto': `-${totalPiezasMerma}`,
+        'Motivo': '',
+        'Observaciones': '',
+        'Admin': '',
+        'Email Admin': '',
+        'IP Origen': ''
+    });
+    datosExcel.push({
+        'ID': '',
+        'Fecha': '',
+        'Hora': '',
+        'Tipo': 'Total Adiciones',
+        'SKU': '',
+        'Producto': '',
+        'Dimensiones': '',
+        'Cantidad': totalPiezasAdicion,
+        'Stock Previo': '',
+        'Stock Posterior': '',
+        'Impacto': `+${totalPiezasAdicion}`,
+        'Motivo': '',
+        'Observaciones': '',
+        'Admin': '',
+        'Email Admin': '',
+        'IP Origen': ''
+    });
+    datosExcel.push({
+        'ID': '',
+        'Fecha': '',
+        'Hora': '',
+        'Tipo': 'Diferencia Neta',
+        'SKU': '',
+        'Producto': '',
+        'Dimensiones': '',
+        'Cantidad': Math.abs(diferenciaNeta),
+        'Stock Previo': '',
+        'Stock Posterior': '',
+        'Impacto': `${diferenciaNeta >= 0 ? '+' : ''}${diferenciaNeta}`,
+        'Motivo': '',
+        'Observaciones': '',
+        'Admin': '',
+        'Email Admin': '',
+        'IP Origen': ''
     });
 
     const ws = XLSX.utils.json_to_sheet(datosExcel);

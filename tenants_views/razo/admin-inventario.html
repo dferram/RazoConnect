@@ -2524,6 +2524,9 @@
             item.stock.toString()
           ]);
 
+          // Calcular totales
+          const totalPiezas = inventario.reduce((sum, item) => sum + (parseInt(item.stock, 10) || 0), 0);
+
           doc.autoTable({
             startY: currentY,
             head: [['SKU', 'Producto', 'Categoría', 'Medida', 'Color', 'Stock']],
@@ -2575,6 +2578,44 @@
               doc.text('RazoConnect - Sistema de Gestión de Inventario', 15, pageHeight - 10);
             }
           });
+
+          // RESUMEN FINANCIERO
+          let yPosition = doc.lastAutoTable.finalY + 10;
+          
+          // Verificar si hay espacio suficiente, si no, agregar nueva página
+          if (yPosition + 35 > pageHeight - 20) {
+            doc.addPage();
+            drawHeader();
+            yPosition = 30;
+          }
+
+          const boxX = 15;
+          const boxWidth = 100;
+          const boxHeight = 30;
+
+          // Box de resumen con fondo naranja
+          doc.setFillColor(...colorNaranja);
+          doc.rect(boxX, yPosition, boxWidth, 10, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(11);
+          doc.setFont('helvetica', 'bold');
+          doc.text('RESUMEN DE INVENTARIO', boxX + boxWidth / 2, yPosition + 7, { align: 'center' });
+
+          // Contenido del resumen
+          doc.setTextColor(...colorNegro);
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+
+          let detailY = yPosition + 15;
+          doc.text('Total de Productos:', boxX + 5, detailY);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`${inventario.length.toLocaleString('es-MX')} productos`, boxX + 60, detailY);
+
+          detailY += 7;
+          doc.setFont('helvetica', 'bold');
+          doc.text('Total de Piezas en Stock:', boxX + 5, detailY);
+          doc.setTextColor(...colorNaranja);
+          doc.text(`${totalPiezas.toLocaleString('es-MX')} pzas`, boxX + 60, detailY);
 
           // Generar nombre de archivo con fecha
           const nombreArchivo = `Inventario_RazoConnect_${ahora.getFullYear()}${String(ahora.getMonth() + 1).padStart(2, '0')}${String(ahora.getDate()).padStart(2, '0')}.pdf`;
