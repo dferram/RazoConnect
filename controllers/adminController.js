@@ -7695,9 +7695,9 @@ const getInventarioResumen = async (req, res) => {
     const userRol = req.user?.rol?.toLowerCase();
     const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin';
 
-    const { stock, categoria, proveedor, admin_id, search } = req.query;
+    const { stock, categoria, proveedor, admin_id, search, tipo_ingreso, fecha_desde, fecha_hasta } = req.query;
     
-    console.log('🔍 [getInventarioResumen] Query params recibidos:', { stock, categoria, proveedor, admin_id, search });
+    console.log('🔍 [getInventarioResumen] Query params recibidos:', { stock, categoria, proveedor, admin_id, search, tipo_ingreso, fecha_desde, fecha_hasta });
 
     const whereClauses = [`p.tenant_id = $1`];
     const params = [tenant_id];
@@ -7745,6 +7745,32 @@ const getInventarioResumen = async (req, res) => {
       }
     }
 
+    // Filtros de tipo de ingreso y fecha
+    let inventarioFilterJoin = '';
+    if ((tipo_ingreso && tipo_ingreso !== 'todos') || fecha_desde || fecha_hasta) {
+      inventarioFilterJoin = `
+        INNER JOIN inventarios_admin ia ON ia.variante_id = v.VarianteID AND ia.tenant_id = $1
+      `;
+      
+      if (tipo_ingreso && tipo_ingreso !== 'todos') {
+        whereClauses.push(`ia.tipo_ingreso = $${paramIndex}`);
+        params.push(tipo_ingreso);
+        paramIndex++;
+      }
+      
+      if (fecha_desde) {
+        whereClauses.push(`ia.fecha_registro >= $${paramIndex}`);
+        params.push(fecha_desde);
+        paramIndex++;
+      }
+      
+      if (fecha_hasta) {
+        whereClauses.push(`ia.fecha_registro <= $${paramIndex}::date + INTERVAL '1 day'`);
+        params.push(fecha_hasta);
+        paramIndex++;
+      }
+    }
+
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
     
     console.log('📋 [getInventarioResumen] WHERE clause construido:', whereClause);
@@ -7763,6 +7789,7 @@ const getInventarioResumen = async (req, res) => {
       LEFT JOIN Categorias c ON c.CategoriaID = p.CategoriaID AND c.tenant_id = $1
       LEFT JOIN Producto_Variantes v ON v.ProductoID = p.ProductoID
       ${adminFilterJoin}
+      ${inventarioFilterJoin}
       ${whereClause}
       GROUP BY p.ProductoID, p.NombreProducto, p.Activo, c.Nombre
       ORDER BY p.NombreProducto ASC
