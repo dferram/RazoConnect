@@ -1530,7 +1530,7 @@
             }
           });
 
-          const token = localStorage.getItem("token");
+          const token = localStorage.getItem("razoconnect_admin_token");
           const simulationResponse = await fetch(`/api/admin/pedidos/${pedidoId}/simulate-priority`, {
             method: "POST",
             headers: {
@@ -1666,7 +1666,7 @@
             }
           });
 
-          const token = localStorage.getItem("token");
+          const token = localStorage.getItem("razoconnect_admin_token");
           const response = await fetch(`/api/admin/pedidos/${pedidoId}/toggle-priority`, {
             method: "POST",
             headers: {

@@ -236,7 +236,7 @@ class AnomalyTracker {
       return { success: true, message: 'Sin anomalías que registrar' };
     }
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('razoconnect_admin_token');
     const resultados = [];
 
     for (const disc of discrepancias) {

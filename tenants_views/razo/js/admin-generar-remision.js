@@ -12,7 +12,7 @@ async function abrirModalGenerarRemision(pedidoId) {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             },
             credentials: 'include'
         });
@@ -291,7 +291,7 @@ async function generarRemisionAPI(datos) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             },
             credentials: 'include',
             body: JSON.stringify(datos)
