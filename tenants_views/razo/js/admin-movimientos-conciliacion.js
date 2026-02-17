@@ -31,27 +31,51 @@ function establecerFechasPorDefecto() {
  */
 async function cargarTiposAjuste() {
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('razoconnect_admin_token');
+    if (!token) {
+      console.warn('⚠️ No hay token de autenticación');
+      return;
+    }
+
     const response = await fetch('/api/admin/ajustes-inventario/tipos', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
     });
 
-    if (!response.ok) throw new Error('Error al cargar tipos de ajuste');
+    if (!response.ok) {
+      console.error('❌ Error HTTP:', response.status, response.statusText);
+      throw new Error('Error al cargar tipos de ajuste');
+    }
 
     const result = await response.json();
-    const tipos = result.data || [];
+    console.log('✅ Respuesta tipos ajuste:', result);
     
+    // Verificar que result.data sea un array
+    if (!result.data || !Array.isArray(result.data)) {
+      console.error('❌ result.data no es un array:', result.data);
+      return;
+    }
+    
+    const tipos = result.data;
     const select = document.getElementById('filtroTipoAjuste');
+    
+    if (!select) {
+      console.error('❌ No se encontró el elemento select #filtroTipoAjuste');
+      return;
+    }
+    
     tipos.forEach(tipo => {
       const option = document.createElement('option');
       option.value = tipo;
       option.textContent = formatearTipoAjuste(tipo);
       select.appendChild(option);
     });
+    
+    console.log(`✅ Cargados ${tipos.length} tipos de ajuste`);
   } catch (error) {
-    console.error('Error cargando tipos de ajuste:', error);
+    console.error('❌ Error cargando tipos de ajuste:', error);
+    // No bloquear la página si falla la carga de tipos
   }
 }
 
@@ -119,7 +143,7 @@ async function cargarAjustes() {
   mostrarLoading(true);
   
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('razoconnect_admin_token');
     const params = new URLSearchParams();
     
     if (filtrosActivos.fechaInicio) params.append('fechaInicio', filtrosActivos.fechaInicio);
@@ -187,6 +211,8 @@ function renderizarTabla() {
 
     const badgeClass = obtenerBadgeClass(ajuste.tipoAjuste);
 
+    const origen = determinarOrigen(ajuste.motivo, ajuste.sesionNombre);
+    
     return `
       <tr>
         <td>${fecha}</td>
@@ -198,6 +224,7 @@ function renderizarTabla() {
             ${formatearTipoAjuste(ajuste.tipoAjuste)}
           </span>
         </td>
+        <td><span class="badge bg-info text-dark">${origen}</span></td>
         <td><strong>${ajuste.cantidad.toLocaleString('es-MX')}</strong></td>
         <td>${ajuste.totalPiezas.toLocaleString('es-MX')} pzas</td>
         <td>$${ajuste.valorTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
@@ -345,21 +372,25 @@ async function exportarPDF() {
     yPos += 20;
 
     // Tabla de ajustes
-    const tableData = ajustesData.map(ajuste => [
-      new Date(ajuste.fecha).toLocaleDateString('es-MX'),
-      ajuste.sku,
-      ajuste.productoNombre.substring(0, 30),
-      ajuste.dimensiones || '-',
-      formatearTipoAjuste(ajuste.tipoAjuste),
-      ajuste.cantidad.toLocaleString('es-MX'),
-      ajuste.totalPiezas.toLocaleString('es-MX'),
-      `$${ajuste.valorTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
-      ajuste.motivo ? ajuste.motivo.substring(0, 20) : '-'
-    ]);
+    const tableData = ajustesData.map(ajuste => {
+      const origen = determinarOrigen(ajuste.motivo, ajuste.sesionNombre);
+      return [
+        new Date(ajuste.fecha).toLocaleDateString('es-MX'),
+        ajuste.sku,
+        ajuste.productoNombre.substring(0, 25),
+        ajuste.dimensiones || '-',
+        formatearTipoAjuste(ajuste.tipoAjuste),
+        origen,
+        ajuste.cantidad.toLocaleString('es-MX'),
+        ajuste.totalPiezas.toLocaleString('es-MX'),
+        `$${ajuste.valorTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
+        ajuste.motivo ? ajuste.motivo.substring(0, 15) : '-'
+      ];
+    });
 
     doc.autoTable({
       startY: yPos,
-      head: [['Fecha', 'SKU', 'Producto', 'Dim.', 'Tipo', 'Cant.', 'Piezas', 'Valor', 'Motivo']],
+      head: [['Fecha', 'SKU', 'Producto', 'Dim.', 'Tipo', 'Origen', 'Cant.', 'Piezas', 'Valor', 'Motivo']],
       body: tableData,
       theme: 'striped',
       headStyles: {
@@ -376,15 +407,16 @@ async function exportarPDF() {
         fillColor: [255, 247, 237]
       },
       columnStyles: {
-        0: { cellWidth: 60 },
-        1: { cellWidth: 70 },
-        2: { cellWidth: 120 },
-        3: { cellWidth: 50 },
-        4: { cellWidth: 60 },
-        5: { cellWidth: 45, halign: 'right' },
-        6: { cellWidth: 55, halign: 'right' },
-        7: { cellWidth: 70, halign: 'right' },
-        8: { cellWidth: 90 }
+        0: { cellWidth: 50 },
+        1: { cellWidth: 60 },
+        2: { cellWidth: 100 },
+        3: { cellWidth: 40 },
+        4: { cellWidth: 50 },
+        5: { cellWidth: 60 },
+        6: { cellWidth: 40, halign: 'right' },
+        7: { cellWidth: 50, halign: 'right' },
+        8: { cellWidth: 60, halign: 'right' },
+        9: { cellWidth: 70 }
       },
       margin: { left: 40, right: 40 }
     });
@@ -495,6 +527,34 @@ function formatearFecha(fecha) {
     month: 'long',
     day: 'numeric'
   });
+}
+
+function determinarOrigen(motivo, sesionNombre) {
+  if (!motivo && !sesionNombre) return 'Manual';
+  
+  const motivoLower = (motivo || '').toLowerCase();
+  
+  // Detectar entrada de almacén
+  if (motivoLower.includes('recepci') || motivoLower.includes('orden') || motivoLower.includes('compra')) {
+    return 'Entrada Almacén';
+  }
+  
+  // Detectar conteo inicial o sesión
+  if (sesionNombre || motivoLower.includes('conteo') || motivoLower.includes('inventario inicial')) {
+    return 'Conteo Inicial';
+  }
+  
+  // Detectar ajustes manuales
+  if (motivoLower.includes('ajuste') || motivoLower.includes('correcci')) {
+    return 'Ajuste Manual';
+  }
+  
+  // Detectar mermas
+  if (motivoLower.includes('merma') || motivoLower.includes('dañ') || motivoLower.includes('robo')) {
+    return 'Merma';
+  }
+  
+  return 'Otro';
 }
 
 function mostrarLoading(mostrar) {
