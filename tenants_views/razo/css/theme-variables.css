@@ -17,24 +17,24 @@
   --theme-primary-dark: #ff7733;
   --theme-primary-rgb: 255, 153, 102;
 
-  /* Colores Secundarios - Gris Oscuro */
-  --theme-secondary: #424242;
-  --theme-secondary-light: #616161;
-  --theme-secondary-dark: #212121;
-  --theme-secondary-rgb: 66, 66, 66;
+  /* Colores Secundarios - Naranja Intenso */
+  --theme-secondary: #ff7733;
+  --theme-secondary-light: #ff9966;
+  --theme-secondary-dark: #ee4801;
+  --theme-secondary-rgb: 255, 119, 51;
 
   /* Colores de Acento - Blanco/Gris Claro */
   --theme-accent: #ffffff;
   --theme-accent-light: #fafafa;
   --theme-accent-dark: #f5f5f5;
 
-  /* Gradientes */
-  --theme-gradient-primary: linear-gradient(135deg, #ff9966 0%, #424242 100%);
+  /* Gradientes - Solo tonos vibrantes */
+  --theme-gradient-primary: linear-gradient(135deg, #ff9966 0%, #ff7733 100%);
   --theme-gradient-hero: linear-gradient(135deg, #ff9966 0%, #ff7733 100%);
   --theme-gradient-card: linear-gradient(
     145deg,
     rgba(255, 153, 102, 0.05) 0%,
-    rgba(66, 66, 66, 0.05) 100%
+    rgba(255, 119, 51, 0.05) 100%
   );
 
   /* Colores de Fondo */
