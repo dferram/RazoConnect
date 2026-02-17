@@ -1373,8 +1373,8 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
     for (const producto of productosActualizados) {
       await client.query(
         `INSERT INTO log_inventario
-         (varianteid, cantidadcambiado, nuevostock, motivo, usuarioid, es_excepcion, cxp_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+         (varianteid, cantidadcambiado, nuevostock, motivo, usuarioid, es_excepcion, cxp_id, tipo_origen, orden_compra_id, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
         [
           producto.varianteId,
           producto.cantidadRecibidaAhora,
@@ -1383,6 +1383,9 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
           Number.isInteger(usuarioRecibeId) && usuarioRecibeId > 0 ? usuarioRecibeId : null,
           false,
           Number.isInteger(cxpId) && cxpId > 0 ? cxpId : null,
+          'ORDEN_COMPRA',
+          ordenCompraId,
+          tenant_id
         ]
       );
     }
@@ -2953,98 +2956,138 @@ const getMovimientosInventario = async (req, res) => {
 };
 
 /**
- * Ajustes de inventario con filtros avanzados para conciliación
+ * ✅ REFACTORIZADO: Conciliación de Inventario con Trazabilidad de Origen
  * GET /api/admin/ajustes-inventario/filtrados
- * Query params: fechaInicio, fechaFin, tipoAjuste, referencia, sesionId
+ * 
+ * Muestra TODOS los movimientos de inventario desde log_inventario con su origen:
+ * - Órdenes de Compra (ORDEN_COMPRA)
+ * - Auditorías/Conteos (AUDITORIA)
+ * - Ajustes Manuales (AJUSTE_MANUAL, MERMA, ADICION)
+ * 
+ * Query params: fechaInicio, fechaFin, tipoOrigen, referencia, ordenCompraId, sesionAuditoriaId
  */
 const getAjustesInventarioFiltrados = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
-    const where = [`ai.tenant_id = $1`];
+    const where = [`li.tenant_id = $1`];
     const values = [tenant_id];
 
     // Filtro por rango de fechas
     const fechaInicioRaw = (req.query.fechaInicio || "").toString().trim();
     if (fechaInicioRaw) {
       values.push(fechaInicioRaw);
-      where.push(`ai.fecha_ajuste >= $${values.length}::timestamp`);
+      where.push(`li.fecha >= $${values.length}::timestamp`);
     }
 
     const fechaFinRaw = (req.query.fechaFin || "").toString().trim();
     if (fechaFinRaw) {
       values.push(fechaFinRaw + ' 23:59:59');
-      where.push(`ai.fecha_ajuste <= $${values.length}::timestamp`);
+      where.push(`li.fecha <= $${values.length}::timestamp`);
     }
 
-    // Filtro por tipo de ajuste
+    // Filtro por tipo de origen (mapeo de UI a tipos de BD)
     const tipoAjusteRaw = (req.query.tipoAjuste || "").toString().trim().toUpperCase();
-    if (tipoAjusteRaw && ['ENTRADA', 'SALIDA', 'MERMA', 'AJUSTE'].includes(tipoAjusteRaw)) {
-      values.push(tipoAjusteRaw);
-      where.push(`ai.tipo_ajuste = $${values.length}`);
+    const tipoOrigenMap = {
+      'ENTRADA': 'AUDITORIA',  // Conteo Inicial / Auditoría
+      'MERMA': 'MERMA',
+      'AJUSTE': 'AJUSTE_MANUAL',
+      'ADICION': 'ADICION'
+    };
+    
+    if (tipoAjusteRaw && tipoOrigenMap[tipoAjusteRaw]) {
+      values.push(tipoOrigenMap[tipoAjusteRaw]);
+      where.push(`li.tipo_origen = $${values.length}`);
     }
 
     // Filtro por referencia (búsqueda parcial en motivo)
     const referenciaRaw = (req.query.referencia || "").toString().trim();
     if (referenciaRaw) {
       values.push(`%${referenciaRaw}%`);
-      where.push(`ai.motivo ILIKE $${values.length}`);
+      where.push(`li.motivo ILIKE $${values.length}`);
     }
 
-    // Filtro por sesión de auditoría
+    // Filtro por orden de compra específica
+    const ordenCompraIdRaw = req.query.ordenCompraId;
+    if (ordenCompraIdRaw !== undefined && ordenCompraIdRaw !== null && ordenCompraIdRaw !== "") {
+      const ordenCompraId = Number.parseInt(ordenCompraIdRaw, 10);
+      if (Number.isInteger(ordenCompraId) && ordenCompraId > 0) {
+        values.push(ordenCompraId);
+        where.push(`li.orden_compra_id = $${values.length}`);
+      }
+    }
+
+    // Filtro por sesión de auditoría específica
     const sesionIdRaw = req.query.sesionId;
     if (sesionIdRaw !== undefined && sesionIdRaw !== null && sesionIdRaw !== "") {
       const sesionId = Number.parseInt(sesionIdRaw, 10);
-      if (!Number.isInteger(sesionId) || sesionId <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: "sesionId inválido",
-        });
+      if (Number.isInteger(sesionId) && sesionId > 0) {
+        values.push(sesionId);
+        where.push(`li.sesion_auditoria_id = $${values.length}`);
       }
-      values.push(sesionId);
-      where.push(`ai.sesion_auditoria_id = $${values.length}`);
     }
 
     const whereSql = `WHERE ${where.join(" AND ")}`;
-
-    // Query principal con JOINs para obtener información completa
+    
+    // Query unificada desde log_inventario con trazabilidad de origen
     const result = await db.query(
       `SELECT
-         ai.ajuste_id,
-         ai.variante_id,
-         ai.admin_id,
-         ai.cantidad,
-         ai.tipo_ajuste,
-         ai.motivo,
-         ai.usuario_id,
-         ai.fecha_ajuste,
-         ai.sesion_auditoria_id,
+         li.logid AS ajuste_id,
+         li.varianteid AS variante_id,
+         ABS(li.cantidadcambiado) AS cantidad,
+         li.cantidadcambiado AS cantidad_delta,
+         li.tipo_origen,
+         li.orden_compra_id,
+         li.sesion_auditoria_id,
+         li.ajuste_id AS ajuste_manual_id,
+         li.motivo,
+         li.usuarioid AS usuario_id,
+         li.fecha AS fecha_ajuste,
          pv.sku,
          pv.dimensiones,
          pv.piezasporpaquete,
+         pv.stock,
+         pv.preciounitario,
+         pv.costounitario,
          p.productoid,
          p.nombreproducto,
-         p.precioventa,
-         ia.cantidad AS stock_actual,
          COALESCE(a.nombre, 'Sistema') AS usuario_nombre,
-         si.nombre AS sesion_nombre
-       FROM ajustes_inventario ai
-       INNER JOIN producto_variantes pv ON pv.varianteid = ai.variante_id
+         oc.OrdenCompraID AS oc_numero,
+         oc.Estatus AS oc_estatus,
+         ts.nombre AS sesion_nombre,
+         ts.estatus AS sesion_estatus
+       FROM log_inventario li
+       INNER JOIN producto_variantes pv ON pv.varianteid = li.varianteid
        INNER JOIN productos p ON p.productoid = pv.productoid
-       LEFT JOIN administradores a ON a.adminid = ai.usuario_id
-       LEFT JOIN sesiones_inventario si ON si.sesion_id = ai.sesion_auditoria_id
-       LEFT JOIN inventarios_admin ia ON ia.variante_id = ai.variante_id AND ia.admin_id = ai.admin_id
+       LEFT JOIN administradores a ON a.adminid = li.usuarioid
+       LEFT JOIN OrdenesDeCompra oc ON oc.OrdenCompraID = li.orden_compra_id
+       LEFT JOIN toma_inventario_sesiones ts ON ts.sesionid = li.sesion_auditoria_id
        ${whereSql}
-       ORDER BY ai.fecha_ajuste DESC
+       ORDER BY li.fecha DESC
        LIMIT 500`,
       values
     );
 
     const ajustes = (result.rows || []).map((r) => {
       const cantidad = Number.parseInt(r.cantidad, 10) || 0;
+      const cantidadDelta = Number.parseInt(r.cantidad_delta, 10) || 0;
       const piezasPorPaquete = Number.parseInt(r.piezasporpaquete, 10) || 1;
-      const precioVenta = parseFloat(r.precioventa) || 0;
+      const precioUnitario = parseFloat(r.preciounitario) || 0;
+      const costoUnitario = parseFloat(r.costounitario) || 0;
       const totalPiezas = cantidad * piezasPorPaquete;
-      const valorTotal = totalPiezas * precioVenta;
+      const valorTotal = totalPiezas * precioUnitario;
+
+      // Determinar tipo de ajuste para UI (mapeo inverso)
+      const tipoAjusteUI = r.tipo_origen === 'AUDITORIA' ? 'ENTRADA' : (r.tipo_origen || 'AJUSTE');
+
+      // Construir referencia de origen
+      let referenciaOrigen = '';
+      if (r.orden_compra_id) {
+        referenciaOrigen = `OC #${r.oc_numero || r.orden_compra_id}`;
+      } else if (r.sesion_auditoria_id) {
+        referenciaOrigen = `Sesión: ${r.sesion_nombre || `#${r.sesion_auditoria_id}`}`;
+      } else if (r.ajuste_manual_id) {
+        referenciaOrigen = `Ajuste #${r.ajuste_manual_id}`;
+      }
 
       return {
         ajusteId: r.ajuste_id,
@@ -3054,19 +3097,30 @@ const getAjustesInventarioFiltrados = async (req, res) => {
         productoNombre: r.nombreproducto,
         sku: r.sku,
         dimensiones: r.dimensiones,
-        tipoAjuste: r.tipo_ajuste,
+        tipoAjuste: tipoAjusteUI,
+        tipoOrigen: r.tipo_origen,
         cantidad,
+        cantidadDelta,
+        esEntrada: cantidadDelta > 0,
+        esSalida: cantidadDelta < 0,
         piezasPorPaquete,
         totalPiezas,
-        precioVenta,
+        precioUnitario,
+        costoUnitario,
         valorTotal,
         motivo: r.motivo || "",
-        stockActual: Number.parseInt(r.stock_actual, 10) || 0,
-        adminId: r.admin_id,
+        stockActual: Number.parseInt(r.stock, 10) || 0,
         usuarioId: r.usuario_id,
         usuarioNombre: r.usuario_nombre || 'Sistema',
+        // Información de origen
+        ordenCompraId: r.orden_compra_id,
+        ordenCompraNumero: r.oc_numero,
+        ordenCompraEstatus: r.oc_estatus,
         sesionAuditoriaId: r.sesion_auditoria_id,
-        sesionNombre: r.sesion_nombre || null,
+        sesionNombre: r.sesion_nombre,
+        sesionEstatus: r.sesion_estatus,
+        ajusteManualId: r.ajuste_manual_id,
+        referenciaOrigen,
       };
     });
 
@@ -3112,24 +3166,70 @@ const getAjustesInventarioFiltrados = async (req, res) => {
 /**
  * Obtener tipos de ajuste disponibles para filtros
  * GET /api/admin/ajustes-inventario/tipos
+ * 
+ * Retorna TODOS los tipos posibles de movimientos de inventario
+ * basados en las formas REALES en que el inventario entra y sale del sistema.
+ * 
+ * FLUJOS DE INVENTARIO EN EL SISTEMA:
+ * 
+ * ENTRADAS (Incrementos de stock):
+ * 1. Recepción de Órdenes de Compra → log_inventario (motivo: "Recepción OC #X")
+ * 2. Conteo Inicial/Auditoría → ajustes_inventario (tipo_ajuste: 'ENTRADA', sesion_auditoria_id)
+ * 3. Adición Manual → movimientos_inventario (tipo: 'ADICION')
+ * 
+ * SALIDAS (Decrementos de stock):
+ * 4. Venta a Cliente → pedido_surtido_detalle (reduce stock al surtir pedido)
+ * 5. Merma → movimientos_inventario (tipo: 'MERMA') o ajustes_inventario (tipo_ajuste: 'MERMA')
+ * 
+ * AJUSTES (Correcciones):
+ * 6. Ajuste por Auditoría → ajustes_inventario (tipo_ajuste: 'AJUSTE')
  */
 const getTiposAjusteInventario = async (req, res) => {
   try {
-    const { tenant_id } = req.tenant;
+    // Definir SOLO los tipos de movimientos que realmente existen en el sistema
+    const tiposMovimientos = [
+      {
+        value: 'ENTRADA',
+        label: 'Conteo Inicial / Auditoría',
+        descripcion: 'Entrada de inventario por conteo físico o auditoría',
+        categoria: 'Entradas',
+        tabla: 'ajustes_inventario'
+      },
+      {
+        value: 'MERMA',
+        label: 'Merma',
+        descripcion: 'Pérdida, daño o robo de inventario',
+        categoria: 'Salidas',
+        tabla: 'movimientos_inventario / ajustes_inventario'
+      },
+      {
+        value: 'AJUSTE',
+        label: 'Ajuste por Auditoría',
+        descripcion: 'Corrección de inventario basada en conteo físico',
+        categoria: 'Ajustes',
+        tabla: 'ajustes_inventario'
+      },
+      {
+        value: 'ADICION',
+        label: 'Adición Manual',
+        descripcion: 'Incremento manual de stock por corrección',
+        categoria: 'Entradas',
+        tabla: 'movimientos_inventario'
+      }
+    ];
 
-    const result = await db.query(
-      `SELECT DISTINCT tipo_ajuste
-       FROM ajustes_inventario
-       WHERE tenant_id = $1
-       ORDER BY tipo_ajuste`,
-      [tenant_id]
-    );
-
-    const tipos = result.rows.map(r => r.tipo_ajuste);
+    // Retornar solo los valores para el dropdown (compatibilidad con frontend actual)
+    const valores = tiposMovimientos.map(t => t.value);
 
     return res.status(200).json({
       success: true,
-      data: tipos,
+      data: valores,
+      // Información adicional para futuras mejoras del frontend
+      metadata: {
+        tiposDetallados: tiposMovimientos,
+        categorias: [...new Set(tiposMovimientos.map(t => t.categoria))],
+        nota: 'Recepciones de OC y Ventas a Clientes se registran en log_inventario y pedido_surtido_detalle respectivamente'
+      }
     });
   } catch (error) {
     console.error("Error al obtener tipos de ajuste:", error);

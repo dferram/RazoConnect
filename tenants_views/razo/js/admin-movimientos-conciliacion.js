@@ -503,20 +503,20 @@ async function exportarPDF() {
  */
 function formatearTipoAjuste(tipo) {
   const tipos = {
-    'ENTRADA': 'Entrada',
-    'SALIDA': 'Salida',
+    'ENTRADA': 'Conteo Inicial / Auditoría',
     'MERMA': 'Merma',
-    'AJUSTE': 'Ajuste'
+    'AJUSTE': 'Ajuste por Auditoría',
+    'ADICION': 'Adición Manual'
   };
   return tipos[tipo] || tipo;
 }
 
 function obtenerBadgeClass(tipo) {
   const clases = {
-    'ENTRADA': 'badge-entrada',
-    'SALIDA': 'badge-salida',
-    'MERMA': 'badge-merma',
-    'AJUSTE': 'badge-ajuste'
+    'ENTRADA': 'badge-entrada',    // Verde - entrada de inventario
+    'MERMA': 'badge-merma',         // Amarillo - pérdida
+    'AJUSTE': 'badge-ajuste',       // Azul - corrección
+    'ADICION': 'badge-entrada'      // Verde - adición manual
   };
   return clases[tipo] || 'badge-ajuste';
 }

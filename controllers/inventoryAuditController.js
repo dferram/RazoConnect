@@ -873,7 +873,9 @@ const aplicarSesion = async (req, res) => {
             usuarioId: req.user?.id,
             esExcepcion: false,
             tenantId: tenant_id,
-            userRole: req.user?.roles || [req.user?.rol || 'admin']
+            userRole: req.user?.roles || [req.user?.rol || 'admin'],
+            tipoOrigen: 'AUDITORIA',
+            sesionAuditoriaId: sesionId
           });
           movimientosGenerados += 1;
         }
