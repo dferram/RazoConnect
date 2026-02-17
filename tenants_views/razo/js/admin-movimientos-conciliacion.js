@@ -10,6 +10,8 @@ let filtrosActivos = {};
 
 document.addEventListener('DOMContentLoaded', async () => {
   await cargarTiposAjuste();
+  await cargarSesionesAuditoria();
+  await cargarOrdenesCompra();
   configurarEventListeners();
   establecerFechasPorDefecto();
 });
@@ -24,6 +26,72 @@ function establecerFechasPorDefecto() {
   
   document.getElementById('filtroFechaInicio').valueAsDate = hace30Dias;
   document.getElementById('filtroFechaFin').valueAsDate = hoy;
+}
+
+/**
+ * Cargar sesiones de auditoría disponibles
+ */
+async function cargarSesionesAuditoria() {
+  try {
+    const token = localStorage.getItem('razoconnect_admin_token');
+    if (!token) return;
+
+    const response = await fetch('/api/admin/inventario/sesiones', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error('Error al cargar sesiones');
+
+    const result = await response.json();
+    const sesiones = result.data || [];
+    const select = document.getElementById('filtroSesion');
+    
+    if (!select) return;
+    
+    sesiones.forEach(sesion => {
+      const option = document.createElement('option');
+      option.value = sesion.sesionid;
+      option.textContent = `${sesion.nombre} (${new Date(sesion.fechacreacion).toLocaleDateString('es-MX')})`;
+      select.appendChild(option);
+    });
+    
+    console.log(`✅ Cargadas ${sesiones.length} sesiones de auditoría`);
+  } catch (error) {
+    console.error('❌ Error cargando sesiones:', error);
+  }
+}
+
+/**
+ * Cargar órdenes de compra disponibles
+ */
+async function cargarOrdenesCompra() {
+  try {
+    const token = localStorage.getItem('razoconnect_admin_token');
+    if (!token) return;
+
+    const response = await fetch('/api/admin/ordenes-compra', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error('Error al cargar órdenes');
+
+    const result = await response.json();
+    const ordenes = result.data || [];
+    const select = document.getElementById('filtroOrdenCompra');
+    
+    if (!select) return;
+    
+    ordenes.forEach(orden => {
+      const option = document.createElement('option');
+      option.value = orden.ordencompraid;
+      option.textContent = `OC #${orden.ordencompraid} - ${orden.proveedor_nombre || 'Sin proveedor'}`;
+      select.appendChild(option);
+    });
+    
+    console.log(`✅ Cargadas ${ordenes.length} órdenes de compra`);
+  } catch (error) {
+    console.error('❌ Error cargando órdenes:', error);
+  }
 }
 
 /**
@@ -97,11 +165,14 @@ function configurarEventListeners() {
 
 /**
  * Aplicar filtros y cargar datos
+ * ✅ REFACTORIZADO: Ahora trabaja con datos de trazabilidad de origen
  */
 async function aplicarFiltros() {
   const fechaInicio = document.getElementById('filtroFechaInicio').value;
   const fechaFin = document.getElementById('filtroFechaFin').value;
   const tipoAjuste = document.getElementById('filtroTipoAjuste').value;
+  const sesionId = document.getElementById('filtroSesion').value;
+  const ordenCompraId = document.getElementById('filtroOrdenCompra').value;
   const referencia = document.getElementById('filtroReferencia').value.trim();
 
   // Validaciones
@@ -150,6 +221,8 @@ async function cargarAjustes() {
     if (filtrosActivos.fechaFin) params.append('fechaFin', filtrosActivos.fechaFin);
     if (filtrosActivos.tipoAjuste) params.append('tipoAjuste', filtrosActivos.tipoAjuste);
     if (filtrosActivos.referencia) params.append('referencia', filtrosActivos.referencia);
+    if (document.getElementById('filtroSesion').value) params.append('sesionId', document.getElementById('filtroSesion').value);
+    if (document.getElementById('filtroOrdenCompra').value) params.append('ordenCompraId', document.getElementById('filtroOrdenCompra').value);
 
     const response = await fetch(`/api/admin/ajustes-inventario/filtrados?${params.toString()}`, {
       headers: {
@@ -201,35 +274,44 @@ function renderizarTabla() {
   emptyState.style.display = 'none';
 
   tbody.innerHTML = ajustesData.map(ajuste => {
+    // ✅ Formato de fecha corto
     const fecha = new Date(ajuste.fecha).toLocaleDateString('es-MX', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: '2-digit',
+      month: '2-digit'
     });
 
-    const badgeClass = obtenerBadgeClass(ajuste.tipoAjuste);
-
-    const origen = determinarOrigen(ajuste.motivo, ajuste.sesionNombre);
+    // ✅ Indicador de dirección (Entrada/Salida)
+    const direccionHTML = ajuste.esEntrada 
+      ? '<span class="direccion-movimiento direccion-entrada"><i class="bi bi-arrow-up-circle-fill"></i> Entrada</span>'
+      : '<span class="direccion-movimiento direccion-salida"><i class="bi bi-arrow-down-circle-fill"></i> Salida</span>';
+    
+    // ✅ Badge de origen con icono
+    const origenBadge = obtenerBadgeOrigen(ajuste.tipoOrigen);
+    
+    // ✅ Referencia clickeable
+    const referenciaHTML = obtenerReferenciaHTML(ajuste);
+    
+    // Color visual indicator
+    const colorHTML = ajuste.colorNombre 
+      ? `<span style="display: inline-flex; align-items: center; gap: 0.35rem;">
+          <span style="width: 16px; height: 16px; border-radius: 50%; background-color: ${ajuste.colorHex || '#ccc'}; border: 1px solid #ddd; display: inline-block;"></span>
+          <small>${ajuste.colorNombre}</small>
+        </span>`
+      : '<small class="text-muted">-</small>';
     
     return `
       <tr>
-        <td>${fecha}</td>
-        <td><strong>${ajuste.sku}</strong></td>
-        <td>${ajuste.productoNombre}</td>
-        <td>${ajuste.dimensiones || '-'}</td>
-        <td>
-          <span class="badge ${badgeClass}">
-            ${formatearTipoAjuste(ajuste.tipoAjuste)}
-          </span>
-        </td>
-        <td><span class="badge bg-info text-dark">${origen}</span></td>
-        <td><strong>${ajuste.cantidad.toLocaleString('es-MX')}</strong></td>
-        <td>${ajuste.totalPiezas.toLocaleString('es-MX')} pzas</td>
-        <td>$${ajuste.valorTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
-        <td>${ajuste.motivo || '-'}</td>
-        <td>${ajuste.usuarioNombre}</td>
+        <td><small>${fecha}</small></td>
+        <td><strong>${ajuste.productoNombre}</strong></td>
+        <td>${colorHTML}</td>
+        <td><small>${ajuste.dimensiones || '-'}</small></td>
+        <td>${direccionHTML}</td>
+        <td>${origenBadge}</td>
+        <td>${referenciaHTML}</td>
+        <td class="text-end"><strong>${ajuste.cantidad.toLocaleString('es-MX')}</strong></td>
+        <td class="text-end">${ajuste.totalPiezas.toLocaleString('es-MX')}</td>
+        <td class="text-end"><strong>$${ajuste.valorTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong></td>
+        <td><small>${ajuste.usuarioNombre}</small></td>
       </tr>
     `;
   }).join('');
@@ -301,6 +383,8 @@ function limpiarFiltros() {
   document.getElementById('filtroFechaInicio').value = '';
   document.getElementById('filtroFechaFin').value = '';
   document.getElementById('filtroTipoAjuste').value = '';
+  document.getElementById('filtroSesion').value = '';
+  document.getElementById('filtroOrdenCompra').value = '';
   document.getElementById('filtroReferencia').value = '';
   
   filtrosActivos = {};
@@ -343,15 +427,36 @@ async function exportarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('landscape', 'pt', 'letter');
 
-    // Encabezado
-    doc.setFontSize(18);
-    doc.setTextColor(249, 115, 22);
-    doc.text('REPORTE DE CONCILIACIÓN DE INVENTARIO', 40, 40);
+    // Función para dibujar encabezado en cada página
+    const drawHeader = (doc, pageNumber) => {
+      // Logo Razo
+      const logoImg = new Image();
+      logoImg.src = '/icon/Logo_Razo.png';
+      try {
+        doc.addImage(logoImg, 'PNG', 40, 20, 50, 50);
+      } catch (e) {
+        console.warn('No se pudo cargar el logo');
+      }
+
+      // Título
+      doc.setFontSize(18);
+      doc.setTextColor(249, 115, 22);
+      doc.text('REPORTE DE CONCILIACIÓN DE INVENTARIO', 100, 45);
+
+      // Número de página
+      doc.setFontSize(8);
+      doc.setTextColor(107, 93, 87);
+      const pageWidth = doc.internal.pageSize.width;
+      doc.text(`Página ${pageNumber}`, pageWidth - 60, 30, { align: 'right' });
+    };
+
+    // Dibujar encabezado en primera página
+    drawHeader(doc, 1);
 
     // Información de filtros
     doc.setFontSize(10);
     doc.setTextColor(107, 93, 87);
-    let yPos = 60;
+    let yPos = 80;
     
     if (filtrosActivos.fechaInicio && filtrosActivos.fechaFin) {
       doc.text(`Período: ${formatearFecha(filtrosActivos.fechaInicio)} - ${formatearFecha(filtrosActivos.fechaFin)}`, 40, yPos);
@@ -371,33 +476,45 @@ async function exportarPDF() {
     doc.text(`Generado: ${new Date().toLocaleString('es-MX')}`, 40, yPos);
     yPos += 20;
 
-    // Tabla de ajustes
+    // Tabla de ajustes (CON Color, CON Usuario, SIN emojis)
     const tableData = ajustesData.map(ajuste => {
-      const origen = determinarOrigen(ajuste.motivo, ajuste.sesionNombre);
+      const fechaCorta = new Date(ajuste.fecha).toLocaleDateString('es-MX', {
+        day: '2-digit',
+        month: '2-digit'
+      });
+      const direccion = ajuste.esEntrada ? 'Entrada' : 'Salida';
+      const origen = ajuste.tipoOrigen === 'ORDEN_COMPRA' ? 'OC' : 
+                     ajuste.tipoOrigen === 'AUDITORIA' ? 'Auditoría' :
+                     ajuste.tipoOrigen === 'MERMA' ? 'Merma' : 'Ajuste';
+      const color = ajuste.colorNombre || '-';
+      
       return [
-        new Date(ajuste.fecha).toLocaleDateString('es-MX'),
-        ajuste.sku,
+        fechaCorta,
         ajuste.productoNombre.substring(0, 25),
+        color,
         ajuste.dimensiones || '-',
-        formatearTipoAjuste(ajuste.tipoAjuste),
+        direccion,
         origen,
         ajuste.cantidad.toLocaleString('es-MX'),
         ajuste.totalPiezas.toLocaleString('es-MX'),
         `$${ajuste.valorTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
-        ajuste.motivo ? ajuste.motivo.substring(0, 15) : '-'
+        ajuste.usuarioNombre.substring(0, 15)
       ];
     });
 
+    let currentPage = 1;
+
     doc.autoTable({
       startY: yPos,
-      head: [['Fecha', 'SKU', 'Producto', 'Dim.', 'Tipo', 'Origen', 'Cant.', 'Piezas', 'Valor', 'Motivo']],
+      head: [['Fecha', 'Producto', 'Color', 'Dim.', 'Dirección', 'Origen', 'Cant.', 'Piezas', 'Valor', 'Usuario']],
       body: tableData,
       theme: 'striped',
       headStyles: {
         fillColor: [249, 115, 22],
         textColor: 255,
         fontStyle: 'bold',
-        fontSize: 9
+        fontSize: 9,
+        halign: 'center'
       },
       bodyStyles: {
         fontSize: 8,
@@ -407,71 +524,93 @@ async function exportarPDF() {
         fillColor: [255, 247, 237]
       },
       columnStyles: {
-        0: { cellWidth: 50 },
-        1: { cellWidth: 60 },
-        2: { cellWidth: 100 },
-        3: { cellWidth: 40 },
-        4: { cellWidth: 50 },
-        5: { cellWidth: 60 },
-        6: { cellWidth: 40, halign: 'right' },
-        7: { cellWidth: 50, halign: 'right' },
-        8: { cellWidth: 60, halign: 'right' },
-        9: { cellWidth: 70 }
+        0: { cellWidth: 45, halign: 'center' },
+        1: { cellWidth: 120, halign: 'left' },
+        2: { cellWidth: 60, halign: 'center' },
+        3: { cellWidth: 40, halign: 'center' },
+        4: { cellWidth: 60, halign: 'center' },
+        5: { cellWidth: 60, halign: 'center' },
+        6: { cellWidth: 45, halign: 'right' },
+        7: { cellWidth: 55, halign: 'right' },
+        8: { cellWidth: 70, halign: 'right' },
+        9: { cellWidth: 75, halign: 'left' }
       },
-      margin: { left: 40, right: 40 }
+      margin: { left: 40, right: 40, top: 90 },
+      showHead: 'everyPage',
+      tableWidth: 'auto',
+      halign: 'center',
+      didDrawPage: (data) => {
+        if (data.pageNumber > 1) {
+          currentPage = data.pageNumber;
+          drawHeader(doc, currentPage);
+        }
+      }
     });
 
-    // Box de totales de conciliación
-    const finalY = doc.lastAutoTable.finalY + 20;
-    const boxX = 500;
+    // Box de totales de conciliación (ALINEADO A LA DERECHA)
+    const finalY = doc.lastAutoTable.finalY + 30;
+    const pageHeight = doc.internal.pageSize.height;
+    
+    // Si no hay espacio suficiente, agregar nueva página
+    if (finalY + 100 > pageHeight - 40) {
+      doc.addPage();
+      currentPage++;
+      drawHeader(doc, currentPage);
+      var currentY = 90;
+    } else {
+      var currentY = finalY;
+    }
+    
+    const pageWidth = doc.internal.pageSize.width;
     const boxWidth = 240;
-    const boxHeight = 85;
+    const boxHeight = 90;
+    const boxX = pageWidth - boxWidth - 40; // Alineado a la derecha
 
     // Fondo y borde
     doc.setFillColor(255, 247, 237);
     doc.setDrawColor(249, 115, 22);
     doc.setLineWidth(2);
-    doc.roundedRect(boxX, finalY, boxWidth, boxHeight, 5, 5, 'FD');
+    doc.roundedRect(boxX, currentY, boxWidth, boxHeight, 5, 5, 'FD');
 
     // Título
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(249, 115, 22);
-    doc.text('TOTALES DE CONCILIACIÓN', boxX + boxWidth / 2, finalY + 20, { align: 'center' });
+    doc.text('TOTALES DE CONCILIACIÓN', boxX + boxWidth / 2, currentY + 20, { align: 'center' });
 
     // Línea separadora
     doc.setDrawColor(249, 115, 22);
     doc.setLineWidth(0.5);
-    doc.line(boxX + 10, finalY + 28, boxX + boxWidth - 10, finalY + 28);
+    doc.line(boxX + 15, currentY + 28, boxX + boxWidth - 15, currentY + 28);
 
     // Totales
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(60, 60, 60);
 
-    let textY = finalY + 42;
+    let textY = currentY + 42;
     
-    doc.text('Total Paquetes:', boxX + 15, textY);
+    doc.text('Total Paquetes:', boxX + 20, textY);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(249, 115, 22);
-    doc.text(totalesData.totalPaquetes.toLocaleString('es-MX'), boxX + boxWidth - 15, textY, { align: 'right' });
+    doc.text(totalesData.totalPaquetes.toLocaleString('es-MX'), boxX + boxWidth - 20, textY, { align: 'right' });
     
     textY += 18;
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(60, 60, 60);
-    doc.text('Total Piezas:', boxX + 15, textY);
+    doc.text('Total Piezas:', boxX + 20, textY);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(249, 115, 22);
-    doc.text(totalesData.totalPiezas.toLocaleString('es-MX') + ' pzas', boxX + boxWidth - 15, textY, { align: 'right' });
+    doc.text(totalesData.totalPiezas.toLocaleString('es-MX') + ' pzas', boxX + boxWidth - 20, textY, { align: 'right' });
     
-    textY += 18;
+    textY += 20;
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(11);
+    doc.setFontSize(12);
     doc.setTextColor(60, 60, 60);
-    doc.text('VALOR TOTAL:', boxX + 15, textY);
+    doc.text('VALOR TOTAL:', boxX + 20, textY);
     doc.setTextColor(249, 115, 22);
     doc.text('$' + totalesData.valorTotalizado.toLocaleString('es-MX', { minimumFractionDigits: 2 }), 
-      boxX + boxWidth - 15, textY, { align: 'right' });
+      boxX + boxWidth - 20, textY, { align: 'right' });
 
     // Guardar PDF
     const nombreArchivo = `Conciliacion_Inventario_${filtrosActivos.fechaInicio}_${filtrosActivos.fechaFin}.pdf`;
@@ -501,12 +640,51 @@ async function exportarPDF() {
 /**
  * Utilidades
  */
+/**
+ * Obtener badge HTML para el origen del movimiento
+ * ✅ NUEVO: Badges visuales con iconos para cada tipo de origen
+ */
+function obtenerBadgeOrigen(tipoOrigen) {
+  const badges = {
+    'ORDEN_COMPRA': '<span class="badge-origen badge-origen-oc"><i class="bi bi-box-seam"></i> Orden de Compra</span>',
+    'AUDITORIA': '<span class="badge-origen badge-origen-auditoria"><i class="bi bi-clipboard-check"></i> Auditoría</span>',
+    'AJUSTE_MANUAL': '<span class="badge-origen badge-origen-ajuste"><i class="bi bi-pencil-square"></i> Ajuste Manual</span>',
+    'MERMA': '<span class="badge-origen badge-origen-merma"><i class="bi bi-exclamation-triangle"></i> Merma</span>',
+    'ADICION': '<span class="badge-origen badge-origen-adicion"><i class="bi bi-plus-circle"></i> Adición</span>'
+  };
+  return badges[tipoOrigen] || '<span class="badge-origen badge-origen-ajuste"><i class="bi bi-question-circle"></i> Otro</span>';
+}
+
+/**
+ * Obtener HTML de referencia clickeable según el origen
+ * ✅ NUEVO: Referencias clickeables a OC o Sesión de Auditoría
+ */
+function obtenerReferenciaHTML(ajuste) {
+  if (ajuste.ordenCompraId) {
+    return `<a href="/admin-ordenes-compra.html" class="referencia-origen" title="Ver Orden de Compra #${ajuste.ordenCompraNumero}" onclick="event.preventDefault(); window.location.href='/admin-ordenes-compra.html';">
+      <i class="bi bi-box-arrow-up-right"></i> OC #${ajuste.ordenCompraNumero}
+    </a>`;
+  }
+  
+  if (ajuste.sesionAuditoriaId) {
+    return `<a href="/admin-inventario-detalle.html?sesionId=${ajuste.sesionAuditoriaId}" class="referencia-origen" title="Ver Sesión: ${ajuste.sesionNombre || 'Sin nombre'}">
+      <i class="bi bi-box-arrow-up-right"></i> ${ajuste.sesionNombre || `Sesión #${ajuste.sesionAuditoriaId}`}
+    </a>`;
+  }
+  
+  if (ajuste.ajusteManualId) {
+    return `<span class="text-muted"><i class="bi bi-pencil"></i> Ajuste #${ajuste.ajusteManualId}</span>`;
+  }
+  
+  return '<span class="text-muted">-</span>';
+}
+
 function formatearTipoAjuste(tipo) {
   const tipos = {
-    'ENTRADA': 'Entrada',
-    'SALIDA': 'Salida',
+    'ENTRADA': 'Conteo Inicial / Auditoría',
     'MERMA': 'Merma',
-    'AJUSTE': 'Ajuste'
+    'AJUSTE': 'Ajuste por Auditoría',
+    'ADICION': 'Adición Manual'
   };
   return tipos[tipo] || tipo;
 }
@@ -514,9 +692,9 @@ function formatearTipoAjuste(tipo) {
 function obtenerBadgeClass(tipo) {
   const clases = {
     'ENTRADA': 'badge-entrada',
-    'SALIDA': 'badge-salida',
     'MERMA': 'badge-merma',
-    'AJUSTE': 'badge-ajuste'
+    'AJUSTE': 'badge-ajuste',
+    'ADICION': 'badge-entrada'
   };
   return clases[tipo] || 'badge-ajuste';
 }
@@ -529,27 +707,25 @@ function formatearFecha(fecha) {
   });
 }
 
+// ✅ DEPRECADO: Reemplazado por obtenerReferenciaHTML()
+// Mantener por compatibilidad temporal
 function determinarOrigen(motivo, sesionNombre) {
   if (!motivo && !sesionNombre) return 'Manual';
   
   const motivoLower = (motivo || '').toLowerCase();
   
-  // Detectar entrada de almacén
   if (motivoLower.includes('recepci') || motivoLower.includes('orden') || motivoLower.includes('compra')) {
     return 'Entrada Almacén';
   }
   
-  // Detectar conteo inicial o sesión
   if (sesionNombre || motivoLower.includes('conteo') || motivoLower.includes('inventario inicial')) {
     return 'Conteo Inicial';
   }
   
-  // Detectar ajustes manuales
   if (motivoLower.includes('ajuste') || motivoLower.includes('correcci')) {
     return 'Ajuste Manual';
   }
   
-  // Detectar mermas
   if (motivoLower.includes('merma') || motivoLower.includes('dañ') || motivoLower.includes('robo')) {
     return 'Merma';
   }

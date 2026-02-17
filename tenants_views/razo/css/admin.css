@@ -182,11 +182,24 @@
   background: var(--razo-cream);
 }
 
+/* Main content area - must have left margin to avoid sidebar overlap */
+.admin-main-content {
+  flex: 1;
+  margin-left: var(--admin-sidebar-width);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 body.sidebar-collapsed .admin-sidebar {
   transform: translateX(-100%);
 }
 
 body.sidebar-collapsed .admin-main {
+  margin-left: 0;
+}
+
+body.sidebar-collapsed .admin-main-content {
   margin-left: 0;
 }
 

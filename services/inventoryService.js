@@ -10,6 +10,7 @@ function createServiceError(message, status = 500, code = "INVENTORY_SERVICE_ERR
 /**
  * Registrar movimiento de inventario usando SmartStockService
  * ✅ REFACTORIZADO: Ahora usa SmartStockService.adjustStock para registrar en stock_admin
+ * ✅ TRAZABILIDAD: Registra el origen del movimiento (orden de compra, auditoría, ajuste manual)
  * 
  * @param {Object} client - Cliente de transacción PostgreSQL
  * @param {Object} params - Parámetros del movimiento
@@ -20,11 +21,27 @@ function createServiceError(message, status = 500, code = "INVENTORY_SERVICE_ERR
  * @param {boolean} params.esExcepcion - Si es una excepción
  * @param {number} params.tenantId - ID del tenant (requerido para SmartStockService)
  * @param {Array<string>} params.userRole - Roles del usuario (requerido para SmartStockService)
+ * @param {string} params.tipoOrigen - Tipo de origen: ORDEN_COMPRA, AUDITORIA, AJUSTE_MANUAL, MERMA, ADICION, VENTA, DEVOLUCION
+ * @param {number} params.ordenCompraId - ID de la orden de compra (si aplica)
+ * @param {number} params.sesionAuditoriaId - ID de la sesión de auditoría (si aplica)
+ * @param {number} params.ajusteId - ID del ajuste manual (si aplica)
  * @returns {Promise<{stockAnterior: number, stockNuevo: number}>}
  */
 async function registrarMovimiento(
   client,
-  { varianteId, cantidadDelta, motivo, usuarioId, esExcepcion, tenantId, userRole }
+  { 
+    varianteId, 
+    cantidadDelta, 
+    motivo, 
+    usuarioId, 
+    esExcepcion, 
+    tenantId, 
+    userRole,
+    tipoOrigen = null,
+    ordenCompraId = null,
+    sesionAuditoriaId = null,
+    ajusteId = null
+  }
 ) {
   const id = Number.parseInt(varianteId, 10);
   if (!Number.isInteger(id) || id <= 0) {
@@ -96,16 +113,20 @@ async function registrarMovimiento(
 
   const stockNuevo = resultado.newStock;
 
-  // ✅ Registrar en log_inventario para auditoría
+  // ✅ Registrar en log_inventario para auditoría con trazabilidad de origen
   const excepcion = Boolean(esExcepcion);
 
   try {
     await client.query(
-      "INSERT INTO log_inventario (varianteid, cantidadcambiado, nuevostock, motivo, usuarioid, es_excepcion) VALUES ($1, $2, $3, $4, $5, $6)",
-      [id, delta, stockNuevo, motivoNormalizado, userId, excepcion]
+      `INSERT INTO log_inventario (
+        varianteid, cantidadcambiado, nuevostock, motivo, usuarioid, es_excepcion,
+        tipo_origen, orden_compra_id, sesion_auditoria_id, ajuste_id, tenant_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [id, delta, stockNuevo, motivoNormalizado, userId, excepcion, tipoOrigen, ordenCompraId, sesionAuditoriaId, ajusteId, tenantId]
     );
   } catch (error) {
     if (error && error.code === "42703") {
+      // Fallback para columnas que no existen (migración pendiente)
       await client.query(
         "INSERT INTO log_inventario (varianteid, cantidadcambiado, nuevostock, motivo, usuarioid) VALUES ($1, $2, $3, $4, $5)",
         [id, delta, stockNuevo, motivoNormalizado, userId]
