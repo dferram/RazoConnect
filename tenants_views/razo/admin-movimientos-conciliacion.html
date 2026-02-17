@@ -88,6 +88,72 @@
       color: #1E40AF;
     }
     
+    /* Badges de Origen */
+    .badge-origen {
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    
+    .badge-origen-oc {
+      background: #DBEAFE;
+      color: #1E40AF;
+    }
+    
+    .badge-origen-auditoria {
+      background: #D1FAE5;
+      color: #065F46;
+    }
+    
+    .badge-origen-ajuste {
+      background: #FEF3C7;
+      color: #92400E;
+    }
+    
+    .badge-origen-merma {
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+    
+    .badge-origen-adicion {
+      background: #E0E7FF;
+      color: #3730A3;
+    }
+    
+    /* Indicadores de Dirección */
+    .direccion-movimiento {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-weight: 600;
+    }
+    
+    .direccion-entrada {
+      color: #059669;
+    }
+    
+    .direccion-salida {
+      color: #DC2626;
+    }
+    
+    /* Referencia clickeable */
+    .referencia-origen {
+      color: #2563EB;
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .referencia-origen:hover {
+      color: #1D4ED8;
+      text-decoration: underline;
+    }
+    
     .btn-filter {
       background: #F97316;
       color: white;
@@ -254,15 +320,27 @@
               <label for="filtroFechaFin" class="form-label">Fecha Fin</label>
               <input type="date" id="filtroFechaFin" class="form-control" title="Selecciona la fecha de fin del rango a filtrar">
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
               <label for="filtroTipoAjuste" class="form-label">Tipo de Ajuste</label>
               <select id="filtroTipoAjuste" class="form-select" title="Selecciona el tipo de ajuste a filtrar">
                 <option value="">Todos los tipos</option>
               </select>
             </div>
             <div class="col-md-3">
-              <label for="filtroReferencia" class="form-label">Referencia/Sesión</label>
-              <input type="text" id="filtroReferencia" class="form-control" placeholder="Ej: Orden #50" title="Busca por referencia de orden o sesión">
+              <label for="filtroSesion" class="form-label">Sesión de Auditoría</label>
+              <select id="filtroSesion" class="form-select" title="Filtra por sesión de auditoría específica">
+                <option value="">Todas las sesiones</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="filtroOrdenCompra" class="form-label">Orden de Compra</label>
+              <select id="filtroOrdenCompra" class="form-select" title="Filtra por orden de compra específica">
+                <option value="">Todas las órdenes</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label for="filtroReferencia" class="form-label">Búsqueda</label>
+              <input type="text" id="filtroReferencia" class="form-control" placeholder="Producto, SKU..." title="Busca por producto o SKU">
             </div>
           </div>
           <div class="d-flex gap-2 mt-3">
@@ -323,17 +401,17 @@
           <table class="table admin-table">
           <thead>
             <tr>
-              <th>Fecha</th>
-              <th>SKU</th>
-              <th>Producto</th>
-              <th>Dimensiones</th>
-              <th>Tipo</th>
-              <th>Origen</th>
-              <th>Cantidad</th>
-              <th>Piezas</th>
-              <th>Valor</th>
-              <th>Motivo</th>
-              <th>Usuario</th>
+              <th style="width: 90px;">Fecha</th>
+              <th style="width: 180px;">Producto</th>
+              <th style="width: 90px;">Color</th>
+              <th style="width: 70px;">Dim.</th>
+              <th style="width: 100px;">Dirección</th>
+              <th style="width: 130px;">Origen</th>
+              <th style="width: 140px;">Referencia</th>
+              <th class="text-end" style="width: 60px;">Cant.</th>
+              <th class="text-end" style="width: 70px;">Piezas</th>
+              <th class="text-end" style="width: 90px;">Valor</th>
+              <th style="width: 90px;">Usuario</th>
             </tr>
           </thead>
           <tbody id="tablaAjustes">
