@@ -2953,6 +2953,195 @@ const getMovimientosInventario = async (req, res) => {
 };
 
 /**
+ * Ajustes de inventario con filtros avanzados para conciliación
+ * GET /api/admin/ajustes-inventario/filtrados
+ * Query params: fechaInicio, fechaFin, tipoAjuste, referencia, sesionId
+ */
+const getAjustesInventarioFiltrados = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const where = [`ai.tenant_id = $1`];
+    const values = [tenant_id];
+
+    // Filtro por rango de fechas
+    const fechaInicioRaw = (req.query.fechaInicio || "").toString().trim();
+    if (fechaInicioRaw) {
+      values.push(fechaInicioRaw);
+      where.push(`ai.fecha_ajuste >= $${values.length}::timestamp`);
+    }
+
+    const fechaFinRaw = (req.query.fechaFin || "").toString().trim();
+    if (fechaFinRaw) {
+      values.push(fechaFinRaw + ' 23:59:59');
+      where.push(`ai.fecha_ajuste <= $${values.length}::timestamp`);
+    }
+
+    // Filtro por tipo de ajuste
+    const tipoAjusteRaw = (req.query.tipoAjuste || "").toString().trim().toUpperCase();
+    if (tipoAjusteRaw && ['ENTRADA', 'SALIDA', 'MERMA', 'AJUSTE'].includes(tipoAjusteRaw)) {
+      values.push(tipoAjusteRaw);
+      where.push(`ai.tipo_ajuste = $${values.length}`);
+    }
+
+    // Filtro por referencia (búsqueda parcial en motivo)
+    const referenciaRaw = (req.query.referencia || "").toString().trim();
+    if (referenciaRaw) {
+      values.push(`%${referenciaRaw}%`);
+      where.push(`ai.motivo ILIKE $${values.length}`);
+    }
+
+    // Filtro por sesión de auditoría
+    const sesionIdRaw = req.query.sesionId;
+    if (sesionIdRaw !== undefined && sesionIdRaw !== null && sesionIdRaw !== "") {
+      const sesionId = Number.parseInt(sesionIdRaw, 10);
+      if (!Number.isInteger(sesionId) || sesionId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "sesionId inválido",
+        });
+      }
+      values.push(sesionId);
+      where.push(`ai.sesion_auditoria_id = $${values.length}`);
+    }
+
+    const whereSql = `WHERE ${where.join(" AND ")}`;
+
+    // Query principal con JOINs para obtener información completa
+    const result = await db.query(
+      `SELECT
+         ai.ajuste_id,
+         ai.variante_id,
+         ai.admin_id,
+         ai.cantidad,
+         ai.tipo_ajuste,
+         ai.motivo,
+         ai.usuario_id,
+         ai.fecha_ajuste,
+         ai.sesion_auditoria_id,
+         pv.sku,
+         pv.dimensiones,
+         pv.piezasporpaquete,
+         p.productoid,
+         p.nombreproducto,
+         p.precioventa,
+         ia.cantidad AS stock_actual,
+         COALESCE(a.nombre, 'Sistema') AS usuario_nombre,
+         si.nombre AS sesion_nombre
+       FROM ajustes_inventario ai
+       INNER JOIN producto_variantes pv ON pv.varianteid = ai.variante_id
+       INNER JOIN productos p ON p.productoid = pv.productoid
+       LEFT JOIN administradores a ON a.adminid = ai.usuario_id
+       LEFT JOIN sesiones_inventario si ON si.sesion_id = ai.sesion_auditoria_id
+       LEFT JOIN inventarios_admin ia ON ia.variante_id = ai.variante_id AND ia.admin_id = ai.admin_id
+       ${whereSql}
+       ORDER BY ai.fecha_ajuste DESC
+       LIMIT 500`,
+      values
+    );
+
+    const ajustes = (result.rows || []).map((r) => {
+      const cantidad = Number.parseInt(r.cantidad, 10) || 0;
+      const piezasPorPaquete = Number.parseInt(r.piezasporpaquete, 10) || 1;
+      const precioVenta = parseFloat(r.precioventa) || 0;
+      const totalPiezas = cantidad * piezasPorPaquete;
+      const valorTotal = totalPiezas * precioVenta;
+
+      return {
+        ajusteId: r.ajuste_id,
+        fecha: r.fecha_ajuste,
+        varianteId: r.variante_id,
+        productoId: r.productoid,
+        productoNombre: r.nombreproducto,
+        sku: r.sku,
+        dimensiones: r.dimensiones,
+        tipoAjuste: r.tipo_ajuste,
+        cantidad,
+        piezasPorPaquete,
+        totalPiezas,
+        precioVenta,
+        valorTotal,
+        motivo: r.motivo || "",
+        stockActual: Number.parseInt(r.stock_actual, 10) || 0,
+        adminId: r.admin_id,
+        usuarioId: r.usuario_id,
+        usuarioNombre: r.usuario_nombre || 'Sistema',
+        sesionAuditoriaId: r.sesion_auditoria_id,
+        sesionNombre: r.sesion_nombre || null,
+      };
+    });
+
+    // Calcular totales para conciliación
+    const totalPiezas = ajustes.reduce((sum, a) => sum + a.totalPiezas, 0);
+    const valorTotalizado = ajustes.reduce((sum, a) => sum + a.valorTotal, 0);
+    const totalPaquetes = ajustes.reduce((sum, a) => sum + a.cantidad, 0);
+
+    // Agrupar por tipo para resumen
+    const resumenPorTipo = ajustes.reduce((acc, a) => {
+      if (!acc[a.tipoAjuste]) {
+        acc[a.tipoAjuste] = { cantidad: 0, piezas: 0, valor: 0 };
+      }
+      acc[a.tipoAjuste].cantidad += a.cantidad;
+      acc[a.tipoAjuste].piezas += a.totalPiezas;
+      acc[a.tipoAjuste].valor += a.valorTotal;
+      return acc;
+    }, {});
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        ajustes,
+        total: ajustes.length,
+        totales: {
+          totalPaquetes,
+          totalPiezas,
+          valorTotalizado: parseFloat(valorTotalizado.toFixed(2)),
+        },
+        resumenPorTipo,
+      },
+    });
+  } catch (error) {
+    console.error("Error al obtener ajustes de inventario filtrados:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Obtener tipos de ajuste disponibles para filtros
+ * GET /api/admin/ajustes-inventario/tipos
+ */
+const getTiposAjusteInventario = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+
+    const result = await db.query(
+      `SELECT DISTINCT tipo_ajuste
+       FROM ajustes_inventario
+       WHERE tenant_id = $1
+       ORDER BY tipo_ajuste`,
+      [tenant_id]
+    );
+
+    const tipos = result.rows.map(r => r.tipo_ajuste);
+
+    return res.status(200).json({
+      success: true,
+      data: tipos,
+    });
+  } catch (error) {
+    console.error("Error al obtener tipos de ajuste:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error en el servidor",
+      error: error.message,
+    });
+  }
+};
+
+/**
  * Historial (Kardex) de movimientos por variante
  * GET /api/admin/inventario/:varianteId/historial
  */
@@ -16413,6 +16602,8 @@ module.exports = {
   quitarProductoDeOrdenCompra,
   getSugerenciasOptimizacion,
   crearGrupoOptimizado,
+  getAjustesInventarioFiltrados,
+  getTiposAjusteInventario,
 };
 
 async function getSugerenciasOptimizacion(req, res) {
