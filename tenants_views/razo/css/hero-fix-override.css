@@ -1,0 +1,56 @@
+/**
+ * OVERRIDE FORZADO - Hero Banner
+ * Overlay vibrante sin oscurecimiento progresivo
+ */
+
+/* Forzar overlay naranja VIBRANTE en TODOS los slides sin importar el tema */
+.hero-slide::before,
+#hero-banner .hero-slide::before,
+.hero-slider .hero-slide::before,
+body .hero-slide::before,
+html body .hero-slide::before {
+  background: linear-gradient(135deg, rgba(255, 153, 102, 0.6), rgba(255, 119, 51, 0.5)) !important;
+  z-index: 1 !important;
+}
+
+/* Override específico por tema con máxima especificidad - COLORES VIBRANTES */
+body.theme-todaocasion #hero-banner .hero-slide::before,
+html body.theme-todaocasion #hero-banner .hero-slide::before {
+  background: linear-gradient(135deg, rgba(255, 153, 102, 0.6), rgba(255, 255, 255, 0.5)) !important;
+}
+
+body.theme-navidad #hero-banner .hero-slide::before,
+html body.theme-navidad #hero-banner .hero-slide::before {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.6), rgba(185, 28, 28, 0.5)) !important;
+}
+
+body.theme-sanvalentin #hero-banner .hero-slide::before,
+html body.theme-sanvalentin #hero-banner .hero-slide::before {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.6), rgba(219, 39, 119, 0.5)) !important;
+}
+
+body.theme-diamadre #hero-banner .hero-slide::before,
+html body.theme-diamadre #hero-banner .hero-slide::before {
+  background: linear-gradient(135deg, rgba(219, 39, 119, 0.6), rgba(190, 24, 93, 0.5)) !important;
+}
+
+body.theme-diapadre #hero-banner .hero-slide::before,
+html body.theme-diapadre #hero-banner .hero-slide::before {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.6), rgba(37, 99, 235, 0.5)) !important;
+}
+
+body.theme-graduaciones #hero-banner .hero-slide::before,
+html body.theme-graduaciones #hero-banner .hero-slide::before {
+  background: linear-gradient(135deg, rgba(71, 85, 105, 0.6), rgba(51, 65, 85, 0.5)) !important;
+}
+
+/* Asegurar que el overlay esté posicionado correctamente */
+.hero-slide::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  pointer-events: none !important;
+}

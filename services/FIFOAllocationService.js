@@ -43,13 +43,7 @@ async function recalcularPedidosPosteriores({
     console.log(`   Variante: ${varianteId}, Tenant: ${tenantId}, Admin: ${adminId || 'GLOBAL'}`);
     
     // Obtener todos los pedidos activos POSTERIORES a la fecha de referencia
-    let adminFilter = '';
     const queryParams = [varianteId, fechaReferencia, tenantId];
-    
-    if (adminId) {
-      queryParams.push(adminId);
-      adminFilter = `AND p.admin_responsable_id = $${queryParams.length}`;
-    }
     
     const pedidosQuery = `
       SELECT DISTINCT
@@ -61,7 +55,7 @@ async function recalcularPedidosPosteriores({
         d.cantidadsurtida,
         d.cantidadbackorder,
         d.tamanoid,
-        t.valor as piezas_por_paquete
+        t.cantidad as piezas_por_paquete
       FROM pedidos p
       INNER JOIN detallesdelpedido d ON d.pedidoid = p.pedidoid
       LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = d.tamanoid
@@ -69,7 +63,6 @@ async function recalcularPedidosPosteriores({
         AND p.fechapedido >= $2
         AND p.tenant_id = $3
         AND p.estatus NOT IN ('Cancelado', 'Entregado')
-        ${adminFilter}
       ORDER BY p.fechapedido ASC
     `;
     
@@ -184,7 +177,6 @@ async function onPedidoCancelado({ pedidoId, tenantId, client }) {
     const { rows: pedidoInfo } = await client.query(
       `SELECT 
         p.fechapedido,
-        p.admin_responsable_id,
         d.varianteid
       FROM pedidos p
       INNER JOIN detallesdelpedido d ON d.pedidoid = p.pedidoid
@@ -198,7 +190,7 @@ async function onPedidoCancelado({ pedidoId, tenantId, client }) {
     }
     
     const fechaPedido = pedidoInfo[0].fechapedido;
-    const adminId = pedidoInfo[0].admin_responsable_id;
+    const adminId = null;
     
     // Obtener variantes únicas del pedido
     const variantesUnicas = [...new Set(pedidoInfo.map(p => p.varianteid))];
