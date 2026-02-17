@@ -1,39 +1,39 @@
 /**
  * AUTH MODAL STYLES
  * Enhanced UX for login/registration modal
+ * Now using Bootstrap modal structure with custom styling
  */
 
-/* Modal overlay */
-.modal-auth {
+/* Ensure modal is hidden by default */
+#modalAuth {
   display: none;
-  position: fixed;
-  z-index: 2000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
+}
+
+/* When Bootstrap shows the modal, it will add .show class */
+#modalAuth.show {
+  display: block;
+}
+
+/* Override Bootstrap modal backdrop */
+#modalAuth.modal .modal-backdrop {
   background-color: rgba(0, 0, 0, 0.6);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
 }
 
-/* Modal shown state */
-.modal-auth[style*="display: flex"],
-.modal-auth[style*="display:flex"] {
-  display: flex !important;
+/* Modal dialog sizing */
+#modalAuth .modal-dialog {
+  max-width: 500px;
+  margin: 1.75rem auto;
 }
 
 /* Modal content container */
-.auth-modal-content {
-  max-width: 500px;
-  width: 95%;
+#modalAuth .auth-modal-content {
   padding: 2rem;
   border-radius: 1rem;
   background: white;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: none;
 }
 
 /* Modal header */
@@ -199,45 +199,18 @@
   transform: scale(1.1);
 }
 
-/* Modal backdrop animation */
-#modalAuth {
-  animation: fadeIn 0.2s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Modal content animation */
-#modalAuth .modal-content {
-  animation: slideUp 0.3s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* Responsive adjustments */
 @media (max-width: 576px) {
-  #modalAuth .modal-content {
-    max-width: 100% !important;
-    margin: 1rem;
+  #modalAuth .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+  
+  #modalAuth .auth-modal-content {
     padding: 1.5rem !important;
   }
   
-  #modalAuth h2 {
+  #modalAuth .auth-modal-title {
     font-size: 1.25rem !important;
   }
   

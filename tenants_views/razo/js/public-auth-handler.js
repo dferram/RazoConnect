@@ -68,17 +68,19 @@
       return;
     }
     
-    // Fallback: intentar abrir modal directamente
+    // Fallback: intentar abrir modal directamente usando Bootstrap
     const modalAuth = document.getElementById('modalAuth');
     if (modalAuth) {
-      modalAuth.style.display = 'flex';
+      const bsModal = bootstrap.Modal.getInstance(modalAuth) || new bootstrap.Modal(modalAuth);
+      bsModal.show();
     } else {
       console.warn('Modal de autenticación no encontrado. Esperando a que se cargue...');
       // Retry after a short delay in case modal is still loading
       setTimeout(() => {
         const retryModal = document.getElementById('modalAuth');
         if (retryModal) {
-          retryModal.style.display = 'flex';
+          const bsModal = bootstrap.Modal.getInstance(retryModal) || new bootstrap.Modal(retryModal);
+          bsModal.show();
         } else {
           console.error('Modal de autenticación no disponible');
         }

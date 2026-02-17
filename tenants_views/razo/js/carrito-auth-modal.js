@@ -54,26 +54,25 @@
     tabLogin.addEventListener('click', switchToLogin);
     tabRegistro.addEventListener('click', switchToRegistro);
 
+    // Initialize Bootstrap modal instance
+    const bsModal = new bootstrap.Modal(modalAuth, {
+      backdrop: 'static', // Don't close on backdrop click during checkout
+      keyboard: true
+    });
+
     // Modal control functions
     window.openAuthModal = function() {
-      modalAuth.classList.add('show');
       switchToLogin();
+      bsModal.show();
     };
 
     window.closeAuthModal = function() {
-      modalAuth.classList.remove('show');
+      bsModal.hide();
       formLogin.reset();
       formRegistro.reset();
     };
 
     btnCerrarAuth.addEventListener('click', window.closeAuthModal);
-
-    // Close modal when clicking outside (only if not in checkout process)
-    window.addEventListener('click', (e) => {
-      if (e.target === modalAuth && !window.isConfirmingPedido) {
-        window.closeAuthModal();
-      }
-    });
 
     // Guest cart synchronization
     async function syncGuestCartToServer() {

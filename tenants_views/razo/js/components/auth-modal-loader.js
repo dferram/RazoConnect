@@ -132,10 +132,16 @@
       });
     }
 
+    // Initialize Bootstrap modal instance
+    const bsModal = new bootstrap.Modal(modalAuth, {
+      backdrop: true,
+      keyboard: true
+    });
+
     // Global functions to open/close modal
     window.openAuthModal = function(options = {}) {
-      modalAuth.style.display = 'flex';
       switchToLogin();
+      bsModal.show();
       
       // Store purchase intent if provided (for guest checkout flow)
       if (options.redirectAfterLogin) {
@@ -147,20 +153,13 @@
     };
 
     window.closeAuthModal = function() {
-      modalAuth.style.display = 'none';
+      bsModal.hide();
       formLogin.reset();
       formRegistro.reset();
     };
 
     // Close button
     btnCerrar.addEventListener('click', window.closeAuthModal);
-
-    // Close when clicking outside
-    window.addEventListener('click', (e) => {
-      if (e.target === modalAuth) {
-        window.closeAuthModal();
-      }
-    });
 
     // Validate email or phone format
     function validateIdentifier(identifier) {

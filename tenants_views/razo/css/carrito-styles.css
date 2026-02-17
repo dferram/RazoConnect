@@ -3,6 +3,24 @@
    Archivo creado para eliminar inline styles
    ============================================ */
 
+/* ========== MODALS - ENSURE HIDDEN BY DEFAULT ========== */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgba(15, 23, 42, 0.35);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.modal.show {
+  display: flex;
+}
+
 /* ========== LAYOUT PRINCIPAL ========== */
 .cart-page-container {
   padding-bottom: 3rem;
