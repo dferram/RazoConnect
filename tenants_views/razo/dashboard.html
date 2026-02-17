@@ -283,7 +283,11 @@
     <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
   <body>
+    <!-- Header Container -->
     <div id="header-container"></div>
+    
+    <!-- Modal de Información de Cancelación -->
+    <div id="cancelacion-info-modal-container"></div>
 
     <div class="container main-content-spacer dashboard-container">
       <h1 class="dashboard-title">
@@ -327,7 +331,7 @@
             id="btnNuevaDireccion"
             onclick="openDireccionModal()"
           >
-            Agregar nueva dirección
+            + Agregar nueva dirección
           </button>
         </div>
 
@@ -1010,7 +1014,7 @@
                       </div>
                       <div>
                         <div style="color: white; font-weight: 700; font-size: 1.25rem;">Pedido #${
-                          p.pedidoId
+                          p.numeroPedidoCliente || p.pedidoId
                         }</div>
                         <div style="color: rgba(255,255,255,0.9); font-size: 0.875rem;">
                           ${formatDateLong(p.fechaPedido)}
@@ -1894,6 +1898,12 @@
         }
       }
 
+      // Función para mostrar modal de información de cancelación
+      function mostrarInfoCancelacion() {
+        const modal = new bootstrap.Modal(document.getElementById('cancelacionInfoModal'));
+        modal.show();
+      }
+
       // Función para cancelar pedido
       async function cancelarPedido(pedidoId) {
         const mensaje = "¿Estás seguro de que deseas cancelar este pedido? Esta acción no se puede deshacer.";
@@ -1903,12 +1913,24 @@
           const result = await Swal.fire({
             icon: "warning",
             title: "Cancelar Pedido",
-            text: mensaje,
+            html: `
+              <p style="margin-bottom: 1rem;">${mensaje}</p>
+              <button 
+                onclick="mostrarInfoCancelacion()" 
+                class="btn btn-sm" 
+                style="background: #F97316; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600;"
+              >
+                <i class="fas fa-info-circle"></i> Más Información
+              </button>
+            `,
             showCancelButton: true,
             confirmButtonText: "Sí, cancelar pedido",
             cancelButtonText: "No, mantener pedido",
             confirmButtonColor: "#dc2626",
             cancelButtonColor: "#6b7280",
+            customClass: {
+              popup: 'swal-wide'
+            }
           });
           confirmado = !!result.isConfirmed;
         } else {
@@ -1919,13 +1941,40 @@
           return;
         }
 
+        // Mostrar loading
+        Swal.fire({
+          title: 'Cancelando pedido...',
+          html: 'Por favor espera mientras procesamos la cancelación',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => {
+            Swal.showLoading();
+          }
+        });
+
         try {
           const response = await API.apiCall(`/pedidos/${pedidoId}/cancelar`, {
             method: 'PUT'
           });
 
           if (response.ok && response.data.success) {
-            showToast("Pedido cancelado exitosamente", "success");
+            Swal.fire({
+              icon: 'success',
+              title: 'Pedido Cancelado',
+              html: `
+                <p style="margin-bottom: 1rem;">El pedido ha sido cancelado exitosamente.</p>
+                <div style="background: #F0FDF4; border-left: 4px solid #10B981; padding: 1rem; border-radius: 0.5rem; text-align: left;">
+                  <p style="margin: 0; font-size: 0.9rem; color: #065F46;"><strong>Detalles:</strong></p>
+                  <ul style="margin: 0.5rem 0 0 1rem; font-size: 0.9rem; color: #065F46;">
+                    <li>Piezas restauradas: ${response.data.detalles?.piezas_restauradas || 0}</li>
+                    <li>Backorders cancelados: ${response.data.detalles?.backorders_cancelados || 0}</li>
+                    ${response.data.detalles?.ordenes_compra_canceladas > 0 ? `<li>Órdenes de compra canceladas: ${response.data.detalles.ordenes_compra_canceladas}</li>` : ''}
+                    ${response.data.detalles?.credito_revertido ? `<li>Crédito revertido: ${response.data.detalles.credito_revertido}</li>` : ''}
+                  </ul>
+                </div>
+              `,
+              confirmButtonColor: '#F97316'
+            });
             loadPedidos(); // Recargar lista de pedidos
           } else {
             // Extraer mensaje de error detallado del servidor
@@ -1946,7 +1995,12 @@
               ? `${errorMsg}: ${errorDetalle}` 
               : errorMsg;
             
-            showToast(mensajeUsuario, "error");
+            Swal.fire({
+              icon: 'error',
+              title: 'Error al Cancelar',
+              text: mensajeUsuario,
+              confirmButtonColor: '#dc2626'
+            });
           }
         } catch (error) {
           console.error("[Cancelar Pedido] Error de red o excepción:", {
@@ -1954,7 +2008,12 @@
             stack: error.stack,
             error: error
           });
-          showToast(error.message || "Error de conexión al cancelar el pedido", "error");
+          Swal.fire({
+            icon: 'error',
+            title: 'Error de Conexión',
+            text: error.message || "Error de conexión al cancelar el pedido",
+            confirmButtonColor: '#dc2626'
+          });
         }
       }
     </script>
@@ -1963,5 +2022,15 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/components/header-loader.js"></script>
     <script src="/js/theme-manager.js"></script>
+    
+    <!-- Cargar Modal de Información de Cancelación -->
+    <script>
+      fetch('/components/cancelacion-info-modal.html')
+        .then(response => response.text())
+        .then(html => {
+          document.getElementById('cancelacion-info-modal-container').innerHTML = html;
+        })
+        .catch(error => console.error('Error loading cancelacion info modal:', error));
+    </script>
   </body>
 </html>

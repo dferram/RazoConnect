@@ -1602,7 +1602,8 @@ const obtenerPedidos = async (req, res) => {
         e.Nombre AS EstadoNombre,
         a.Nombre as AgenteNombre,
         a.Apellido as AgenteApellido,
-        a.CodigoAgente
+        a.CodigoAgente,
+        ROW_NUMBER() OVER (ORDER BY p.FechaPedido ASC, p.PedidoID ASC) AS NumeroPedidoCliente
       FROM Pedidos p
       LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
       LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
@@ -1729,6 +1730,7 @@ const obtenerPedidos = async (req, res) => {
 
         return {
           pedidoId: pedido.pedidoid,
+          numeroPedidoCliente: parseInt(pedido.numeropedidocliente, 10),
           fechaPedido: pedido.fechapedido,
           montoTotal: parseFloat(montoTotalCalculado.toFixed(2)),
           esCredito: pedido.es_credito || false,

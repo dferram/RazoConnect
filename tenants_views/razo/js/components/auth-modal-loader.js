@@ -82,21 +82,17 @@
 
     // Tab switching functions
     function switchToLogin() {
-      tabLogin.style.borderBottomColor = 'var(--razo-orange)';
-      tabLogin.style.color = 'var(--razo-orange)';
-      tabRegistro.style.borderBottomColor = 'transparent';
-      tabRegistro.style.color = '#6b7280';
-      formLogin.style.display = 'block';
-      formRegistro.style.display = 'none';
+      tabLogin.classList.add('active');
+      tabRegistro.classList.remove('active');
+      formLogin.classList.add('active');
+      formRegistro.classList.remove('active');
     }
 
     function switchToRegistro() {
-      tabRegistro.style.borderBottomColor = 'var(--razo-orange)';
-      tabRegistro.style.color = 'var(--razo-orange)';
-      tabLogin.style.borderBottomColor = 'transparent';
-      tabLogin.style.color = '#6b7280';
-      formRegistro.style.display = 'block';
-      formLogin.style.display = 'none';
+      tabRegistro.classList.add('active');
+      tabLogin.classList.remove('active');
+      formRegistro.classList.add('active');
+      formLogin.classList.remove('active');
     }
 
     // Event listeners for tabs
@@ -271,6 +267,39 @@
           // Dispatch event for UI updates
           window.dispatchEvent(new CustomEvent('razoconnect:auth-changed'));
           
+          // CRITICAL: Migrate guest cart to server if exists
+          const migrateGuestCart = async () => {
+            try {
+              if (typeof CarritoService !== 'undefined' && CarritoService.getGuestCart) {
+                const guestCart = CarritoService.getGuestCart();
+                if (guestCart && guestCart.length > 0) {
+                  console.log('🛒 Migrando carrito de invitado al servidor...', guestCart.length, 'items');
+                  
+                  // Migrate each item to server cart
+                  for (const item of guestCart) {
+                    try {
+                      // Use cantidad field from guest cart (it's the same as cantidadPaquetes)
+                      const cantidadPaquetes = item.cantidad || item.cantidadPaquetes || 1;
+                      await API.agregarAlCarrito(item.varianteId, cantidadPaquetes, item.tamanoId);
+                      console.log('✅ Item migrado:', item.varianteId, 'cantidad:', cantidadPaquetes);
+                    } catch (err) {
+                      console.error('❌ Error migrando item:', item.varianteId, err);
+                    }
+                  }
+                  
+                  // Clear guest cart after successful migration
+                  CarritoService.clearGuestCart();
+                  console.log('✅ Carrito de invitado migrado y limpiado');
+                }
+              }
+            } catch (error) {
+              console.error('❌ Error en migración de carrito:', error);
+            }
+          };
+          
+          // Execute cart migration before redirect
+          await migrateGuestCart();
+          
           // Check for redirect intent (guest checkout flow)
           const redirectUrl = sessionStorage.getItem('razoconnect_redirect_after_login');
           sessionStorage.removeItem('razoconnect_redirect_after_login');
@@ -378,6 +407,39 @@
             
             // Dispatch event for UI updates
             window.dispatchEvent(new CustomEvent('razoconnect:auth-changed'));
+            
+            // CRITICAL: Migrate guest cart to server if exists
+            const migrateGuestCart = async () => {
+              try {
+                if (typeof CarritoService !== 'undefined' && CarritoService.getGuestCart) {
+                  const guestCart = CarritoService.getGuestCart();
+                  if (guestCart && guestCart.length > 0) {
+                    console.log('🛒 Migrando carrito de invitado al servidor...', guestCart.length, 'items');
+                    
+                    // Migrate each item to server cart
+                    for (const item of guestCart) {
+                      try {
+                        // Use cantidad field from guest cart (it's the same as cantidadPaquetes)
+                        const cantidadPaquetes = item.cantidad || item.cantidadPaquetes || 1;
+                        await API.agregarAlCarrito(item.varianteId, cantidadPaquetes, item.tamanoId);
+                        console.log('✅ Item migrado:', item.varianteId, 'cantidad:', cantidadPaquetes);
+                      } catch (err) {
+                        console.error('❌ Error migrando item:', item.varianteId, err);
+                      }
+                    }
+                    
+                    // Clear guest cart after successful migration
+                    CarritoService.clearGuestCart();
+                    console.log('✅ Carrito de invitado migrado y limpiado');
+                  }
+                }
+              } catch (error) {
+                console.error('❌ Error en migración de carrito:', error);
+              }
+            };
+            
+            // Execute cart migration before redirect
+            await migrateGuestCart();
             
             // Check for redirect intent (guest checkout flow)
             const redirectUrl = sessionStorage.getItem('razoconnect_redirect_after_login');

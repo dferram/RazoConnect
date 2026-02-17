@@ -350,13 +350,28 @@
   color: white;
 }
 
-#hero-banner.tema-sanvalentin .hero-slide::before,
-#hero-banner.tema-diamadre .hero-slide::before,
-#hero-banner.tema-diapadre .hero-slide::before,
-#hero-banner.tema-graduaciones .hero-slide::before,
-#hero-banner.tema-navidad .hero-slide::before,
-#hero-banner.tema-todaocasion .hero-slide::before {
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.65), transparent);
+.theme-todaocasion #hero-banner .hero-slide::before {
+  background: linear-gradient(135deg, rgba(138, 51, 0, 0.75), transparent);
+}
+
+.theme-navidad #hero-banner .hero-slide::before {
+  background: linear-gradient(135deg, rgba(139, 0, 0, 0.75), transparent);
+}
+
+.theme-sanvalentin #hero-banner .hero-slide::before {
+  background: linear-gradient(135deg, rgba(211, 47, 47, 0.75), transparent);
+}
+
+.theme-diamadre #hero-banner .hero-slide::before {
+  background: linear-gradient(135deg, rgba(136, 14, 79, 0.75), transparent);
+}
+
+.theme-diapadre #hero-banner .hero-slide::before {
+  background: linear-gradient(135deg, rgba(13, 71, 161, 0.75), transparent);
+}
+
+.theme-graduaciones #hero-banner .hero-slide::before {
+  background: linear-gradient(135deg, rgba(33, 33, 33, 0.75), transparent);
 }
 
 /* ============================================

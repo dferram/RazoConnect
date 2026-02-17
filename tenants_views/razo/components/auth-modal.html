@@ -1,68 +1,68 @@
 <!-- Modal: Autenticación (Login/Registro) -->
-<div id="modalAuth" class="modal-auth" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; padding: 1rem;">
-  <div class="modal-content" style="max-width: 500px; width: 95%; padding: 2rem; border-radius: 1rem; background: white; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h2 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: #111827;">Inicia sesión</h2>
-      <button id="btnCerrarAuthModal" style="border: none; background: transparent; font-size: 1.5rem; cursor: pointer; color: #6b7280;" aria-label="Cerrar">×</button>
+<div id="modalAuth" class="modal-auth">
+  <div class="modal-content auth-modal-content">
+    <div class="auth-modal-header">
+      <h2 class="auth-modal-title">Inicia sesión</h2>
+      <button id="btnCerrarAuthModal" class="auth-modal-close" aria-label="Cerrar">×</button>
     </div>
     
     <!-- Tabs -->
-    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb;">
-      <button id="tabLoginModal" class="auth-tab active" style="flex: 1; padding: 0.75rem; border: none; background: transparent; cursor: pointer; font-weight: 600; border-bottom: 3px solid var(--razo-orange); color: var(--razo-orange);">Iniciar Sesión</button>
-      <button id="tabRegistroModal" class="auth-tab" style="flex: 1; padding: 0.75rem; border: none; background: transparent; cursor: pointer; font-weight: 600; border-bottom: 3px solid transparent; color: #6b7280;">Registrarse</button>
+    <div class="auth-tabs">
+      <button id="tabLoginModal" class="auth-tab active">Iniciar Sesión</button>
+      <button id="tabRegistroModal" class="auth-tab">Registrarse</button>
     </div>
 
     <!-- Login Form -->
-    <form id="formLoginModal" style="display: block;">
-      <div style="margin-bottom: 1rem;">
-        <label for="loginEmailModal" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Correo Electrónico o Teléfono</label>
-        <input type="text" id="loginEmailModal" name="identifier" required autocomplete="username" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem; transition: border-color 0.2s;" placeholder="ejemplo@correo.com o 5512345678" aria-label="Correo electrónico o teléfono">
+    <form id="formLoginModal" class="auth-form active">
+      <div class="form-group">
+        <label for="loginEmailModal" class="form-label">Correo Electrónico o Teléfono</label>
+        <input type="text" id="loginEmailModal" name="identifier" required autocomplete="username" class="form-control" placeholder="ejemplo@correo.com o 5512345678" aria-label="Correo electrónico o teléfono">
       </div>
-      <div style="margin-bottom: 1.5rem;">
-        <label for="loginPasswordModal" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Contraseña</label>
-        <div style="position: relative;">
-          <input type="password" id="loginPasswordModal" name="password" required autocomplete="current-password" minlength="6" style="width: 100%; padding: 0.75rem 3rem 0.75rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem; transition: border-color 0.2s;" placeholder="••••••••" aria-label="Contraseña">
-          <button type="button" id="toggleLoginPasswordModal" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); border: none; background: transparent; cursor: pointer; color: #6b7280; font-size: 1.25rem;" aria-label="Mostrar contraseña">
+      <div class="form-group">
+        <label for="loginPasswordModal" class="form-label">Contraseña</label>
+        <div class="password-input-wrapper">
+          <input type="password" id="loginPasswordModal" name="password" required autocomplete="current-password" minlength="6" class="form-control password-input" placeholder="••••••••" aria-label="Contraseña">
+          <button type="button" id="toggleLoginPasswordModal" class="password-toggle" aria-label="Mostrar contraseña">
             <i class="bi bi-eye"></i>
           </button>
         </div>
       </div>
-      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.875rem; font-size: 1rem; font-weight: 600; background: var(--razo-orange); border: none; border-radius: 0.5rem; color: white; cursor: pointer;">Iniciar Sesión</button>
+      <button type="submit" class="btn btn-primary btn-block auth-submit-btn">Iniciar Sesión</button>
     </form>
 
     <!-- Registration Form -->
-    <form id="formRegistroModal" style="display: none;">
-      <div style="margin-bottom: 1rem;">
-        <label for="regNombreModal" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Nombre Completo</label>
-        <input type="text" id="regNombreModal" name="nombre" required minlength="3" maxlength="100" autocomplete="name" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem; transition: border-color 0.2s;" placeholder="Juan Pérez" aria-label="Nombre completo">
+    <form id="formRegistroModal" class="auth-form">
+      <div class="form-group">
+        <label for="regNombreModal" class="form-label">Nombre Completo</label>
+        <input type="text" id="regNombreModal" name="nombre" required minlength="3" maxlength="100" autocomplete="name" class="form-control" placeholder="Juan Pérez" aria-label="Nombre completo">
       </div>
-      <div style="margin-bottom: 1rem;">
-        <label for="regEmailModal" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Email</label>
-        <input type="email" id="regEmailModal" name="email" required autocomplete="email" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem; transition: border-color 0.2s;" placeholder="tu@email.com" aria-label="Correo electrónico">
+      <div class="form-group">
+        <label for="regEmailModal" class="form-label">Email</label>
+        <input type="email" id="regEmailModal" name="email" required autocomplete="email" class="form-control" placeholder="tu@email.com" aria-label="Correo electrónico">
       </div>
-      <div style="margin-bottom: 1rem;">
-        <label for="regTelefonoModal" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Teléfono</label>
-        <input type="tel" id="regTelefonoModal" name="telefono" required pattern="[0-9]{10}" maxlength="10" autocomplete="tel" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem; transition: border-color 0.2s;" placeholder="5512345678" aria-label="Teléfono (10 dígitos)" title="Ingresa 10 dígitos">
+      <div class="form-group">
+        <label for="regTelefonoModal" class="form-label">Teléfono</label>
+        <input type="tel" id="regTelefonoModal" name="telefono" required pattern="[0-9]{10}" maxlength="10" autocomplete="tel" class="form-control" placeholder="5512345678" aria-label="Teléfono (10 dígitos)" title="Ingresa 10 dígitos">
       </div>
-      <div style="margin-bottom: 1rem;">
-        <label for="regPasswordModal" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Contraseña</label>
-        <div style="position: relative;">
-          <input type="password" id="regPasswordModal" name="password" required minlength="6" maxlength="50" autocomplete="new-password" style="width: 100%; padding: 0.75rem 3rem 0.75rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem; transition: border-color 0.2s;" placeholder="••••••••" aria-label="Contraseña (mínimo 6 caracteres)" title="Mínimo 6 caracteres">
-          <button type="button" id="toggleRegPasswordModal" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); border: none; background: transparent; cursor: pointer; color: #6b7280; font-size: 1.25rem;" aria-label="Mostrar contraseña">
+      <div class="form-group">
+        <label for="regPasswordModal" class="form-label">Contraseña</label>
+        <div class="password-input-wrapper">
+          <input type="password" id="regPasswordModal" name="password" required minlength="6" maxlength="50" autocomplete="new-password" class="form-control password-input" placeholder="••••••••" aria-label="Contraseña (mínimo 6 caracteres)" title="Mínimo 6 caracteres">
+          <button type="button" id="toggleRegPasswordModal" class="password-toggle" aria-label="Mostrar contraseña">
             <i class="bi bi-eye"></i>
           </button>
         </div>
       </div>
-      <div style="margin-bottom: 1.5rem;">
-        <label for="regPasswordConfirmModal" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">Confirmar Contraseña</label>
-        <div style="position: relative;">
-          <input type="password" id="regPasswordConfirmModal" name="passwordConfirm" required minlength="6" maxlength="50" autocomplete="new-password" style="width: 100%; padding: 0.75rem 3rem 0.75rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem; transition: border-color 0.2s;" placeholder="••••••••" aria-label="Confirmar contraseña" title="Repite la contraseña">
-          <button type="button" id="toggleRegPasswordConfirmModal" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); border: none; background: transparent; cursor: pointer; color: #6b7280; font-size: 1.25rem;" aria-label="Mostrar contraseña">
+      <div class="form-group">
+        <label for="regPasswordConfirmModal" class="form-label">Confirmar Contraseña</label>
+        <div class="password-input-wrapper">
+          <input type="password" id="regPasswordConfirmModal" name="passwordConfirm" required minlength="6" maxlength="50" autocomplete="new-password" class="form-control password-input" placeholder="••••••••" aria-label="Confirmar contraseña" title="Repite la contraseña">
+          <button type="button" id="toggleRegPasswordConfirmModal" class="password-toggle" aria-label="Mostrar contraseña">
             <i class="bi bi-eye"></i>
           </button>
         </div>
       </div>
-      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.875rem; font-size: 1rem; font-weight: 600; background: var(--razo-orange); border: none; border-radius: 0.5rem; color: white; cursor: pointer;">Crear Cuenta</button>
+      <button type="submit" class="btn btn-primary btn-block auth-submit-btn">Crear Cuenta</button>
     </form>
   </div>
 </div>

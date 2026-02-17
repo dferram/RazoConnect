@@ -31,7 +31,15 @@ async function generarPDFPedido(req, res) {
                 cd.colonia,
                 cd.codigopostal,
                 cd.ciudad,
-                e.nombre AS estado_nombre
+                e.nombre AS estado_nombre,
+                (
+                    SELECT COUNT(*)
+                    FROM pedidos p2
+                    WHERE p2.clienteid = p.clienteid
+                      AND p2.tenant_id = p.tenant_id
+                      AND (p2.fechapedido < p.fechapedido 
+                           OR (p2.fechapedido = p.fechapedido AND p2.pedidoid <= p.pedidoid))
+                ) AS numero_pedido_cliente
             FROM pedidos p
             INNER JOIN clientes c ON p.clienteid = c.clienteid
             LEFT JOIN cliente_direcciones cd ON p.direccionenvioid = cd.direccionid
@@ -143,13 +151,14 @@ async function generarPDFPedido(req, res) {
             doc.fontSize(9)
                .font('Helvetica')
                .fillColor('#333333')
-               .text(`Folio: ${String(pedido.pedidoid).padStart(6, '0')}`, 350, 70, { width: 212, align: 'right' })
+               .text(`Pedido: #${pedido.numero_pedido_cliente || pedido.pedidoid}`, 350, 70, { width: 212, align: 'right' })
+               .text(`Folio Interno: ${String(pedido.pedidoid).padStart(6, '0')}`, 350, 85, { width: 212, align: 'right' })
                .text(`Fecha: ${new Date(pedido.fechapedido).toLocaleDateString('es-MX', { 
                    year: 'numeric', 
                    month: 'long', 
                    day: 'numeric' 
-               })}`, 350, 85, { width: 212, align: 'right' })
-               .text(`Estatus: ${pedido.estatus}`, 350, 100, { width: 212, align: 'right' });
+               })}`, 350, 100, { width: 212, align: 'right' })
+               .text(`Estatus: ${pedido.estatus}`, 350, 115, { width: 212, align: 'right' });
 
             // Separator line
             doc.moveTo(50, 135)

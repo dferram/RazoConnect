@@ -61,8 +61,8 @@
   }
 
   // Open authentication modal (if exists on page)
-  function openAuthModal() {
-    // Usar función global si existe (definida en catalogo.html o carrito.html)
+  function openAuthModalHandler() {
+    // Check if auth-modal-loader has set up the global function
     if (typeof window.openAuthModal === 'function') {
       window.openAuthModal();
       return;
@@ -73,8 +73,16 @@
     if (modalAuth) {
       modalAuth.style.display = 'flex';
     } else {
-      // Último recurso: redirect to login page
-      window.location.href = '/login.html';
+      console.warn('Modal de autenticación no encontrado. Esperando a que se cargue...');
+      // Retry after a short delay in case modal is still loading
+      setTimeout(() => {
+        const retryModal = document.getElementById('modalAuth');
+        if (retryModal) {
+          retryModal.style.display = 'flex';
+        } else {
+          console.error('Modal de autenticación no disponible');
+        }
+      }, 500);
     }
   }
 
@@ -82,7 +90,7 @@
   function handleProtectedLinkClick(event) {
     if (!isAuthenticated()) {
       event.preventDefault();
-      openAuthModal();
+      openAuthModalHandler();
       return false;
     }
     return true;
@@ -103,7 +111,7 @@
     loginLinks.forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
-        openAuthModal();
+        openAuthModalHandler();
       });
     });
 
@@ -123,7 +131,7 @@
     isAuthenticated,
     getUserData,
     updateAuthUI,
-    openAuthModal,
+    openAuthModal: openAuthModalHandler,
     handleProtectedLinkClick
   };
 })();
