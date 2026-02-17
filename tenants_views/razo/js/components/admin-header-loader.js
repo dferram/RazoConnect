@@ -110,7 +110,15 @@
 
     if (headerUserName) headerUserName.textContent = nombre || "Admin";
     if (headerUserRole) headerUserRole.textContent = rolTexto;
-    if (headerUserAvatar) headerUserAvatar.textContent = getIniciales(nombre);
+    if (headerUserAvatar) {
+      headerUserAvatar.textContent = getIniciales(nombre);
+      // Aplicar clase super-admin para badge naranja
+      if (isSuperAdmin) {
+        headerUserAvatar.classList.add('super-admin');
+      } else {
+        headerUserAvatar.classList.remove('super-admin');
+      }
+    }
 
     // Backwards compat IDs
     const legacyUserName = document.getElementById("userName");

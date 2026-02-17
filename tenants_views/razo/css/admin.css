@@ -87,8 +87,8 @@
 }
 
 .input-qty-recibida[type=number] {
-  appearance: textfield;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* ============================================
@@ -403,17 +403,21 @@ body.sidebar-collapsed .admin-main {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    var(--razo-turquoise),
-    var(--razo-turquoise-dark)
-  );
+  background: #333333;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: 700;
   font-size: 1.125rem;
+}
+
+.admin-user-avatar.super-admin {
+  background: linear-gradient(
+    135deg,
+    var(--razo-orange),
+    var(--razo-orange-dark)
+  );
 }
 
 .admin-user-details {
