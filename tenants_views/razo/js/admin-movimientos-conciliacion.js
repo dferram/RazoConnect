@@ -299,6 +299,9 @@ function renderizarTabla() {
         </span>`
       : '<small class="text-muted">-</small>';
     
+    // Calcular costo total
+    const costoTotal = ajuste.totalPiezas * ajuste.costoUnitario;
+    
     return `
       <tr>
         <td><small>${fecha}</small></td>
@@ -311,6 +314,7 @@ function renderizarTabla() {
         <td class="text-end"><strong>${ajuste.cantidad.toLocaleString('es-MX')}</strong></td>
         <td class="text-end">${ajuste.totalPiezas.toLocaleString('es-MX')}</td>
         <td class="text-end"><strong>$${ajuste.valorTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong></td>
+        <td class="text-end"><strong>$${costoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong></td>
         <td><small>${ajuste.usuarioNombre}</small></td>
       </tr>
     `;
@@ -330,6 +334,11 @@ function renderizarTotales() {
 
   totalesCard.style.display = 'block';
   
+  // Calcular costo total
+  const costoTotal = ajustesData.reduce((sum, ajuste) => {
+    return sum + (ajuste.totalPiezas * ajuste.costoUnitario);
+  }, 0);
+  
   document.getElementById('totalPaquetes').textContent = 
     totalesData.totalPaquetes.toLocaleString('es-MX');
   
@@ -338,6 +347,9 @@ function renderizarTotales() {
   
   document.getElementById('valorTotal').textContent = 
     `$${totalesData.valorTotalizado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
+  
+  document.getElementById('costoTotal').textContent = 
+    `$${costoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`;
 }
 
 /**
@@ -476,7 +488,7 @@ async function exportarPDF() {
     doc.text(`Generado: ${new Date().toLocaleString('es-MX')}`, 40, yPos);
     yPos += 20;
 
-    // Tabla de ajustes (CON Color, CON Usuario, SIN emojis)
+    // Tabla de ajustes (CON Color, CON Costo, CON Usuario, SIN emojis)
     const tableData = ajustesData.map(ajuste => {
       const fechaCorta = new Date(ajuste.fecha).toLocaleDateString('es-MX', {
         day: '2-digit',
@@ -487,10 +499,11 @@ async function exportarPDF() {
                      ajuste.tipoOrigen === 'AUDITORIA' ? 'Auditoría' :
                      ajuste.tipoOrigen === 'MERMA' ? 'Merma' : 'Ajuste';
       const color = ajuste.colorNombre || '-';
+      const costoTotal = ajuste.totalPiezas * ajuste.costoUnitario;
       
       return [
         fechaCorta,
-        ajuste.productoNombre.substring(0, 25),
+        ajuste.productoNombre.substring(0, 22),
         color,
         ajuste.dimensiones || '-',
         direccion,
@@ -498,7 +511,8 @@ async function exportarPDF() {
         ajuste.cantidad.toLocaleString('es-MX'),
         ajuste.totalPiezas.toLocaleString('es-MX'),
         `$${ajuste.valorTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
-        ajuste.usuarioNombre.substring(0, 15)
+        `$${costoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
+        ajuste.usuarioNombre.substring(0, 12)
       ];
     });
 
@@ -506,34 +520,35 @@ async function exportarPDF() {
 
     doc.autoTable({
       startY: yPos,
-      head: [['Fecha', 'Producto', 'Color', 'Dim.', 'Dirección', 'Origen', 'Cant.', 'Piezas', 'Valor', 'Usuario']],
+      head: [['Fecha', 'Producto', 'Color', 'Dim.', 'Dirección', 'Origen', 'Cant.', 'Piezas', 'Valor', 'Costo', 'Usuario']],
       body: tableData,
       theme: 'striped',
       headStyles: {
         fillColor: [249, 115, 22],
         textColor: 255,
         fontStyle: 'bold',
-        fontSize: 9,
+        fontSize: 8,
         halign: 'center'
       },
       bodyStyles: {
-        fontSize: 8,
+        fontSize: 7,
         textColor: [60, 60, 60]
       },
       alternateRowStyles: {
         fillColor: [255, 247, 237]
       },
       columnStyles: {
-        0: { cellWidth: 45, halign: 'center' },
-        1: { cellWidth: 120, halign: 'left' },
-        2: { cellWidth: 60, halign: 'center' },
-        3: { cellWidth: 40, halign: 'center' },
-        4: { cellWidth: 60, halign: 'center' },
-        5: { cellWidth: 60, halign: 'center' },
-        6: { cellWidth: 45, halign: 'right' },
-        7: { cellWidth: 55, halign: 'right' },
-        8: { cellWidth: 70, halign: 'right' },
-        9: { cellWidth: 75, halign: 'left' }
+        0: { cellWidth: 40, halign: 'center' },
+        1: { cellWidth: 100, halign: 'left' },
+        2: { cellWidth: 50, halign: 'center' },
+        3: { cellWidth: 35, halign: 'center' },
+        4: { cellWidth: 55, halign: 'center' },
+        5: { cellWidth: 50, halign: 'center' },
+        6: { cellWidth: 40, halign: 'right' },
+        7: { cellWidth: 45, halign: 'right' },
+        8: { cellWidth: 60, halign: 'right' },
+        9: { cellWidth: 60, halign: 'right' },
+        10: { cellWidth: 55, halign: 'left' }
       },
       margin: { left: 40, right: 40, top: 90 },
       showHead: 'everyPage',
@@ -563,8 +578,13 @@ async function exportarPDF() {
     
     const pageWidth = doc.internal.pageSize.width;
     const boxWidth = 240;
-    const boxHeight = 90;
+    const boxHeight = 105;
     const boxX = pageWidth - boxWidth - 40; // Alineado a la derecha
+
+    // Calcular costo total
+    const costoTotal = ajustesData.reduce((sum, ajuste) => {
+      return sum + (ajuste.totalPiezas * ajuste.costoUnitario);
+    }, 0);
 
     // Fondo y borde
     doc.setFillColor(255, 247, 237);
@@ -580,37 +600,28 @@ async function exportarPDF() {
 
     // Línea separadora
     doc.setDrawColor(249, 115, 22);
-    doc.setLineWidth(0.5);
-    doc.line(boxX + 15, currentY + 28, boxX + boxWidth - 15, currentY + 28);
+    doc.setLineWidth(1);
+    doc.line(boxX + 20, currentY + 28, boxX + boxWidth - 20, currentY + 28);
 
     // Totales
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(60, 60, 60);
-
+    
     let textY = currentY + 42;
+    doc.text(`Total Paquetes: ${totalesData.totalPaquetes.toLocaleString('es-MX')}`, boxX + 20, textY);
     
-    doc.text('Total Paquetes:', boxX + 20, textY);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(249, 115, 22);
-    doc.text(totalesData.totalPaquetes.toLocaleString('es-MX'), boxX + boxWidth - 20, textY, { align: 'right' });
+    textY += 15;
+    doc.text(`Total Piezas: ${totalesData.totalPiezas.toLocaleString('es-MX')} pzas`, boxX + 20, textY);
     
-    textY += 18;
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(60, 60, 60);
-    doc.text('Total Piezas:', boxX + 20, textY);
+    textY += 15;
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(249, 115, 22);
-    doc.text(totalesData.totalPiezas.toLocaleString('es-MX') + ' pzas', boxX + boxWidth - 20, textY, { align: 'right' });
+    doc.setTextColor(22, 163, 74);
+    doc.text(`VALOR TOTAL: $${totalesData.valorTotalizado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, boxX + 20, textY);
     
-    textY += 20;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(60, 60, 60);
-    doc.text('VALOR TOTAL:', boxX + 20, textY);
-    doc.setTextColor(249, 115, 22);
-    doc.text('$' + totalesData.valorTotalizado.toLocaleString('es-MX', { minimumFractionDigits: 2 }), 
-      boxX + boxWidth - 20, textY, { align: 'right' });
+    textY += 15;
+    doc.setTextColor(220, 38, 38);
+    doc.text(`COSTO TOTAL: $${costoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, boxX + 20, textY);
 
     // Guardar PDF
     const nombreArchivo = `Conciliacion_Inventario_${filtrosActivos.fechaInicio}_${filtrosActivos.fechaFin}.pdf`;
