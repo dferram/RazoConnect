@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conciliación de Inventario - RazoConnect</title>
+  <link rel="icon" type="image/png" href="/icon/Logo_Razo.png">
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+  <script src="js/auth-guard-admin.js"></script>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/mobile-responsive.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    .filter-card {
+      background: white;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .totales-card {
+      background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+      border: 2px solid #F97316;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .total-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(249, 115, 22, 0.2);
+    }
+    
+    .total-item:last-child {
+      border-bottom: none;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+    
+    .total-label {
+      color: #6b5d57;
+      font-weight: 500;
+    }
+    
+    .total-value {
+      color: #F97316;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+    
+    .badge-tipo {
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+    
+    .badge-entrada {
+      background: #D1FAE5;
+      color: #065F46;
+    }
+    
+    .badge-salida {
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+    
+    .badge-merma {
+      background: #FEF3C7;
+      color: #92400E;
+    }
+    
+    .badge-ajuste {
+      background: #DBEAFE;
+      color: #1E40AF;
+    }
+    
+    .btn-filter {
+      background: #F97316;
+      color: white;
+      border: none;
+      padding: 0.5rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+    
+    .btn-filter:hover {
+      background: #EA580C;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    }
+    
+    .btn-clear {
+      background: #6B7280;
+      color: white;
+      border: none;
+      padding: 0.5rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+    }
+    
+    .btn-clear:hover {
+      background: #4B5563;
+    }
+    
+    .table-responsive {
+      border-radius: 1rem;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .admin-table {
+      margin-bottom: 0;
+    }
+    
+    .admin-table thead {
+      background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+      color: white;
+    }
+    
+    .admin-table tbody tr:hover {
+      background: #FFF7ED;
+      cursor: pointer;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #6B7280;
+    }
+    
+    .empty-state i {
+      font-size: 4rem;
+      color: #D1D5DB;
+      margin-bottom: 1rem;
+    }
+    
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    
+    .loading-spinner {
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      text-align: center;
+    }
+    
+    .resumen-tipo-card {
+      background: white;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-left: 4px solid #F97316;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .btn-pdf-export {
+      background: #8B1538;
+      color: white;
+      border: none;
+      transition: all 0.3s;
+    }
+    
+    .btn-pdf-export:hover {
+      background: #6B0F2A;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(139, 21, 56, 0.3);
+    }
+  </style>
+</head>
+<body data-sidebar="admin" data-page-title="Conciliación de Inventario">
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="loading-spinner">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-3 mb-0">Cargando datos...</p>
+    </div>
+  </div>
+
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <div id="admin-sidebar-container"></div>
+
+    <!-- Main Content -->
+    <div class="admin-main-content">
+      <div id="admin-header-container"></div>
+
+      <div class="admin-content">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2 class="mb-1">
+              <i class="bi bi-clipboard-data text-primary"></i>
+              Conciliación de Inventario
+            </h2>
+            <p class="text-muted mb-0">Filtros avanzados para auditoría y reconciliación de movimientos</p>
+          </div>
+        </div>
+
+        <!-- Sección de Ayuda -->
+        <div class="alert alert-info" role="alert">
+          <h5 class="alert-heading">
+            <i class="bi bi-info-circle"></i>
+            ¿Cómo usar esta página?
+          </h5>
+          <p class="mb-2"><strong>Objetivo:</strong> Conciliar (cuadrar) los movimientos de inventario contra documentos fuente como Órdenes de Compra, Conteos Iniciales o Ajustes.</p>
+          <hr>
+          <p class="mb-1"><strong>Pasos:</strong></p>
+          <ol class="mb-0">
+            <li><strong>Filtrar:</strong> Selecciona fechas y escribe una referencia (ej: "Orden #50" o "Conteo Enero")</li>
+            <li><strong>Revisar:</strong> Verifica en la tabla que las cantidades y valores coincidan con tu documento</li>
+            <li><strong>Exportar PDF:</strong> Descarga el reporte con totales para comparar físicamente</li>
+            <li><strong>Conciliar:</strong> Los totales del PDF deben coincidir exactamente con tu documento fuente</li>
+          </ol>
+        </div>
+
+        <!-- Filtros Avanzados -->
+        <div class="filter-card">
+          <h5 class="mb-3">
+            <i class="bi bi-funnel"></i>
+            Filtros de Búsqueda
+          </h5>
+          <div class="row g-3">
+            <div class="col-md-3">
+              <label for="filtroFechaInicio" class="form-label">Fecha Inicio</label>
+              <input type="date" id="filtroFechaInicio" class="form-control" title="Selecciona la fecha de inicio del rango a filtrar">
+            </div>
+            <div class="col-md-3">
+              <label for="filtroFechaFin" class="form-label">Fecha Fin</label>
+              <input type="date" id="filtroFechaFin" class="form-control" title="Selecciona la fecha de fin del rango a filtrar">
+            </div>
+            <div class="col-md-3">
+              <label for="filtroTipoAjuste" class="form-label">Tipo de Ajuste</label>
+              <select id="filtroTipoAjuste" class="form-select" title="Selecciona el tipo de ajuste a filtrar">
+                <option value="">Todos los tipos</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="filtroReferencia" class="form-label">Referencia/Sesión</label>
+              <input type="text" id="filtroReferencia" class="form-control" placeholder="Ej: Orden #50" title="Busca por referencia de orden o sesión">
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-3">
+            <button id="btnFiltrar" class="btn btn-filter">
+              <i class="bi bi-search"></i>
+              Filtrar
+            </button>
+            <button id="btnLimpiar" class="btn btn-clear">
+              <i class="bi bi-x-circle"></i>
+              Limpiar Filtros
+            </button>
+            <button id="btnExportarPDF" class="btn btn-pdf-export ms-auto">
+              <i class="bi bi-file-earmark-pdf"></i>
+              Exportar PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Totales de Conciliación -->
+        <div class="totales-card" id="totalesCard" style="display: none;">
+          <h5 class="mb-3">
+            <i class="bi bi-calculator"></i>
+            Totales de Conciliación
+          </h5>
+          <div class="row">
+          <div class="col-md-4">
+            <div class="total-item">
+              <span class="total-label">Total Paquetes:</span>
+              <span class="total-value" id="totalPaquetes">0</span>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="total-item">
+              <span class="total-label">Total Piezas:</span>
+              <span class="total-value" id="totalPiezas">0</span>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="total-item">
+              <span class="total-label">Valor Total:</span>
+              <span class="total-value" id="valorTotal">$0.00</span>
+            </div>
+          </div>
+          </div>
+        </div>
+
+        <!-- Resumen por Tipo -->
+        <div id="resumenTipoContainer" style="display: none;">
+          <h5 class="mb-3">
+            <i class="bi bi-pie-chart"></i>
+            Resumen por Tipo de Ajuste
+          </h5>
+          <div class="row" id="resumenTipoCards"></div>
+        </div>
+
+        <!-- Tabla de Resultados -->
+        <div class="table-responsive">
+          <table class="table admin-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>SKU</th>
+              <th>Producto</th>
+              <th>Dimensiones</th>
+              <th>Tipo</th>
+              <th>Origen</th>
+              <th>Cantidad</th>
+              <th>Piezas</th>
+              <th>Valor</th>
+              <th>Motivo</th>
+              <th>Usuario</th>
+            </tr>
+          </thead>
+          <tbody id="tablaAjustes">
+            <tr>
+              <td colspan="11" class="text-center text-muted">
+                Selecciona los filtros y presiona "Filtrar" para ver resultados
+              </td>
+            </tr>
+          </tbody>
+          </table>
+        </div>
+
+        <div id="emptyState" class="empty-state" style="display: none;">
+          <i class="bi bi-inbox"></i>
+          <h5>No se encontraron resultados</h5>
+          <p>Intenta ajustar los filtros de búsqueda</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/components/admin-sidebar-loader.js"></script>
+  <script src="js/components/admin-header-loader.js"></script>
+  <script src="js/admin-movimientos-conciliacion.js"></script>
+</body>
+</html>

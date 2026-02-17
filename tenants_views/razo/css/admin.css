@@ -87,8 +87,32 @@
 }
 
 .input-qty-recibida[type=number] {
-  appearance: textfield;
   -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* ============================================
+   PDF EXPORT BUTTON - GLOBAL STANDARD
+   ============================================ */
+.btn-pdf-export {
+  background: #8B1538 !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.5rem 1.5rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.btn-pdf-export:hover {
+  background: #6B0F2A !important;
+  color: white !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 21, 56, 0.3);
+}
+
+.btn-pdf-export:active {
+  transform: translateY(0);
 }
 
 /* ============================================
@@ -403,11 +427,20 @@ body.sidebar-collapsed .admin-main {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(
-    135deg,
-    var(--razo-turquoise),
-    var(--razo-turquoise-dark)
-  );
+  background: #333333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.admin-user-avatar.super-admin {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #333333;
   display: flex;
   align-items: center;
   justify-content: center;

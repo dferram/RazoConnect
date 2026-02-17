@@ -628,6 +628,22 @@ router.get(
   adminController.getMovimientosInventario
 );
 
+// Ajustes de inventario con filtros avanzados para conciliación
+router.get(
+  "/ajustes-inventario/filtrados",
+  authenticate,
+  authorizeAdmin,
+  adminController.getAjustesInventarioFiltrados
+);
+
+// Obtener tipos de ajuste disponibles
+router.get(
+  "/ajustes-inventario/tipos",
+  authenticate,
+  authorizeAdmin,
+  adminController.getTiposAjusteInventario
+);
+
 // router.post(
 //   "/recepcion",
 //   authenticate,
