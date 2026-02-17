@@ -413,11 +413,16 @@ body.sidebar-collapsed .admin-main {
 }
 
 .admin-user-avatar.super-admin {
-  background: linear-gradient(
-    135deg,
-    var(--razo-orange),
-    var(--razo-orange-dark)
-  );
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #333333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 1.125rem;
 }
 
 .admin-user-details {
