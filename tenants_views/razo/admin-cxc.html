@@ -33,41 +33,51 @@
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; padding: 1.5rem;">
                         <div class="admin-stat-card">
-                            <div class="stat-label">Total por cobrar</div>
-                            <div class="stat-value" id="kpiTotalPorCobrar">$0.00</div>
-                            <div class="stat-sub">Sumatoria de saldos deudores</div>
+                            <div style="font-size: 0.875rem; color: #6b7280; font-weight: 500; margin-bottom: 0.5rem;">
+                                <i class="bi bi-cash-stack" style="color: var(--razo-orange); margin-right: 0.5rem;"></i>
+                                Total por cobrar
+                            </div>
+                            <div class="admin-stat-value" id="kpiTotalPorCobrar">$0.00</div>
+                            <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem;">Sumatoria de saldos deudores</div>
                         </div>
                         <div class="admin-stat-card">
-                            <div class="stat-label">Clientes con deuda</div>
-                            <div class="stat-value" id="kpiClientesConDeuda">0</div>
-                            <div class="stat-sub">Con saldo > 0</div>
+                            <div style="font-size: 0.875rem; color: #6b7280; font-weight: 500; margin-bottom: 0.5rem;">
+                                <i class="bi bi-people-fill" style="color: var(--razo-turquoise); margin-right: 0.5rem;"></i>
+                                Clientes con deuda
+                            </div>
+                            <div class="admin-stat-value" id="kpiClientesConDeuda">0</div>
+                            <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem;">Con saldo > 0</div>
                         </div>
                         <div class="admin-stat-card">
-                            <div class="stat-label">Cartera vencida</div>
-                            <div class="stat-value" id="kpiCarteraVencida">$0.00</div>
-                            <div class="stat-sub">Saldo vencido por días de gracia</div>
+                            <div style="font-size: 0.875rem; color: #6b7280; font-weight: 500; margin-bottom: 0.5rem;">
+                                <i class="bi bi-exclamation-triangle-fill" style="color: #dc2626; margin-right: 0.5rem;"></i>
+                                Cartera vencida
+                            </div>
+                            <div class="admin-stat-value" id="kpiCarteraVencida">$0.00</div>
+                            <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem;">Saldo vencido por días de gracia</div>
                         </div>
                     </div>
                 </section>
 
                 <!-- Main Table Section -->
                 <section class="admin-card">
-                    <div class="table-toolbar" style="padding: 1.5rem; margin-bottom: 1rem;">
-                        <div class="toolbar-left">
-                            <span id="resumenResultados" class="admin-badge secondary">0 CLIENTES</span>
-                            <div class="input-icon">
+                    <div class="table-toolbar" style="padding: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                        <span id="resumenResultados" class="admin-badge secondary">0 CLIENTES</span>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                            <div class="input-icon" style="width: 200px;">
                                 <i class="bi bi-search"></i>
-                                <input id="buscadorClientes" type="search" placeholder="Buscar cliente o email" class="form-input">
+                                <input id="buscadorClientes" type="search" placeholder="Buscar..." class="form-input" style="font-size: 0.875rem;">
                             </div>
-                        </div>
-                        <div class="toolbar-right">
-                            <select id="filtroRiesgo" class="form-input" aria-label="Filtrar por estado de riesgo">
-                                <option value="">Todos los estados</option>
+                            <select id="filtroAdmin" class="form-input" aria-label="Filtrar por administrador" style="width: 150px; font-size: 0.875rem;">
+                                <option value="">Todos los admins</option>
+                            </select>
+                            <select id="filtroRiesgo" class="form-input" aria-label="Filtrar por estado" style="width: 130px; font-size: 0.875rem;">
+                                <option value="">Estado</option>
                                 <option value="al-dia">Al día</option>
                                 <option value="vencido">Vencido</option>
-                                <option value="critico">Crítico (&gt;15 días)</option>
+                                <option value="critico">Crítico</option>
                             </select>
-                            <button id="btnRecargar" class="btn btn-secondary btn-icon" title="Recargar datos" aria-label="Recargar datos">
+                            <button id="btnRecargar" class="btn btn-secondary btn-sm" title="Recargar" aria-label="Recargar datos" style="padding: 0.5rem 0.75rem;">
                                 <i class="bi bi-arrow-repeat"></i>
                             </button>
                         </div>
@@ -87,31 +97,31 @@
                         <table id="tablaCxC" class="admin-table" style="display: none;">
                             <thead>
                                 <tr>
-                                    <th>Cliente</th>
-                                    <th style="text-align: right;">Límite</th>
-                                    <th style="text-align: right;">Saldo Total</th>
-                                    <th style="text-align: right;">Al Corriente</th>
-                                    <th style="text-align: right;">Vencido 1-30d</th>
-                                    <th style="text-align: right;">Vencido +30d</th>
-                                    <th style="text-align: right;">Disponible</th>
-                                    <th>Último movimiento</th>
-                                    <th>Estado</th>
-                                    <th style="text-align: center;">Acciones</th>
+                                    <th style="min-width: 180px;">Cliente</th>
+                                    <th style="text-align: right; width: 100px;">Saldo</th>
+                                    <th style="text-align: right; width: 90px;">Al día</th>
+                                    <th style="text-align: right; width: 90px;">1-30d</th>
+                                    <th style="text-align: right; width: 90px;">+30d</th>
+                                    <th style="text-align: right; width: 100px;">Disponible</th>
+                                    <th style="width: 100px;">Estado</th>
+                                    <th style="text-align: center; width: 80px;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tablaCxCTbody"></tbody>
                         </table>
                     </div>
 
-                    <div id="paginacion" class="pagination-wrapper" style="display: none; padding: 1.5rem; border-top: 1px solid #e5e7eb;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span id="paginacionInfo" style="font-size: 0.875rem; color: #6b7280;"></span>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button id="btnPaginaAnterior" class="btn btn-secondary btn-sm">
-                                    <i class="bi bi-chevron-left"></i> Anterior
+                    <div id="paginacion" class="pagination-container" style="display: none;">
+                        <div class="pagination-wrapper">
+                            <span id="paginacionInfo" class="pagination-info"></span>
+                            <div class="pagination-controls">
+                                <button id="btnPaginaAnterior" class="btn btn-secondary btn-sm pagination-btn">
+                                    <i class="bi bi-chevron-left"></i>
+                                    <span class="d-none d-sm-inline ms-1">Anterior</span>
                                 </button>
-                                <button id="btnPaginaSiguiente" class="btn btn-secondary btn-sm">
-                                    Siguiente <i class="bi bi-chevron-right"></i>
+                                <button id="btnPaginaSiguiente" class="btn btn-secondary btn-sm pagination-btn">
+                                    <span class="d-none d-sm-inline me-1">Siguiente</span>
+                                    <i class="bi bi-chevron-right"></i>
                                 </button>
                             </div>
                         </div>

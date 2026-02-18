@@ -6,12 +6,14 @@
     filtrada: [],
     filters: {
       search: "",
-      estado: ""
+      estado: "",
+      admin: ""
     },
     currentPage: 1,
     itemsPerPage: 10,
     totalPages: 1,
-    totalRecords: 0
+    totalRecords: 0,
+    admins: []
   };
 
   const elements = {};
@@ -19,6 +21,7 @@
   document.addEventListener("DOMContentLoaded", async () => {
     cacheElements();
     bindEvents();
+    await cargarAdministradores();
     loadCartera();
     cargarMetricas();
     cargarClientesConCredito();
@@ -32,6 +35,7 @@
     elements.resumenResultados = document.getElementById("resumenResultados");
     elements.searchInput = document.getElementById("buscadorClientes");
     elements.filtroEstado = document.getElementById("filtroRiesgo");
+    elements.filtroAdmin = document.getElementById("filtroAdmin");
     elements.tabla = document.getElementById("tablaCxC");
     elements.tbody = document.getElementById("tablaCxCTbody");
     elements.estadoCarga = document.getElementById("estadoCarga");
@@ -56,6 +60,11 @@
 
     elements.filtroEstado?.addEventListener("change", (e) => {
       state.filters.estado = e.target.value;
+      applyFilters();
+    });
+
+    elements.filtroAdmin?.addEventListener("change", (e) => {
+      state.filters.admin = e.target.value;
       applyFilters();
     });
 
@@ -125,10 +134,17 @@
   function applyFilters() {
     const search = state.filters.search.trim();
     const estadoFiltro = state.filters.estado;
+    const adminFiltro = state.filters.admin;
 
     state.filtrada = state.cartera.filter((item) => {
       const coincideBusqueda = !search || item.nombreBusqueda.includes(search);
       if (!coincideBusqueda) return false;
+
+      if (adminFiltro && item.adminNombre) {
+        if (!item.adminNombre.toLowerCase().includes(adminFiltro.toLowerCase())) {
+          return false;
+        }
+      }
 
       if (!estadoFiltro) return true;
       if (estadoFiltro === "al-dia") {
@@ -152,37 +168,42 @@
     if (state.filtrada.length === 0) {
       elements.tabla.style.display = "none";
       elements.estadoVacio.style.display = "block";
-      elements.paginacion.style.display = "none";
+      if (elements.paginacion) {
+        elements.paginacion.style.display = "none";
+        elements.paginacion.classList.remove("show");
+      }
       elements.resumenResultados.textContent = "0 CLIENTES";
       return;
     }
 
     elements.tabla.style.display = "table";
     elements.estadoVacio.style.display = "none";
-    elements.paginacion.style.display = "flex";
-    elements.resumenResultados.textContent = `${state.filtrada.length} CLIENTE${state.filtrada.length !== 1 ? 'S' : ''}`;
+    if (elements.paginacion) {
+      elements.paginacion.style.display = "block";
+      elements.paginacion.classList.add("show");
+    }
+    const displayCount = state.filtrada.length;
+    elements.resumenResultados.textContent = `${displayCount} CLIENTE${displayCount !== 1 ? 'S' : ''}`;
 
     elements.tbody.innerHTML = state.filtrada.map(cliente => {
       const estadoBadge = cliente.estado === "VENCIDO" 
-        ? '<span class="cxc-badge cxc-badge-danger">Suspendido</span>'
-        : '<span class="cxc-badge cxc-badge-success">Activo</span>';
+        ? '<span class="badge bg-danger">Suspendido</span>'
+        : '<span class="badge bg-success">Activo</span>';
 
       return `
         <tr>
           <td>
-            <div style="font-weight: 600; color: #111827;">${cliente.clienteNombre || ''} ${cliente.apellido || ''}</div>
-            <div style="font-size: 0.75rem; color: #9ca3af;">${cliente.email || 'Sin email'}</div>
+            <div style="font-weight: 600; color: #111827; font-size: 0.875rem;">${cliente.clienteNombre || ''} ${cliente.apellido || ''}</div>
+            <div style="font-size: 0.7rem; color: #9ca3af;">${cliente.email || 'Sin email'}</div>
           </td>
-          <td class="text-right">${formatCurrency(cliente.limiteCredito)}</td>
-          <td class="text-right" style="font-weight: 700; color: #dc2626;">${formatCurrency(cliente.saldoDeudor)}</td>
-          <td class="text-right">${formatCurrency(cliente.alCorriente)}</td>
-          <td class="text-right" style="background: #fef3c7;">${formatCurrency(cliente.vencido1a30)}</td>
-          <td class="text-right" style="background: #fee2e2;">${formatCurrency(cliente.vencidoMas30)}</td>
-          <td class="text-right" style="color: #10b981; font-weight: 600;">${formatCurrency(cliente.disponible)}</td>
-          <td style="font-size: 0.75rem;">${formatFecha(cliente.ultimoMovimiento)}</td>
+          <td class="text-right" style="font-weight: 700; color: #dc2626; font-size: 0.875rem;">${formatCurrency(cliente.saldoDeudor)}</td>
+          <td class="text-right" style="font-size: 0.875rem;">${formatCurrency(cliente.alCorriente)}</td>
+          <td class="text-right" style="background: #fef3c7; font-size: 0.875rem;">${formatCurrency(cliente.vencido1a30)}</td>
+          <td class="text-right" style="background: #fee2e2; font-size: 0.875rem;">${formatCurrency(cliente.vencidoMas30)}</td>
+          <td class="text-right" style="color: #10b981; font-weight: 600; font-size: 0.875rem;">${formatCurrency(cliente.disponible)}</td>
           <td>${estadoBadge}</td>
           <td class="text-center">
-            <button class="btn btn-light btn-sm" onclick="window.verDetalleCliente(${cliente.clienteId})" title="Ver detalle">
+            <button class="btn btn-light btn-sm" onclick="window.verDetalleCliente(${cliente.clienteId})" title="Ver detalle" style="padding: 0.25rem 0.5rem;">
               <i class="bi bi-eye"></i>
             </button>
           </td>
@@ -241,6 +262,34 @@
     } catch (error) {
       console.error("Error cargando métricas:", error);
     }
+  }
+
+  async function cargarAdministradores() {
+    try {
+      const response = await API.apiCall("/admin/administradores", { method: "GET" });
+
+      if (response.ok && response.data) {
+        const admins = Array.isArray(response.data) ? response.data : (response.data.data || []);
+        state.admins = admins;
+        renderAdminSelector(admins);
+      }
+    } catch (error) {
+      console.error("Error cargando administradores:", error);
+    }
+  }
+
+  function renderAdminSelector(admins) {
+    const selector = elements.filtroAdmin;
+    if (!selector) return;
+
+    selector.innerHTML = '<option value="">Todos los admins</option>';
+
+    admins.forEach((admin) => {
+      const option = document.createElement("option");
+      option.value = admin.nombre || admin.adminid;
+      option.textContent = admin.nombre || `Admin ${admin.adminid}`;
+      selector.appendChild(option);
+    });
   }
 
   async function cargarClientesConCredito() {
