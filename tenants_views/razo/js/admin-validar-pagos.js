@@ -22,14 +22,18 @@ async function cargarPagosPendientes() {
     estadoVacio.style.display = 'none';
     listaPagos.style.display = 'none';
 
-    const response = await fetchWithAuth('/api/admin/pagos/pendientes');
+    console.log('🔄 [Validar Pagos] Cargando pagos de clientes pendientes...');
+    const response = await fetchWithAuth('/api/admin/pagos-clientes/pendientes');
     const data = await response.json();
+
+    console.log('📥 [Validar Pagos] Respuesta recibida:', data);
 
     if (!response.ok) {
       throw new Error(data.message || 'Error al cargar pagos pendientes');
     }
 
     pagosPendientes = data.pagos || [];
+    console.log('📊 [Validar Pagos] Total de pagos:', pagosPendientes.length);
 
     estadoCarga.style.display = 'none';
 
@@ -60,7 +64,7 @@ function renderizarPagos() {
   const listaPagos = document.getElementById('listaPagos');
   
   listaPagos.innerHTML = pagosPendientes.map(pago => {
-    const fecha = new Date(pago.fechapedido);
+    const fecha = new Date(pago.fecha_pago);
     const fechaFormateada = fecha.toLocaleDateString('es-MX', {
       year: 'numeric',
       month: 'long',
@@ -72,38 +76,44 @@ function renderizarPagos() {
     const montoFormateado = new Intl.NumberFormat('es-MX', {
       style: 'currency',
       currency: 'MXN'
-    }).format(pago.montototal);
+    }).format(pago.monto);
 
-    const saldoPendienteFormateado = pago.saldo_pendiente 
-      ? new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(pago.saldo_pendiente)
+    const saldoDeudorFormateado = pago.saldo_deudor 
+      ? new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(pago.saldo_deudor)
       : '$0.00';
 
     return `
-      <div class="payment-card" data-pedido-id="${pago.pedidoid}">
+      <div class="payment-card" data-pago-id="${pago.pago_id}">
         <div class="payment-header">
           <div class="payment-info">
-            <div class="payment-client">${pago.nombre} ${pago.apellido}</div>
-            <div class="payment-email">${pago.email || 'Sin email'} · Pedido #${pago.pedidoid}</div>
+            <div class="payment-client">${pago.nombre} ${pago.apellido || ''}</div>
+            <div class="payment-email">${pago.email || 'Sin email'} · Pago #${pago.pago_id}</div>
           </div>
           <div class="payment-amount">
-            <div class="amount-label">Monto Total</div>
+            <div class="amount-label">Monto del Pago</div>
             <div class="amount-value">${montoFormateado}</div>
           </div>
         </div>
 
         <div class="payment-details">
           <div class="detail-item">
-            <span class="detail-label">Fecha del pedido</span>
+            <span class="detail-label">Fecha del pago</span>
             <span class="detail-value">${fechaFormateada}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">Estatus actual</span>
-            <span class="detail-value">${pago.estatus}</span>
+            <span class="detail-label">Tipo de pago</span>
+            <span class="detail-value">${pago.tipo_pago}</span>
           </div>
           <div class="detail-item">
-            <span class="detail-label">Saldo pendiente</span>
-            <span class="detail-value">${saldoPendienteFormateado}</span>
+            <span class="detail-label">Saldo deudor actual</span>
+            <span class="detail-value">${saldoDeudorFormateado}</span>
           </div>
+          ${pago.referencia_bancaria ? `
+          <div class="detail-item">
+            <span class="detail-label">Referencia bancaria</span>
+            <span class="detail-value">${pago.referencia_bancaria}</span>
+          </div>
+          ` : ''}
           ${pago.transaccion_id ? `
           <div class="detail-item">
             <span class="detail-label">ID Transacción</span>
@@ -113,16 +123,18 @@ function renderizarPagos() {
         </div>
 
         <div class="payment-actions">
+          ${pago.comprobante_url ? `
           <button 
             class="btn-view-receipt" 
-            onclick="verComprobante(${pago.pedidoid})"
+            onclick="verComprobante(${pago.pago_id})"
           >
             <i class="bi bi-file-earmark-image"></i>
             Ver comprobante
           </button>
+          ` : ''}
           <button 
             class="btn btn-danger" 
-            onclick="rechazarPago(${pago.pedidoid})"
+            onclick="rechazarPago(${pago.pago_id})"
             style="display: flex; align-items: center; gap: 0.5rem;"
           >
             <i class="bi bi-x-circle-fill"></i>
@@ -130,7 +142,7 @@ function renderizarPagos() {
           </button>
           <button 
             class="btn btn-success" 
-            onclick="aprobarPago(${pago.pedidoid})"
+            onclick="aprobarPago(${pago.pago_id})"
             style="display: flex; align-items: center; gap: 0.5rem;"
           >
             <i class="bi bi-check-circle-fill"></i>
@@ -142,8 +154,8 @@ function renderizarPagos() {
   }).join('');
 }
 
-function verComprobante(pedidoId) {
-  const pago = pagosPendientes.find(p => p.pedidoid === pedidoId);
+function verComprobante(pagoId) {
+  const pago = pagosPendientes.find(p => p.pago_id === pagoId);
   
   if (!pago) {
     Swal.fire({
@@ -155,35 +167,41 @@ function verComprobante(pedidoId) {
     return;
   }
 
-  pagoActual = pedidoId;
+  pagoActual = pagoId;
 
   const modal = document.getElementById('modalComprobante');
   const modalCliente = document.getElementById('modalCliente');
   const modalMonto = document.getElementById('modalMonto');
   const modalContenido = document.getElementById('modalContenido');
 
-  modalCliente.textContent = `${pago.nombre} ${pago.apellido} - Pedido #${pago.pedidoid}`;
+  modalCliente.textContent = `${pago.nombre} ${pago.apellido || ''} - Pago #${pago.pago_id}`;
   modalMonto.textContent = new Intl.NumberFormat('es-MX', {
     style: 'currency',
     currency: 'MXN'
-  }).format(pago.montototal);
+  }).format(pago.monto);
 
   if (pago.comprobante_url) {
     modalContenido.innerHTML = `
       <div style="margin-bottom: 1rem;">
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; text-align: left;">
           <div>
-            <div class="detail-label">Pedido ID</div>
-            <div class="detail-value">#${pago.pedidoid}</div>
+            <div class="detail-label">Pago ID</div>
+            <div class="detail-value">#${pago.pago_id}</div>
           </div>
           <div>
-            <div class="detail-label">Fecha del pedido</div>
-            <div class="detail-value">${new Date(pago.fechapedido).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+            <div class="detail-label">Fecha del pago</div>
+            <div class="detail-value">${new Date(pago.fecha_pago).toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
           </div>
           <div>
-            <div class="detail-label">Método de pago</div>
-            <div class="detail-value">${pago.metodo_pago || 'Transferencia'}</div>
+            <div class="detail-label">Tipo de pago</div>
+            <div class="detail-value">${pago.tipo_pago || 'Transferencia'}</div>
           </div>
+          ${pago.referencia_bancaria ? `
+          <div>
+            <div class="detail-label">Referencia bancaria</div>
+            <div class="detail-value">${pago.referencia_bancaria}</div>
+          </div>
+          ` : ''}
           ${pago.transaccion_id ? `
           <div>
             <div class="detail-label">ID de transacción</div>
@@ -219,8 +237,8 @@ function cerrarModal() {
   pagoActual = null;
 }
 
-async function aprobarPago(pedidoId) {
-  const pago = pagosPendientes.find(p => p.pedidoid === pedidoId);
+async function aprobarPago(pagoId) {
+  const pago = pagosPendientes.find(p => p.pago_id === pagoId);
   
   if (!pago) {
     Swal.fire({
@@ -235,18 +253,18 @@ async function aprobarPago(pedidoId) {
   const montoFormateado = new Intl.NumberFormat('es-MX', {
     style: 'currency',
     currency: 'MXN'
-  }).format(pago.montototal);
+  }).format(pago.monto);
 
   const result = await Swal.fire({
     title: '¿Aprobar este pago?',
     html: `
       <div style="text-align: left; padding: 1rem;">
-        <p style="margin-bottom: 0.5rem;"><strong>Pedido:</strong> #${pago.pedidoid}</p>
-        <p style="margin-bottom: 0.5rem;"><strong>Cliente:</strong> ${pago.nombre} ${pago.apellido}</p>
+        <p style="margin-bottom: 0.5rem;"><strong>Pago:</strong> #${pago.pago_id}</p>
+        <p style="margin-bottom: 0.5rem;"><strong>Cliente:</strong> ${pago.nombre} ${pago.apellido || ''}</p>
         <p style="margin-bottom: 0.5rem;"><strong>Monto:</strong> ${montoFormateado}</p>
         <hr style="margin: 1rem 0;">
         <p style="color: #6b7280; font-size: 0.875rem;">
-          Al aprobar, el pedido se marcará como <strong>Confirmado</strong> y <strong>Pagado</strong>.
+          Al aprobar, el pago se aplicará al saldo deudor del cliente.
         </p>
       </div>
     `,
@@ -270,7 +288,7 @@ async function aprobarPago(pedidoId) {
       }
     });
 
-    const response = await fetchWithAuth(`/api/admin/pagos/${pedidoId}/aprobar`, {
+    const response = await fetchWithAuth(`/api/admin/pagos-clientes/${pagoId}/aprobar`, {
       method: 'PUT'
     });
 
@@ -302,8 +320,8 @@ async function aprobarPago(pedidoId) {
   }
 }
 
-async function rechazarPago(pedidoId) {
-  const pago = pagosPendientes.find(p => p.pedidoid === pedidoId);
+async function rechazarPago(pagoId) {
+  const pago = pagosPendientes.find(p => p.pago_id === pagoId);
   
   if (!pago) {
     Swal.fire({
@@ -318,14 +336,14 @@ async function rechazarPago(pedidoId) {
   const montoFormateado = new Intl.NumberFormat('es-MX', {
     style: 'currency',
     currency: 'MXN'
-  }).format(pago.montototal);
+  }).format(pago.monto);
 
   const result = await Swal.fire({
     title: '¿Rechazar este pago?',
     html: `
       <div style="text-align: left; padding: 1rem;">
-        <p style="margin-bottom: 0.5rem;"><strong>Pedido:</strong> #${pago.pedidoid}</p>
-        <p style="margin-bottom: 0.5rem;"><strong>Cliente:</strong> ${pago.nombre} ${pago.apellido}</p>
+        <p style="margin-bottom: 0.5rem;"><strong>Pago:</strong> #${pago.pago_id}</p>
+        <p style="margin-bottom: 0.5rem;"><strong>Cliente:</strong> ${pago.nombre} ${pago.apellido || ''}</p>
         <p style="margin-bottom: 0.5rem;"><strong>Monto:</strong> ${montoFormateado}</p>
         <hr style="margin: 1rem 0;">
         <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Motivo del rechazo:</label>
@@ -367,7 +385,7 @@ async function rechazarPago(pedidoId) {
       }
     });
 
-    const response = await fetchWithAuth(`/api/admin/pagos/${pedidoId}/rechazar`, {
+    const response = await fetchWithAuth(`/api/admin/pagos-clientes/${pagoId}/rechazar`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'

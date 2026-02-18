@@ -811,6 +811,20 @@ router.get(
 );
 
 router.get(
+  "/cxc/cliente/:clienteId",
+  authenticate,
+  authorizeAdmin,
+  cxcController.getClienteCXCDetail
+);
+
+router.get(
+  "/cxc/cliente/:clienteId/movimientos",
+  authenticate,
+  authorizeAdmin,
+  cxcController.getClienteCXCMovimientos
+);
+
+router.get(
   "/cxc/estado-cuenta/:clienteId",
   authenticate,
   authorizeAdmin,
