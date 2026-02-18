@@ -892,31 +892,28 @@ async function getClienteCXCMovimientos(req, res) {
         // Obtener movimientos
         const { rows } = await client.query(`
             SELECT 
-                mcr.movimiento_id,
-                mcr.tipo,
-                mcr.monto,
-                mcr.descripcion,
-                mcr.fecha_movimiento,
-                mcr.saldo_despues_movimiento,
-                mcr.referencia,
-                CASE 
-                    WHEN mcr.pedido_id IS NOT NULL THEN CONCAT('Pedido #', mcr.pedido_id)
-                    WHEN mcr.pago_id IS NOT NULL THEN CONCAT('Pago #', mcr.pago_id)
-                    ELSE mcr.referencia
-                END as referencia
-            FROM movimientos_credito mcr
-            WHERE mcr.cliente_id = $1
-                AND mcr.tenant_id = $2
-            ORDER BY mcr.fecha_movimiento DESC
+                cm.movimiento_id,
+                cm.tipo_movimiento as tipo,
+                cm.monto,
+                cm.descripcion,
+                cm.fecha_movimiento,
+                cm.saldo_despues_movimiento,
+                cm.referencia_id as referencia
+            FROM credito_movimientos cm
+            INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id
+            WHERE cc.cliente_id = $1
+                AND cc.tenant_id = $2
+            ORDER BY cm.fecha_movimiento DESC
             LIMIT $3 OFFSET $4
         `, [clienteId, tenant_id, limit, offset]);
 
         // Contar total de registros
         const { rows: [count] } = await client.query(`
             SELECT COUNT(*) as total
-            FROM movimientos_credito
-            WHERE cliente_id = $1
-                AND tenant_id = $2
+            FROM credito_movimientos cm
+            INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id
+            WHERE cc.cliente_id = $1
+                AND cc.tenant_id = $2
         `, [clienteId, tenant_id]);
 
         const totalPages = Math.ceil(parseInt(count.total) / limit);
@@ -945,10 +942,11 @@ async function getClienteCXCMovimientos(req, res) {
 module.exports = {
     getSummaryAging,
     getMetricasCobranza,
-    exportarLoteCXC,
-    getHistorialMovimientos,
+    exportarLoteCxC,
+    obtenerHistorialMovimientos,
     getPagosClientesPendientes,
-    getClientesConCredito,
+    gestionarPagoCliente,
+    getClientesCredito,
     getClienteCXCDetail,
     getClienteCXCMovimientos
 };
