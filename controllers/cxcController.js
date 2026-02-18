@@ -304,6 +304,7 @@ async function exportarLoteCxC(req, res) {
  */
 async function getMetricasCobranza(req, res) {
     const client = await db.pool.connect();
+    const tenant_id = req.tenant?.tenant_id || 1;
     
     try {
         // Ejecutar consultas en paralelo
@@ -313,22 +314,25 @@ async function getMetricasCobranza(req, res) {
                 SELECT COALESCE(SUM(saldo_deudor), 0) as total
                 FROM cliente_creditos
                 WHERE saldo_deudor > 0
-            `),
+                    AND tenant_id = $1
+            `, [tenant_id]),
             
             // Saldo en gestión (exportado este mes)
             client.query(`
                 SELECT COALESCE(SUM(saldo_deudor), 0) as total
                 FROM cliente_creditos
                 WHERE saldo_deudor > 0
-                AND ultima_actualizacion >= date_trunc('month', CURRENT_DATE)
-            `),
+                    AND ultima_actualizacion >= date_trunc('month', CURRENT_DATE)
+                    AND tenant_id = $1
+            `, [tenant_id]),
             
             // Clientes en mora
             client.query(`
                 SELECT COUNT(*) as total
                 FROM cliente_creditos
                 WHERE estado_credito = 'SUSPENDIDO'
-            `)
+                    AND tenant_id = $1
+            `, [tenant_id])
         ]);
 
         res.json({
@@ -471,40 +475,8 @@ async function getSummaryAging(req, res) {
     const filterByAdminId = req.query.adminId ? parseInt(req.query.adminId) : null;
 
     try {
-        // Construir filtro de admin dinámicamente
-        let adminFilter = '';
-        let queryParams = [tenant_id];
-        let paramIndex = 2;
-        
-        if (!isSuperAdmin) {
-            // Admin regular: solo ve CXC de ventas que usaron su stock
-            adminFilter = `
-                AND EXISTS (
-                    SELECT 1 FROM remisiones r
-                    INNER JOIN detalles_remision dr ON dr.remision_id = r.remision_id
-                    INNER JOIN inventarios_admin ia ON ia.inventarioid = dr.inventario_id
-                    WHERE r.pedido_id = pa.pedidoid
-                        AND ia.admin_id = $${paramIndex}
-                        AND r.tenant_id = $1
-                )`;
-            queryParams.push(adminId);
-            paramIndex++;
-        } else if (filterByAdminId) {
-            // Super admin filtrando por admin específico
-            adminFilter = `
-                AND EXISTS (
-                    SELECT 1 FROM remisiones r
-                    INNER JOIN detalles_remision dr ON dr.remision_id = r.remision_id
-                    INNER JOIN inventarios_admin ia ON ia.inventarioid = dr.inventario_id
-                    WHERE r.pedido_id = pa.pedidoid
-                        AND ia.admin_id = $${paramIndex}
-                        AND r.tenant_id = $1
-                )`;
-            queryParams.push(filterByAdminId);
-            paramIndex++;
-        }
-        
-        queryParams.push(limit, offset);
+        // Construir parámetros de query
+        let queryParams = [tenant_id, limit, offset];
 
         // Obtener cartera activa con aging
         const { rows } = await client.query(`
@@ -526,7 +498,6 @@ async function getSummaryAging(req, res) {
                     AND p.saldo_pendiente > 0
                     AND p.estatus NOT IN ('Cancelado', 'Rechazado')
                     AND p.tenant_id = $1
-                    ${adminFilter}
             )
             SELECT 
                 cc.credito_id as "creditoId",
@@ -538,7 +509,7 @@ async function getSummaryAging(req, res) {
                 cc.saldo_deudor as "saldoDeudor",
                 (cc.limite_credito - cc.saldo_deudor) as disponible,
                 cc.estado_credito as estado,
-                cc.ultimo_movimiento as "ultimoMovimiento",
+                cc.ultima_actualizacion as "ultimoMovimiento",
                 -- Aging buckets
                 COALESCE(SUM(CASE WHEN pa.dias_vencido = 0 THEN pa.saldo_pendiente ELSE 0 END), 0) as "alCorriente",
                 COALESCE(SUM(CASE WHEN pa.dias_vencido BETWEEN 1 AND 30 THEN pa.saldo_pendiente ELSE 0 END), 0) as "vencido1a30",
@@ -551,46 +522,12 @@ async function getSummaryAging(req, res) {
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
             GROUP BY cc.credito_id, c.clienteid, c.nombre, c.apellido, c.email, 
-                     cc.limite_credito, cc.saldo_deudor, cc.estado_credito, cc.ultimo_movimiento
+                     cc.limite_credito, cc.saldo_deudor, cc.estado_credito, cc.ultima_actualizacion
             ORDER BY cc.saldo_deudor DESC
-            LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+            LIMIT $2 OFFSET $3
         `, queryParams);
 
-        // Total de registros con mismo filtro de admin
-        let countParams = [tenant_id];
-        let countParamIndex = 2;
-        let countAdminFilter = '';
-        
-        if (!isSuperAdmin) {
-            countAdminFilter = `
-                AND EXISTS (
-                    SELECT 1 FROM pedidos p
-                    INNER JOIN remisiones r ON r.pedido_id = p.pedidoid
-                    INNER JOIN detalles_remision dr ON dr.remision_id = r.remision_id
-                    INNER JOIN inventarios_admin ia ON ia.inventarioid = dr.inventario_id
-                    WHERE p.clienteid = c.clienteid
-                        AND p.es_credito = true
-                        AND p.saldo_pendiente > 0
-                        AND ia.admin_id = $${countParamIndex}
-                        AND r.tenant_id = $1
-                )`;
-            countParams.push(adminId);
-        } else if (filterByAdminId) {
-            countAdminFilter = `
-                AND EXISTS (
-                    SELECT 1 FROM pedidos p
-                    INNER JOIN remisiones r ON r.pedido_id = p.pedidoid
-                    INNER JOIN detalles_remision dr ON dr.remision_id = r.remision_id
-                    INNER JOIN inventarios_admin ia ON ia.inventarioid = dr.inventario_id
-                    WHERE p.clienteid = c.clienteid
-                        AND p.es_credito = true
-                        AND p.saldo_pendiente > 0
-                        AND ia.admin_id = $${countParamIndex}
-                        AND r.tenant_id = $1
-                )`;
-            countParams.push(filterByAdminId);
-        }
-        
+        // Total de registros
         const { rows: [count] } = await client.query(`
             SELECT COUNT(DISTINCT cc.credito_id) as total
             FROM cliente_creditos cc
@@ -598,10 +535,9 @@ async function getSummaryAging(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-                ${countAdminFilter}
-        `, countParams);
+        `, [tenant_id]);
 
-        // Métricas agregadas con mismo filtro de admin
+        // Métricas agregadas
         const { rows: [metrics] } = await client.query(`
             SELECT 
                 COALESCE(SUM(cc.saldo_deudor), 0) as total_cobrar,
@@ -612,8 +548,7 @@ async function getSummaryAging(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-                ${countAdminFilter}
-        `, countParams);
+        `, [tenant_id]);
 
         const totalPages = Math.ceil(parseInt(count.total) / limit);
 
@@ -663,9 +598,11 @@ async function getPagosClientesPendientes(req, res) {
                 pc.notas,
                 c.nombre,
                 c.apellido,
-                c.email
+                c.email,
+                cc.saldo_deudor
             FROM pagos_clientes pc
             INNER JOIN clientes c ON c.clienteid = pc.cliente_id
+            LEFT JOIN cliente_creditos cc ON cc.cliente_id = pc.cliente_id
             WHERE pc.estatus = 'PENDIENTE'
                 AND pc.tenant_id = $1
                 AND c.tenant_id = $1
@@ -674,7 +611,7 @@ async function getPagosClientesPendientes(req, res) {
 
         res.json({
             success: true,
-            data: rows
+            pagos: rows
         });
 
     } catch (error) {
