@@ -811,10 +811,17 @@ router.get(
 );
 
 router.get(
-  "/cxc/administradores",
+  "/cxc/cliente/:clienteId",
   authenticate,
   authorizeAdmin,
-  cxcController.getAdministradoresCxC
+  cxcController.getClienteCXCDetail
+);
+
+router.get(
+  "/cxc/cliente/:clienteId/movimientos",
+  authenticate,
+  authorizeAdmin,
+  cxcController.getClienteCXCMovimientos
 );
 
 router.get(

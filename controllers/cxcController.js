@@ -826,53 +826,129 @@ async function gestionarPagoCliente(req, res) {
 }
 
 /**
- * Obtiene lista de administradores para filtro (solo super admin)
- * @route GET /api/admin/cxc/administradores
+ * Obtiene los datos de crédito de un cliente específico
+ * @route GET /api/admin/cxc/cliente/:clienteId
  */
-async function getAdministradoresCxC(req, res) {
+async function getClienteCXCDetail(req, res) {
+    const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
-    const userRole = req.user?.rol || req.user?.roles?.[0];
-    
-    if (userRole !== 'superadmin') {
-        return res.status(403).json({
-            success: false,
-            message: 'Solo super admin puede acceder a esta información'
-        });
-    }
+    const clienteId = parseInt(req.params.clienteId);
 
     try {
-        const { rows } = await db.query(`
-            SELECT DISTINCT
-                a.adminid,
-                a.nombre,
-                a.apellido
-            FROM administradores a
-            WHERE a.tenant_id = $1
-                AND a.activo = true
-            ORDER BY a.nombre, a.apellido
-        `, [tenant_id]);
+        const { rows } = await client.query(`
+            SELECT 
+                c.clienteid,
+                c.nombre,
+                c.apellido,
+                c.email,
+                cc.limite_credito,
+                cc.saldo_deudor,
+                cc.estado_credito,
+                cc.dias_credito,
+                cc.ultima_actualizacion
+            FROM clientes c
+            INNER JOIN cliente_creditos cc ON cc.cliente_id = c.clienteid
+            WHERE c.clienteid = $1
+                AND c.tenant_id = $2
+                AND cc.tenant_id = $2
+        `, [clienteId, tenant_id]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cliente no encontrado'
+            });
+        }
 
         res.json({
             success: true,
-            data: rows
+            data: rows[0]
         });
 
     } catch (error) {
-        console.error('Error obteniendo administradores:', error);
+        console.error('Error obteniendo detalle de cliente CXC:', error);
         res.status(500).json({
             success: false,
-            message: 'Error al obtener lista de administradores'
+            message: 'Error al obtener detalle del cliente'
         });
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Obtiene el historial de movimientos de crédito de un cliente
+ * @route GET /api/admin/cxc/cliente/:clienteId/movimientos
+ */
+async function getClienteCXCMovimientos(req, res) {
+    const client = await db.pool.connect();
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const clienteId = parseInt(req.params.clienteId);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const offset = (page - 1) * limit;
+
+    try {
+        // Obtener movimientos
+        const { rows } = await client.query(`
+            SELECT 
+                mcr.movimiento_id,
+                mcr.tipo,
+                mcr.monto,
+                mcr.descripcion,
+                mcr.fecha_movimiento,
+                mcr.saldo_despues_movimiento,
+                mcr.referencia,
+                CASE 
+                    WHEN mcr.pedido_id IS NOT NULL THEN CONCAT('Pedido #', mcr.pedido_id)
+                    WHEN mcr.pago_id IS NOT NULL THEN CONCAT('Pago #', mcr.pago_id)
+                    ELSE mcr.referencia
+                END as referencia
+            FROM movimientos_credito mcr
+            WHERE mcr.cliente_id = $1
+                AND mcr.tenant_id = $2
+            ORDER BY mcr.fecha_movimiento DESC
+            LIMIT $3 OFFSET $4
+        `, [clienteId, tenant_id, limit, offset]);
+
+        // Contar total de registros
+        const { rows: [count] } = await client.query(`
+            SELECT COUNT(*) as total
+            FROM movimientos_credito
+            WHERE cliente_id = $1
+                AND tenant_id = $2
+        `, [clienteId, tenant_id]);
+
+        const totalPages = Math.ceil(parseInt(count.total) / limit);
+
+        res.json({
+            success: true,
+            data: {
+                movimientos: rows,
+                currentPage: page,
+                totalPages,
+                totalRecords: parseInt(count.total)
+            }
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo movimientos de cliente:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener movimientos del cliente'
+        });
+    } finally {
+        client.release();
     }
 }
 
 module.exports = {
-    exportarLoteCxC,
-    getMetricasCobranza,
-    getClientesCredito,
     getSummaryAging,
+    getMetricasCobranza,
+    exportarLoteCXC,
+    getHistorialMovimientos,
     getPagosClientesPendientes,
-    gestionarPagoCliente,
-    obtenerHistorialMovimientos,
-    getAdministradoresCxC
+    getClientesConCredito,
+    getClienteCXCDetail,
+    getClienteCXCMovimientos
 };

@@ -401,7 +401,7 @@
   }
 
   window.verDetalleCliente = function(clienteId) {
-    window.location.href = `/admin-cliente-detalle.html?id=${clienteId}`;
+    window.location.href = `/admin-cliente-cxc.html?id=${clienteId}`;
   };
 
 })();
