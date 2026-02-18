@@ -465,8 +465,47 @@ async function getSummaryAging(req, res) {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
+    const adminId = req.user?.adminId || req.user?.userId;
+    const userRole = req.user?.rol || req.user?.roles?.[0];
+    const isSuperAdmin = userRole === 'superadmin';
+    const filterByAdminId = req.query.adminId ? parseInt(req.query.adminId) : null;
 
     try {
+        // Construir filtro de admin dinámicamente
+        let adminFilter = '';
+        let queryParams = [tenant_id];
+        let paramIndex = 2;
+        
+        if (!isSuperAdmin) {
+            // Admin regular: solo ve CXC de ventas que usaron su stock
+            adminFilter = `
+                AND EXISTS (
+                    SELECT 1 FROM remisiones r
+                    INNER JOIN detalles_remision dr ON dr.remision_id = r.remision_id
+                    INNER JOIN inventarios_admin ia ON ia.inventarioid = dr.inventario_id
+                    WHERE r.pedido_id = pa.pedidoid
+                        AND ia.admin_id = $${paramIndex}
+                        AND r.tenant_id = $1
+                )`;
+            queryParams.push(adminId);
+            paramIndex++;
+        } else if (filterByAdminId) {
+            // Super admin filtrando por admin específico
+            adminFilter = `
+                AND EXISTS (
+                    SELECT 1 FROM remisiones r
+                    INNER JOIN detalles_remision dr ON dr.remision_id = r.remision_id
+                    INNER JOIN inventarios_admin ia ON ia.inventarioid = dr.inventario_id
+                    WHERE r.pedido_id = pa.pedidoid
+                        AND ia.admin_id = $${paramIndex}
+                        AND r.tenant_id = $1
+                )`;
+            queryParams.push(filterByAdminId);
+            paramIndex++;
+        }
+        
+        queryParams.push(limit, offset);
+
         // Obtener cartera activa con aging
         const { rows } = await client.query(`
             WITH pedidos_aging AS (
@@ -487,6 +526,7 @@ async function getSummaryAging(req, res) {
                     AND p.saldo_pendiente > 0
                     AND p.estatus NOT IN ('Cancelado', 'Rechazado')
                     AND p.tenant_id = $1
+                    ${adminFilter}
             )
             SELECT 
                 cc.credito_id as "creditoId",
@@ -513,10 +553,44 @@ async function getSummaryAging(req, res) {
             GROUP BY cc.credito_id, c.clienteid, c.nombre, c.apellido, c.email, 
                      cc.limite_credito, cc.saldo_deudor, cc.estado_credito, cc.ultimo_movimiento
             ORDER BY cc.saldo_deudor DESC
-            LIMIT $2 OFFSET $3
-        `, [tenant_id, limit, offset]);
+            LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+        `, queryParams);
 
-        // Total de registros
+        // Total de registros con mismo filtro de admin
+        let countParams = [tenant_id];
+        let countParamIndex = 2;
+        let countAdminFilter = '';
+        
+        if (!isSuperAdmin) {
+            countAdminFilter = `
+                AND EXISTS (
+                    SELECT 1 FROM pedidos p
+                    INNER JOIN remisiones r ON r.pedido_id = p.pedidoid
+                    INNER JOIN detalles_remision dr ON dr.remision_id = r.remision_id
+                    INNER JOIN inventarios_admin ia ON ia.inventarioid = dr.inventario_id
+                    WHERE p.clienteid = c.clienteid
+                        AND p.es_credito = true
+                        AND p.saldo_pendiente > 0
+                        AND ia.admin_id = $${countParamIndex}
+                        AND r.tenant_id = $1
+                )`;
+            countParams.push(adminId);
+        } else if (filterByAdminId) {
+            countAdminFilter = `
+                AND EXISTS (
+                    SELECT 1 FROM pedidos p
+                    INNER JOIN remisiones r ON r.pedido_id = p.pedidoid
+                    INNER JOIN detalles_remision dr ON dr.remision_id = r.remision_id
+                    INNER JOIN inventarios_admin ia ON ia.inventarioid = dr.inventario_id
+                    WHERE p.clienteid = c.clienteid
+                        AND p.es_credito = true
+                        AND p.saldo_pendiente > 0
+                        AND ia.admin_id = $${countParamIndex}
+                        AND r.tenant_id = $1
+                )`;
+            countParams.push(filterByAdminId);
+        }
+        
         const { rows: [count] } = await client.query(`
             SELECT COUNT(DISTINCT cc.credito_id) as total
             FROM cliente_creditos cc
@@ -524,9 +598,10 @@ async function getSummaryAging(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-        `, [tenant_id]);
+                ${countAdminFilter}
+        `, countParams);
 
-        // Métricas agregadas
+        // Métricas agregadas con mismo filtro de admin
         const { rows: [metrics] } = await client.query(`
             SELECT 
                 COALESCE(SUM(cc.saldo_deudor), 0) as total_cobrar,
@@ -537,7 +612,8 @@ async function getSummaryAging(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-        `, [tenant_id]);
+                ${countAdminFilter}
+        `, countParams);
 
         const totalPages = Math.ceil(parseInt(count.total) / limit);
 
@@ -760,6 +836,47 @@ async function gestionarPagoCliente(req, res) {
     }
 }
 
+/**
+ * Obtiene lista de administradores para filtro (solo super admin)
+ * @route GET /api/admin/cxc/administradores
+ */
+async function getAdministradoresCxC(req, res) {
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const userRole = req.user?.rol || req.user?.roles?.[0];
+    
+    if (userRole !== 'superadmin') {
+        return res.status(403).json({
+            success: false,
+            message: 'Solo super admin puede acceder a esta información'
+        });
+    }
+
+    try {
+        const { rows } = await db.query(`
+            SELECT DISTINCT
+                a.adminid,
+                a.nombre,
+                a.apellido
+            FROM administradores a
+            WHERE a.tenant_id = $1
+                AND a.activo = true
+            ORDER BY a.nombre, a.apellido
+        `, [tenant_id]);
+
+        res.json({
+            success: true,
+            data: rows
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo administradores:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener lista de administradores'
+        });
+    }
+}
+
 module.exports = {
     exportarLoteCxC,
     getMetricasCobranza,
@@ -767,5 +884,6 @@ module.exports = {
     getSummaryAging,
     getPagosClientesPendientes,
     gestionarPagoCliente,
-    obtenerHistorialMovimientos
+    obtenerHistorialMovimientos,
+    getAdministradoresCxC
 };

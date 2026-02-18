@@ -317,6 +317,8 @@ async function exportarCxCDetallado(req, res) {
  * Obtiene lista de clientes con crédito activo para el selector de filtros
  */
 async function obtenerClientesConCredito(req, res) {
+    const tenant_id = req.tenant?.tenant_id || 1;
+    
     try {
         const { rows } = await db.query(`
             SELECT 
@@ -327,8 +329,10 @@ async function obtenerClientesConCredito(req, res) {
             FROM cliente_creditos cc
             INNER JOIN clientes c ON c.clienteid = cc.cliente_id
             WHERE cc.estado_credito = 'ACTIVO'
+                AND cc.tenant_id = $1
+                AND c.tenant_id = $1
             ORDER BY c.nombre, c.apellido
-        `);
+        `, [tenant_id]);
 
         return res.json({
             success: true,

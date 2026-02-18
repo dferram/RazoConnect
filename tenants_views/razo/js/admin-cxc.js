@@ -7,19 +7,22 @@
     filters: {
       search: "",
       estado: "",
+      adminId: ""
     },
     currentCreditoId: null,
     currentPage: 1,
     itemsPerPage: 10,
     totalPages: 1,
-    totalRecords: 0
+    totalRecords: 0,
+    userRole: null
   };
 
   const elements = {};
 
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", async () => {
     cacheElements();
     ensureFontAwesome();
+    await checkUserRole();
     bindEvents();
     loadCartera();
     cargarMetricas();
@@ -58,6 +61,7 @@
     elements.filtroFechaHasta = document.getElementById("filtro-fecha-hasta");
     elements.filtroCliente = document.getElementById("filtro-cliente");
     elements.filtroEstadoExport = document.getElementById("filtro-estado-export");
+    elements.filtroAdmin = document.getElementById("filtroAdmin");
   }
 
   function ensureFontAwesome() {
@@ -82,6 +86,11 @@
     elements.filtroEstado?.addEventListener("change", (event) => {
       state.filters.estado = event.target.value;
       applyFilters();
+    });
+
+    elements.filtroAdmin?.addEventListener("change", (event) => {
+      state.filters.adminId = event.target.value;
+      loadCartera(false, 1);
     });
 
     elements.btnRegistrarAbono?.addEventListener("click", () => {
@@ -238,7 +247,12 @@
         showButtonLoading(elements.btnRecargar, true);
       }
 
-      const response = await API.apiCall(`/admin/cxc/summary-aging?page=${page}&limit=${state.itemsPerPage}`, {
+      let url = `/admin/cxc/summary-aging?page=${page}&limit=${state.itemsPerPage}`;
+      if (state.filters.adminId) {
+        url += `&adminId=${state.filters.adminId}`;
+      }
+
+      const response = await API.apiCall(url, {
         method: "GET",
       });
 
@@ -1028,6 +1042,55 @@
       const nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim();
       const saldo = formatCurrency(cliente.saldo_deudor || 0);
       option.textContent = `${nombreCompleto} (${saldo})`;
+      selector.appendChild(option);
+    });
+  }
+
+  async function checkUserRole() {
+    try {
+      const token = localStorage.getItem('razoconnect_admin_token');
+      if (!token) return;
+
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      state.userRole = payload.rol || payload.roles?.[0];
+
+      if (state.userRole === 'superadmin' && elements.filtroAdmin) {
+        elements.filtroAdmin.style.display = '';
+        await cargarAdministradores();
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+    }
+  }
+
+  async function cargarAdministradores() {
+    try {
+      const response = await API.apiCall("/admin/cxc/administradores", {
+        method: "GET",
+      });
+
+      if (response.ok && response.data?.success) {
+        const admins = response.data.data || [];
+        renderAdministradoresSelector(admins);
+      } else {
+        console.error("Error cargando administradores:", response.data?.message);
+      }
+    } catch (error) {
+      console.error("Error cargando administradores:", error);
+    }
+  }
+
+  function renderAdministradoresSelector(admins) {
+    const selector = elements.filtroAdmin;
+    if (!selector) return;
+
+    selector.innerHTML = '<option value="">Todos los administradores</option>';
+
+    admins.forEach((admin) => {
+      const option = document.createElement("option");
+      option.value = admin.adminid;
+      const nombreCompleto = `${admin.nombre || ''} ${admin.apellido || ''}`.trim();
+      option.textContent = nombreCompleto;
       selector.appendChild(option);
     });
   }
