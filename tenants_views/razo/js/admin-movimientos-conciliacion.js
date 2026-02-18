@@ -36,7 +36,8 @@ async function cargarSesionesAuditoria() {
     const token = localStorage.getItem('razoconnect_admin_token');
     if (!token) return;
 
-    const response = await fetch('/api/admin/inventario/sesiones', {
+    // Solo cargar sesiones APLICADAS (que ya entraron al inventario)
+    const response = await fetch('/api/admin/inventario/sesiones?estatus=APLICADA', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -48,14 +49,22 @@ async function cargarSesionesAuditoria() {
     
     if (!select) return;
     
-    sesiones.forEach(sesion => {
+    if (sesiones.length === 0) {
       const option = document.createElement('option');
-      option.value = sesion.sesionid;
-      option.textContent = `${sesion.nombre} (${new Date(sesion.fechacreacion).toLocaleDateString('es-MX')})`;
+      option.value = '';
+      option.textContent = 'No hay sesiones de auditoría';
+      option.disabled = true;
       select.appendChild(option);
-    });
-    
-    console.log(`✅ Cargadas ${sesiones.length} sesiones de auditoría`);
+      console.log('⚠️ No hay sesiones de auditoría disponibles');
+    } else {
+      sesiones.forEach(sesion => {
+        const option = document.createElement('option');
+        option.value = sesion.sesionid;
+        option.textContent = `${sesion.nombre} (${new Date(sesion.fechacreacion).toLocaleDateString('es-MX')})`;
+        select.appendChild(option);
+      });
+      console.log(`✅ Cargadas ${sesiones.length} sesiones de auditoría`);
+    }
   } catch (error) {
     console.error('❌ Error cargando sesiones:', error);
   }
@@ -69,26 +78,35 @@ async function cargarOrdenesCompra() {
     const token = localStorage.getItem('razoconnect_admin_token');
     if (!token) return;
 
-    const response = await fetch('/api/admin/ordenes-compra', {
+    // Solo cargar órdenes RECIBIDAS (que ya entraron al inventario)
+    const response = await fetch('/api/admin/ordenes-compra?estatus=Recibida', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
     if (!response.ok) throw new Error('Error al cargar órdenes');
 
     const result = await response.json();
-    const ordenes = result.data || [];
+    const ordenes = result.data?.ordenes || result.data || [];
     const select = document.getElementById('filtroOrdenCompra');
     
     if (!select) return;
     
-    ordenes.forEach(orden => {
+    if (ordenes.length === 0) {
       const option = document.createElement('option');
-      option.value = orden.ordencompraid;
-      option.textContent = `OC #${orden.ordencompraid} - ${orden.proveedor_nombre || 'Sin proveedor'}`;
+      option.value = '';
+      option.textContent = 'No hay órdenes de compra';
+      option.disabled = true;
       select.appendChild(option);
-    });
-    
-    console.log(`✅ Cargadas ${ordenes.length} órdenes de compra`);
+      console.log('⚠️ No hay órdenes de compra disponibles');
+    } else {
+      ordenes.forEach(orden => {
+        const option = document.createElement('option');
+        option.value = orden.ordencompraid;
+        option.textContent = `OC #${orden.ordencompraid} - ${orden.proveedor_nombre || 'Sin proveedor'}`;
+        select.appendChild(option);
+      });
+      console.log(`✅ Cargadas ${ordenes.length} órdenes de compra`);
+    }
   } catch (error) {
     console.error('❌ Error cargando órdenes:', error);
   }
@@ -133,14 +151,22 @@ async function cargarTiposAjuste() {
       return;
     }
     
-    tipos.forEach(tipo => {
+    if (tipos.length === 0) {
       const option = document.createElement('option');
-      option.value = tipo;
-      option.textContent = formatearTipoAjuste(tipo);
+      option.value = '';
+      option.textContent = 'No hay tipos de ajuste';
+      option.disabled = true;
       select.appendChild(option);
-    });
-    
-    console.log(`✅ Cargados ${tipos.length} tipos de ajuste`);
+      console.log('⚠️ No hay tipos de ajuste disponibles');
+    } else {
+      tipos.forEach(tipo => {
+        const option = document.createElement('option');
+        option.value = tipo;
+        option.textContent = formatearTipoAjuste(tipo);
+        select.appendChild(option);
+      });
+      console.log(`✅ Cargados ${tipos.length} tipos de ajuste`);
+    }
   } catch (error) {
     console.error('❌ Error cargando tipos de ajuste:', error);
     // No bloquear la página si falla la carga de tipos
@@ -219,10 +245,22 @@ async function cargarAjustes() {
     
     if (filtrosActivos.fechaInicio) params.append('fechaInicio', filtrosActivos.fechaInicio);
     if (filtrosActivos.fechaFin) params.append('fechaFin', filtrosActivos.fechaFin);
-    if (filtrosActivos.tipoAjuste) params.append('tipoAjuste', filtrosActivos.tipoAjuste);
+    
+    // Solo agregar filtros si NO son "TODOS/TODAS" (que significa mostrar todos)
+    if (filtrosActivos.tipoAjuste && filtrosActivos.tipoAjuste !== 'TODOS') {
+      params.append('tipoAjuste', filtrosActivos.tipoAjuste);
+    }
     if (filtrosActivos.referencia) params.append('referencia', filtrosActivos.referencia);
-    if (document.getElementById('filtroSesion').value) params.append('sesionId', document.getElementById('filtroSesion').value);
-    if (document.getElementById('filtroOrdenCompra').value) params.append('ordenCompraId', document.getElementById('filtroOrdenCompra').value);
+    
+    const sesionValue = document.getElementById('filtroSesion').value;
+    if (sesionValue && sesionValue !== 'TODAS') {
+      params.append('sesionId', sesionValue);
+    }
+    
+    const ordenValue = document.getElementById('filtroOrdenCompra').value;
+    if (ordenValue && ordenValue !== 'TODAS') {
+      params.append('ordenCompraId', ordenValue);
+    }
 
     const response = await fetch(`/api/admin/ajustes-inventario/filtrados?${params.toString()}`, {
       headers: {
@@ -240,6 +278,7 @@ async function cargarAjustes() {
     renderizarTabla();
     renderizarTotales();
     renderizarResumenTipo();
+    renderizarUsuarios();
 
     console.log(`✅ Cargados ${ajustesData.length} ajustes de inventario`);
     console.log(`📊 Total Piezas: ${totalesData?.totalPiezas || 0}`);
@@ -292,11 +331,13 @@ function renderizarTabla() {
     const referenciaHTML = obtenerReferenciaHTML(ajuste);
     
     // Color visual indicator
-    const colorHTML = ajuste.colorNombre 
-      ? `<span style="display: inline-flex; align-items: center; gap: 0.35rem;">
-          <span style="width: 16px; height: 16px; border-radius: 50%; background-color: ${ajuste.colorHex || '#ccc'}; border: 1px solid #ddd; display: inline-block;"></span>
-          <small>${ajuste.colorNombre}</small>
-        </span>`
+    const colorHTML = ajuste.colorNombre
+      ? (ajuste.colorHex 
+          ? `<span style="display: inline-flex; align-items: center; gap: 0.35rem;">
+              <span style="width: 16px; height: 16px; border-radius: 50%; background-color: ${ajuste.colorHex}; border: 1px solid #ddd; display: inline-block;"></span>
+              <small>${ajuste.colorNombre}</small>
+            </span>`
+          : `<small>${ajuste.colorNombre}</small>`)
       : '<small class="text-muted">-</small>';
     
     // Calcular costo total
@@ -315,7 +356,6 @@ function renderizarTabla() {
         <td class="text-end">${ajuste.totalPiezas.toLocaleString('es-MX')}</td>
         <td class="text-end"><strong>$${ajuste.valorTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong></td>
         <td class="text-end"><strong>$${costoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong></td>
-        <td><small>${ajuste.usuarioNombre}</small></td>
       </tr>
     `;
   }).join('');
@@ -353,6 +393,51 @@ function renderizarTotales() {
 }
 
 /**
+ * Renderizar usuarios que afectaron el inventario
+ */
+function renderizarUsuarios() {
+  const container = document.getElementById('usuariosContainer');
+  const badgesContainer = document.getElementById('usuariosBadges');
+  
+  if (!ajustesData || ajustesData.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  // Obtener usuarios únicos con conteo de movimientos
+  const usuariosMap = new Map();
+  ajustesData.forEach(ajuste => {
+    const userId = ajuste.usuarioId;
+    const userName = ajuste.usuarioNombre;
+    if (userId && userName) {
+      if (usuariosMap.has(userId)) {
+        usuariosMap.get(userId).count++;
+      } else {
+        usuariosMap.set(userId, { name: userName, count: 1 });
+      }
+    }
+  });
+  
+  if (usuariosMap.size === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'block';
+  
+  // Renderizar badges de usuarios
+  badgesContainer.innerHTML = Array.from(usuariosMap.entries())
+    .sort((a, b) => b[1].count - a[1].count) // Ordenar por cantidad de movimientos
+    .map(([userId, data]) => `
+      <div class="usuario-badge" data-user-id="${userId}" onclick="filtrarPorUsuario(${userId}, '${data.name}')">
+        <i class="bi bi-person-circle"></i>
+        <span>${data.name}</span>
+        <span class="badge bg-secondary ms-1">${data.count}</span>
+      </div>
+    `).join('');
+}
+
+/**
  * Renderizar resumen por tipo
  */
 function renderizarResumenTipo() {
@@ -370,7 +455,7 @@ function renderizarResumenTipo() {
     const badgeClass = obtenerBadgeClass(tipo);
     
     return `
-      <div class="col-md-3">
+      <div class="col-md-6 col-lg-4">
         <div class="resumen-tipo-card">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <span class="badge ${badgeClass}">
@@ -406,7 +491,7 @@ function limpiarFiltros() {
   
   document.getElementById('tablaAjustes').innerHTML = `
     <tr>
-      <td colspan="10" class="text-center text-muted">
+      <td colspan="11" class="text-center text-muted">
         Selecciona los filtros y presiona "Filtrar" para ver resultados
       </td>
     </tr>
@@ -414,6 +499,7 @@ function limpiarFiltros() {
   
   document.getElementById('totalesCard').style.display = 'none';
   document.getElementById('resumenTipoContainer').style.display = 'none';
+  document.getElementById('usuariosContainer').style.display = 'none';
   document.getElementById('emptyState').style.display = 'none';
   
   establecerFechasPorDefecto();
@@ -688,6 +774,63 @@ function obtenerReferenciaHTML(ajuste) {
   }
   
   return '<span class="text-muted">-</span>';
+}
+
+/**
+ * Filtrar movimientos por usuario específico
+ */
+function filtrarPorUsuario(userId, userName) {
+  // Remover clase active de todos los badges
+  document.querySelectorAll('.usuario-badge').forEach(badge => {
+    badge.classList.remove('active');
+  });
+  
+  // Agregar clase active al badge clickeado
+  const clickedBadge = document.querySelector(`.usuario-badge[data-user-id="${userId}"]`);
+  if (clickedBadge) {
+    clickedBadge.classList.add('active');
+  }
+  
+  // Filtrar datos por usuario
+  const ajustesFiltrados = ajustesData.filter(ajuste => ajuste.usuarioId === userId);
+  
+  // Guardar datos originales si no están guardados
+  if (!window.ajustesDataOriginal) {
+    window.ajustesDataOriginal = [...ajustesData];
+  }
+  
+  // Actualizar ajustesData temporalmente
+  const tempData = ajustesData;
+  ajustesData = ajustesFiltrados;
+  
+  // Re-renderizar tabla
+  renderizarTabla();
+  
+  // Mostrar mensaje de filtro activo
+  Swal.fire({
+    icon: 'info',
+    title: `Filtrado por: ${userName}`,
+    text: `Mostrando ${ajustesFiltrados.length} movimientos de este usuario`,
+    confirmButtonColor: '#F97316',
+    showCancelButton: true,
+    cancelButtonText: 'Quitar Filtro',
+    confirmButtonText: 'OK'
+  }).then((result) => {
+    if (result.isDismissed) {
+      // Restaurar datos originales
+      ajustesData = window.ajustesDataOriginal;
+      window.ajustesDataOriginal = null;
+      renderizarTabla();
+      
+      // Remover clase active
+      document.querySelectorAll('.usuario-badge').forEach(badge => {
+        badge.classList.remove('active');
+      });
+    }
+  });
+  
+  // Restaurar datos después del render
+  ajustesData = tempData;
 }
 
 function formatearTipoAjuste(tipo) {

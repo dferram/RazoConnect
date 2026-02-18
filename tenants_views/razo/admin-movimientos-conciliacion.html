@@ -124,6 +124,32 @@
       color: #3730A3;
     }
     
+    /* Badges de Usuario */
+    .usuario-badge {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      font-size: 0.9rem;
+      background: #F3F4F6;
+      color: #374151;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+    
+    .usuario-badge:hover {
+      background: #F97316;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(249, 115, 22, 0.3);
+    }
+    
+    .usuario-badge.active {
+      background: #F97316;
+      color: white;
+      border-color: #EA580C;
+    }
+    
     /* Indicadores de Dirección */
     .direccion-movimiento {
       display: inline-flex;
@@ -323,19 +349,22 @@
             <div class="col-md-2">
               <label for="filtroTipoAjuste" class="form-label">Tipo de Ajuste</label>
               <select id="filtroTipoAjuste" class="form-select" title="Selecciona el tipo de ajuste a filtrar">
-                <option value="">Todos los tipos</option>
+                <option value="">Seleccionar tipo</option>
+                <option value="TODOS">Todos los tipos</option>
               </select>
             </div>
             <div class="col-md-3">
               <label for="filtroSesion" class="form-label">Sesión de Auditoría</label>
               <select id="filtroSesion" class="form-select" title="Filtra por sesión de auditoría específica">
-                <option value="">Todas las sesiones</option>
+                <option value="">Seleccionar sesión</option>
+                <option value="TODAS">Todas las sesiones</option>
               </select>
             </div>
             <div class="col-md-3">
               <label for="filtroOrdenCompra" class="form-label">Orden de Compra</label>
               <select id="filtroOrdenCompra" class="form-select" title="Filtra por orden de compra específica">
-                <option value="">Todas las órdenes</option>
+                <option value="">Seleccionar orden</option>
+                <option value="TODAS">Todas las órdenes</option>
               </select>
             </div>
             <div class="col-md-2">
@@ -393,13 +422,25 @@
           </div>
         </div>
 
-        <!-- Resumen por Tipo -->
-        <div id="resumenTipoContainer" style="display: none;">
-          <h5 class="mb-3">
-            <i class="bi bi-pie-chart"></i>
-            Resumen por Tipo de Ajuste
-          </h5>
-          <div class="row" id="resumenTipoCards"></div>
+        <!-- Resumen por Tipo y Usuarios -->
+        <div class="row mb-4">
+          <!-- Resumen por Tipo -->
+          <div class="col-md-8" id="resumenTipoContainer" style="display: none;">
+            <h5 class="mb-3">
+              <i class="bi bi-pie-chart"></i>
+              Resumen por Tipo de Ajuste
+            </h5>
+            <div class="row" id="resumenTipoCards"></div>
+          </div>
+          
+          <!-- Usuarios que Afectaron -->
+          <div class="col-md-4" id="usuariosContainer" style="display: none;">
+            <h5 class="mb-3">
+              <i class="bi bi-people"></i>
+              Usuarios
+            </h5>
+            <div id="usuariosBadges" class="d-flex flex-wrap gap-2"></div>
+          </div>
         </div>
 
         <!-- Tabla de Resultados -->
@@ -407,23 +448,22 @@
           <table class="table admin-table">
           <thead>
             <tr>
-              <th style="width: 90px;">Fecha</th>
-              <th style="width: 170px;">Producto</th>
-              <th style="width: 85px;">Color</th>
-              <th style="width: 65px;">Dim.</th>
-              <th style="width: 95px;">Dirección</th>
-              <th style="width: 120px;">Origen</th>
+              <th style="width: 70px;">Fecha</th>
+              <th style="width: 180px;">Producto</th>
+              <th style="width: 90px;">Color</th>
+              <th style="width: 60px;">Dim.</th>
+              <th style="width: 90px;">Dirección</th>
+              <th style="width: 110px;">Origen</th>
               <th style="width: 130px;">Referencia</th>
-              <th class="text-end" style="width: 55px;">Cant.</th>
-              <th class="text-end" style="width: 65px;">Piezas</th>
+              <th class="text-end" style="width: 60px;">Cant.</th>
+              <th class="text-end" style="width: 60px;">Piezas</th>
               <th class="text-end" style="width: 85px;">Valor</th>
               <th class="text-end" style="width: 85px;">Costo</th>
-              <th style="width: 85px;">Usuario</th>
             </tr>
           </thead>
           <tbody id="tablaAjustes">
             <tr>
-              <td colspan="12" class="text-center text-muted">
+              <td colspan="11" class="text-center text-muted">
                 Selecciona los filtros y presiona "Filtrar" para ver resultados
               </td>
             </tr>

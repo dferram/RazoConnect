@@ -550,61 +550,6 @@ async function descargarReportePDF(sesionId, nombreSesion) {
             });
 
             yPosition += 10;
-            
-            if (yPosition > 175) {
-                doc.addPage();
-                dibujarEncabezado(doc);
-                yPosition = 40;
-            }
-            
-            const xDerecha = 210;
-            const anchoBox = 75;
-            const altoBox = mostrarTotalPiezas ? 32 : 24;
-            
-            doc.setDrawColor(249, 115, 22);
-            doc.setLineWidth(0.5);
-            doc.setFillColor(255, 247, 237);
-            doc.roundedRect(xDerecha, yPosition, anchoBox, altoBox, 2, 2, 'FD');
-            
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(249, 115, 22);
-            doc.text('TOTALES', xDerecha + anchoBox / 2, yPosition + 5, { align: 'center' });
-            
-            doc.setDrawColor(230, 230, 230);
-            doc.setLineWidth(0.3);
-            doc.line(xDerecha + 3, yPosition + 7, xDerecha + anchoBox - 3, yPosition + 7);
-            
-            let lineY = yPosition + 12;
-            
-            if (mostrarTotalPiezas) {
-                doc.setFontSize(8);
-                doc.setFont('helvetica', 'normal');
-                doc.setTextColor(80, 80, 80);
-                doc.text('Total Piezas:', xDerecha + 3, lineY);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(0, 0, 0);
-                doc.text(`${totalPiezas.toLocaleString('es-MX')}`, xDerecha + anchoBox - 3, lineY, { align: 'right' });
-                lineY += 6;
-            }
-            
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(80, 80, 80);
-            doc.text('Costo Total:', xDerecha + 3, lineY);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(220, 38, 38);
-            doc.text(`$${totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, xDerecha + anchoBox - 3, lineY, { align: 'right' });
-            
-            lineY += 6;
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(80, 80, 80);
-            doc.text('Venta Total:', xDerecha + 3, lineY);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(22, 163, 74);
-            doc.text(`$${totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, xDerecha + anchoBox - 3, lineY, { align: 'right' });
-
-            yPosition += altoBox + 5;
 
             return yPosition;
         };
