@@ -176,7 +176,7 @@ function prepararDatosReporte() {
   
   // Usar sesionRecepcion en lugar de state.items para obtener cantidades reales ingresadas
   window.sesionRecepcion.forEach(item => {
-    const cantidadPiezas = parseInt(item.cantidad, 10) || 0;
+    const cantidadPiezas = parseInt(item.cantidadPiezas || item.cantidad, 10) || 0;  // ← Compatibilidad con datos antiguos
     const costoUnitario = parseFloat(item.costoUnitario || item.costounitario || 0);
     const piezasPorPaquete = parseInt(item.piezasPorPaquete || item.piezasporpaquete, 10) || 1;
     

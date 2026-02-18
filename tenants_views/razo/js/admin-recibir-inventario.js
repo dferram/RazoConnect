@@ -6,14 +6,8 @@ const itemsPerPage = 10;
 let isExported = false;
 let hasSessionData = false;
 
-// Protección de salida sin exportar
-window.addEventListener('beforeunload', (e) => {
-    if (hasSessionData && !isExported) {
-        e.preventDefault();
-        e.returnValue = 'No has descargado el comprobante de entrada. ¿Seguro que quieres salir?';
-        return e.returnValue;
-    }
-});
+// NOTA: La alerta beforeunload fue removida para permitir que el admin
+// salga y regrese libremente. La sesión se persiste automáticamente en localStorage.
 
 // Función para obtener el siguiente folio sugerido
 function getSuggestedFolio() {

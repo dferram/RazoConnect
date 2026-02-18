@@ -552,15 +552,15 @@
         if (existingIdx >= 0) {
           sesionRecepcion[existingIdx] = {
             ...sesionRecepcion[existingIdx],
-            cantidad:
-              (Number.parseInt(sesionRecepcion[existingIdx].cantidad, 10) || 0) + cantidad,
+            cantidadPiezas:
+              (Number.parseInt(sesionRecepcion[existingIdx].cantidadPiezas || sesionRecepcion[existingIdx].cantidad, 10) || 0) + cantidad,
             piezasPorPaquete: piezas
           };
         } else {
           sesionRecepcion.push({
             detalleId: item.detalleId,
             varianteId: item.varianteId,
-            cantidad,
+            cantidadPiezas: cantidad,  // ← EXPLÍCITO: Son PIEZAS, no paquetes
             nombreProducto: safeText(item.nombreProducto),
             sku: safeText(item.sku),
             piezasPorPaquete: piezas,
@@ -635,7 +635,7 @@
           const base = byDetalle.get(String(detalleId));
           if (!base) continue;
 
-          const cantidad = Number.parseInt(raw?.cantidad, 10);
+          const cantidad = Number.parseInt(raw?.cantidadPiezas ?? raw?.cantidad, 10);  // ← Compatibilidad
           if (!Number.isInteger(cantidad) || cantidad <= 0) continue;
 
           const piezasPorPaqueteStored = Number.parseInt(
@@ -670,7 +670,7 @@
           normalized.push({
             detalleId: base.detalleId,
             varianteId: base.varianteId,
-            cantidad: cantidadFinal,
+            cantidadPiezas: cantidadFinal,  // ← EXPLÍCITO: Son PIEZAS
             nombreProducto: safeText(base.nombreProducto),
             sku: safeText(base.sku),
             piezasPorPaquete:
@@ -713,6 +713,20 @@
         const prov = safeText(oc.proveedorNombre);
         const est = safeText(oc.estatus);
         return `OC #${id} — ${prov} (${est})`;
+      };
+
+      // Función para verificar si una orden tiene sesión activa
+      const tieneSesionActiva = (ordenCompraId) => {
+        try {
+          const key = getRecepcionStorageKey(ordenCompraId);
+          if (!key) return false;
+          const raw = localStorage.getItem(key);
+          if (!raw) return false;
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) && parsed.length > 0;
+        } catch (e) {
+          return false;
+        }
       };
 
       const renderOrdenes = (filterText) => {
@@ -765,11 +779,25 @@
           for (const oc of ordenes) {
             const opt = document.createElement("option");
             opt.value = String(oc.ordenCompraId);
-            opt.textContent = buildOptionLabel(oc);
+            
+            // Verificar si tiene sesión activa
+            const tieneSesion = tieneSesionActiva(oc.ordenCompraId);
+            
+            // Marcar visualmente las órdenes con sesión activa
+            if (tieneSesion) {
+              opt.textContent = `🟢 ${buildOptionLabel(oc)} [En progreso]`;
+              opt.style.color = "#10b981";  // Verde
+              opt.style.fontWeight = "700";
+              opt.style.background = "#ecfdf5";  // Fondo verde claro
+            } else {
+              opt.textContent = buildOptionLabel(oc);
+            }
+            
             opt.dataset.proveedorNombre = safeText(oc.proveedorNombre);
             opt.dataset.fechaCreacion = safeText(oc.fechaCreacion);
             opt.dataset.fechaEntrega = safeText(oc.fechaEntregaEsperada);
             opt.dataset.estatus = safeText(oc.estatus);
+            opt.dataset.tieneSesion = tieneSesion ? "true" : "false";
             optgroupOrdenes.appendChild(opt);
           }
           ocSelect.appendChild(optgroupOrdenes);
@@ -1177,7 +1205,8 @@
         const totalMonto = items.reduce((acc, x) => {
           const piezas = x.piezasPorPaquete ?? x.piezasporpaquete;
           const costo = x.costoUnitario ?? x.costounitario;
-          return acc + montoDePiezas(x.cantidad, piezas, costo);
+          const cantidadPzas = x.cantidadPiezas ?? x.cantidad;  // ← Compatibilidad con datos antiguos
+          return acc + montoDePiezas(cantidadPzas, piezas, costo);
         }, 0);
 
         hasSessionData = count > 0;
@@ -1232,7 +1261,8 @@
 
           const tdCant = document.createElement("td");
           tdCant.style.textAlign = "center";
-          tdCant.innerHTML = `<strong>${(Number.parseInt(it.cantidad, 10) || 0).toLocaleString("es-MX")}</strong>`;
+          const cantidadPzas = it.cantidadPiezas ?? it.cantidad;  // ← Compatibilidad con datos antiguos
+          tdCant.innerHTML = `<strong>${(Number.parseInt(cantidadPzas, 10) || 0).toLocaleString("es-MX")}</strong>`;
 
           const tdAcc = document.createElement("td");
           tdAcc.style.textAlign = "right";
@@ -1327,7 +1357,7 @@
           // Buscar el item correspondiente en la orden para obtener datos completos
           const itemOC = itemsOrden.find(x => String(x.detalleId) === String(itemSesion.detalleId));
           
-          const cantidadSesion = Number.parseInt(itemSesion.cantidad, 10) || 0;
+          const cantidadSesion = Number.parseInt(itemSesion.cantidadPiezas || itemSesion.cantidad, 10) || 0;  // ← Compatibilidad
           const piezasPorPaquete = Number.parseInt(itemSesion.piezasPorPaquete || itemSesion.piezasporpaquete, 10) || 1;
           const costoUnitario = Number.parseFloat(itemSesion.costoUnitario || itemSesion.costounitario) || 0;
           

@@ -21,7 +21,7 @@ function actualizarTotalesSesion() {
 
   // Calculate totals from session data
   window.sesionRecepcion.forEach(item => {
-    const cantidadPiezas = parseInt(item.cantidad, 10) || 0;
+    const cantidadPiezas = parseInt(item.cantidadPiezas || item.cantidad, 10) || 0;  // ← Compatibilidad con datos antiguos
     const costoUnitario = parseFloat(item.costoUnitario || item.costounitario || 0);
     
     // Get item info for sales price
