@@ -469,14 +469,23 @@ async function getSummaryAging(req, res) {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    const adminId = req.user?.adminId || req.user?.userId;
-    const userRole = req.user?.rol || req.user?.roles?.[0];
-    const isSuperAdmin = userRole === 'superadmin';
-    const filterByAdminId = req.query.adminId ? parseInt(req.query.adminId) : null;
+    const admin_id = req.query.admin_id ? parseInt(req.query.admin_id) : null;
 
     try {
-        // Construir parámetros de query
-        let queryParams = [tenant_id, limit, offset];
+        // Construir parámetros de query dinámicamente
+        let queryParams = [tenant_id];
+        let paramIndex = 2;
+        
+        // Agregar admin_id si se proporciona
+        if (admin_id) {
+            queryParams.push(admin_id);
+            paramIndex++;
+        }
+        
+        // Agregar limit y offset
+        const limitIndex = paramIndex;
+        const offsetIndex = paramIndex + 1;
+        queryParams.push(limit, offset);
 
         // Obtener cartera activa con aging
         const { rows } = await client.query(`
@@ -510,6 +519,22 @@ async function getSummaryAging(req, res) {
                 (cc.limite_credito - cc.saldo_deudor) as disponible,
                 cc.estado_credito as estado,
                 cc.ultima_actualizacion as "ultimoMovimiento",
+                -- Obtener nombre del admin principal (el que más ha surtido)
+                (
+                    SELECT a.nombre 
+                    FROM pedido_surtido_detalle psd
+                    INNER JOIN administradores a ON a.adminid = psd.admin_id
+                    WHERE psd.pedido_id IN (
+                        SELECT pedidoid FROM pedidos 
+                        WHERE clienteid = c.clienteid 
+                        AND es_credito = true 
+                        AND saldo_pendiente > 0
+                        AND tenant_id = $1
+                    )
+                    GROUP BY a.nombre, a.adminid
+                    ORDER BY SUM(psd.cantidad) DESC
+                    LIMIT 1
+                ) as "adminNombre",
                 -- Aging buckets
                 COALESCE(SUM(CASE WHEN pa.dias_vencido = 0 THEN pa.saldo_pendiente ELSE 0 END), 0) as "alCorriente",
                 COALESCE(SUM(CASE WHEN pa.dias_vencido BETWEEN 1 AND 30 THEN pa.saldo_pendiente ELSE 0 END), 0) as "vencido1a30",
@@ -521,13 +546,29 @@ async function getSummaryAging(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
+                ${admin_id ? `
+                AND EXISTS (
+                    SELECT 1 FROM pedido_surtido_detalle psd
+                    WHERE psd.pedido_id IN (
+                        SELECT pedidoid FROM pedidos 
+                        WHERE clienteid = c.clienteid 
+                        AND es_credito = true
+                        AND tenant_id = $1
+                    )
+                    AND psd.admin_id = $${paramIndex - 1}
+                )` : ''}
             GROUP BY cc.credito_id, c.clienteid, c.nombre, c.apellido, c.email, 
                      cc.limite_credito, cc.saldo_deudor, cc.estado_credito, cc.ultima_actualizacion
             ORDER BY cc.saldo_deudor DESC
-            LIMIT $2 OFFSET $3
+            LIMIT $${limitIndex} OFFSET $${offsetIndex}
         `, queryParams);
 
-        // Total de registros
+        // Total de registros con mismo filtro
+        const countParams = [tenant_id];
+        if (admin_id) {
+            countParams.push(admin_id);
+        }
+        
         const { rows: [count] } = await client.query(`
             SELECT COUNT(DISTINCT cc.credito_id) as total
             FROM cliente_creditos cc
@@ -535,7 +576,18 @@ async function getSummaryAging(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-        `, [tenant_id]);
+                ${admin_id ? `
+                AND EXISTS (
+                    SELECT 1 FROM pedido_surtido_detalle psd
+                    WHERE psd.pedido_id IN (
+                        SELECT pedidoid FROM pedidos 
+                        WHERE clienteid = c.clienteid 
+                        AND es_credito = true
+                        AND tenant_id = $1
+                    )
+                    AND psd.admin_id = $2
+                )` : ''}
+        `, countParams);
 
         // Métricas agregadas
         const { rows: [metrics] } = await client.query(`

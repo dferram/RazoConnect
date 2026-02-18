@@ -12,14 +12,15 @@
     currentPage: 1,
     itemsPerPage: 10,
     totalPages: 1,
-    totalRecords: 0,
-    admins: []
+    totalRecords: 0
   };
 
   const elements = {};
+  let paginador = null;
 
   document.addEventListener("DOMContentLoaded", async () => {
     cacheElements();
+    initPagination();
     bindEvents();
     await cargarAdministradores();
     loadCartera();
@@ -27,6 +28,17 @@
     cargarClientesConCredito();
     setDefaultDates();
   });
+
+  function initPagination() {
+    paginador = new PaginationComponent({
+      containerId: 'paginationWrapper',
+      registrosPorPagina: state.itemsPerPage,
+      onPageChange: (pagina) => {
+        state.currentPage = pagina;
+        loadCartera(false, pagina);
+      }
+    });
+  }
 
   function cacheElements() {
     elements.kpiTotal = document.getElementById("kpiTotalPorCobrar");
@@ -40,10 +52,6 @@
     elements.tbody = document.getElementById("tablaCxCTbody");
     elements.estadoCarga = document.getElementById("estadoCarga");
     elements.estadoVacio = document.getElementById("estadoVacio");
-    elements.paginacion = document.getElementById("paginacion");
-    elements.paginacionInfo = document.getElementById("paginacionInfo");
-    elements.btnPaginaAnterior = document.getElementById("btnPaginaAnterior");
-    elements.btnPaginaSiguiente = document.getElementById("btnPaginaSiguiente");
     elements.btnRecargar = document.getElementById("btnRecargar");
     elements.btnExportar = document.getElementById("btnExportar");
     elements.filtroFechaDesde = document.getElementById("filtroFechaDesde");
@@ -65,23 +73,12 @@
 
     elements.filtroAdmin?.addEventListener("change", (e) => {
       state.filters.admin = e.target.value;
-      applyFilters();
+      state.currentPage = 1;
+      loadCartera();
     });
 
     elements.btnRecargar?.addEventListener("click", () => loadCartera(true));
     elements.btnExportar?.addEventListener("click", exportarExcel);
-
-    elements.btnPaginaAnterior?.addEventListener("click", () => {
-      if (state.currentPage > 1) {
-        loadCartera(false, state.currentPage - 1);
-      }
-    });
-
-    elements.btnPaginaSiguiente?.addEventListener("click", () => {
-      if (state.currentPage < state.totalPages) {
-        loadCartera(false, state.currentPage + 1);
-      }
-    });
   }
 
   async function loadCartera(isManualRefresh = false, page = state.currentPage) {
@@ -91,7 +88,11 @@
         showButtonLoading(elements.btnRecargar, true);
       }
 
-      const url = `/admin/cxc/summary-aging?page=${page}&limit=${state.itemsPerPage}`;
+      let url = `/admin/cxc/summary-aging?page=${page}&limit=${state.itemsPerPage}`;
+      
+      if (state.filters.admin) {
+        url += `&admin_id=${state.filters.admin}`;
+      }
       const response = await API.apiCall(url, { method: "GET" });
 
       if (!response.ok || !response.data?.success) {
@@ -107,8 +108,9 @@
 
       state.cartera = cartera.map((cliente) => ({
         ...cliente,
-        estadoEtiqueta: cliente.estado === "VENCIDO" ? "Vencido" : "Al corriente",
+        estadoEtiqueta: cliente.estado === "SUSPENDIDO" ? "Suspendido" : "Activo",
         diasVencido: calcularDiasVencido(cliente),
+        adminNombre: cliente.adminNombre || 'N/A',
         nombreBusqueda: [cliente.clienteNombre, cliente.email]
           .filter(Boolean)
           .join(" ")
@@ -117,6 +119,10 @@
 
       updateKpis(payload);
       applyFilters();
+      
+      if (paginador) {
+        paginador.render(state.totalRecords, state.currentPage);
+      }
     } catch (error) {
       console.error("Error cargando cartera CxC:", error);
       Swal.fire({
@@ -134,27 +140,20 @@
   function applyFilters() {
     const search = state.filters.search.trim();
     const estadoFiltro = state.filters.estado;
-    const adminFiltro = state.filters.admin;
 
     state.filtrada = state.cartera.filter((item) => {
       const coincideBusqueda = !search || item.nombreBusqueda.includes(search);
       if (!coincideBusqueda) return false;
 
-      if (adminFiltro && item.adminNombre) {
-        if (!item.adminNombre.toLowerCase().includes(adminFiltro.toLowerCase())) {
-          return false;
-        }
-      }
-
       if (!estadoFiltro) return true;
       if (estadoFiltro === "al-dia") {
-        return item.estado !== "VENCIDO";
+        return item.estado === "ACTIVO";
       }
       if (estadoFiltro === "vencido") {
-        return item.estado === "VENCIDO";
+        return item.estado === "SUSPENDIDO";
       }
       if (estadoFiltro === "critico") {
-        return item.estado === "VENCIDO" && item.diasVencido >= 15;
+        return item.estado === "SUSPENDIDO" && item.diasVencido >= 15;
       }
       return true;
     });
@@ -168,25 +167,17 @@
     if (state.filtrada.length === 0) {
       elements.tabla.style.display = "none";
       elements.estadoVacio.style.display = "block";
-      if (elements.paginacion) {
-        elements.paginacion.style.display = "none";
-        elements.paginacion.classList.remove("show");
-      }
       elements.resumenResultados.textContent = "0 CLIENTES";
       return;
     }
 
     elements.tabla.style.display = "table";
     elements.estadoVacio.style.display = "none";
-    if (elements.paginacion) {
-      elements.paginacion.style.display = "block";
-      elements.paginacion.classList.add("show");
-    }
     const displayCount = state.filtrada.length;
     elements.resumenResultados.textContent = `${displayCount} CLIENTE${displayCount !== 1 ? 'S' : ''}`;
 
     elements.tbody.innerHTML = state.filtrada.map(cliente => {
-      const estadoBadge = cliente.estado === "VENCIDO" 
+      const estadoBadge = cliente.estado === "SUSPENDIDO" 
         ? '<span class="badge bg-danger">Suspendido</span>'
         : '<span class="badge bg-success">Activo</span>';
 
@@ -203,32 +194,13 @@
           <td class="text-right" style="color: #10b981; font-weight: 600; font-size: 0.875rem;">${formatCurrency(cliente.disponible)}</td>
           <td>${estadoBadge}</td>
           <td class="text-center">
-            <button class="btn btn-light btn-sm" onclick="window.verDetalleCliente(${cliente.clienteId})" title="Ver detalle" style="padding: 0.25rem 0.5rem;">
-              <i class="bi bi-eye"></i>
+            <button class="btn btn-primary btn-sm" onclick="window.verDetalleCliente(${cliente.clienteId})" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
+              Ver detalle
             </button>
           </td>
         </tr>
       `;
     }).join('');
-
-    updatePaginacion();
-  }
-
-  function updatePaginacion() {
-    if (!elements.paginacionInfo) return;
-
-    const inicio = (state.currentPage - 1) * state.itemsPerPage + 1;
-    const fin = Math.min(state.currentPage * state.itemsPerPage, state.totalRecords);
-    
-    elements.paginacionInfo.textContent = `Mostrando ${inicio}-${fin} de ${state.totalRecords} registros`;
-    
-    if (elements.btnPaginaAnterior) {
-      elements.btnPaginaAnterior.disabled = state.currentPage === 1;
-    }
-    
-    if (elements.btnPaginaSiguiente) {
-      elements.btnPaginaSiguiente.disabled = state.currentPage >= state.totalPages;
-    }
   }
 
   function updateKpis(payload) {
@@ -270,7 +242,6 @@
 
       if (response.ok && response.data) {
         const admins = Array.isArray(response.data) ? response.data : (response.data.data || []);
-        state.admins = admins;
         renderAdminSelector(admins);
       }
     } catch (error) {
@@ -286,7 +257,7 @@
 
     admins.forEach((admin) => {
       const option = document.createElement("option");
-      option.value = admin.nombre || admin.adminid;
+      option.value = admin.adminid;
       option.textContent = admin.nombre || `Admin ${admin.adminid}`;
       selector.appendChild(option);
     });

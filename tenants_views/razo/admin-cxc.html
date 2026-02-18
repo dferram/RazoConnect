@@ -64,11 +64,11 @@
                     <div class="table-toolbar" style="padding: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                         <span id="resumenResultados" class="admin-badge secondary">0 CLIENTES</span>
                         <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                            <div class="input-icon" style="width: 200px;">
-                                <i class="bi bi-search"></i>
-                                <input id="buscadorClientes" type="search" placeholder="Buscar..." class="form-input" style="font-size: 0.875rem;">
+                            <div style="position: relative; width: 200px;">
+                                <i class="bi bi-search" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;"></i>
+                                <input id="buscadorClientes" type="search" placeholder="Buscar..." class="form-input" style="font-size: 0.875rem; padding-left: 2.5rem;">
                             </div>
-                            <select id="filtroAdmin" class="form-input" aria-label="Filtrar por administrador" style="width: 150px; font-size: 0.875rem;">
+                            <select id="filtroAdmin" class="form-input" aria-label="Filtrar por administrador" style="width: 140px; font-size: 0.875rem;">
                                 <option value="">Todos los admins</option>
                             </select>
                             <select id="filtroRiesgo" class="form-input" aria-label="Filtrar por estado" style="width: 130px; font-size: 0.875rem;">
@@ -111,21 +111,7 @@
                         </table>
                     </div>
 
-                    <div id="paginacion" class="pagination-container" style="display: none;">
-                        <div class="pagination-wrapper">
-                            <span id="paginacionInfo" class="pagination-info"></span>
-                            <div class="pagination-controls">
-                                <button id="btnPaginaAnterior" class="btn btn-secondary btn-sm pagination-btn">
-                                    <i class="bi bi-chevron-left"></i>
-                                    <span class="d-none d-sm-inline ms-1">Anterior</span>
-                                </button>
-                                <button id="btnPaginaSiguiente" class="btn btn-secondary btn-sm pagination-btn">
-                                    <span class="d-none d-sm-inline me-1">Siguiente</span>
-                                    <i class="bi bi-chevron-right"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <div id="paginationWrapper"></div>
                 </section>
 
                 <!-- Export Section -->
@@ -177,6 +163,7 @@
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
+    <script src="js/pagination-component.js"></script>
     <script src="js/admin-cxc.js" defer></script>
 </body>
 </html>
