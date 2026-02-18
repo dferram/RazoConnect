@@ -3,6 +3,8 @@ const auditService = require("../services/auditService");
 
 const obtenerSugerencias = async (req, res) => {
   try {
+    const { tenant_id } = req.tenant;
+
     const query = `
       WITH en_transito AS (
         SELECT
@@ -13,6 +15,7 @@ const obtenerSugerencias = async (req, res) => {
           ON oc.ordencompraid = doc.ordencompraid
         WHERE oc.estatus IN ('Pendiente', 'Parcial')
           AND COALESCE(oc.origenoc, 'manual') <> 'backorder'
+          AND oc.tenant_id = $1
         GROUP BY doc.varianteid
       )
       SELECT
@@ -34,19 +37,21 @@ const obtenerSugerencias = async (req, res) => {
       INNER JOIN productos p
         ON p.productoid = pv.productoid
       LEFT JOIN proveedores pr
-        ON pr.proveedorid = p.proveedorid_default
+        ON pr.proveedorid = p.proveedorid_default AND pr.tenant_id = $1
       LEFT JOIN en_transito et
         ON et.varianteid = pv.varianteid
       LEFT JOIN proveedor_reglas_empaque pre
         ON pre.proveedorid = p.proveedorid_default
        AND pre.tipoproductoid = pv.tipoproductoid
+       AND pre.tenant_id = $1
       WHERE p.activo = TRUE
         AND pv.activo = TRUE
+        AND p.tenant_id = $1
         AND COALESCE(pv.stock_minimo, 0) > 0
       ORDER BY pr.nombreempresa ASC NULLS LAST, pr.proveedorid ASC NULLS LAST, pv.varianteid ASC
     `;
 
-    const result = await db.query(query);
+    const result = await db.query(query, [tenant_id]);
     const rows = Array.isArray(result.rows) ? result.rows : [];
 
     const grouped = new Map();
@@ -121,6 +126,7 @@ const obtenerSugerencias = async (req, res) => {
 };
 
 const autoGenerarOrdenes = async (req, res) => {
+  const { tenant_id } = req.tenant;
   const usuarioCreadorId = Number.parseInt(req?.user?.id ?? req?.user?.userId, 10);
   if (!Number.isInteger(usuarioCreadorId) || usuarioCreadorId <= 0) {
     return res.status(401).json({
@@ -140,6 +146,7 @@ const autoGenerarOrdenes = async (req, res) => {
           ON oc.ordencompraid = doc.ordencompraid
         WHERE oc.estatus IN ('Pendiente', 'Parcial')
           AND COALESCE(oc.origenoc, 'manual') <> 'backorder'
+          AND oc.tenant_id = $1
         GROUP BY doc.varianteid
       )
       SELECT
@@ -159,19 +166,21 @@ const autoGenerarOrdenes = async (req, res) => {
       INNER JOIN productos p
         ON p.productoid = pv.productoid
       LEFT JOIN proveedores pr
-        ON pr.proveedorid = p.proveedorid_default
+        ON pr.proveedorid = p.proveedorid_default AND pr.tenant_id = $1
       LEFT JOIN en_transito et
         ON et.varianteid = pv.varianteid
       LEFT JOIN proveedor_reglas_empaque pre
         ON pre.proveedorid = p.proveedorid_default
        AND pre.tipoproductoid = pv.tipoproductoid
+       AND pre.tenant_id = $1
       WHERE p.activo = TRUE
         AND pv.activo = TRUE
+        AND p.tenant_id = $1
         AND COALESCE(pv.stock_minimo, 0) > 0
       ORDER BY pr.nombreempresa ASC NULLS LAST, p.proveedorid_default ASC NULLS LAST, pv.varianteid ASC
     `;
 
-    const result = await db.query(query);
+    const result = await db.query(query, [tenant_id]);
     const rows = Array.isArray(result.rows) ? result.rows : [];
 
     const grupos = new Map();
@@ -258,10 +267,10 @@ const autoGenerarOrdenes = async (req, res) => {
 
         const insertOC = await client.query(
           `INSERT INTO ordenesdecompra
-            (proveedorid, fechasolicitud, estatus, total, origenoc, usuario_creador_id)
-           VALUES ($1, NOW(), 'Pendiente', $2, $3, $4)
+            (proveedorid, fechasolicitud, estatus, total, origenoc, usuario_creador_id, tenant_id)
+           VALUES ($1, NOW(), 'Pendiente', $2, $3, $4, $5)
            RETURNING ordencompraid`,
-          [grupo.proveedorId, total, "sugerencia_stock", usuarioCreadorId]
+          [grupo.proveedorId, total, "sugerencia_stock", usuarioCreadorId, tenant_id]
         );
 
         ordenCompraId = insertOC.rows?.[0]?.ordencompraid ?? null;
@@ -327,6 +336,7 @@ const autoGenerarOrdenes = async (req, res) => {
 };
 
 const generarOrdenCompra = async (req, res) => {
+  const { tenant_id } = req.tenant;
   const proveedorId = Number.parseInt(req?.body?.proveedorId, 10);
   const items = Array.isArray(req?.body?.items) ? req.body.items : [];
 
@@ -354,8 +364,8 @@ const generarOrdenCompra = async (req, res) => {
 
   try {
     const proveedorRes = await db.query(
-      "SELECT proveedorid, nombreempresa FROM proveedores WHERE proveedorid = $1 LIMIT 1",
-      [proveedorId]
+      "SELECT proveedorid, nombreempresa FROM proveedores WHERE proveedorid = $1 AND tenant_id = $2 LIMIT 1",
+      [proveedorId, tenant_id]
     );
 
     if (!proveedorRes.rows?.length) {
@@ -439,9 +449,10 @@ const generarOrdenCompra = async (req, res) => {
        INNER JOIN productos p ON p.productoid = pv.productoid
        WHERE pv.varianteid = ANY($1::int[])
          AND p.proveedorid_default = $2
+         AND p.tenant_id = $3
          AND p.activo = TRUE
          AND pv.activo = TRUE`,
-      [normalizados.map((n) => n.varianteId), proveedorId]
+      [normalizados.map((n) => n.varianteId), proveedorId, tenant_id]
     );
 
     const idsValidos = new Set(
@@ -463,10 +474,10 @@ const generarOrdenCompra = async (req, res) => {
 
       const insertOC = await client.query(
         `INSERT INTO ordenesdecompra
-          (proveedorid, fechasolicitud, estatus, total, origenoc, usuario_creador_id)
-         VALUES ($1, NOW(), 'Pendiente', $2, $3, $4)
+          (proveedorid, fechasolicitud, estatus, total, origenoc, usuario_creador_id, tenant_id)
+         VALUES ($1, NOW(), 'Pendiente', $2, $3, $4, $5)
          RETURNING ordencompraid`,
-        [proveedorId, total, "sugerencia_stock", usuarioCreadorId]
+        [proveedorId, total, "sugerencia_stock", usuarioCreadorId, tenant_id]
       );
 
       ordenCompraId = insertOC.rows?.[0]?.ordencompraid ?? null;
