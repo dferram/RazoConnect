@@ -304,6 +304,7 @@ async function exportarLoteCxC(req, res) {
  */
 async function getMetricasCobranza(req, res) {
     const client = await db.pool.connect();
+    const tenant_id = req.tenant?.tenant_id || 1;
     
     try {
         // Ejecutar consultas en paralelo
@@ -313,22 +314,25 @@ async function getMetricasCobranza(req, res) {
                 SELECT COALESCE(SUM(saldo_deudor), 0) as total
                 FROM cliente_creditos
                 WHERE saldo_deudor > 0
-            `),
+                    AND tenant_id = $1
+            `, [tenant_id]),
             
             // Saldo en gestión (exportado este mes)
             client.query(`
                 SELECT COALESCE(SUM(saldo_deudor), 0) as total
                 FROM cliente_creditos
                 WHERE saldo_deudor > 0
-                AND ultima_actualizacion >= date_trunc('month', CURRENT_DATE)
-            `),
+                    AND ultima_actualizacion >= date_trunc('month', CURRENT_DATE)
+                    AND tenant_id = $1
+            `, [tenant_id]),
             
             // Clientes en mora
             client.query(`
                 SELECT COUNT(*) as total
                 FROM cliente_creditos
                 WHERE estado_credito = 'SUSPENDIDO'
-            `)
+                    AND tenant_id = $1
+            `, [tenant_id])
         ]);
 
         res.json({
@@ -465,8 +469,24 @@ async function getSummaryAging(req, res) {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
+    const admin_id = req.query.admin_id ? parseInt(req.query.admin_id) : null;
 
     try {
+        // Construir parámetros de query dinámicamente
+        let queryParams = [tenant_id];
+        let paramIndex = 2;
+        
+        // Agregar admin_id si se proporciona
+        if (admin_id) {
+            queryParams.push(admin_id);
+            paramIndex++;
+        }
+        
+        // Agregar limit y offset
+        const limitIndex = paramIndex;
+        const offsetIndex = paramIndex + 1;
+        queryParams.push(limit, offset);
+
         // Obtener cartera activa con aging
         const { rows } = await client.query(`
             WITH pedidos_aging AS (
@@ -498,7 +518,23 @@ async function getSummaryAging(req, res) {
                 cc.saldo_deudor as "saldoDeudor",
                 (cc.limite_credito - cc.saldo_deudor) as disponible,
                 cc.estado_credito as estado,
-                cc.ultimo_movimiento as "ultimoMovimiento",
+                cc.ultima_actualizacion as "ultimoMovimiento",
+                -- Obtener nombre del admin principal (el que más ha surtido)
+                (
+                    SELECT a.nombre 
+                    FROM pedido_surtido_detalle psd
+                    INNER JOIN administradores a ON a.adminid = psd.admin_id
+                    WHERE psd.pedido_id IN (
+                        SELECT pedidoid FROM pedidos 
+                        WHERE clienteid = c.clienteid 
+                        AND es_credito = true 
+                        AND saldo_pendiente > 0
+                        AND tenant_id = $1
+                    )
+                    GROUP BY a.nombre, a.adminid
+                    ORDER BY SUM(psd.cantidad) DESC
+                    LIMIT 1
+                ) as "adminNombre",
                 -- Aging buckets
                 COALESCE(SUM(CASE WHEN pa.dias_vencido = 0 THEN pa.saldo_pendiente ELSE 0 END), 0) as "alCorriente",
                 COALESCE(SUM(CASE WHEN pa.dias_vencido BETWEEN 1 AND 30 THEN pa.saldo_pendiente ELSE 0 END), 0) as "vencido1a30",
@@ -510,13 +546,29 @@ async function getSummaryAging(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
+                ${admin_id ? `
+                AND EXISTS (
+                    SELECT 1 FROM pedido_surtido_detalle psd
+                    WHERE psd.pedido_id IN (
+                        SELECT pedidoid FROM pedidos 
+                        WHERE clienteid = c.clienteid 
+                        AND es_credito = true
+                        AND tenant_id = $1
+                    )
+                    AND psd.admin_id = $${paramIndex - 1}
+                )` : ''}
             GROUP BY cc.credito_id, c.clienteid, c.nombre, c.apellido, c.email, 
-                     cc.limite_credito, cc.saldo_deudor, cc.estado_credito, cc.ultimo_movimiento
+                     cc.limite_credito, cc.saldo_deudor, cc.estado_credito, cc.ultima_actualizacion
             ORDER BY cc.saldo_deudor DESC
-            LIMIT $2 OFFSET $3
-        `, [tenant_id, limit, offset]);
+            LIMIT $${limitIndex} OFFSET $${offsetIndex}
+        `, queryParams);
 
-        // Total de registros
+        // Total de registros con mismo filtro
+        const countParams = [tenant_id];
+        if (admin_id) {
+            countParams.push(admin_id);
+        }
+        
         const { rows: [count] } = await client.query(`
             SELECT COUNT(DISTINCT cc.credito_id) as total
             FROM cliente_creditos cc
@@ -524,7 +576,18 @@ async function getSummaryAging(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-        `, [tenant_id]);
+                ${admin_id ? `
+                AND EXISTS (
+                    SELECT 1 FROM pedido_surtido_detalle psd
+                    WHERE psd.pedido_id IN (
+                        SELECT pedidoid FROM pedidos 
+                        WHERE clienteid = c.clienteid 
+                        AND es_credito = true
+                        AND tenant_id = $1
+                    )
+                    AND psd.admin_id = $2
+                )` : ''}
+        `, countParams);
 
         // Métricas agregadas
         const { rows: [metrics] } = await client.query(`
@@ -587,9 +650,11 @@ async function getPagosClientesPendientes(req, res) {
                 pc.notas,
                 c.nombre,
                 c.apellido,
-                c.email
+                c.email,
+                cc.saldo_deudor
             FROM pagos_clientes pc
             INNER JOIN clientes c ON c.clienteid = pc.cliente_id
+            LEFT JOIN cliente_creditos cc ON cc.cliente_id = pc.cliente_id
             WHERE pc.estatus = 'PENDIENTE'
                 AND pc.tenant_id = $1
                 AND c.tenant_id = $1
@@ -598,7 +663,7 @@ async function getPagosClientesPendientes(req, res) {
 
         res.json({
             success: true,
-            data: rows
+            pagos: rows
         });
 
     } catch (error) {
@@ -760,12 +825,128 @@ async function gestionarPagoCliente(req, res) {
     }
 }
 
+/**
+ * Obtiene los datos de crédito de un cliente específico
+ * @route GET /api/admin/cxc/cliente/:clienteId
+ */
+async function getClienteCXCDetail(req, res) {
+    const client = await db.pool.connect();
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const clienteId = parseInt(req.params.clienteId);
+
+    try {
+        const { rows } = await client.query(`
+            SELECT 
+                c.clienteid,
+                c.nombre,
+                c.apellido,
+                c.email,
+                cc.limite_credito,
+                cc.saldo_deudor,
+                cc.estado_credito,
+                cc.dias_credito,
+                cc.ultima_actualizacion
+            FROM clientes c
+            INNER JOIN cliente_creditos cc ON cc.cliente_id = c.clienteid
+            WHERE c.clienteid = $1
+                AND c.tenant_id = $2
+                AND cc.tenant_id = $2
+        `, [clienteId, tenant_id]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cliente no encontrado'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: rows[0]
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo detalle de cliente CXC:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener detalle del cliente'
+        });
+    } finally {
+        client.release();
+    }
+}
+
+/**
+ * Obtiene el historial de movimientos de crédito de un cliente
+ * @route GET /api/admin/cxc/cliente/:clienteId/movimientos
+ */
+async function getClienteCXCMovimientos(req, res) {
+    const client = await db.pool.connect();
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const clienteId = parseInt(req.params.clienteId);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 15;
+    const offset = (page - 1) * limit;
+
+    try {
+        // Obtener movimientos
+        const { rows } = await client.query(`
+            SELECT 
+                cm.movimiento_id,
+                cm.tipo_movimiento as tipo,
+                cm.monto,
+                cm.descripcion,
+                cm.fecha_movimiento,
+                cm.saldo_despues_movimiento,
+                cm.referencia_id as referencia
+            FROM credito_movimientos cm
+            INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id
+            WHERE cc.cliente_id = $1
+                AND cc.tenant_id = $2
+            ORDER BY cm.fecha_movimiento DESC
+            LIMIT $3 OFFSET $4
+        `, [clienteId, tenant_id, limit, offset]);
+
+        // Contar total de registros
+        const { rows: [count] } = await client.query(`
+            SELECT COUNT(*) as total
+            FROM credito_movimientos cm
+            INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id
+            WHERE cc.cliente_id = $1
+                AND cc.tenant_id = $2
+        `, [clienteId, tenant_id]);
+
+        const totalPages = Math.ceil(parseInt(count.total) / limit);
+
+        res.json({
+            success: true,
+            data: {
+                movimientos: rows,
+                currentPage: page,
+                totalPages,
+                totalRecords: parseInt(count.total)
+            }
+        });
+
+    } catch (error) {
+        console.error('Error obteniendo movimientos de cliente:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error al obtener movimientos del cliente'
+        });
+    } finally {
+        client.release();
+    }
+}
+
 module.exports = {
-    exportarLoteCxC,
-    getMetricasCobranza,
-    getClientesCredito,
     getSummaryAging,
+    getMetricasCobranza,
+    exportarLoteCxC,
+    obtenerHistorialMovimientos,
     getPagosClientesPendientes,
     gestionarPagoCliente,
-    obtenerHistorialMovimientos
+    getClientesCredito,
+    getClienteCXCDetail,
+    getClienteCXCMovimientos
 };
