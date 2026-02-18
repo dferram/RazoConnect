@@ -9,6 +9,8 @@ const NIVEL_RIESGO = {
 
 async function obtenerSolicitudesPendientes(req, res) {
   try {
+    const { tenant_id } = req.tenant;
+
     const { rows } = await db.query(
       `SELECT 
         s.solicitud_id,
@@ -19,9 +21,11 @@ async function obtenerSolicitudesPendientes(req, res) {
         s.fecha_solicitud,
         c.nombre || ' ' || c.apellido as nombre_cliente
       FROM solicitudes_credito s
-      INNER JOIN clientes c ON c.clienteid = s.cliente_id
+      INNER JOIN clientes c ON c.clienteid = s.cliente_id AND c.tenant_id = s.tenant_id
       WHERE s.estado = 'PENDIENTE'
+        AND s.tenant_id = $1
       ORDER BY s.fecha_solicitud DESC`,
+      [tenant_id]
     );
 
     // Calcular monto total solicitado
@@ -48,6 +52,7 @@ async function obtenerSolicitudesPendientes(req, res) {
 
 async function obtenerAnalisisSolicitud(req, res) {
   try {
+    const { tenant_id } = req.tenant;
     const solicitudId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(solicitudId)) {
       return res.status(400).json({
@@ -68,9 +73,10 @@ async function obtenerAnalisisSolicitud(req, res) {
         c.fechaderegistro,
         EXTRACT(MONTH FROM AGE(CURRENT_DATE, c.fechaderegistro))::integer as antiguedad_meses
       FROM solicitudes_credito s
-      INNER JOIN clientes c ON c.clienteid = s.cliente_id
-      WHERE s.solicitud_id = $1`,
-      [solicitudId]
+      INNER JOIN clientes c ON c.clienteid = s.cliente_id AND c.tenant_id = s.tenant_id
+      WHERE s.solicitud_id = $1
+        AND s.tenant_id = $2`,
+      [solicitudId, tenant_id]
     );
 
     if (!solicitud) {
@@ -90,9 +96,10 @@ async function obtenerAnalisisSolicitud(req, res) {
         MAX(fecha) as ultima_compra
       FROM pedidos 
       WHERE clienteid = $1 
+        AND tenant_id = $2
         AND estatus = 'COMPLETADO' 
         AND pagado = true`,
-      [solicitud.cliente_id]
+      [solicitud.cliente_id, tenant_id]
     );
 
     // 3. Verificar pagos vencidos
@@ -100,10 +107,11 @@ async function obtenerAnalisisSolicitud(req, res) {
       `SELECT COUNT(*)::integer as pagos_vencidos
        FROM pedidos 
        WHERE clienteid = $1 
+         AND tenant_id = $2
          AND es_credito = true
          AND pagado = false
          AND fecha_vencimiento < CURRENT_DATE`,
-      [solicitud.cliente_id]
+      [solicitud.cliente_id, tenant_id]
     );
 
     // 4. Calcular score y mensaje
@@ -164,6 +172,7 @@ async function obtenerAnalisisSolicitud(req, res) {
 async function aprobarSolicitud(req, res) {
   const client = await db.pool.connect();
   try {
+    const { tenant_id } = req.tenant;
     const solicitudId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(solicitudId)) {
       return res.status(400).json({
@@ -178,9 +187,11 @@ async function aprobarSolicitud(req, res) {
     const { rows: [solicitud] } = await client.query(
       `SELECT cliente_id, monto_solicitado 
        FROM solicitudes_credito 
-       WHERE solicitud_id = $1 AND estado = 'PENDIENTE'
+       WHERE solicitud_id = $1 
+         AND tenant_id = $2
+         AND estado = 'PENDIENTE'
        FOR UPDATE`,
-      [solicitudId]
+      [solicitudId, tenant_id]
     );
 
     if (!solicitud) {
@@ -195,9 +206,11 @@ async function aprobarSolicitud(req, res) {
     const { rows: [creditoActivo] } = await client.query(
       `SELECT credito_id 
        FROM cliente_creditos 
-       WHERE cliente_id = $1 AND estado_credito = 'ACTIVO'
+       WHERE cliente_id = $1 
+         AND tenant_id = $2
+         AND estado_credito = 'ACTIVO'
        LIMIT 1`,
-      [solicitud.cliente_id]
+      [solicitud.cliente_id, tenant_id]
     );
 
     if (creditoActivo) {
@@ -211,10 +224,10 @@ async function aprobarSolicitud(req, res) {
     // 3. Crear línea de crédito
     await client.query(
       `INSERT INTO cliente_creditos 
-         (cliente_id, limite_credito, saldo_deudor, estado_credito)
+         (cliente_id, limite_credito, saldo_deudor, estado_credito, tenant_id)
        VALUES 
-         ($1, $2, 0, 'ACTIVO')`,
-      [solicitud.cliente_id, solicitud.monto_solicitado]
+         ($1, $2, 0, 'ACTIVO', $3)`,
+      [solicitud.cliente_id, solicitud.monto_solicitado, tenant_id]
     );
 
     // 4. Actualizar estado de la solicitud
@@ -228,17 +241,17 @@ async function aprobarSolicitud(req, res) {
 
     // 5. Obtener datos del cliente para notificaciones
     const { rows: [cliente] } = await client.query(
-      `SELECT nombre, apellido, email FROM clientes WHERE clienteid = $1`,
-      [solicitud.cliente_id]
+      `SELECT nombre, apellido, email FROM clientes WHERE clienteid = $1 AND tenant_id = $2`,
+      [solicitud.cliente_id, tenant_id]
     );
 
     // 6. Crear notificación in-app para el cliente
     await client.query(
       `INSERT INTO notificaciones 
-         (clienteid, tipo, titulo, mensaje, prioridad, url)
+         (clienteid, tipo, titulo, mensaje, prioridad, url, tenant_id)
        VALUES 
-         ($1, 'sistema', '¡Crédito Aprobado!', 'Tu solicitud de crédito ha sido aprobada. Ya puedes realizar compras a crédito por un monto de $' || $2 || '.', 'alta', '/perfil/creditos')`,
-      [solicitud.cliente_id, solicitud.monto_solicitado]
+         ($1, 'sistema', '¡Crédito Aprobado!', 'Tu solicitud de crédito ha sido aprobada. Ya puedes realizar compras a crédito por un monto de $' || $2 || '.', 'alta', '/perfil/creditos', $3)`,
+      [solicitud.cliente_id, solicitud.monto_solicitado, tenant_id]
     );
 
     await client.query('COMMIT');
@@ -281,6 +294,7 @@ async function aprobarSolicitud(req, res) {
 async function rechazarSolicitud(req, res) {
   const client = await db.pool.connect();
   try {
+    const { tenant_id } = req.tenant;
     const solicitudId = Number.parseInt(req.params.id, 10);
     const { motivo } = req.body;
 
@@ -297,9 +311,11 @@ async function rechazarSolicitud(req, res) {
     const { rows: [solicitud] } = await client.query(
       `SELECT cliente_id 
        FROM solicitudes_credito 
-       WHERE solicitud_id = $1 AND estado = 'PENDIENTE'
+       WHERE solicitud_id = $1 
+         AND tenant_id = $2
+         AND estado = 'PENDIENTE'
        FOR UPDATE`,
-      [solicitudId]
+      [solicitudId, tenant_id]
     );
 
     if (!solicitud) {
@@ -312,8 +328,8 @@ async function rechazarSolicitud(req, res) {
 
     // 2. Obtener datos del cliente para notificaciones
     const { rows: [cliente] } = await client.query(
-      `SELECT nombre, apellido, email FROM clientes WHERE clienteid = $1`,
-      [solicitud.cliente_id]
+      `SELECT nombre, apellido, email FROM clientes WHERE clienteid = $1 AND tenant_id = $2`,
+      [solicitud.cliente_id, tenant_id]
     );
 
     // 3. Actualizar estado de la solicitud
@@ -333,10 +349,10 @@ async function rechazarSolicitud(req, res) {
     
     await client.query(
       `INSERT INTO notificaciones 
-         (clienteid, tipo, titulo, mensaje, prioridad, url)
+         (clienteid, tipo, titulo, mensaje, prioridad, url, tenant_id)
        VALUES 
-         ($1, 'sistema', 'Actualización de Solicitud de Crédito', $2, 'alta', '/contacto')`,
-      [solicitud.cliente_id, mensajeNotificacion]
+         ($1, 'sistema', 'Actualización de Solicitud de Crédito', $2, 'alta', '/contacto', $3)`,
+      [solicitud.cliente_id, mensajeNotificacion, tenant_id]
     );
 
     await client.query('COMMIT');
