@@ -30,6 +30,16 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content" style="display: grid; gap: 1.5rem">
+          <!-- Instructional Banner -->
+          <div id="instructionalBanner" class="instructional-banner">
+            <p>
+              💡 <strong>Grupos de Órdenes de Compra:</strong> Agrupa múltiples órdenes de compra del mismo proveedor para consolidar pedidos. Puedes crear grupos, confirmarlos y enviarlos al proveedor. Ideal para optimizar costos de envío y gestión.
+            </p>
+            <button class="instructional-banner-close" title="Cerrar">
+              ×
+            </button>
+          </div>
+
           <!-- Filtros -->
           <section
             class="admin-card"
@@ -143,10 +153,11 @@
     <script src="js/layout.js" defer></script>
     <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/api.js"></script>
-    <script src="js/admin-header-dropdown.js"></script>
-    <script src="js/components/admin-header-loader.js"></script>
-    <script src="js/components/user-profile.js"></script>
-    <script src="js/optimizacion-compras.js"></script>
+    <script src="js/admin-header-dropdown.js" defer></script>
+    <script src="js/components/admin-header-loader.js" defer></script>
+    <script src="js/components/user-profile.js" defer></script>
+    <script src="js/optimizacion-compras.js" defer></script>
+    <script src="js/instructional-banner.js" defer></script>
     <script>
       fetch('components/modal-optimizacion-compras.html')
         .then(response => response.text())

@@ -29,6 +29,16 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content" style="display: grid; gap: 1.25rem">
+          <!-- Instructional Banner -->
+          <div id="instructionalBanner" class="instructional-banner">
+            <p>
+              💡 <strong>Historial de Cuentas Saldadas:</strong> Consulta el historial completo de cuentas por pagar finalizadas (pagadas o canceladas). Puedes revisar los comprobantes de pago y verificar los detalles de cada transacción completada.
+            </p>
+            <button class="instructional-banner-close" title="Cerrar">
+              ×
+            </button>
+          </div>
+
           <section class="admin-card" style="padding: 1.25rem">
             <div
               style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: center;"
@@ -128,11 +138,13 @@
       </main>
     </div>
 
-    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
+    <script src="js/instructional-banner.js"></script>
     <script src="js/admin-cuentaspagadas.js" defer></script>
 
     <style>

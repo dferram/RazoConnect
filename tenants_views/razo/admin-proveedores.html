@@ -31,6 +31,16 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content">
+          <!-- Instructional Banner -->
+          <div id="instructionalBanner" class="instructional-banner">
+            <p>
+              💡 <strong>Gestión de Proveedores:</strong> Administra tu catálogo de proveedores. Puedes agregar nuevos proveedores, editar su información de contacto y configurar reglas de empaque para cada tipo de producto que manejan.
+            </p>
+            <button class="instructional-banner-close" title="Cerrar">
+              ×
+            </button>
+          </div>
+
           <!-- Actions Bar -->
           <div
             class="admin-table-container"
@@ -606,11 +616,13 @@
       </div>
     </div>
 
-    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
+    <script src="js/instructional-banner.js"></script>
     <script>
       // Authentication check
       const adminToken = localStorage.getItem("razoconnect_admin_token");

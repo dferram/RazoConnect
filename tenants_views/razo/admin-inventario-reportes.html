@@ -26,6 +26,16 @@
       <div id="admin-header-container"></div>
 
       <div class="admin-content">
+        <!-- Instructional Banner -->
+        <div id="instructionalBanner" class="instructional-banner">
+          <p>
+            💡 <strong>Historial de Sesiones de Inventario:</strong> Consulta todas las auditorías de inventario realizadas. Puedes buscar sesiones por nombre o administrador, ver detalles de cada auditoría y generar reportes PDF con las discrepancias encontradas.
+          </p>
+          <button class="instructional-banner-close" title="Cerrar">
+            ×
+          </button>
+        </div>
+
         <div class="admin-table-container">
           <div class="admin-table-header">
             <h2 class="admin-table-title">
@@ -156,8 +166,11 @@
     </main>
   </div>
 
+  <script src="js/layout.js" defer></script>
+  <script src="js/sidebar-toggle.js" defer></script>
   <script src="js/components/admin-sidebar-loader.js?v=2.0"></script>
   <script src="js/components/admin-header-loader.js?v=2.0"></script>
+  <script src="js/instructional-banner.js"></script>
   <script src="js/admin-inventario-reportes.js?v=5.0"></script>
 </body>
 </html>

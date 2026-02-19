@@ -38,7 +38,19 @@
       <main class="admin-main">
         <div id="admin-header-container"></div>
 
-        <div class="admin-content" style="display: grid; gap: 1.25rem">
+        <div class="admin-content">
+          <!-- Instructional Banner -->
+          <div id="instructionalBanner" class="instructional-banner">
+            <p>
+              💡 <strong>Recepción de Inventario:</strong> Registra la llegada de productos de tus proveedores. Selecciona la orden de compra, verifica las cantidades recibidas y asigna costos. El sistema actualizará automáticamente tu inventario disponible.
+            </p>
+            <button class="instructional-banner-close" title="Cerrar">
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-content admin-content-tight" style="display: grid; gap: 1.25rem">
           <!-- Órdenes de Compra Pendientes -->
           <section class="admin-card" style="padding: 1.25rem">
             <div
@@ -278,8 +290,11 @@
                       <thead class="thead-sticky">
                         <tr>
                           <th>Producto</th>
-                          <th style="width: 160px;">SKU</th>
-                          <th style="text-align:center; width: 160px;">Cantidad (pzas)</th>
+                          <th style="width: 140px;">SKU</th>
+                          <th style="width: 120px;">Categoría</th>
+                          <th style="width: 100px;">Color</th>
+                          <th style="width: 120px;">Medida</th>
+                          <th style="text-align:center; width: 140px;">Cantidad (pzas)</th>
                           <th style="width: 88px;"></th>
                         </tr>
                       </thead>
@@ -511,7 +526,7 @@
           return;
         }
 
-        const input = inputEl || tbodyPendiente.querySelector(`.input-qty-recibida[data-detalle-id="${detalleId}"]`);
+        const input = inputEl || (tbodyPendiente ? tbodyPendiente.querySelector(`.input-qty-recibida[data-detalle-id="${detalleId}"]`) : null);
         if (!input) {
           showToastError("No se encontró el campo de cantidad");
           return;
@@ -557,14 +572,27 @@
             piezasPorPaquete: piezas
           };
         } else {
+          const costoCalculado = costoUnitarioValue(item);
+          console.log('💾 [SESION] Guardando nuevo item:', {
+            detalleId: item.detalleId,
+            nombreProducto: item.nombreProducto,
+            cantidad,
+            piezas,
+            costoCalculado,
+            itemCompleto: item
+          });
+          
           sesionRecepcion.push({
             detalleId: item.detalleId,
             varianteId: item.varianteId,
             cantidadPiezas: cantidad,  // ← EXPLÍCITO: Son PIEZAS, no paquetes
             nombreProducto: safeText(item.nombreProducto),
             sku: safeText(item.sku),
+            categoria: safeText(item.categoria || 'N/A'),
+            color: safeText(item.color || 'N/A'),
+            dimensiones: safeText(item.dimensionesFisicas || item.dimensiones || 'N/A'),
             piezasPorPaquete: piezas,
-            costoUnitario: costoUnitarioValue(item)
+            costoUnitario: costoCalculado
           });
         }
 
@@ -673,6 +701,9 @@
             cantidadPiezas: cantidadFinal,  // ← EXPLÍCITO: Son PIEZAS
             nombreProducto: safeText(base.nombreProducto),
             sku: safeText(base.sku),
+            categoria: safeText(base.categoria || raw?.categoria || 'N/A'),
+            color: safeText(base.color || raw?.color || 'N/A'),
+            dimensiones: safeText(base.dimensionesFisicas || base.dimensiones || raw?.dimensiones || 'N/A'),
             piezasPorPaquete:
               (Number.isInteger(piezasPorPaqueteStored) && piezasPorPaqueteStored > 0
                 ? piezasPorPaqueteStored
@@ -993,11 +1024,19 @@
           lblTotalRecibido.textContent = formatMoneyMx(valorRecibido);
         }
 
-        pendienteBadge.textContent = `${pendientes.length} PENDIENTES`;
-        recibidoBadge.textContent = `${items.length} ITEMS`;
+        if (pendienteBadge) {
+          pendienteBadge.textContent = `${pendientes.length} PENDIENTES`;
+        }
+        if (recibidoBadge) {
+          recibidoBadge.textContent = `${items.length} ITEMS`;
+        }
 
-        tbodyPendiente.innerHTML = "";
-        tbodyRecibido.innerHTML = "";
+        if (tbodyPendiente) {
+          tbodyPendiente.innerHTML = "";
+        }
+        if (tbodyRecibido) {
+          tbodyRecibido.innerHTML = "";
+        }
 
         for (const item of pendientes) {
           const piezas = piezasPorPaqueteValue(item);
@@ -1101,7 +1140,9 @@
           tr.appendChild(tdPen);
           tr.appendChild(tdInput);
           tr.appendChild(tdBtn);
-          tbodyPendiente.appendChild(tr);
+          if (tbodyPendiente) {
+            tbodyPendiente.appendChild(tr);
+          }
         }
 
         for (const item of items) {
@@ -1183,7 +1224,9 @@
           tr.appendChild(tdDimensiones);
           tr.appendChild(tdRec);
           tr.appendChild(tdProg);
-          tbodyRecibido.appendChild(tr);
+          if (tbodyRecibido) {
+            tbodyRecibido.appendChild(tr);
+          }
         }
 
         if (!pendientes.length) {
@@ -1195,7 +1238,9 @@
           td.style.padding = "1rem";
           td.textContent = "No hay pendientes por recibir.";
           tr.appendChild(td);
-          tbodyPendiente.appendChild(tr);
+          if (tbodyPendiente) {
+            tbodyPendiente.appendChild(tr);
+          }
         }
       };
 
@@ -1245,6 +1290,9 @@
         for (const it of items) {
           const tr = document.createElement("tr");
 
+          // Obtener información adicional del item desde state.items
+          const itemInfo = Array.isArray(state.items) ? state.items.find(x => String(x.detalleId) === String(it.detalleId)) : null;
+
           const tdNombre = document.createElement("td");
           tdNombre.className = "td-truncado";
           tdNombre.title = safeText(it.nombreProducto);
@@ -1258,6 +1306,15 @@
           tdSku.innerHTML = `<code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(
             it.sku
           )}</code>`;
+
+          const tdCategoria = document.createElement("td");
+          tdCategoria.textContent = safeText(itemInfo?.categoria || it.categoria || 'N/A');
+
+          const tdColor = document.createElement("td");
+          tdColor.textContent = safeText(itemInfo?.color || it.color || 'N/A');
+
+          const tdMedida = document.createElement("td");
+          tdMedida.textContent = safeText(itemInfo?.dimensionesFisicas || itemInfo?.dimensiones || it.dimensiones || 'N/A');
 
           const tdCant = document.createElement("td");
           tdCant.style.textAlign = "center";
@@ -1283,9 +1340,44 @@
 
           tr.appendChild(tdNombre);
           tr.appendChild(tdSku);
+          tr.appendChild(tdCategoria);
+          tr.appendChild(tdColor);
+          tr.appendChild(tdMedida);
           tr.appendChild(tdCant);
           tr.appendChild(tdAcc);
           tbodySesion.appendChild(tr);
+        }
+
+        // Calcular totales financieros directamente
+        let totalPiezas = 0;
+        let totalCosto = 0;
+        let totalVenta = 0;
+
+        items.forEach(item => {
+          const cantidadPiezas = parseInt(item.cantidadPiezas || item.cantidad, 10) || 0;
+          const costoUnitario = parseFloat(item.costoUnitario || item.costounitario || 0);
+          
+          // Obtener precio de venta desde state.items
+          const itemInfo = Array.isArray(state.items) ? state.items.find(x => String(x.detalleId) === String(item.detalleId)) : null;
+          const precioVenta = parseFloat(itemInfo?.precioofertaunitario || itemInfo?.preciounitario || 0);
+          
+          totalPiezas += cantidadPiezas;
+          totalCosto += cantidadPiezas * costoUnitario;
+          totalVenta += cantidadPiezas * precioVenta;
+        });
+
+        // Actualizar labels de totales
+        const lblTotalPiezas = document.getElementById('lbl-total-piezas');
+        const lblTotalVenta = document.getElementById('lbl-total-venta');
+
+        if (lblTotalPiezas) {
+          lblTotalPiezas.textContent = `${totalPiezas.toLocaleString('es-MX')} pzas`;
+        }
+        if (lblTotalSesion) {
+          lblTotalSesion.textContent = `$${totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+        if (lblTotalVenta) {
+          lblTotalVenta.textContent = `$${totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
       };
 
@@ -1551,22 +1643,29 @@
             }
           }
 
-          ocProveedor.textContent = safeText(state.orden.proveedorNombre || "—");
-          ocMeta.textContent = `Estatus: ${safeText(state.orden.estatus)}`;
-          ocBadge.textContent = `OC #${safeText(state.orden.ordenCompraId)} · ${safeText(
-            state.orden.estatus
-          )}`;
+          if (ocProveedor) {
+            ocProveedor.textContent = safeText(state.orden.proveedorNombre || "—");
+          }
+          if (ocMeta) {
+            ocMeta.textContent = `Estatus: ${safeText(state.orden.estatus)}`;
+          }
+          if (ocBadge) {
+            ocBadge.textContent = `OC #${safeText(state.orden.ordenCompraId)} · ${safeText(
+              state.orden.estatus
+            )}`;
+          }
 
           // CRUCIAL: Asegurar que las tablas estén visibles antes de renderizar
-          const paneles = recepcionSplit.querySelectorAll('.recepcion-panel');
-          paneles.forEach(panel => {
-            // Restaurar display inline
-            panel.style.display = '';
-            // Eliminar clase d-none de Bootstrap si existe
-            panel.classList.remove('d-none');
-          });
-
-          recepcionSplit.style.display = "block";
+          if (recepcionSplit) {
+            const paneles = recepcionSplit.querySelectorAll('.recepcion-panel');
+            paneles.forEach(panel => {
+              // Restaurar display inline
+              panel.style.display = '';
+              // Eliminar clase d-none de Bootstrap si existe
+              panel.classList.remove('d-none');
+            });
+            recepcionSplit.style.display = "block";
+          }
           renderSplit();
           renderizarTablaSesion();
           
@@ -1604,7 +1703,7 @@
           const row = btn.closest("tr");
           const input =
             row?.querySelector?.("input.cantidad-hoy") ||
-            tbodyPendiente.querySelector(`input.cantidad-hoy[data-detalle-id="${safeText(detalleId)}"]`);
+            (tbodyPendiente ? tbodyPendiente.querySelector(`input.cantidad-hoy[data-detalle-id="${safeText(detalleId)}"]`) : null);
 
           await agregarItemASesion(detalleId, input);
         });
@@ -1621,9 +1720,9 @@
         if (!id) {
           state.orden = null;
           state.items = [];
-          ocProveedor.textContent = "—";
-          ocMeta.textContent = "—";
-          ocBadge.textContent = "—";
+          if (ocProveedor) ocProveedor.textContent = "—";
+          if (ocMeta) ocMeta.textContent = "—";
+          if (ocBadge) ocBadge.textContent = "—";
           setEmpty("Selecciona una orden de compra para empezar.");
           return;
         }
@@ -1669,9 +1768,15 @@
           }
           
           // Es una orden individual
-          ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "—");
-          ocMeta.textContent = "—";
-          ocBadge.textContent = `OC #${safeText(id)} · Cargando…`;
+          if (ocProveedor) {
+            ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "—");
+          }
+          if (ocMeta) {
+            ocMeta.textContent = "—";
+          }
+          if (ocBadge) {
+            ocBadge.textContent = `OC #${safeText(id)} · Cargando…`;
+          }
           
           // loadRecepcion se encargará de limpiar y renderizar el contenedor
           await loadRecepcion(id);
@@ -2236,5 +2341,6 @@
 
     </style>
 
+    <script src="js/instructional-banner.js"></script>
   </body>
 </html>

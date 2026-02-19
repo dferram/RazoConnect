@@ -27,6 +27,16 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content" style="display: grid; gap: 1.25rem">
+          <!-- Instructional Banner -->
+          <div id="instructionalBanner" class="instructional-banner">
+            <p>
+              💡 <strong>Recepción Blindada (OC):</strong> Registra la recepción de mercancía de órdenes de compra con validación ciega. Selecciona la orden, verifica cantidades recibidas sin ver el stock actual y el sistema actualizará automáticamente tu inventario.
+            </p>
+            <button class="instructional-banner-close" title="Cerrar">
+              ×
+            </button>
+          </div>
+
           <section class="admin-card" style="padding: 1.25rem">
             <div
               style="
@@ -139,9 +149,11 @@
       </main>
     </div>
 
-    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/instructional-banner.js"></script>
     <script src="js/components/user-profile.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
 
