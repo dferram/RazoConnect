@@ -628,6 +628,14 @@ router.get(
   adminController.getMovimientosInventario
 );
 
+// Búsqueda de variantes con autocompletado para movimientos
+router.get(
+  "/variantes/search",
+  authenticate,
+  authorizeAdmin,
+  adminController.searchVariantesMovimientos
+);
+
 // Ajustes de inventario con filtros avanzados para conciliación
 router.get(
   "/ajustes-inventario/filtrados",

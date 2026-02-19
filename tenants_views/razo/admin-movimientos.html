@@ -14,9 +14,11 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
-      <link rel="stylesheet" href="css/mobile-responsive.css" />
+    <link rel="stylesheet" href="css/mobile-responsive.css" />
+    <link rel="stylesheet" href="css/search-autocomplete.css" />
   </head>
 
   <body data-sidebar="admin" data-page-title="Movimientos">
@@ -49,6 +51,14 @@
               </div>
 
               <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  onclick="window.history.back()"
+                  style="display: inline-flex; align-items: center; gap: 0.5rem;"
+                >
+                  <i class="bi bi-arrow-left"></i> Volver
+                </button>
                 <button id="btnLimpiarFiltros" class="btn btn-secondary" type="button">
                   Limpiar Filtros
                 </button>
@@ -59,19 +69,94 @@
             <div
               style="
                 display: grid;
-                grid-template-columns: 2fr 1fr 1fr 1fr;
+                grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr;
                 gap: 0.75rem;
                 padding: 1rem;
                 border-top: 1px solid #e5e7eb;
                 background: #fafafa;
               "
             >
+              <div style="position: relative;">
+                <label style="display:block; font-size:0.8rem; color:#6b7280; margin-bottom:0.25rem;">Buscar Producto/SKU</label>
+                <div class="search-container-modern" style="position: relative;">
+                  <input
+                    id="filtroSearch"
+                    type="text"
+                    placeholder="Buscar por SKU o Producto..."
+                    style="
+                      width: 100%;
+                      padding: 0.65rem 2.5rem 0.65rem 0.9rem;
+                      border: 2px solid var(--razo-gray-light);
+                      border-radius: 0.75rem;
+                      font-family: 'Inter', sans-serif;
+                      background: white;
+                    "
+                  />
+                  <i class="bi bi-search" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;"></i>
+                </div>
+              </div>
+
               <div>
-                <label style="display:block; font-size:0.8rem; color:#6b7280; margin-bottom:0.25rem;">Buscar</label>
+                <label style="display:block; font-size:0.8rem; color:#6b7280; margin-bottom:0.25rem;">Categoría</label>
+                <select
+                  id="filtroCategoria"
+                  aria-label="Categoría"
+                  style="
+                    width: 100%;
+                    padding: 0.65rem 0.9rem;
+                    border: 2px solid var(--razo-gray-light);
+                    border-radius: 0.75rem;
+                    font-family: 'Inter', sans-serif;
+                    background: white;
+                  "
+                >
+                  <option value="todos">Todas</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:0.8rem; color:#6b7280; margin-bottom:0.25rem;">Proveedor</label>
+                <select
+                  id="filtroProveedor"
+                  aria-label="Proveedor"
+                  style="
+                    width: 100%;
+                    padding: 0.65rem 0.9rem;
+                    border: 2px solid var(--razo-gray-light);
+                    border-radius: 0.75rem;
+                    font-family: 'Inter', sans-serif;
+                    background: white;
+                  "
+                >
+                  <option value="todos">Todos</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:0.8rem; color:#6b7280; margin-bottom:0.25rem;">Medida</label>
+                <select
+                  id="filtroMedida"
+                  aria-label="Medida"
+                  style="
+                    width: 100%;
+                    padding: 0.65rem 0.9rem;
+                    border: 2px solid var(--razo-gray-light);
+                    border-radius: 0.75rem;
+                    font-family: 'Inter', sans-serif;
+                    background: white;
+                  "
+                >
+                  <option value="todos">Todas</option>
+                </select>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:0.8rem; color:#6b7280; margin-bottom:0.25rem;">Color</label>
                 <input
-                  id="filtroSearch"
+                  id="filtroColor"
                   type="text"
-                  placeholder="Buscar por SKU, Producto o Motivo..."
+                  placeholder="Color..."
+                  aria-label="Color"
                   style="
                     width: 100%;
                     padding: 0.65rem 0.9rem;
@@ -188,11 +273,16 @@
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/instructional-banner.js"></script>
     <script src="js/components/user-profile.js"></script>
+    <script src="js/search-autocomplete.js"></script>
 
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
 
       const filtroSearch = document.getElementById("filtroSearch");
+      const filtroCategoria = document.getElementById("filtroCategoria");
+      const filtroProveedor = document.getElementById("filtroProveedor");
+      const filtroMedida = document.getElementById("filtroMedida");
+      const filtroColor = document.getElementById("filtroColor");
       const filtroTipo = document.getElementById("filtroTipo");
       const filtroFechaInicio = document.getElementById("filtroFechaInicio");
       const filtroFechaFin = document.getElementById("filtroFechaFin");
@@ -208,6 +298,186 @@
       const tablaMovimientos = document.getElementById("tablaMovimientos");
 
       let varianteIdFixed = null;
+      let searchAutocomplete = null;
+
+      // Cargar catálogos de filtros
+      async function cargarCatalogos() {
+        try {
+          // Cargar categorías
+          const categoriasRes = await fetch(`${API_BASE_URL}/admin/categorias`, {
+            headers: { Authorization: `Bearer ${adminToken}` }
+          });
+          if (categoriasRes.ok) {
+            const categoriasData = await categoriasRes.json();
+            if (categoriasData.success && categoriasData.data.categorias) {
+              categoriasData.data.categorias.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.categoriaId;
+                option.textContent = cat.nombre;
+                filtroCategoria.appendChild(option);
+              });
+            }
+          }
+
+          // Cargar proveedores
+          const proveedoresRes = await fetch(`${API_BASE_URL}/admin/proveedores`, {
+            headers: { Authorization: `Bearer ${adminToken}` }
+          });
+          if (proveedoresRes.ok) {
+            const proveedoresData = await proveedoresRes.json();
+            if (proveedoresData.success && proveedoresData.data.proveedores) {
+              proveedoresData.data.proveedores.forEach(prov => {
+                const option = document.createElement('option');
+                option.value = prov.proveedorid;
+                option.textContent = prov.nombreempresa;
+                filtroProveedor.appendChild(option);
+              });
+            }
+          }
+
+          // Cargar medidas
+          const medidasRes = await fetch(`${API_BASE_URL}/admin/medidas`, {
+            headers: { Authorization: `Bearer ${adminToken}` }
+          });
+          if (medidasRes.ok) {
+            const medidasData = await medidasRes.json();
+            if (medidasData.success && medidasData.data) {
+              const medidas = medidasData.data.medidas || medidasData.data;
+              medidas.forEach(med => {
+                const option = document.createElement('option');
+                option.value = med.medidaid || med.medidaId;
+                option.textContent = med.nombremedida || med.nombreMedida;
+                filtroMedida.appendChild(option);
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error cargando catálogos:', error);
+        }
+      }
+
+      // Inicializar autocompletado con imágenes
+      function initSearchAutocomplete() {
+        if (searchAutocomplete) {
+          searchAutocomplete.destroy();
+        }
+
+        searchAutocomplete = new SearchAutocomplete(filtroSearch, {
+          minChars: 2,
+          debounceMs: 300,
+          maxResults: 8,
+          onSelect: (varianteId) => {
+            setVarianteIdFixed(varianteId);
+            filtroSearch.value = '';
+            loadMovimientos();
+          },
+          searchEndpoint: `${API_BASE_URL}/admin/variantes/search`,
+          additionalParams: () => {
+            const params = {};
+            const categoria = filtroCategoria.value;
+            if (categoria && categoria !== 'todos') params.categoria_id = categoria;
+            const proveedor = filtroProveedor.value;
+            if (proveedor && proveedor !== 'todos') params.proveedor_id = proveedor;
+            const medida = filtroMedida.value;
+            if (medida && medida !== 'todos') params.medida_id = medida;
+            const color = filtroColor.value.trim();
+            if (color) params.color = color;
+            return params;
+          }
+        });
+
+        // Sobrescribir el método de búsqueda para usar el endpoint correcto
+        const originalSearch = searchAutocomplete.search.bind(searchAutocomplete);
+        searchAutocomplete.search = async function(query) {
+          try {
+            const params = new URLSearchParams({ q: query });
+            const additionalParams = this.options.additionalParams ? this.options.additionalParams() : {};
+            Object.keys(additionalParams).forEach(key => {
+              params.append(key, additionalParams[key]);
+            });
+
+            const response = await fetch(`${this.options.searchEndpoint}?${params.toString()}`, {
+              headers: { Authorization: `Bearer ${adminToken}` }
+            });
+            const data = await response.json();
+
+            if (data.success && data.data.variantes && data.data.variantes.length > 0) {
+              this.renderResults(data.data.variantes);
+              this.open();
+            } else {
+              this.renderEmpty(query);
+              this.open();
+            }
+          } catch (error) {
+            console.error('Error en búsqueda:', error);
+            this.close();
+          }
+        };
+
+        // Sobrescribir renderResults para mostrar variantes con imágenes
+        searchAutocomplete.renderResults = function(variantes) {
+          const resultsContainer = this.isMobile 
+            ? this.dropdown.querySelector('.search-drawer-results')
+            : this.dropdown;
+
+          if (this.isMobile) {
+            resultsContainer.innerHTML = variantes.map((variante, index) => `
+              <button type="button" class="search-result-item-mobile" data-index="${index}" data-variante-id="${variante.varianteId}">
+                <div class="search-result-image-mobile">
+                  ${variante.imagenUrl 
+                    ? `<img src="${variante.imagenUrl}" alt="${variante.nombreProducto}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />` 
+                    : ''}
+                  <div class="search-result-placeholder-mobile" style="${variante.imagenUrl ? 'display: none;' : ''}">
+                    <i class="bi bi-box-seam"></i>
+                  </div>
+                </div>
+                <div class="search-result-info-mobile">
+                  <div class="search-result-name">${this.highlightMatch(variante.nombreProducto)}</div>
+                  <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">
+                    SKU: ${variante.sku}${variante.dimensiones ? ' • ' + variante.dimensiones : ''}${variante.colorNombre ? ' • ' + variante.colorNombre : ''}
+                  </div>
+                </div>
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            `).join('');
+          } else {
+            resultsContainer.innerHTML = variantes.map((variante, index) => `
+              <button type="button" class="search-result-item" data-index="${index}" data-variante-id="${variante.varianteId}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; border: none; border-bottom: 1px solid #f0f0f0; background: white; width: 100%; text-align: left; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#f8f8f8'" onmouseout="this.style.background='white'">
+                <div class="search-result-image" style="width: 50px; height: 50px; flex-shrink: 0; border-radius: 0.5rem; overflow: hidden; background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
+                  ${variante.imagenUrl 
+                    ? `<img src="${variante.imagenUrl}" alt="${variante.nombreProducto}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />` 
+                    : ''}
+                  <div class="search-result-placeholder" style="${variante.imagenUrl ? 'display: none;' : 'display: flex;'}; width: 100%; height: 100%; align-items: center; justify-content: center;">
+                    <i class="bi bi-box-seam" style="font-size: 24px; color: #999;"></i>
+                  </div>
+                </div>
+                <div class="search-result-info" style="flex: 1; min-width: 0;">
+                  <div class="search-result-name" style="font-size: 0.95rem; font-weight: 500; color: #333; margin-bottom: 0.25rem;">${this.highlightMatch(variante.nombreProducto)}</div>
+                  <div style="font-size: 0.8rem; color: #6b7280;">
+                    <span style="font-weight: 600;">SKU:</span> ${variante.sku}
+                    ${variante.dimensiones ? `<span style="margin-left: 0.5rem;">• ${variante.dimensiones}</span>` : ''}
+                    ${variante.colorNombre ? `<span style="margin-left: 0.5rem;">• <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${variante.colorHex || '#ccc'}; border: 1px solid #ddd; vertical-align: middle;"></span> ${variante.colorNombre}</span>` : ''}
+                  </div>
+                  ${variante.categoriaNombre || variante.proveedorNombre ? `
+                    <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem;">
+                      ${variante.categoriaNombre ? variante.categoriaNombre : ''}${variante.categoriaNombre && variante.proveedorNombre ? ' • ' : ''}${variante.proveedorNombre ? variante.proveedorNombre : ''}
+                    </div>
+                  ` : ''}
+                </div>
+              </button>
+            `).join('');
+          }
+
+          const items = resultsContainer.querySelectorAll('[data-variante-id]');
+          items.forEach((item) => {
+            item.addEventListener('click', () => {
+              const varianteId = item.dataset.varianteId;
+              this.options.onSelect(varianteId);
+              this.close();
+            });
+          });
+        };
+      }
 
       function setVarianteIdFixed(newValue) {
         varianteIdFixed = newValue ? String(newValue) : null;
@@ -312,6 +582,10 @@
       async function limpiarFiltrosSinRecargar() {
         setVarianteIdFixed(null);
         filtroSearch.value = "";
+        filtroCategoria.value = "todos";
+        filtroProveedor.value = "todos";
+        filtroMedida.value = "todos";
+        filtroColor.value = "";
         filtroTipo.value = "";
         filtroFechaInicio.value = "";
         filtroFechaFin.value = "";
@@ -584,8 +858,32 @@
       });
 
       // Init
+      cargarCatalogos();
+      initSearchAutocomplete();
       initFromUrlParams();
       loadMovimientos();
+
+      // Event listeners para recargar autocompletado cuando cambien los filtros
+      filtroCategoria.addEventListener('change', () => {
+        if (searchAutocomplete) {
+          searchAutocomplete.close();
+        }
+      });
+      filtroProveedor.addEventListener('change', () => {
+        if (searchAutocomplete) {
+          searchAutocomplete.close();
+        }
+      });
+      filtroMedida.addEventListener('change', () => {
+        if (searchAutocomplete) {
+          searchAutocomplete.close();
+        }
+      });
+      filtroColor.addEventListener('input', () => {
+        if (searchAutocomplete) {
+          searchAutocomplete.close();
+        }
+      });
     </script>
   </body>
 </html>
