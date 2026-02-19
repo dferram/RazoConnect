@@ -441,17 +441,6 @@ function mostrarResultadosBusqueda(productos) {
         ? `<img src="${imagenUrl}" alt="${producto.nombreProducto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 0.5rem;" onerror="this.onerror=null; this.parentElement.innerHTML='📦';">`
         : '📦';
 
-      const varianteData = JSON.stringify({
-        varianteId: variante.varianteId,
-        sku: variante.sku,
-        nombreProducto: producto.nombreProducto,
-        dimensiones: variante.dimensiones,
-        colorNombre: variante.colorNombre,
-        stock: variante.stock,
-        precioUnitario: variante.precioUnitario,
-        tamanos: variante.tamanos
-      }).replace(/"/g, '&quot;');
-
       return `
         <div class="search-result-item">
           <div class="search-result-info">
@@ -472,9 +461,16 @@ function mostrarResultadosBusqueda(productos) {
           </div>
           <div class="search-result-action">
             <button 
-              class="btn btn-success" 
+              class="btn btn-success btn-agregar-variante"
               style="padding: 0.5rem 1.25rem; font-size: 0.875rem; white-space: nowrap; min-width: 120px;"
-              onclick='abrirModalSeleccionPaquete(${varianteData})'>
+              data-variante-id="${variante.varianteId}"
+              data-sku="${variante.sku}"
+              data-nombre-producto="${producto.nombreProducto.replace(/"/g, '&quot;')}"
+              data-dimensiones="${variante.dimensiones}"
+              data-color-nombre="${variante.colorNombre || ''}"
+              data-stock="${variante.stock}"
+              data-precio-unitario="${variante.precioUnitario}"
+              data-tamanos='${JSON.stringify(variante.tamanos)}'>
               ${yaEnPedido ? '+ Incrementar' : '+ Agregar'}
             </button>
           </div>
@@ -486,6 +482,27 @@ function mostrarResultadosBusqueda(productos) {
 
 let varianteSeleccionadaModal = null;
 let tamanoSeleccionadoModal = null;
+
+// Event delegation para botones de agregar variante
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn-agregar-variante');
+  if (!btn) return;
+
+  e.preventDefault();
+  
+  const varianteData = {
+    varianteId: parseInt(btn.dataset.varianteId, 10),
+    sku: btn.dataset.sku,
+    nombreProducto: btn.dataset.nombreProducto,
+    dimensiones: btn.dataset.dimensiones,
+    colorNombre: btn.dataset.colorNombre,
+    stock: parseInt(btn.dataset.stock, 10),
+    precioUnitario: parseFloat(btn.dataset.precioUnitario),
+    tamanos: JSON.parse(btn.dataset.tamanos || '[]')
+  };
+
+  abrirModalSeleccionPaquete(varianteData);
+});
 
 function abrirModalSeleccionPaquete(varianteData) {
   varianteSeleccionadaModal = varianteData;

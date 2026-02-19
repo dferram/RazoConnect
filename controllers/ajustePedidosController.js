@@ -1,4 +1,5 @@
 const db = require("../db");
+const SmartStockService = require("../services/SmartStockService");
 
 async function ajustarPedido(req, res) {
   const client = await db.pool.connect();
@@ -277,77 +278,49 @@ async function ajustarPedido(req, res) {
 
       if (!detalle.esbackorder) {
         if (diferenciaCantidad > 0) {
-          const stockActual = parseInt(detalle.stock, 10);
+          // Incremento de cantidad - Descontar stock usando SmartStockService
           const piezasNecesarias = diferenciaPiezas;
+          
+          console.log(`📉 Descontando ${piezasNecesarias} piezas de variante ${detalle.varianteid}`);
+          
+          const resultado = await SmartStockService.adjustStock({
+            varianteId: detalle.varianteid,
+            cantidad: -piezasNecesarias,  // Negativo = descuento
+            userId: req.user.userId,
+            userRole: req.user.role,
+            tenantId: tenant_id
+          });
 
-          if (stockActual < piezasNecesarias) {
+          if (!resultado.success) {
             await client.query("ROLLBACK");
             transactionStarted = false;
             client.release();
             return res.status(400).json({
               success: false,
-              message: `Stock insuficiente para ${detalle.nombreproducto} (${detalle.sku}). Disponible: ${stockActual} piezas, necesitas: ${piezasNecesarias}`
+              message: `Stock insuficiente para ${detalle.nombreproducto} (${detalle.sku}). ${resultado.message || 'No hay suficiente inventario disponible'}`
             });
           }
 
-          const nuevoStock = stockActual - piezasNecesarias;
-          await client.query(
-            `UPDATE producto_variantes SET stock = $1 WHERE varianteid = $2`,
-            [nuevoStock, detalle.varianteid]
-          );
-
-          await client.query(
-            `INSERT INTO log_inventario (
-              varianteid,
-              tipo_movimiento,
-              cantidad_piezas,
-              stock_previo,
-              stock_posterior,
-              referencia,
-              notas,
-              tenant_id
-            ) VALUES ($1, 'DESCUENTO_AJUSTE', $2, $3, $4, $5, $6, $7)`,
-            [
-              detalle.varianteid,
-              piezasNecesarias,
-              stockActual,
-              nuevoStock,
-              `AJUSTE-PED-${pedidoId}`,
-              `Descuento por incremento de cantidad en ajuste de pedido`,
-              tenant_id
-            ]
-          );
-        } else {
-          const stockActual = parseInt(detalle.stock, 10);
+          console.log(`✅ Stock ajustado: ${resultado.oldStock} → ${resultado.newStock}`);
+        } else if (diferenciaCantidad < 0) {
+          // Reducción de cantidad - Devolver stock usando SmartStockService
           const piezasDevolver = Math.abs(diferenciaPiezas);
-          const nuevoStock = stockActual + piezasDevolver;
+          
+          console.log(`📈 Devolviendo ${piezasDevolver} piezas a variante ${detalle.varianteid}`);
+          
+          const resultado = await SmartStockService.adjustStock({
+            varianteId: detalle.varianteid,
+            cantidad: +piezasDevolver,  // Positivo = incremento
+            userId: req.user.userId,
+            userRole: req.user.role,
+            tenantId: tenant_id
+          });
 
-          await client.query(
-            `UPDATE producto_variantes SET stock = $1 WHERE varianteid = $2`,
-            [nuevoStock, detalle.varianteid]
-          );
-
-          await client.query(
-            `INSERT INTO log_inventario (
-              varianteid,
-              tipo_movimiento,
-              cantidad_piezas,
-              stock_previo,
-              stock_posterior,
-              referencia,
-              notas,
-              tenant_id
-            ) VALUES ($1, 'DEVOLUCION_AJUSTE', $2, $3, $4, $5, $6, $7)`,
-            [
-              detalle.varianteid,
-              piezasDevolver,
-              stockActual,
-              nuevoStock,
-              `AJUSTE-PED-${pedidoId}`,
-              `Devolución por reducción de cantidad en ajuste de pedido`,
-              tenant_id
-            ]
-          );
+          if (!resultado.success) {
+            console.error(`⚠️ Error al devolver stock: ${resultado.message}`);
+          } else {
+            console.log(`✅ Stock devuelto: ${resultado.oldStock} → ${resultado.newStock}`);
+          }
         }
       }
 
@@ -422,51 +395,35 @@ async function ajustarPedido(req, res) {
       const variante = varianteResult.rows[0];
       const tamanoPiezas = parseInt(variante.tamano_piezas, 10) || 1;
       const piezasNecesarias = cantidad * tamanoPiezas;
-      const stockActual = parseInt(variante.stock, 10);
 
-      if (stockActual < piezasNecesarias) {
+      console.log(`📦 Agregando producto: ${variante.nombreproducto} - ${piezasNecesarias} piezas`);
+
+      // Descontar stock usando SmartStockService
+      const resultado = await SmartStockService.adjustStock({
+        varianteId,
+        cantidad: -piezasNecesarias,  // Negativo = descuento
+        userId: req.user.userId,
+        userRole: req.user.role,
+        tenantId: tenant_id
+      });
+
+      if (!resultado.success) {
         await client.query("ROLLBACK");
         transactionStarted = false;
         client.release();
         return res.status(400).json({
           success: false,
-          message: `Stock insuficiente para ${variante.nombreproducto} (${variante.sku}). Disponible: ${stockActual} piezas, necesitas: ${piezasNecesarias}`
+          message: `Stock insuficiente para ${variante.nombreproducto} (${variante.sku}). ${resultado.message || 'No hay suficiente inventario disponible'}`
         });
       }
+
+      console.log(`✅ Stock descontado: ${resultado.oldStock} → ${resultado.newStock}`);
 
       const precioBase = parseFloat(variante.preciounitario) || 0;
       const precioOferta = variante.precioofertaunitario ? parseFloat(variante.precioofertaunitario) : null;
       const precioUnitario = precioOferta || precioBase;
       const precioPorPaquete = precioUnitario * tamanoPiezas;
       const subtotal = cantidad * precioPorPaquete;
-
-      const nuevoStock = stockActual - piezasNecesarias;
-      await client.query(
-        `UPDATE producto_variantes SET stock = $1 WHERE varianteid = $2`,
-        [nuevoStock, varianteId]
-      );
-
-      await client.query(
-        `INSERT INTO log_inventario (
-          varianteid,
-          tipo_movimiento,
-          cantidad_piezas,
-          stock_previo,
-          stock_posterior,
-          referencia,
-          notas,
-          tenant_id
-        ) VALUES ($1, 'DESCUENTO_AJUSTE', $2, $3, $4, $5, $6, $7)`,
-        [
-          varianteId,
-          piezasNecesarias,
-          stockActual,
-          nuevoStock,
-          `AJUSTE-PED-${pedidoId}`,
-          `Descuento por adición de producto en ajuste de pedido`,
-          tenant_id
-        ]
-      );
 
       await client.query(
         `INSERT INTO detallesdelpedido (
