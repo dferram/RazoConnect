@@ -2839,21 +2839,6 @@ const getMovimientosInventario = async (req, res) => {
     }
 
     const searchRaw = (req.query.search || "").toString().trim();
-    if (searchRaw) {
-      values.push(`%${searchRaw}%`);
-      const p = `$${values.length}`;
-      where.push(
-        `(
-          pv.sku ILIKE ${p} OR
-          COALESCE(p.nombreproducto, '') ILIKE ${p} OR
-          COALESCE(mi.motivo, '') ILIKE ${p} OR
-          COALESCE(mi.observaciones, '') ILIKE ${p} OR
-          COALESCE(mi.referencia_id, '') ILIKE ${p} OR
-          COALESCE(pv.dimensiones, '') ILIKE ${p}
-        )`
-      );
-    }
-
     const fechaInicioRaw = (req.query.fechaInicio || "").toString().trim();
     if (fechaInicioRaw) {
       values.push(fechaInicioRaw);
@@ -2887,8 +2872,6 @@ const getMovimientosInventario = async (req, res) => {
          mi.stock_posterior,
          mi.motivo,
          mi.observaciones,
-         mi.referencia_tipo,
-         mi.referencia_id,
          pv.sku,
          pv.dimensiones,
          p.productoid,
@@ -2931,8 +2914,6 @@ const getMovimientosInventario = async (req, res) => {
         stockPosterior: Number.parseInt(r.stock_posterior, 10) || 0,
         motivo: r.motivo || "",
         observaciones: r.observaciones || null,
-        referenciaTipo: r.referencia_tipo || null,
-        referenciaId: r.referencia_id || null,
         adminId: r.admin_id ?? null,
         usuario: r.usuario || 'Sistema',
       };
