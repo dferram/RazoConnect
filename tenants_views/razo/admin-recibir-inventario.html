@@ -50,7 +50,7 @@
           </div>
         </div>
 
-        <div class="admin-content" style="display: grid; gap: 1.25rem">
+        <div class="admin-content admin-content-tight" style="display: grid; gap: 1.25rem">
           <!-- Órdenes de Compra Pendientes -->
           <section class="admin-card" style="padding: 1.25rem">
             <div
@@ -290,8 +290,11 @@
                       <thead class="thead-sticky">
                         <tr>
                           <th>Producto</th>
-                          <th style="width: 160px;">SKU</th>
-                          <th style="text-align:center; width: 160px;">Cantidad (pzas)</th>
+                          <th style="width: 140px;">SKU</th>
+                          <th style="width: 120px;">Categoría</th>
+                          <th style="width: 100px;">Color</th>
+                          <th style="width: 120px;">Medida</th>
+                          <th style="text-align:center; width: 140px;">Cantidad (pzas)</th>
                           <th style="width: 88px;"></th>
                         </tr>
                       </thead>
@@ -569,14 +572,27 @@
             piezasPorPaquete: piezas
           };
         } else {
+          const costoCalculado = costoUnitarioValue(item);
+          console.log('💾 [SESION] Guardando nuevo item:', {
+            detalleId: item.detalleId,
+            nombreProducto: item.nombreProducto,
+            cantidad,
+            piezas,
+            costoCalculado,
+            itemCompleto: item
+          });
+          
           sesionRecepcion.push({
             detalleId: item.detalleId,
             varianteId: item.varianteId,
             cantidadPiezas: cantidad,  // ← EXPLÍCITO: Son PIEZAS, no paquetes
             nombreProducto: safeText(item.nombreProducto),
             sku: safeText(item.sku),
+            categoria: safeText(item.categoria || 'N/A'),
+            color: safeText(item.color || 'N/A'),
+            dimensiones: safeText(item.dimensionesFisicas || item.dimensiones || 'N/A'),
             piezasPorPaquete: piezas,
-            costoUnitario: costoUnitarioValue(item)
+            costoUnitario: costoCalculado
           });
         }
 
@@ -685,6 +701,9 @@
             cantidadPiezas: cantidadFinal,  // ← EXPLÍCITO: Son PIEZAS
             nombreProducto: safeText(base.nombreProducto),
             sku: safeText(base.sku),
+            categoria: safeText(base.categoria || raw?.categoria || 'N/A'),
+            color: safeText(base.color || raw?.color || 'N/A'),
+            dimensiones: safeText(base.dimensionesFisicas || base.dimensiones || raw?.dimensiones || 'N/A'),
             piezasPorPaquete:
               (Number.isInteger(piezasPorPaqueteStored) && piezasPorPaqueteStored > 0
                 ? piezasPorPaqueteStored
@@ -1271,6 +1290,9 @@
         for (const it of items) {
           const tr = document.createElement("tr");
 
+          // Obtener información adicional del item desde state.items
+          const itemInfo = Array.isArray(state.items) ? state.items.find(x => String(x.detalleId) === String(it.detalleId)) : null;
+
           const tdNombre = document.createElement("td");
           tdNombre.className = "td-truncado";
           tdNombre.title = safeText(it.nombreProducto);
@@ -1284,6 +1306,15 @@
           tdSku.innerHTML = `<code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(
             it.sku
           )}</code>`;
+
+          const tdCategoria = document.createElement("td");
+          tdCategoria.textContent = safeText(itemInfo?.categoria || it.categoria || 'N/A');
+
+          const tdColor = document.createElement("td");
+          tdColor.textContent = safeText(itemInfo?.color || it.color || 'N/A');
+
+          const tdMedida = document.createElement("td");
+          tdMedida.textContent = safeText(itemInfo?.dimensionesFisicas || itemInfo?.dimensiones || it.dimensiones || 'N/A');
 
           const tdCant = document.createElement("td");
           tdCant.style.textAlign = "center";
@@ -1309,9 +1340,44 @@
 
           tr.appendChild(tdNombre);
           tr.appendChild(tdSku);
+          tr.appendChild(tdCategoria);
+          tr.appendChild(tdColor);
+          tr.appendChild(tdMedida);
           tr.appendChild(tdCant);
           tr.appendChild(tdAcc);
           tbodySesion.appendChild(tr);
+        }
+
+        // Calcular totales financieros directamente
+        let totalPiezas = 0;
+        let totalCosto = 0;
+        let totalVenta = 0;
+
+        items.forEach(item => {
+          const cantidadPiezas = parseInt(item.cantidadPiezas || item.cantidad, 10) || 0;
+          const costoUnitario = parseFloat(item.costoUnitario || item.costounitario || 0);
+          
+          // Obtener precio de venta desde state.items
+          const itemInfo = Array.isArray(state.items) ? state.items.find(x => String(x.detalleId) === String(item.detalleId)) : null;
+          const precioVenta = parseFloat(itemInfo?.precioofertaunitario || itemInfo?.preciounitario || 0);
+          
+          totalPiezas += cantidadPiezas;
+          totalCosto += cantidadPiezas * costoUnitario;
+          totalVenta += cantidadPiezas * precioVenta;
+        });
+
+        // Actualizar labels de totales
+        const lblTotalPiezas = document.getElementById('lbl-total-piezas');
+        const lblTotalVenta = document.getElementById('lbl-total-venta');
+
+        if (lblTotalPiezas) {
+          lblTotalPiezas.textContent = `${totalPiezas.toLocaleString('es-MX')} pzas`;
+        }
+        if (lblTotalSesion) {
+          lblTotalSesion.textContent = `$${totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+        if (lblTotalVenta) {
+          lblTotalVenta.textContent = `$${totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
       };
 
@@ -2275,5 +2341,6 @@
 
     </style>
 
+    <script src="js/instructional-banner.js"></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-const pool = require('../db');
+const { pool } = require('../db');
 
 class OptimizationService {
   async detectConsolidationOpportunities(tenantId, adminId = null) {
@@ -10,20 +10,20 @@ class OptimizationService {
           SELECT 
             oc.ordencompraid,
             oc.proveedorid,
-            doc.detalleocid,
+            doc.detalleoc_id,
             doc.varianteid,
-            doc.cantidad as cantidad_solicitada,
+            doc.cantidadsolicitada as cantidad_solicitada,
             p.productoid,
-            p.nombre as producto_nombre,
-            p.sku,
-            pv.dimensionesfisicas,
+            p.nombreproducto as producto_nombre,
+            p.sku_maestro as sku,
+            pv.dimensiones as dimensionesfisicas,
             pre.cantidadempaque as pack_size,
             pre.reglaid,
             prov.nombreempresa as proveedor_nombre,
             oc.admin_creador_id,
             oc.fechacreacion,
-            CEILING(doc.cantidad::numeric / NULLIF(pre.cantidadempaque, 0)) as paquetes_necesarios,
-            CEILING(doc.cantidad::numeric / NULLIF(pre.cantidadempaque, 0)) * pre.cantidadempaque as piezas_a_comprar
+            CEILING(doc.cantidadsolicitada::numeric / NULLIF(pre.cantidadempaque, 0)) as paquetes_necesarios,
+            CEILING(doc.cantidadsolicitada::numeric / NULLIF(pre.cantidadempaque, 0)) * pre.cantidadempaque as piezas_a_comprar
           FROM ordenesdecompra oc
           INNER JOIN detallesordencompra doc ON oc.ordencompraid = doc.ordencompraid
           INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
@@ -53,7 +53,7 @@ class OptimizationService {
             json_agg(
               json_build_object(
                 'ordenCompraId', ordencompraid,
-                'detalleOcId', detalleocid,
+                'detalleOcId', detalleoc_id,
                 'cantidadSolicitada', cantidad_solicitada,
                 'paquetesNecesarios', paquetes_necesarios,
                 'piezasAComprar', piezas_a_comprar,

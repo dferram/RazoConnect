@@ -514,6 +514,11 @@ body.sidebar-collapsed .admin-main-content {
   padding: 2rem;
 }
 
+.admin-content-tight {
+  margin-top: 0 !important;
+  padding-top: 0.01rem !important;
+}
+
 .admin-card--spaced {
   padding: 1.5rem 1.75rem 2rem;
   display: flex;
