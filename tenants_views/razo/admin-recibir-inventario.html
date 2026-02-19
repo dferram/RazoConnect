@@ -523,7 +523,7 @@
           return;
         }
 
-        const input = inputEl || tbodyPendiente.querySelector(`.input-qty-recibida[data-detalle-id="${detalleId}"]`);
+        const input = inputEl || (tbodyPendiente ? tbodyPendiente.querySelector(`.input-qty-recibida[data-detalle-id="${detalleId}"]`) : null);
         if (!input) {
           showToastError("No se encontró el campo de cantidad");
           return;
@@ -1005,11 +1005,19 @@
           lblTotalRecibido.textContent = formatMoneyMx(valorRecibido);
         }
 
-        pendienteBadge.textContent = `${pendientes.length} PENDIENTES`;
-        recibidoBadge.textContent = `${items.length} ITEMS`;
+        if (pendienteBadge) {
+          pendienteBadge.textContent = `${pendientes.length} PENDIENTES`;
+        }
+        if (recibidoBadge) {
+          recibidoBadge.textContent = `${items.length} ITEMS`;
+        }
 
-        tbodyPendiente.innerHTML = "";
-        tbodyRecibido.innerHTML = "";
+        if (tbodyPendiente) {
+          tbodyPendiente.innerHTML = "";
+        }
+        if (tbodyRecibido) {
+          tbodyRecibido.innerHTML = "";
+        }
 
         for (const item of pendientes) {
           const piezas = piezasPorPaqueteValue(item);
@@ -1113,7 +1121,9 @@
           tr.appendChild(tdPen);
           tr.appendChild(tdInput);
           tr.appendChild(tdBtn);
-          tbodyPendiente.appendChild(tr);
+          if (tbodyPendiente) {
+            tbodyPendiente.appendChild(tr);
+          }
         }
 
         for (const item of items) {
@@ -1195,7 +1205,9 @@
           tr.appendChild(tdDimensiones);
           tr.appendChild(tdRec);
           tr.appendChild(tdProg);
-          tbodyRecibido.appendChild(tr);
+          if (tbodyRecibido) {
+            tbodyRecibido.appendChild(tr);
+          }
         }
 
         if (!pendientes.length) {
@@ -1207,7 +1219,9 @@
           td.style.padding = "1rem";
           td.textContent = "No hay pendientes por recibir.";
           tr.appendChild(td);
-          tbodyPendiente.appendChild(tr);
+          if (tbodyPendiente) {
+            tbodyPendiente.appendChild(tr);
+          }
         }
       };
 
@@ -1563,22 +1577,29 @@
             }
           }
 
-          ocProveedor.textContent = safeText(state.orden.proveedorNombre || "—");
-          ocMeta.textContent = `Estatus: ${safeText(state.orden.estatus)}`;
-          ocBadge.textContent = `OC #${safeText(state.orden.ordenCompraId)} · ${safeText(
-            state.orden.estatus
-          )}`;
+          if (ocProveedor) {
+            ocProveedor.textContent = safeText(state.orden.proveedorNombre || "—");
+          }
+          if (ocMeta) {
+            ocMeta.textContent = `Estatus: ${safeText(state.orden.estatus)}`;
+          }
+          if (ocBadge) {
+            ocBadge.textContent = `OC #${safeText(state.orden.ordenCompraId)} · ${safeText(
+              state.orden.estatus
+            )}`;
+          }
 
           // CRUCIAL: Asegurar que las tablas estén visibles antes de renderizar
-          const paneles = recepcionSplit.querySelectorAll('.recepcion-panel');
-          paneles.forEach(panel => {
-            // Restaurar display inline
-            panel.style.display = '';
-            // Eliminar clase d-none de Bootstrap si existe
-            panel.classList.remove('d-none');
-          });
-
-          recepcionSplit.style.display = "block";
+          if (recepcionSplit) {
+            const paneles = recepcionSplit.querySelectorAll('.recepcion-panel');
+            paneles.forEach(panel => {
+              // Restaurar display inline
+              panel.style.display = '';
+              // Eliminar clase d-none de Bootstrap si existe
+              panel.classList.remove('d-none');
+            });
+            recepcionSplit.style.display = "block";
+          }
           renderSplit();
           renderizarTablaSesion();
           
@@ -1616,7 +1637,7 @@
           const row = btn.closest("tr");
           const input =
             row?.querySelector?.("input.cantidad-hoy") ||
-            tbodyPendiente.querySelector(`input.cantidad-hoy[data-detalle-id="${safeText(detalleId)}"]`);
+            (tbodyPendiente ? tbodyPendiente.querySelector(`input.cantidad-hoy[data-detalle-id="${safeText(detalleId)}"]`) : null);
 
           await agregarItemASesion(detalleId, input);
         });
@@ -1633,9 +1654,9 @@
         if (!id) {
           state.orden = null;
           state.items = [];
-          ocProveedor.textContent = "—";
-          ocMeta.textContent = "—";
-          ocBadge.textContent = "—";
+          if (ocProveedor) ocProveedor.textContent = "—";
+          if (ocMeta) ocMeta.textContent = "—";
+          if (ocBadge) ocBadge.textContent = "—";
           setEmpty("Selecciona una orden de compra para empezar.");
           return;
         }
@@ -1681,9 +1702,15 @@
           }
           
           // Es una orden individual
-          ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "—");
-          ocMeta.textContent = "—";
-          ocBadge.textContent = `OC #${safeText(id)} · Cargando…`;
+          if (ocProveedor) {
+            ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "—");
+          }
+          if (ocMeta) {
+            ocMeta.textContent = "—";
+          }
+          if (ocBadge) {
+            ocBadge.textContent = `OC #${safeText(id)} · Cargando…`;
+          }
           
           // loadRecepcion se encargará de limpiar y renderizar el contenedor
           await loadRecepcion(id);
