@@ -2232,6 +2232,53 @@ body.sidebar-collapsed .admin-main-content {
   text-decoration: none;
 }
 
+/* ============================================
+   INSTRUCTIONAL BANNER
+   ============================================ */
+.instructional-banner {
+  padding: 0.75rem 1rem;
+  background: #fef3c7;
+  border-radius: 0.5rem;
+  border-left: 4px solid #F97316;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.instructional-banner p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #92400e;
+  flex: 1;
+}
+
+.instructional-banner strong {
+  font-weight: 700;
+}
+
+.instructional-banner-close {
+  background: transparent;
+  border: none;
+  color: #92400e;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.instructional-banner-close:hover {
+  transform: scale(1.1);
+  color: #78350f;
+}
+
 @media (max-width: 768px) {
   .agent-form-grid {
     grid-template-columns: 1fr;
