@@ -27,6 +27,16 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content u-grid-gap-1-5">
+          <!-- Instructional Banner -->
+          <div id="instructionalBanner" class="instructional-banner">
+            <p>
+              💡 <strong>Detalle del Cliente:</strong> Consulta la información completa de un cliente específico. Puedes ver su historial de compras, línea de crédito, saldo pendiente, datos de contacto y gestionar su cuenta. Usa esta vista para dar seguimiento personalizado.
+            </p>
+            <button class="instructional-banner-close" title="Cerrar">
+              ×
+            </button>
+          </div>
+
           <div style="margin-bottom: 1rem;">
             <button onclick="window.history.back()" class="btn btn-secondary btn-sm">
               <i class="bi bi-arrow-left"></i>
@@ -297,11 +307,13 @@
       </main>
     </div>
 
-    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
+    <script src="js/instructional-banner.js"></script>
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
       if (!adminToken) {

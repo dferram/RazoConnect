@@ -33,6 +33,16 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content" style="display: grid; gap: 1.5rem">
+          <!-- Instructional Banner -->
+          <div id="instructionalBanner" class="instructional-banner">
+            <p>
+              💡 <strong>Órdenes de Compra (Backorders):</strong> Aquí aparecen las órdenes de compra generadas automáticamente cuando un pedido excede el stock disponible. Puedes agrupar múltiples órdenes del mismo proveedor, confirmarlas o cancelarlas según sea necesario.
+            </p>
+            <button class="instructional-banner-close" title="Cerrar">
+              ×
+            </button>
+          </div>
+
           <!-- Filtros -->
           <section
             class="admin-card"
@@ -556,7 +566,9 @@
     <!-- Modal de Optimización de Compras -->
     <div id="modal-optimizacion-container"></div>
 
-    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/layout.js" defer></script>
+    <script src="js/admin-ordenes-compra.js" defer></script>
+    <script src="js/instructional-banner.js"></script>
     <script src="js/api.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/components/admin-header-loader.js"></script>

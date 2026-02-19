@@ -31,9 +31,13 @@ async function cargarGrupoCompleto(grupoId) {
     // Actualizar badge de grupo (pequeño)
     const tipoBadge = document.getElementById('tipoBadge');
     if (tipoBadge) {
-      tipoBadge.innerHTML = '<i class="bi bi-collection"></i> GRUPO';
-      tipoBadge.className = 'admin-badge';
-      tipoBadge.style.cssText = 'display: inline-flex; align-items: center; gap: 0.25rem; background: #8b5cf6; color: white; font-size: 0.75rem; padding: 0.25rem 0.75rem;';
+      try {
+        tipoBadge.innerHTML = '<i class="bi bi-collection"></i> GRUPO';
+        tipoBadge.className = 'admin-badge';
+        tipoBadge.style.cssText = 'display: inline-flex; align-items: center; gap: 0.25rem; background: #8b5cf6; color: white; font-size: 0.75rem; padding: 0.25rem 0.75rem;';
+      } catch (error) {
+        console.warn('[GRUPO] No se pudo actualizar tipoBadge:', error);
+      }
     }
 
     // Renderizar todas las órdenes del grupo
@@ -439,7 +443,12 @@ function limpiarEstadoGrupo() {
   // Ocultar badge de grupo
   const tipoBadge = document.getElementById('tipoBadge');
   if (tipoBadge) {
-    tipoBadge.style.display = 'none';
+    try {
+      tipoBadge.style.display = 'none';
+      tipoBadge.textContent = '';
+    } catch (error) {
+      console.warn('[GRUPO] No se pudo ocultar tipoBadge:', error);
+    }
   }
   
   console.log('[GRUPO] Estado del grupo limpiado correctamente');

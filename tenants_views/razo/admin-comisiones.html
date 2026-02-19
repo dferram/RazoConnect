@@ -130,7 +130,7 @@
     </style>
       <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
-  <body data-page-title="Gestión de comisiones">
+  <body data-page-title="Gestión de Comisiones">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="sidebar-container"></div>
@@ -138,6 +138,18 @@
       <!-- Main Content -->
       <main class="admin-main">
         <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <!-- Instructional Banner -->
+          <div id="instructionalBanner" class="instructional-banner">
+            <p>
+              💡 <strong>Gestión de Comisiones:</strong> Administra las comisiones de tus agentes de ventas. Puedes ver el historial de comisiones generadas, marcar pagos realizados y filtrar por agente o período. Las comisiones se calculan automáticamente según los pedidos entregados.
+            </p>
+            <button class="instructional-banner-close" title="Cerrar">
+              ×
+            </button>
+          </div>
+        </div>
 
         <div class="admin-content">
           <!-- Stats -->
@@ -571,5 +583,6 @@
     <script src="js/layout.js" defer></script>
     <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/instructional-banner.js"></script>
   </body>
 </html>

@@ -537,10 +537,30 @@
       <!-- Admin Header -->
       <div id="admin-header-container"></div>
 
+      <!-- Instructional Banner -->
+      <div id="instructionalBanner" class="instructional-banner">
+        <p>
+          <strong>Editor de Landing Page:</strong> Diseña y personaliza la página principal de tu tienda con un editor visual. Arrastra secciones, sube imágenes, edita textos y configura el diseño. Vista previa en tiempo real de los cambios.
+        </p>
+        <button class="instructional-banner-close" title="Cerrar">
+          ×
+        </button>
+      </div>
+
       <!-- Landing Editor Container -->
       <div class="landing-editor-container">
         <!-- Split Screen -->
         <div class="split-screen-container">
+          <!-- Left Panel - Controls -->
+          <div class="controls-panel">
+            <!-- Scrollable Content Section -->
+            <div class="controls-content">
+              <!-- Hero Slider Section -->
+              <div class="section-card">
+                <div class="section-title">
+                  <i class="bi bi-images"></i>
+                  Hero Slider (Carrusel Principal)
+                </div>
       <!-- Left Panel - Controls -->
       <div class="controls-panel">
         <!-- Scrollable Content Section -->
@@ -858,9 +878,12 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
   
   <script src="/js/admin-auth-guard.js"></script>
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/instructional-banner.js"></script>
   <script src="/js/api.js"></script>
   <script src="/js/components/admin-sidebar-loader.js"></script>
-  <script src="/js/components/admin-header-loader.js"></script>
   <script src="/js/admin-landing-editor.js"></script>
 </body>
 </html>

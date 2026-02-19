@@ -26,6 +26,16 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content" style="display: grid; gap: 1.25rem">
+          <!-- Instructional Banner -->
+          <div id="instructionalBanner" class="instructional-banner">
+            <p>
+              💡 <strong>Estado de Cuenta (Proveedores):</strong> Consulta tipo banca con saldos, cargos y abonos de tus proveedores. Visualiza el historial de transacciones, saldo actual y movimientos detallados. Usa esta vista para conciliar cuentas con proveedores.
+            </p>
+            <button class="instructional-banner-close" title="Cerrar">
+              ×
+            </button>
+          </div>
+
           <section class="admin-card" style="padding: 1.25rem">
             <div
               style="
@@ -75,11 +85,13 @@
       </main>
     </div>
 
-    <script src="js/layout.js" defer></script>`n    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/api.js"></script>
     <script src="js/admin-header-dropdown.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
+    <script src="js/instructional-banner.js"></script>
     <script src="js/admin-edocuenta.js" defer></script>
 
     <style>
