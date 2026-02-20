@@ -4093,21 +4093,37 @@ const getAllPedidos = async (req, res) => {
 
     const result = await db.query(query, params);
 
-    // VALIDACIÓN DE INTEGRIDAD FINANCIERA: Recalcular totales desde items
-    const pedidos = await Promise.all(result.rows.map(async (row) => {
-      // Obtener detalles del pedido para validar el total
+    // VALIDACIÓN DE INTEGRIDAD FINANCIERA: Obtener detalles en una sola query
+    const pedidoIds = result.rows.map(r => r.pedidoid);
+    
+    let detallesPorPedido = new Map();
+    if (pedidoIds.length > 0) {
       const detallesQuery = `
         SELECT 
+          PedidoID,
           CantidadPaquetes,
           PrecioPorPaquete
         FROM DetallesDelPedido
-        WHERE PedidoID = $1
+        WHERE PedidoID = ANY($1::int[])
       `;
       
-      const detallesResult = await db.query(detallesQuery, [row.pedidoid]);
+      const detallesResult = await db.query(detallesQuery, [pedidoIds]);
+      
+      // Agrupar detalles por pedido
+      detallesResult.rows.forEach(detalle => {
+        if (!detallesPorPedido.has(detalle.pedidoid)) {
+          detallesPorPedido.set(detalle.pedidoid, []);
+        }
+        detallesPorPedido.get(detalle.pedidoid).push(detalle);
+      });
+    }
+
+    // Procesar pedidos sin queries adicionales
+    const pedidos = result.rows.map((row) => {
+      const detalles = detallesPorPedido.get(row.pedidoid) || [];
       
       // Calcular subtotal desde items
-      const subtotalItems = detallesResult.rows.reduce((sum, detalle) => {
+      const subtotalItems = detalles.reduce((sum, detalle) => {
         const cantidad = parseFloat(detalle.cantidadpaquetes || 0);
         const precio = parseFloat(detalle.precioporpaquete || 0);
         return sum + (cantidad * precio);
@@ -4159,7 +4175,7 @@ const getAllPedidos = async (req, res) => {
           estado: row.estadonombre
         }
       };
-    }));
+    });
 
     // Contar pedidos con discrepancia
     const pedidosConDiscrepancia = pedidos.filter(p => p.tieneDiscrepancia);
@@ -11812,7 +11828,7 @@ const bloquearSesionRecepcion = async (req, res) => {
       });
     }
 
-    // Verificar si ya está bloqueada
+    // Verificar si ya está bloqueada (db.query maneja el pool automáticamente)
     const checkQuery = `
       SELECT admin_trabajando_id, fecha_bloqueo, ultima_actividad,
              (SELECT nombre FROM administradores WHERE adminid = admin_trabajando_id) as admin_nombre
@@ -11843,7 +11859,7 @@ const bloquearSesionRecepcion = async (req, res) => {
       });
     }
 
-    // Bloquear la sesión
+    // Bloquear la sesión (db.query maneja el pool automáticamente)
     const lockQuery = `
       UPDATE ordenesdecompra
       SET admin_trabajando_id = $1,
