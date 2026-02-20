@@ -607,7 +607,7 @@ async function aprobarDevolucion(req, res) {
           varianteId: variante_id,
           cantidad: piezas_totales,
           userId: adminResponsable,
-          userRole: 'admin',
+          userRole: ['admin'],
           tenantId: tenant_id,
           motivo: `Devolución aprobada #${devolucionId}`,
           client: client

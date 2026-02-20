@@ -2135,8 +2135,8 @@ const buscarProductosAjuste = async (req, res) => {
     const SmartStockService = require('../services/SmartStockService');
     const stockMap = await SmartStockService.getBulkStock({
       varianteIds,
-      userId: req.user.userId,
-      userRole: req.user.role,
+      userId: req.user.id || req.user.userId,
+      userRole: req.user.roles || [req.user.rol],
       tenantId: tenant_id
     });
 

@@ -286,9 +286,10 @@ async function ajustarPedido(req, res) {
           const resultado = await SmartStockService.adjustStock({
             varianteId: detalle.varianteid,
             cantidad: -piezasNecesarias,  // Negativo = descuento
-            userId: req.user.userId,
-            userRole: req.user.role,
-            tenantId: tenant_id
+            userId: req.user.id || req.user.userId,
+            userRole: req.user.roles || [req.user.rol],
+            tenantId: tenant_id,
+            client: client
           });
 
           if (!resultado.success) {
@@ -311,9 +312,10 @@ async function ajustarPedido(req, res) {
           const resultado = await SmartStockService.adjustStock({
             varianteId: detalle.varianteid,
             cantidad: +piezasDevolver,  // Positivo = incremento
-            userId: req.user.userId,
-            userRole: req.user.role,
-            tenantId: tenant_id
+            userId: req.user.id || req.user.userId,
+            userRole: req.user.roles || [req.user.rol],
+            tenantId: tenant_id,
+            client: client
           });
 
           if (!resultado.success) {
@@ -402,9 +404,10 @@ async function ajustarPedido(req, res) {
       const resultado = await SmartStockService.adjustStock({
         varianteId,
         cantidad: -piezasNecesarias,  // Negativo = descuento
-        userId: req.user.userId,
-        userRole: req.user.role,
-        tenantId: tenant_id
+        userId: req.user.id || req.user.userId,
+        userRole: req.user.roles || [req.user.rol],
+        tenantId: tenant_id,
+        client: client
       });
 
       if (!resultado.success) {
@@ -489,7 +492,7 @@ async function ajustarPedido(req, res) {
         JSON.stringify(cambiosRealizados),
         parseFloat(pedido.montototal),
         montoTotalNuevo,
-        req.user?.userId || null,
+        req.user?.id || req.user?.userId || null,
         tenant_id
       ]
     );
