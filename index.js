@@ -32,6 +32,7 @@ const remisionesRoutes = require("./routes/remisiones");
 const agenteRoutes = require("./routes/agente");
 const inventarioRoutes = require("./routes/inventario");
 const devolucionesRoutes = require("./routes/devoluciones");
+const favoritosRoutes = require("./routes/favoritos");
 
 // Importar middlewares
 const tenantGuard = require("./middlewares/tenantGuard");
@@ -266,6 +267,7 @@ app.use("/api/cupones", cuponesRoutes);
 app.use("/api/agente", agenteRoutes);
 app.use("/api/inventario", inventarioRoutes);
 app.use("/api", devolucionesRoutes);
+app.use("/api/favoritos", favoritosRoutes);
 
 // Manejo de rutas no encontradas solo para API
 app.use("/api/*", (req, res) => {

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis Favoritos - RazoConnect</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/tenants_views/razo/css/favoritos.css">
+  <link rel="stylesheet" href="/tenants_views/razo/css/cliente-dashboard.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+  <div id="header-container"></div>
+
+  <div class="container py-5">
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <h1 class="mb-2">
+              <i class="bi bi-heart-fill text-danger me-2"></i>
+              Mis Favoritos
+            </h1>
+            <p class="text-muted mb-0">Productos que has guardado para comprar después</p>
+          </div>
+          <div>
+            <span id="total-favoritos" class="badge bg-primary" style="font-size: 1rem; padding: 0.5rem 1rem;">
+              0 productos
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="notificaciones-restock" class="alert alert-info d-none mb-4" role="alert">
+      <div class="d-flex align-items-center">
+        <i class="bi bi-bell-fill me-2" style="font-size: 1.5rem;"></i>
+        <div class="flex-grow-1">
+          <strong>¡Tienes productos disponibles!</strong>
+          <p class="mb-0">Algunos de tus productos favoritos que estaban agotados ya están disponibles.</p>
+        </div>
+        <button type="button" class="btn btn-sm btn-primary" id="btn-marcar-leidas">
+          Marcar como visto
+        </button>
+      </div>
+    </div>
+
+    <div id="loading-favoritos" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-3 text-muted">Cargando tus favoritos...</p>
+    </div>
+
+    <div id="favoritos-container" class="row g-4 d-none">
+    </div>
+
+    <div id="favoritos-empty" class="favorito-empty d-none">
+      <i class="bi bi-heart"></i>
+      <h3>No tienes favoritos aún</h3>
+      <p>Explora nuestro catálogo y agrega productos a tu lista de favoritos</p>
+      <a href="/catalogo.html" class="btn btn-primary btn-lg">
+        <i class="bi bi-grid-3x3-gap me-2"></i>
+        Ver Catálogo
+      </a>
+    </div>
+  </div>
+
+  <div id="footer-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/tenants_views/razo/js/components/header-loader.js"></script>
+  <script src="/tenants_views/razo/js/components/footer-loader.js"></script>
+  <script src="/tenants_views/razo/js/favoritos.js"></script>
+  <script>
+    let favoritos = [];
+
+    async function cargarFavoritos() {
+      const token = localStorage.getItem('razoconnect_token');
+      
+      if (!token) {
+        window.location.href = '/login.html';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/favoritos', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            window.location.href = '/login.html';
+            return;
+          }
+          throw new Error('Error al cargar favoritos');
+        }
+
+        const data = await response.json();
+        favoritos = data.favoritos;
+
+        document.getElementById('loading-favoritos').classList.add('d-none');
+
+        if (favoritos.length === 0) {
+          document.getElementById('favoritos-empty').classList.remove('d-none');
+        } else {
+          renderizarFavoritos();
+          document.getElementById('favoritos-container').classList.remove('d-none');
+        }
+
+        document.getElementById('total-favoritos').textContent = 
+          `${favoritos.length} ${favoritos.length === 1 ? 'producto' : 'productos'}`;
+
+        verificarNotificaciones();
+
+      } catch (error) {
+        console.error('Error al cargar favoritos:', error);
+        document.getElementById('loading-favoritos').classList.add('d-none');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudieron cargar tus favoritos. Intenta de nuevo.',
+          confirmButtonColor: '#F97316'
+        });
+      }
+    }
+
+    function renderizarFavoritos() {
+      const container = document.getElementById('favoritos-container');
+      container.innerHTML = '';
+
+      favoritos.forEach(fav => {
+        const precioFinal = fav.precioOferta || fav.precioUnitario;
+        const tieneOferta = fav.precioOferta !== null;
+
+        const card = document.createElement('div');
+        card.className = 'col-12 col-md-6 col-lg-4';
+        card.innerHTML = `
+          <div class="favorito-card">
+            <img src="${fav.imagenUrl}" alt="${fav.nombreProducto}" class="favorito-card-image">
+            
+            <button class="btn-favorito" data-variante-id="${fav.varianteId}">
+              <i class="bi bi-heart-fill"></i>
+            </button>
+
+            <div class="favorito-card-body">
+              <h5 class="favorito-card-title">${fav.nombreProducto}</h5>
+              <p class="favorito-card-sku">SKU: ${fav.sku}</p>
+
+              ${fav.dimensiones ? `<p class="text-muted mb-2"><small>${fav.dimensiones}</small></p>` : ''}
+              ${fav.colorNombre ? `
+                <div class="mb-2">
+                  <span class="badge" style="background: ${fav.colorHex || '#6B7280'}; color: white;">
+                    ${fav.colorNombre}
+                  </span>
+                </div>
+              ` : ''}
+
+              <div class="favorito-card-price">
+                $${precioFinal.toFixed(2)}
+                ${tieneOferta ? `<span class="favorito-card-price-oferta">$${fav.precioUnitario.toFixed(2)}</span>` : ''}
+              </div>
+
+              <span class="favorito-card-stock ${fav.disponible ? 'disponible' : 'agotado'}">
+                ${fav.disponible ? `✓ Disponible (${fav.stockDisponible} pzas)` : '✗ Agotado'}
+              </span>
+
+              ${fav.alertaRestockActiva ? `
+                <div class="favorito-card-alerta">
+                  <i class="bi bi-bell-fill"></i>
+                  <span>Te notificaremos cuando vuelva a estar disponible</span>
+                </div>
+              ` : ''}
+
+              <div class="favorito-card-actions">
+                <a href="/producto-detalle.html?id=${fav.varianteId}" class="btn btn-outline-primary">
+                  <i class="bi bi-eye me-1"></i> Ver
+                </a>
+                ${fav.disponible ? `
+                  <button class="btn btn-primary" onclick="agregarAlCarrito(${fav.varianteId})">
+                    <i class="bi bi-cart-plus me-1"></i> Agregar
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+
+        const btnFavorito = card.querySelector('.btn-favorito');
+        btnFavorito.addEventListener('click', async (e) => {
+          e.preventDefault();
+          await eliminarFavorito(fav.varianteId);
+        });
+
+        container.appendChild(card);
+      });
+    }
+
+    async function eliminarFavorito(varianteId) {
+      const result = await Swal.fire({
+        title: '¿Eliminar de favoritos?',
+        text: 'Este producto se quitará de tu lista de favoritos',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#F97316',
+        cancelButtonColor: '#6B7280',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (result.isConfirmed) {
+        const token = localStorage.getItem('razoconnect_token');
+        try {
+          const response = await fetch('/api/favoritos/toggle', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ varianteId })
+          });
+
+          if (response.ok) {
+            favoritos = favoritos.filter(f => f.varianteId !== varianteId);
+            
+            if (favoritos.length === 0) {
+              document.getElementById('favoritos-container').classList.add('d-none');
+              document.getElementById('favoritos-empty').classList.remove('d-none');
+            } else {
+              renderizarFavoritos();
+            }
+
+            document.getElementById('total-favoritos').textContent = 
+              `${favoritos.length} ${favoritos.length === 1 ? 'producto' : 'productos'}`;
+
+            Swal.fire({
+              icon: 'success',
+              title: 'Eliminado',
+              text: 'Producto eliminado de favoritos',
+              timer: 2000,
+              showConfirmButton: false,
+              toast: true,
+              position: 'top-end'
+            });
+          }
+        } catch (error) {
+          console.error('Error al eliminar favorito:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se pudo eliminar el favorito',
+            confirmButtonColor: '#F97316'
+          });
+        }
+      }
+    }
+
+    async function agregarAlCarrito(varianteId) {
+      try {
+        const response = await fetch('/api/carrito', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+          body: JSON.stringify({ 
+            varianteId, 
+            cantidad: 1 
+          })
+        });
+
+        if (response.ok) {
+          Swal.fire({
+            icon: 'success',
+            title: '¡Agregado al carrito!',
+            text: 'El producto se agregó correctamente',
+            timer: 2000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+          });
+        } else {
+          throw new Error('Error al agregar al carrito');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'No se pudo agregar al carrito',
+          confirmButtonColor: '#F97316'
+        });
+      }
+    }
+
+    async function verificarNotificaciones() {
+      const token = localStorage.getItem('razoconnect_token');
+      if (!token) return;
+
+      try {
+        const response = await fetch('/api/favoritos/notificaciones/count', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.count > 0) {
+            document.getElementById('notificaciones-restock').classList.remove('d-none');
+          }
+        }
+      } catch (error) {
+        console.error('Error al verificar notificaciones:', error);
+      }
+    }
+
+    document.getElementById('btn-marcar-leidas')?.addEventListener('click', async () => {
+      const token = localStorage.getItem('razoconnect_token');
+      try {
+        const response = await fetch('/api/favoritos/notificaciones/marcar-leidas', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          document.getElementById('notificaciones-restock').classList.add('d-none');
+          Swal.fire({
+            icon: 'success',
+            title: 'Notificaciones marcadas',
+            timer: 1500,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+          });
+        }
+      } catch (error) {
+        console.error('Error al marcar notificaciones:', error);
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      cargarFavoritos();
+    });
+  </script>
+</body>
+</html>

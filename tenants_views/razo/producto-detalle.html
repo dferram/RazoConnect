@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="css/styles.css?v=1.2" />
     <link rel="stylesheet" href="css/producto-detalle.css?v=1.2" />
     <link rel="stylesheet" href="css/auth-modal.css?v=2.0" />
+    <link rel="stylesheet" href="css/favoritos.css" />
     <style>
       .product-layout {
         display: grid;
@@ -570,7 +571,10 @@
                 <span id="productSKU"></span>
               </div>
 
-              <h1 id="productName" class="product-name"></h1>
+              <div style="display: flex; align-items: center; gap: 1rem; position: relative;">
+                <h1 id="productName" class="product-name" style="flex: 1; margin: 0;"></h1>
+                <div id="favorito-producto-container" style="position: relative;"></div>
+              </div>
 
               <!-- Variant Selection -->
               <div class="compact-section">
@@ -699,6 +703,8 @@
     <script src="/js/components/auth-modal-loader.js"></script>
     <script src="/js/public-auth-handler.js"></script>
     <script src="/js/components/header-loader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/favoritos.js"></script>
     <script>
       // Public page - guests can view products
 
@@ -1559,6 +1565,15 @@
         actualizarInformacionVariante();
         actualizarStockUI(varianteSeleccionada);
         actualizarStockVisual();
+        
+        // Actualizar botón de favoritos
+        if (typeof FavoritosManager !== 'undefined') {
+          const container = document.getElementById('favorito-producto-container');
+          if (container) {
+            container.innerHTML = '';
+            FavoritosManager.renderIcon(varianteSeleccionada.varianteId, container);
+          }
+        }
       }
 
       function getCarritoCache() {
@@ -1948,6 +1963,17 @@
             // Show product details
             loadingState.style.display = "none";
             productDetails.style.display = "block";
+            
+            // Inicializar botón de favoritos
+            setTimeout(() => {
+              if (typeof FavoritosManager !== 'undefined' && varianteSeleccionada) {
+                const container = document.getElementById('favorito-producto-container');
+                if (container) {
+                  container.innerHTML = '';
+                  FavoritosManager.renderIcon(varianteSeleccionada.varianteId, container);
+                }
+              }
+            }, 100);
           } else {
             throw new Error(response.data.message || "Producto no encontrado");
           }
