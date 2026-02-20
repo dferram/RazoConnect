@@ -516,7 +516,7 @@ body.sidebar-collapsed .admin-main-content {
 
 .admin-content-tight {
   margin-top: 0 !important;
-  padding-top: 0.01rem !important;
+  padding-top: 0.05rem !important;
 }
 
 .admin-card--spaced {

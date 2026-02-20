@@ -38,7 +38,7 @@
       <main class="admin-main">
         <div id="admin-header-container"></div>
 
-        <div class="admin-content admin-content-tight" style="display: grid; gap: 1.25rem">
+        <div class="admin-content admin-content-tight" style="display: grid; gap: 1.25rem; margin-top: 1.5rem;">
           <!-- Instructional Banner -->
           <div id="instructionalBanner" class="instructional-banner">
             <p>
@@ -541,23 +541,16 @@
           return;
         }
 
-        if (max > 0 && cantidad > max) {
-          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
-            const resp = await Swal.fire({
-              icon: "warning",
-              title: "Estás recibiendo más de lo solicitado. ¿Deseas continuar?",
-              showCancelButton: true,
-              confirmButtonText: "Sí, continuar",
-              cancelButtonText: "Cancelar",
-              confirmButtonColor: "#F97316",
-            });
-
-            if (!resp.isConfirmed) {
-              return;
-            }
-          } else {
-            return;
-          }
+        // Calcular cuánto ya está en sesión para este item
+        const enSesion = sesionRecepcion
+          .filter((x) => String(x.detalleId) === String(item.detalleId))
+          .reduce((acc, x) => acc + (Number.parseInt(x.cantidadPiezas || x.cantidad, 10) || 0), 0);
+        
+        const totalAcumulado = enSesion + cantidad;
+        
+        if (max > 0 && totalAcumulado > max) {
+          showToastError(`No puedes recibir más de lo solicitado. Solicitado: ${max} pzas, Ya en sesión: ${enSesion} pzas, Intentando agregar: ${cantidad} pzas`);
+          return;
         }
 
         const existingIdx = sesionRecepcion.findIndex(
@@ -596,8 +589,7 @@
           });
         }
 
-        const solicitado = Number.parseInt(input.dataset.pendiente, 10) || 0;
-        input.value = String(solicitado);
+        input.value = '';
         
         hasSessionData = true;
         showToastSuccess("Agregado a sesión");
@@ -1600,8 +1592,7 @@
         recepcionEmpty.style.display = "none";
         recepcionSplit.style.display = "none";
 
-        sesionRecepcion = [];
-        renderizarTablaSesion();
+        // NO limpiar sesión aquí - se restaurará desde localStorage más adelante
 
         try {
           const resp = await apiCall(
@@ -1621,26 +1612,20 @@
             return;
           }
 
+          // Restaurar sesión automáticamente desde localStorage
           const ocKey = getRecepcionStorageKey(state.orden.ordenCompraId);
           if (ocKey && !ocRestorePrompted.has(ocKey)) {
             ocRestorePrompted.add(ocKey);
             const stored = readSesionRecepcionFromStorage(state.orden.ordenCompraId);
             if (Array.isArray(stored) && stored.length > 0) {
-              const confirm = await Swal.fire({
-                icon: "question",
-                title: "Recuperar sesión",
-                text: "Se encontró una sesión previa sin finalizar. ¿Deseas recuperarla?",
-                showCancelButton: true,
-                confirmButtonText: "Sí, recuperar",
-                cancelButtonText: "No",
-                confirmButtonColor: "#F97316",
-              });
-
-              if (confirm.isConfirmed) {
-                sesionRecepcion = normalizeRestoredSesion(stored);
-                persistSesionRecepcion();
-              }
+              sesionRecepcion = normalizeRestoredSesion(stored);
+              persistSesionRecepcion();
+            } else {
+              sesionRecepcion = [];
             }
+          } else if (!sesionRecepcion || sesionRecepcion.length === 0) {
+            // Si no hay sesión previa, inicializar vacía
+            sesionRecepcion = [];
           }
 
           if (ocProveedor) {
