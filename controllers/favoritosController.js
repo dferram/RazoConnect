@@ -1,8 +1,8 @@
-const pool = require('../db');
+const db = require('../db');
 
 const favoritosController = {
   async toggleFavorito(req, res) {
-    const client = await pool.connect();
+    const client = await db.pool.connect();
     try {
       const { varianteId } = req.body;
       const clienteId = req.user.id;
@@ -123,7 +123,7 @@ const favoritosController = {
         ORDER BY cf.fecha_agregado DESC
       `;
 
-      const result = await pool.query(query, [clienteId, tenant_id]);
+      const result = await db.pool.query(query, [clienteId, tenant_id]);
 
       const favoritos = result.rows.map(row => ({
         favoritoId: row.favorito_id,
@@ -164,7 +164,7 @@ const favoritosController = {
         FROM clientes_favoritos
         WHERE cliente_id = $1 AND variante_id = $2 AND tenant_id = $3
       `;
-      const result = await pool.query(query, [clienteId, varianteId, tenant_id]);
+      const result = await db.pool.query(query, [clienteId, varianteId, tenant_id]);
 
       res.json({
         esFavorito: result.rows.length > 0,
@@ -190,7 +190,7 @@ const favoritosController = {
           AND leida = false
           AND tenant_id = $2
       `;
-      const result = await pool.query(query, [clienteId, tenant_id]);
+      const result = await db.pool.query(query, [clienteId, tenant_id]);
 
       res.json({ 
         count: parseInt(result.rows[0].total) || 0 
@@ -216,7 +216,7 @@ const favoritosController = {
           AND tenant_id = $2
         RETURNING notificacionid
       `;
-      const result = await pool.query(query, [clienteId, tenant_id]);
+      const result = await db.pool.query(query, [clienteId, tenant_id]);
 
       res.json({ 
         message: 'Notificaciones marcadas como leídas',

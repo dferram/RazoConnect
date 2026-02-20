@@ -2,11 +2,33 @@ const FavoritosManager = {
   favoritos: new Set(),
   initialized: false,
 
+  getToken() {
+    return localStorage.getItem('razoconnect_token');
+  },
+
+  getHeaders() {
+    const token = this.getToken();
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  },
+
   async init() {
     if (this.initialized) return;
     
+    const token = this.getToken();
+    if (!token) {
+      console.log('[FAVORITOS] No hay token, usuario no autenticado');
+      return;
+    }
+    
     try {
       const response = await fetch('/api/favoritos', {
+        headers: this.getHeaders(),
         credentials: 'include'
       });
 
@@ -22,12 +44,26 @@ const FavoritosManager = {
   },
 
   async toggle(varianteId) {
+    const token = this.getToken();
+    if (!token) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Inicia sesión',
+        text: 'Debes iniciar sesión para agregar productos a favoritos',
+        confirmButtonColor: '#F97316',
+        confirmButtonText: 'Ir a login'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = '/login.html';
+        }
+      });
+      return { success: false };
+    }
+
     try {
       const response = await fetch('/api/favoritos/toggle', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: this.getHeaders(),
         credentials: 'include',
         body: JSON.stringify({ varianteId })
       });
@@ -113,22 +149,36 @@ const FavoritosManager = {
       e.preventDefault();
       e.stopPropagation();
       
+      // Deshabilitar botón temporalmente
+      icon.disabled = true;
+      icon.style.opacity = '0.6';
+      
       const result = await this.toggle(varianteId);
       
       if (result.success) {
-        icon.innerHTML = result.esFavorito 
-          ? '<i class="bi bi-heart-fill"></i>' 
-          : '<i class="bi bi-heart"></i>';
+        // Actualizar icono con animación
+        const iconElement = icon.querySelector('i');
+        iconElement.className = result.esFavorito 
+          ? 'bi bi-heart-fill' 
+          : 'bi bi-heart';
         icon.title = result.esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos';
       }
+      
+      // Rehabilitar botón
+      icon.disabled = false;
+      icon.style.opacity = '1';
     });
 
     container.appendChild(icon);
   },
 
   async updateBadge() {
+    const token = this.getToken();
+    if (!token) return;
+
     try {
       const response = await fetch('/api/favoritos/notificaciones/count', {
+        headers: this.getHeaders(),
         credentials: 'include'
       });
 
