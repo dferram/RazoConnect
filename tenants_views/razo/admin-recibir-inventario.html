@@ -38,7 +38,7 @@
       <main class="admin-main">
         <div id="admin-header-container"></div>
 
-        <div class="admin-content admin-content-tight" style="display: grid; gap: 1.25rem; margin-top: 1.5rem;">
+        <div class="admin-content admin-content-tight" style="display: grid; gap: 1.25rem; margin-top: 0; padding-top: 1.5rem;">
           <!-- Instructional Banner -->
           <div id="instructionalBanner" class="instructional-banner">
             <p>
@@ -1146,6 +1146,12 @@
           const isDone = recibidoPzas >= solicitadoPzas && solicitadoPzas > 0;
 
           const tr = document.createElement("tr");
+          // Visual indicator: green for complete, yellow for partial
+          if (isDone) {
+            tr.style.backgroundColor = "rgba(16, 185, 129, 0.08)"; // Verde tenue
+          } else if (recibidoPzas > 0) {
+            tr.style.backgroundColor = "rgba(245, 158, 11, 0.08)"; // Amarillo tenue
+          }
 
           const tdImg = document.createElement("td");
           const img = document.createElement("img");
@@ -1587,14 +1593,158 @@
         }
       };
 
+      // Variables de bloqueo de sesión
+      let sesionBloqueada = false;
+      let adminTrabajando = null;
+      let esSuperAdmin = false;
+
+      const verificarBloqueoSesion = async (ordenCompraId) => {
+        try {
+          const resp = await apiCall(
+            `/admin/ordenes-compra/${encodeURIComponent(ordenCompraId)}/verificar-bloqueo`,
+            { method: "GET" }
+          );
+
+          if (!resp.ok) {
+            console.warn('No se pudo verificar bloqueo de sesión');
+            return { bloqueada: false, puedeEditar: true };
+          }
+
+          const data = resp.data?.data || {};
+          sesionBloqueada = data.bloqueada && !data.esPropietario;
+          adminTrabajando = data.nombreAdmin;
+          
+          // Verificar si el usuario actual es super admin
+          const adminInfo = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
+          esSuperAdmin = adminInfo.rol === 'superadmin';
+
+          return data;
+        } catch (error) {
+          console.error('Error verificando bloqueo:', error);
+          return { bloqueada: false, puedeEditar: true };
+        }
+      };
+
+      const bloquearSesion = async (ordenCompraId) => {
+        try {
+          const resp = await apiCall(
+            `/admin/ordenes-compra/${encodeURIComponent(ordenCompraId)}/bloquear-sesion`,
+            { method: "POST" }
+          );
+          return resp.ok;
+        } catch (error) {
+          console.error('Error bloqueando sesión:', error);
+          return false;
+        }
+      };
+
+      const desbloquearSesion = async (ordenCompraId) => {
+        try {
+          await apiCall(
+            `/admin/ordenes-compra/${encodeURIComponent(ordenCompraId)}/desbloquear-sesion`,
+            { method: "POST" }
+          );
+        } catch (error) {
+          console.error('Error desbloqueando sesión:', error);
+        }
+      };
+
+      const forzarLiberacion = async (ordenCompraId) => {
+        try {
+          const confirmacion = await Swal.fire({
+            title: '🔓 Forzar Liberación de Sesión',
+            html: `<p>¿Estás seguro de que deseas liberar la sesión de <strong>${adminTrabajando}</strong>?</p>
+                   <p class="text-muted" style="font-size: 0.875rem;">Esta acción permitirá que otros administradores editen esta orden.</p>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, liberar sesión',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#F97316'
+          });
+
+          if (!confirmacion.isConfirmed) return;
+
+          const resp = await apiCall(
+            `/admin/ordenes-compra/${encodeURIComponent(ordenCompraId)}/forzar-liberacion`,
+            { method: "POST" }
+          );
+
+          if (resp.ok) {
+            showToastSuccess('Sesión liberada exitosamente');
+            await loadRecepcion(ordenCompraId);
+          } else {
+            showToastError('No se pudo liberar la sesión');
+          }
+        } catch (error) {
+          console.error('Error forzando liberación:', error);
+          showToastError('Error al liberar sesión');
+        }
+      };
+
+      const aplicarModoSoloLectura = () => {
+        // Deshabilitar todos los inputs y botones de edición
+        const inputs = document.querySelectorAll('.cantidad-hoy, input[type="number"]');
+        inputs.forEach(input => input.disabled = true);
+
+        const botonesAgregar = document.querySelectorAll('.btn-agregar-sesion, .btn-agregar-a-orden');
+        botonesAgregar.forEach(btn => btn.disabled = true);
+
+        if (btnFinalizarRecepcion) btnFinalizarRecepcion.disabled = true;
+        if (btnConfirmarGenerarCxp) btnConfirmarGenerarCxp.disabled = true;
+
+        // Mostrar banner de solo lectura
+        const banner = document.createElement('div');
+        banner.id = 'bannerSoloLectura';
+        banner.style.cssText = 'background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border: 2px solid #F59E0B; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;';
+        banner.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <i class="bi bi-lock-fill" style="font-size: 1.5rem; color: #F59E0B;"></i>
+            <div>
+              <div style="font-weight: 700; color: #92400E;">Modo Solo Lectura</div>
+              <div style="font-size: 0.875rem; color: #78350F;">Esta orden está siendo editada por <strong>${adminTrabajando}</strong></div>
+            </div>
+          </div>
+          ${esSuperAdmin ? `<button id="btnForzarLiberacion" class="btn btn-sm" style="background: #DC2626; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; font-weight: 600;"><i class="bi bi-unlock"></i> Quitar Control</button>` : ''}
+        `;
+
+        const contenedor = document.querySelector('.admin-content');
+        const primerCard = contenedor?.querySelector('.admin-card');
+        if (primerCard) {
+          primerCard.insertAdjacentElement('afterend', banner);
+
+          if (esSuperAdmin) {
+            const btnForzar = document.getElementById('btnForzarLiberacion');
+            if (btnForzar) {
+              btnForzar.addEventListener('click', () => forzarLiberacion(state.orden.ordenCompraId));
+            }
+          }
+        }
+      };
+
       const loadRecepcion = async (ordenCompraId) => {
         setLoading(true);
         recepcionEmpty.style.display = "none";
         recepcionSplit.style.display = "none";
 
+        // Eliminar banner de solo lectura previo si existe
+        const bannerPrevio = document.getElementById('bannerSoloLectura');
+        if (bannerPrevio) bannerPrevio.remove();
+
         // NO limpiar sesión aquí - se restaurará desde localStorage más adelante
 
         try {
+          // Verificar bloqueo de sesión
+          const bloqueo = await verificarBloqueoSesion(ordenCompraId);
+
+          if (bloqueo.bloqueada && !bloqueo.esPropietario) {
+            // Sesión bloqueada por otro admin - modo solo lectura
+            console.log(`🔒 Sesión bloqueada por ${bloqueo.nombreAdmin}`);
+          } else if (!bloqueo.bloqueada) {
+            // Sesión libre - intentar bloquear
+            await bloquearSesion(ordenCompraId);
+          }
+          // Si esPropietario, ya está bloqueada por nosotros, continuar normalmente
+
           const resp = await apiCall(
             `/admin/ordenes-compra/${encodeURIComponent(ordenCompraId)}/recepcion`,
             { method: "GET" }
@@ -1663,6 +1813,11 @@
           if (typeof actualizarBotonesGestion === 'function') {
             actualizarBotonesGestion();
           }
+
+          // Aplicar modo solo lectura si la sesión está bloqueada
+          if (sesionBloqueada) {
+            aplicarModoSoloLectura();
+          }
         } catch (error) {
           console.error(error);
           setEmpty(error.message || "Error al cargar recepción");
@@ -1670,6 +1825,18 @@
           setLoading(false);
         }
       };
+
+      // Desbloquear sesión al salir de la página
+      window.addEventListener('beforeunload', () => {
+        if (state.orden?.ordenCompraId && !sesionBloqueada) {
+          // Usar sendBeacon para garantizar que se envíe incluso al cerrar
+          const token = localStorage.getItem('razoconnect_admin_token');
+          const url = `/api/admin/ordenes-compra/${state.orden.ordenCompraId}/desbloquear-sesion`;
+          const data = new Blob([JSON.stringify({})], { type: 'application/json' });
+          
+          navigator.sendBeacon(url, data);
+        }
+      });
 
       if (btnFinalizarRecepcion) {
         btnFinalizarRecepcion.addEventListener("click", finalizarRecepcion);
@@ -1701,6 +1868,11 @@
       ocSelect.addEventListener("change", async () => {
         const id = ocSelect.value;
         const selected = ocSelect.options[ocSelect.selectedIndex];
+
+        // Desbloquear sesión anterior si existe
+        if (state.orden?.ordenCompraId && !sesionBloqueada) {
+          await desbloquearSesion(state.orden.ordenCompraId);
+        }
 
         if (!id) {
           state.orden = null;

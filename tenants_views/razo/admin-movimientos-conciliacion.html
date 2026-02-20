@@ -307,7 +307,7 @@
         <!-- Instructional Banner -->
         <div id="instructionalBanner" class="instructional-banner">
           <p>
-            💡 <strong>Conciliación de Inventario:</strong> Compara el inventario teórico con el físico para identificar discrepancias. Filtra por fecha, variante o tipo de movimiento. Genera reportes PDF para análisis y auditorías de conciliación.
+            💡 <strong>Conciliación de Inventario:</strong> Consulta y concilia todos los movimientos de inventario: <strong>Entradas de Almacén</strong> (recepciones de órdenes de compra), <strong>Sesiones de Auditoría</strong> (conteos físicos), y <strong>Ajustes Manuales</strong> (mermas/adiciones). Filtra por tipo, fecha y referencia para cuadrar contra documentos fuente.
           </p>
           <button class="instructional-banner-close" title="Cerrar">
             ×
@@ -330,14 +330,20 @@
             <i class="bi bi-info-circle"></i>
             ¿Cómo usar esta página?
           </h5>
-          <p class="mb-2"><strong>Objetivo:</strong> Conciliar (cuadrar) los movimientos de inventario contra documentos fuente como Órdenes de Compra, Conteos Iniciales o Ajustes.</p>
+          <p class="mb-2"><strong>Objetivo:</strong> Conciliar (cuadrar) los movimientos de inventario contra documentos fuente.</p>
           <hr>
+          <p class="mb-1"><strong>Tipos de Movimientos:</strong></p>
+          <ul class="mb-2">
+            <li><strong>Entradas de Almacén:</strong> Recepciones de Órdenes de Compra (productos que llegan de proveedores)</li>
+            <li><strong>Sesiones de Auditoría:</strong> Conteos físicos de inventario (ajustes por diferencias encontradas)</li>
+            <li><strong>Ajustes Manuales:</strong> Mermas, adiciones u otros ajustes registrados manualmente</li>
+          </ul>
           <p class="mb-1"><strong>Pasos:</strong></p>
           <ol class="mb-0">
-            <li><strong>Filtrar:</strong> Selecciona fechas y escribe una referencia (ej: "Orden #50" o "Conteo Enero")</li>
-            <li><strong>Revisar:</strong> Verifica en la tabla que las cantidades y valores coincidan con tu documento</li>
-            <li><strong>Exportar PDF:</strong> Descarga el reporte con totales para comparar físicamente</li>
-            <li><strong>Conciliar:</strong> Los totales del PDF deben coincidir exactamente con tu documento fuente</li>
+            <li><strong>Seleccionar Tipo:</strong> Filtra por "Entrada de Almacén" (OC), "Sesión de Auditoría" o "Ajuste Manual"</li>
+            <li><strong>Filtrar por Fecha:</strong> Define el rango de fechas a analizar</li>
+            <li><strong>Revisar Tabla:</strong> Verifica cantidades, valores y referencias contra tu documento fuente</li>
+            <li><strong>Exportar PDF:</strong> Descarga el reporte con totales para conciliación física</li>
           </ol>
         </div>
 
@@ -356,26 +362,36 @@
               <label for="filtroFechaFin" class="form-label">Fecha Fin</label>
               <input type="date" id="filtroFechaFin" class="form-control" title="Selecciona la fecha de fin del rango a filtrar">
             </div>
-            <div class="col-md-2">
-              <label for="filtroTipoAjuste" class="form-label">Tipo de Ajuste</label>
-              <select id="filtroTipoAjuste" class="form-select" title="Selecciona el tipo de ajuste a filtrar">
-                <option value="">Seleccionar tipo</option>
-                <option value="TODOS">Todos los tipos</option>
+            <div class="col-md-3">
+              <label for="filtroTipoMovimiento" class="form-label">
+                <i class="bi bi-filter-circle"></i> Tipo de Movimiento
+              </label>
+              <select id="filtroTipoMovimiento" class="form-select" title="Filtra por tipo de movimiento de inventario">
+                <option value="">Todos los movimientos</option>
+                <option value="ORDEN_COMPRA">📦 Entradas de Almacén (OC)</option>
+                <option value="AUDITORIA">📋 Sesiones de Auditoría</option>
+                <option value="AJUSTE_MANUAL">🔧 Ajustes Manuales</option>
+                <option value="MERMA">⚠️ Mermas</option>
+                <option value="ADICION">➕ Adiciones</option>
               </select>
             </div>
             <div class="col-md-3">
-              <label for="filtroSesion" class="form-label">Sesión de Auditoría</label>
-              <select id="filtroSesion" class="form-select" title="Filtra por sesión de auditoría específica">
-                <option value="">Seleccionar sesión</option>
-                <option value="TODAS">Todas las sesiones</option>
+              <label for="filtroSesion" class="form-label">
+                <i class="bi bi-clipboard-check"></i> Sesión de Auditoría
+              </label>
+              <select id="filtroSesion" class="form-select" title="Filtra por sesión de auditoría específica (solo para movimientos de tipo AUDITORIA)">
+                <option value="">Todas las sesiones</option>
               </select>
+              <small class="text-muted">Solo aplica para Sesiones de Auditoría</small>
             </div>
             <div class="col-md-3">
-              <label for="filtroOrdenCompra" class="form-label">Entrada de Almacén</label>
-              <select id="filtroOrdenCompra" class="form-select" title="Filtra por entrada de almacén específica">
-                <option value="">Seleccionar entrada</option>
-                <option value="TODAS">Todas las entradas</option>
+              <label for="filtroOrdenCompra" class="form-label">
+                <i class="bi bi-box-seam"></i> Orden de Compra
+              </label>
+              <select id="filtroOrdenCompra" class="form-select" title="Filtra por orden de compra específica (solo para movimientos de tipo ORDEN_COMPRA)">
+                <option value="">Todas las órdenes</option>
               </select>
+              <small class="text-muted">Solo aplica para Entradas de Almacén</small>
             </div>
             <div class="col-md-2">
               <label for="filtroReferencia" class="form-label">Búsqueda</label>
