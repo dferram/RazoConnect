@@ -3112,7 +3112,11 @@ const getAjustesInventarioFiltrados = async (req, res) => {
     // Calcular totales para conciliación
     const totalPiezas = ajustes.reduce((sum, a) => sum + a.totalPiezas, 0);
     const valorTotalizado = ajustes.reduce((sum, a) => sum + a.valorTotal, 0);
-    const totalPaquetes = ajustes.reduce((sum, a) => sum + a.cantidad, 0);
+    // Calcular paquetes correctamente: piezas totales / piezas por paquete
+    const totalPaquetes = ajustes.reduce((sum, a) => {
+      const paquetes = a.piezasPorPaquete > 0 ? Math.floor(a.totalPiezas / a.piezasPorPaquete) : a.cantidad;
+      return sum + paquetes;
+    }, 0);
 
     // Agrupar por tipo para resumen
     const resumenPorTipo = ajustes.reduce((acc, a) => {
