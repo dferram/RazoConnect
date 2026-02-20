@@ -12058,6 +12058,30 @@ const reasignarSesion = async (req, res) => {
       });
     }
 
+    // Crear notificación para el admin asignado
+    try {
+      await db.query(
+        `INSERT INTO notificaciones (
+          administrador_id, tipo, titulo, mensaje, leida, 
+          prioridad, url, metadata, tenant_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          nuevoAdminId,
+          'sistema',
+          'Sesión de Recepción Asignada',
+          `Se te ha asignado la sesión de recepción de la Orden de Compra #${ordenCompraId}. Puedes continuar trabajando en ella.`,
+          false,
+          'alta',
+          '/admin-recibir-inventario.html',
+          JSON.stringify({ ordenCompraId, tipo: 'reasignacion_sesion' }),
+          tenant_id
+        ]
+      );
+      console.log(`✅ Notificación creada para admin ${nuevoAdminId} sobre reasignación de OC #${ordenCompraId}`);
+    } catch (notifError) {
+      console.error('Error creando notificación de reasignación:', notifError);
+    }
+
     res.json({
       success: true,
       message: `Sesión reasignada a ${adminCheck.rows[0].nombre}`,
