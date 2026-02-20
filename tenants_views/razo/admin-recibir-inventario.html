@@ -479,6 +479,7 @@
       </div>
     </div>
 
+
     <script src="js/admin-recibir-inventario.js" defer></script>
     <script src="js/admin-recibir-inventario-enhanced.js" defer></script>
     <script src="js/admin-recibir-inventario-totales.js" defer></script>
@@ -1684,11 +1685,23 @@
             return { bloqueada: false, puedeEditar: true };
           }
 
-          const data = resp.data?.data || {};
+          console.log('🔍 [DEBUG RESPUESTA] resp completo:', resp);
+          console.log('🔍 [DEBUG RESPUESTA] resp.data:', resp.data);
+          console.log('🔍 [DEBUG RESPUESTA] resp.data.data:', resp.data?.data);
+          
+          const data = resp.data?.data || resp.data || {};
+          console.log('🔍 [DEBUG RESPUESTA] data final:', data);
+          console.log('🔍 [DEBUG RESPUESTA] data.bloqueada:', data.bloqueada, 'tipo:', typeof data.bloqueada);
+          console.log('🔍 [DEBUG RESPUESTA] data.esPropietario:', data.esPropietario, 'tipo:', typeof data.esPropietario);
           
           // Verificar si el usuario actual es super admin
           const adminInfo = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
-          esSuperAdmin = adminInfo.rol === 'superadmin';
+          console.log('🔍 [DEBUG ROL] Admin Info:', adminInfo);
+          console.log('🔍 [DEBUG ROL] Rol original:', adminInfo.rol);
+          const rolNormalizado = (adminInfo.rol || '').toLowerCase().replace(/\s+/g, '');
+          console.log('🔍 [DEBUG ROL] Rol normalizado:', rolNormalizado);
+          esSuperAdmin = rolNormalizado === 'superadmin';
+          console.log('🔍 [DEBUG ROL] Es super admin:', esSuperAdmin);
           
           // CRÍTICO: Super admin debe ver modo lectura si OTRO admin está trabajando
           // Solo puede editar si es propietario O si la sesión está libre
@@ -1759,11 +1772,22 @@
       };
 
       const actualizarBarraEstado = (bloqueo) => {
+        console.log('🔍 [ACTUALIZAR BARRA] Llamada con bloqueo:', bloqueo);
+        console.log('🔍 [ACTUALIZAR BARRA] esSuperAdmin:', esSuperAdmin);
+        
         const sessionStatusBar = document.getElementById('sessionStatusBar');
         const modeBadge = document.getElementById('modeBadge');
         const modeText = document.getElementById('modeText');
         const sessionInfoText = document.getElementById('sessionInfoText');
         const superAdminControls = document.getElementById('superAdminControls');
+
+        console.log('🔍 [ACTUALIZAR BARRA] Elementos encontrados:', {
+          sessionStatusBar: !!sessionStatusBar,
+          modeBadge: !!modeBadge,
+          modeText: !!modeText,
+          sessionInfoText: !!sessionInfoText,
+          superAdminControls: !!superAdminControls
+        });
 
         if (!sessionStatusBar) return;
 
@@ -1788,11 +1812,27 @@
           sessionInfoText.innerHTML = 'Estás trabajando en esta orden';
         }
 
-        // Mostrar controles de super admin SOLO si hay sesión bloqueada por otro
-        if (esSuperAdmin && bloqueo.bloqueada && !bloqueo.esPropietario) {
-          superAdminControls.style.display = 'flex';
+        // Mostrar controles de super admin si hay sesión bloqueada (incluso si es propietario)
+        if (superAdminControls) {
+          // Convertir explícitamente a booleanos para evitar problemas
+          const bloqueada = Boolean(bloqueo.bloqueada);
+          
+          console.log('🔍 [SUPER ADMIN CHECK]', {
+            esSuperAdmin,
+            bloqueada,
+            condicion: esSuperAdmin && bloqueada
+          });
+          
+          // Super admin puede reasignar cualquier sesión, incluso la propia
+          if (esSuperAdmin && bloqueada) {
+            superAdminControls.style.display = 'flex';
+            console.log('✅ [SUPER ADMIN] Mostrando controles de reasignación');
+          } else {
+            superAdminControls.style.display = 'none';
+            console.log('❌ [SUPER ADMIN] Ocultando controles');
+          }
         } else {
-          superAdminControls.style.display = 'none';
+          console.error('⚠️ [SUPER ADMIN] Elemento superAdminControls no encontrado en el DOM');
         }
       };
 
@@ -2407,169 +2447,174 @@
       // ============================================
       // REASIGNACIÓN DE SESIÓN
       // ============================================
-      const modalReasignarSesion = document.getElementById('modalReasignarSesion');
       const btnReasignarSesion = document.getElementById('btnReasignarSesion');
-      const btnCerrarModalReasignar = document.getElementById('btnCerrarModalReasignar');
-      const btnCancelarReasignar = document.getElementById('btnCancelarReasignar');
-      const btnConfirmarReasignar = document.getElementById('btnConfirmarReasignar');
-      const selectAdminReasignar = document.getElementById('selectAdminReasignar');
-      const adminInfoReasignar = document.getElementById('adminInfoReasignar');
-      const adminNombreReasignar = document.getElementById('adminNombreReasignar');
-      const adminEmailReasignar = document.getElementById('adminEmailReasignar');
-      const adminRolReasignar = document.getElementById('adminRolReasignar');
-      
-      console.log('🔍 [MODAL DEBUG] Elementos del modal:', {
-        modalReasignarSesion: !!modalReasignarSesion,
-        btnReasignarSesion: !!btnReasignarSesion,
-        selectAdminReasignar: !!selectAdminReasignar,
-        btnConfirmarReasignar: !!btnConfirmarReasignar,
-        adminInfoReasignar: !!adminInfoReasignar
-      });
 
-      let administradoresDisponibles = [];
+      // Función para mostrar modal de reasignación de sesión
+      async function mostrarModalReasignarSesion() {
+        const currentState = window.recepcionState || state;
+        
+        if (!currentState.orden || !currentState.orden.ordenCompraId) {
+          showToastError('No hay una orden seleccionada');
+          return;
+        }
 
-      // Cargar lista de administradores
-      async function cargarAdministradores() {
         try {
           const resp = await apiCall('/admin/administradores');
-          if (resp.ok && resp.data?.administradores) {
-            administradoresDisponibles = resp.data.administradores;
-            
-            selectAdminReasignar.innerHTML = '<option value="">Seleccionar administrador...</option>';
-            
-            administradoresDisponibles.forEach(admin => {
-              const option = document.createElement('option');
-              option.value = admin.adminid;
-              option.textContent = `${admin.nombre} ${admin.apellido || ''} - ${admin.rol}`;
-              option.dataset.nombre = `${admin.nombre} ${admin.apellido || ''}`;
-              option.dataset.email = admin.email;
-              option.dataset.rol = admin.rol;
-              selectAdminReasignar.appendChild(option);
-            });
+          
+          if (!resp.ok || !resp.data?.data?.administradores) {
+            throw new Error('No se pudo cargar la lista de administradores');
+          }
+
+          const administradores = resp.data.data.administradores;
+          
+          const escapeHtml = (text) => {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+          };
+
+          const adminsHTML = administradores.map(admin => {
+            const iniciales = (admin.nombre.charAt(0) + (admin.apellido?.charAt(0) || '')).toUpperCase();
+            return `
+              <div class="admin-selectable" data-admin-id="${admin.adminid}" style="
+                padding: 1rem;
+                border: 2px solid #e5e7eb;
+                border-radius: 0.75rem;
+                cursor: pointer;
+                transition: all 0.2s;
+                margin-bottom: 0.75rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+              ">
+                <div style="
+                  width: 48px;
+                  height: 48px;
+                  border-radius: 50%;
+                  background: #F97316;
+                  color: white;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-weight: 700;
+                  font-size: 1.125rem;
+                  flex-shrink: 0;
+                ">${iniciales}</div>
+                <div style="flex: 1;">
+                  <div style="font-weight: 600; color: #1f2937; font-size: 1rem;">${escapeHtml(admin.nombre)} ${escapeHtml(admin.apellido || '')}</div>
+                  <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">${escapeHtml(admin.email || 'Sin email')}</div>
+                  <div style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.125rem;">Rol: ${escapeHtml(admin.rol || 'N/A')}</div>
+                </div>
+                <i class="bi bi-check-circle" style="font-size: 1.5rem; color: #10b981; display: none;"></i>
+              </div>
+            `;
+          }).join('');
+
+          const result = await Swal.fire({
+            title: '<strong style="color: #1f2937;">Reasignar Sesión de Recepción</strong>',
+            html: `
+              <div style="text-align: left; margin-bottom: 1rem;">
+                <p style="color: #6b7280; font-size: 0.95rem; margin: 0;">Selecciona el administrador responsable de esta sesión de recepción. El administrador recibirá una notificación y podrá continuar trabajando en esta orden de compra.</p>
+              </div>
+              <div id="adminsContainer" style="max-height: 400px; overflow-y: auto; text-align: left;">
+                ${adminsHTML}
+              </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Reasignar Sesión',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#F97316',
+            cancelButtonColor: '#6b7280',
+            width: '600px',
+            didOpen: () => {
+              let selectedAdminId = null;
+              
+              const adminDivs = document.querySelectorAll('.admin-selectable');
+              adminDivs.forEach(div => {
+                div.addEventListener('click', function() {
+                  adminDivs.forEach(d => {
+                    d.style.borderColor = '#e5e7eb';
+                    d.style.background = 'white';
+                    d.querySelector('i').style.display = 'none';
+                  });
+                  
+                  this.style.borderColor = '#F97316';
+                  this.style.background = 'linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)';
+                  this.querySelector('i').style.display = 'block';
+                  
+                  selectedAdminId = parseInt(this.getAttribute('data-admin-id'));
+                });
+                
+                div.addEventListener('mouseenter', function() {
+                  if (this.style.borderColor !== 'rgb(249, 115, 22)') {
+                    this.style.borderColor = '#F97316';
+                    this.style.background = '#fff7ed';
+                  }
+                });
+                
+                div.addEventListener('mouseleave', function() {
+                  if (this.style.borderColor !== 'rgb(249, 115, 22)') {
+                    this.style.borderColor = '#e5e7eb';
+                    this.style.background = 'white';
+                  }
+                });
+              });
+              
+              const confirmButton = Swal.getConfirmButton();
+              confirmButton.onclick = async () => {
+                if (!selectedAdminId) {
+                  Swal.showValidationMessage('Por favor selecciona un administrador');
+                  return false;
+                }
+                
+                Swal.close();
+                await reasignarSesionAAdmin(selectedAdminId);
+              };
+            },
+            preConfirm: () => {
+              return true;
+            }
+          });
+
+        } catch (error) {
+          console.error(error);
+          await Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: error.message || "No se pudo cargar la lista de administradores",
+            confirmButtonColor: "#F97316"
+          });
+        }
+      }
+
+      // Función para reasignar sesión a un admin
+      async function reasignarSesionAAdmin(adminId) {
+        const currentState = window.recepcionState || state;
+        
+        try {
+          const resp = await apiCall(
+            `/admin/ordenes-compra/${currentState.orden.ordenCompraId}/reasignar-sesion`,
+            {
+              method: 'POST',
+              body: JSON.stringify({ nuevoAdminId: adminId })
+            }
+          );
+
+          if (resp.ok) {
+            showToastSuccess('Sesión reasignada exitosamente');
+            await loadRecepcion(currentState.orden.ordenCompraId);
+          } else {
+            showToastError(resp.data?.message || 'Error al reasignar sesión');
           }
         } catch (error) {
-          console.error('Error cargando administradores:', error);
-          showToastError('Error al cargar lista de administradores');
+          console.error('Error reasignando sesión:', error);
+          showToastError('Error al reasignar sesión');
         }
       }
 
-      // Abrir modal de reasignación
+      // Event listener para botón de reasignar
       if (btnReasignarSesion) {
-        btnReasignarSesion.addEventListener('click', async () => {
-          const currentState = window.recepcionState || state;
-          
-          if (!currentState.orden || !currentState.orden.ordenCompraId) {
-            showToastError('No hay una orden seleccionada');
-            return;
-          }
-
-          await cargarAdministradores();
-          modalReasignarSesion.style.display = 'flex';
-        });
-      }
-
-      // Mostrar información del admin seleccionado
-      if (selectAdminReasignar) {
-        selectAdminReasignar.addEventListener('change', (e) => {
-          const selectedOption = e.target.selectedOptions[0];
-          
-          if (!selectedOption || !selectedOption.value) {
-            adminInfoReasignar.style.display = 'none';
-            btnConfirmarReasignar.disabled = true;
-            return;
-          }
-
-          adminNombreReasignar.textContent = selectedOption.dataset.nombre;
-          adminEmailReasignar.textContent = selectedOption.dataset.email;
-          adminRolReasignar.textContent = selectedOption.dataset.rol;
-          
-          adminInfoReasignar.style.display = 'block';
-          btnConfirmarReasignar.disabled = false;
-        });
-      }
-
-      // Confirmar reasignación
-      if (btnConfirmarReasignar) {
-        btnConfirmarReasignar.addEventListener('click', async () => {
-          const currentState = window.recepcionState || state;
-          const nuevoAdminId = parseInt(selectAdminReasignar.value, 10);
-          
-          if (!nuevoAdminId) {
-            showToastError('Debes seleccionar un administrador');
-            return;
-          }
-
-          const confirmacion = await Swal.fire({
-            title: '¿Reasignar sesión?',
-            html: `Se reasignará la sesión de recepción de la OC #${currentState.orden.ordenCompraId} a <strong>${adminNombreReasignar.textContent}</strong>.<br><br>El administrador recibirá una notificación.`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3B82F6',
-            cancelButtonColor: '#6B7280',
-            confirmButtonText: 'Sí, reasignar',
-            cancelButtonText: 'Cancelar'
-          });
-
-          if (!confirmacion.isConfirmed) return;
-
-          try {
-            btnConfirmarReasignar.disabled = true;
-            btnConfirmarReasignar.innerHTML = '<i class="bi bi-hourglass-split"></i> Reasignando...';
-
-            const resp = await apiCall(`/admin/ordenes-compra/${currentState.orden.ordenCompraId}/reasignar-sesion`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ nuevoAdminId })
-            });
-
-            if (!resp.ok) {
-              throw new Error(resp.data?.message || 'Error al reasignar sesión');
-            }
-
-            await Swal.fire({
-              icon: 'success',
-              title: 'Sesión Reasignada',
-              text: `La sesión ha sido reasignada a ${adminNombreReasignar.textContent}`,
-              confirmButtonColor: '#F97316'
-            });
-
-            modalReasignarSesion.style.display = 'none';
-            
-            // Recargar órdenes para reflejar el cambio
-            await loadOrdenes();
-            
-          } catch (error) {
-            console.error('Error reasignando sesión:', error);
-            showToastError(error.message || 'Error al reasignar sesión');
-            btnConfirmarReasignar.disabled = false;
-            btnConfirmarReasignar.innerHTML = '<i class="bi bi-check-circle"></i> Reasignar Sesión';
-          }
-        });
-      }
-
-      // Cerrar modal de reasignación
-      [btnCerrarModalReasignar, btnCancelarReasignar].forEach(btn => {
-        if (btn) {
-          btn.addEventListener('click', () => {
-            modalReasignarSesion.style.display = 'none';
-            selectAdminReasignar.value = '';
-            adminInfoReasignar.style.display = 'none';
-            btnConfirmarReasignar.disabled = true;
-            btnConfirmarReasignar.innerHTML = '<i class="bi bi-check-circle"></i> Reasignar Sesión';
-          });
-        }
-      });
-
-      // Cerrar modal al hacer clic fuera
-      if (modalReasignarSesion) {
-        modalReasignarSesion.addEventListener('click', (e) => {
-          if (e.target === modalReasignarSesion) {
-            modalReasignarSesion.style.display = 'none';
-            selectAdminReasignar.value = '';
-            adminInfoReasignar.style.display = 'none';
-            btnConfirmarReasignar.disabled = true;
-          }
-        });
+        btnReasignarSesion.addEventListener('click', mostrarModalReasignarSesion);
       }
 
       // Exponer funciones globalmente para evitar errores de scope
@@ -2799,63 +2844,6 @@
       }
 
     </style>
-
-    <!-- Modal de Reasignación de Sesión -->
-    <div id="modalReasignarSesion" class="modal-overlay" style="display: none;">
-      <div class="modal-content" style="max-width: 600px; width: 95%;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-          <h3 style="margin: 0; font-size: 1.25rem; color: #111827;">
-            <i class="bi bi-arrow-left-right" style="color: #3B82F6;"></i>
-            Reasignar Sesión de Recepción
-          </h3>
-          <button id="btnCerrarModalReasignar" class="btn-close-modal" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6B7280;">
-            ×
-          </button>
-        </div>
-
-        <div style="background: #EFF6FF; border-left: 4px solid #3B82F6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-          <p style="margin: 0; font-size: 0.875rem; color: #1E40AF;">
-            <i class="bi bi-info-circle"></i>
-            <strong>Importante:</strong> Al reasignar esta sesión, el administrador seleccionado recibirá una notificación y podrá continuar trabajando en esta orden de compra.
-          </p>
-        </div>
-
-        <div style="margin-bottom: 1.5rem;">
-          <label for="selectAdminReasignar" class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block;">
-            Seleccionar Administrador
-          </label>
-          <select id="selectAdminReasignar" class="form-input" style="width: 100%;">
-            <option value="">Cargando administradores...</option>
-          </select>
-        </div>
-
-        <div id="adminInfoReasignar" style="display: none; background: #F9FAFB; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-          <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
-            <div style="display: flex; justify-content: space-between;">
-              <span style="color: #6B7280;">Nombre:</span>
-              <span id="adminNombreReasignar" style="font-weight: 600; color: #111827;"></span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span style="color: #6B7280;">Email:</span>
-              <span id="adminEmailReasignar" style="color: #111827;"></span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span style="color: #6B7280;">Rol:</span>
-              <span id="adminRolReasignar" style="color: #111827;"></span>
-            </div>
-          </div>
-        </div>
-
-        <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; margin-bottom: 1rem;">
-          <button id="btnCancelarReasignar" type="button" class="btn btn-secondary">
-            <i class="bi bi-x-circle"></i> Cancelar
-          </button>
-          <button id="btnConfirmarReasignar" type="button" class="btn" style="background: #3B82F6; color: white;" disabled>
-            <i class="bi bi-check-circle"></i> Reasignar Sesión
-          </button>
-        </div>
-      </div>
-    </div>
 
     <script src="js/instructional-banner.js"></script>
   </body>
