@@ -1240,6 +1240,13 @@ router.get(
 );
 
 router.post(
+  "/ordenes-compra/:id/reasignar-sesion",
+  authenticate,
+  authorizeSuperAdmin,
+  adminController.reasignarSesion
+);
+
+router.post(
   "/ordenes-compra/:id/forzar-liberacion",
   authenticate,
   authorizeSuperAdmin,

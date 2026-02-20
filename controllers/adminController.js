@@ -11994,6 +11994,88 @@ const verificarBloqueoSesion = async (req, res) => {
 };
 
 /**
+ * Reasignar sesión a otro admin (solo super admin)
+ * POST /api/admin/ordenes-compra/:id/reasignar-sesion
+ * Body: { nuevoAdminId }
+ */
+const reasignarSesion = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const userRole = req.user?.rol || req.user?.roles?.[0];
+    const ordenCompraId = parseInt(req.params.id, 10);
+    const { nuevoAdminId } = req.body;
+
+    // Solo super admin puede reasignar sesiones
+    if (userRole !== 'superadmin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Solo los super administradores pueden reasignar sesiones'
+      });
+    }
+
+    if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de orden de compra inválido'
+      });
+    }
+
+    if (!Number.isInteger(nuevoAdminId) || nuevoAdminId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de administrador inválido'
+      });
+    }
+
+    // Verificar que el nuevo admin existe
+    const adminCheck = await db.query(
+      'SELECT adminid, nombre FROM administradores WHERE adminid = $1 AND tenant_id = $2',
+      [nuevoAdminId, tenant_id]
+    );
+
+    if (adminCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Administrador no encontrado'
+      });
+    }
+
+    // Reasignar la sesión
+    const updateQuery = `
+      UPDATE ordenesdecompra
+      SET admin_trabajando_id = $1,
+          fecha_bloqueo = CURRENT_TIMESTAMP,
+          ultima_actividad = CURRENT_TIMESTAMP
+      WHERE ordencompraid = $2 AND tenant_id = $3
+      RETURNING ordencompraid
+    `;
+    const result = await db.query(updateQuery, [nuevoAdminId, ordenCompraId, tenant_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Orden de compra no encontrada'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Sesión reasignada a ${adminCheck.rows[0].nombre}`,
+      data: {
+        nuevoAdminId,
+        nuevoAdminNombre: adminCheck.rows[0].nombre
+      }
+    });
+  } catch (error) {
+    console.error('Error al reasignar sesión:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al reasignar sesión'
+    });
+  }
+};
+
+/**
  * Forzar liberación de sesión (solo super admin)
  * POST /api/admin/ordenes-compra/:id/forzar-liberacion
  */
@@ -17017,6 +17099,7 @@ module.exports = {
   bloquearSesionRecepcion,
   desbloquearSesionRecepcion,
   verificarBloqueoSesion,
+  reasignarSesion,
   forzarLiberacionSesion,
   getDetallesOrdenCompra,
   getRecepcionOrdenCompra,
