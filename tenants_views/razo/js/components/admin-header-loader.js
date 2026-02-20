@@ -209,5 +209,46 @@
     }
 
     // Nota: logout se enlaza en el dropdown dinámico.
+
+    // 4. Cargar contador de notificaciones
+    loadNotificationCount();
+    
+    // Actualizar cada 30 segundos
+    setInterval(loadNotificationCount, 30000);
+  }
+
+  async function loadNotificationCount() {
+    try {
+      const token = localStorage.getItem('razoconnect_admin_token');
+      if (!token) return;
+
+      const response = await fetch('/api/staff/notificaciones/unread-count', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const count = data.count || 0;
+
+      const badge = document.getElementById('notificationBadgeAdmin');
+      const bell = document.querySelector('#notificationBellAdmin i');
+
+      if (badge && bell) {
+        if (count > 0) {
+          badge.style.display = 'block';
+          bell.style.color = '#F97316';
+        } else {
+          badge.style.display = 'none';
+          bell.style.color = '#6B7280';
+        }
+      }
+    } catch (error) {
+      console.error('Error cargando notificaciones:', error);
+    }
   }
 })();

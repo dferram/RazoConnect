@@ -2,12 +2,14 @@
   "use strict";
 
   async function actualizarBadgeNotificaciones() {
-    const badge = document.getElementById("badgeNotificaciones");
+    const badge = document.getElementById("badgeNotificacionesCliente");
+    const bell = document.querySelector("#notificationLinkCliente i");
+    
     if (!badge) return;
 
     const token = localStorage.getItem("razoconnect_token");
     if (!token) {
-      badge.classList.add("d-none");
+      badge.style.display = "none";
       return;
     }
 
@@ -21,7 +23,7 @@
       });
 
       if (!response.ok) {
-        badge.classList.add("d-none");
+        badge.style.display = "none";
         return;
       }
 
@@ -29,18 +31,29 @@
       const count = Number.parseInt(data?.count, 10) || 0;
 
       if (count > 0) {
-        badge.classList.remove("d-none");
+        badge.style.display = "block";
+        if (bell) bell.style.color = "#F97316";
       } else {
-        badge.classList.add("d-none");
+        badge.style.display = "none";
+        if (bell) bell.style.color = "#6B7280";
       }
     } catch (error) {
-      badge.classList.add("d-none");
+      badge.style.display = "none";
     }
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", actualizarBadgeNotificaciones);
+    document.addEventListener("DOMContentLoaded", () => {
+      actualizarBadgeNotificaciones();
+      // Actualizar cada 30 segundos
+      setInterval(actualizarBadgeNotificaciones, 30000);
+    });
   } else {
     actualizarBadgeNotificaciones();
+    // Actualizar cada 30 segundos
+    setInterval(actualizarBadgeNotificaciones, 30000);
   }
+
+  // Exponer función globalmente
+  window.actualizarBadgeNotificaciones = actualizarBadgeNotificaciones;
 })();
