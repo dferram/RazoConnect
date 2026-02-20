@@ -210,6 +210,34 @@
       return "/components/sidebar-agente.html";
     }
 
+    // Detectar rol desde el token para páginas compartidas (staff-notificaciones.html)
+    const token = localStorage.getItem("razoconnect_admin_token");
+    if (token) {
+      const payload = decodeJWT(token);
+      if (payload && Array.isArray(payload.roles)) {
+        // Si tiene rol 'admin' o 'superadmin', mostrar sidebar admin
+        const hasAdminRole = payload.roles.some(
+          (role) =>
+            role &&
+            (role.toLowerCase() === "admin" ||
+              role.toLowerCase() === "superadmin" ||
+              role.toLowerCase() === "super-admin")
+        );
+        if (hasAdminRole) {
+          return "/components/sidebar-admin.html";
+        }
+        
+        // Si tiene rol 'agente', mostrar sidebar agente
+        const hasAgenteRole = payload.roles.some(
+          (role) => role && role.toLowerCase() === "agente"
+        );
+        if (hasAgenteRole) {
+          return "/components/sidebar-agente.html";
+        }
+      }
+    }
+
+    // Fallback: usar path para determinar sidebar
     const path = window.location.pathname.toLowerCase();
     if (path.startsWith("/admin")) {
       return "/components/sidebar-admin.html";
