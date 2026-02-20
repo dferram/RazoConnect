@@ -229,7 +229,10 @@
                         <th style="min-width: 110px">Medidas</th>
                         <th style="text-align: center; width: 110px">Solicitado (pzas)</th>
                         <th style="text-align: center; width: 110px">Por recibir (pzas)</th>
-                        <th style="width: 130px">Cantidad recibida</th>
+                        <th style="width: 130px">
+                          <div style="font-weight: 600;">Cantidad a recibir</div>
+                          <div style="font-size: 0.75rem; font-weight: 400; color: #6b7280; margin-top: 0.25rem;">Ingresar en PIEZAS</div>
+                        </th>
                         <th style="width: 140px"></th>
                       </tr>
                     </thead>
@@ -622,9 +625,9 @@
         showToastSuccess("Agregado a sesión");
         persistSesionRecepcion();
         renderizarTablaSesion();
-        renderSplit();
         
-        // ACTUALIZAR CONTADOR "POR RECIBIR" DINÁMICAMENTE
+        // CRÍTICO: Solo actualizar el contador del item específico, NO renderizar toda la tabla
+        // para evitar que se reseteen los valores de otros inputs
         actualizarContadorPorRecibir(item.detalleId);
       };
 
@@ -1073,12 +1076,14 @@
           tr.dataset.detalleId = String(item.detalleId);
           
           // VISUAL INDICATOR: Aplicar color según estado de recepción
-          if (pendientePzas === 0) {
-            // Completamente recibido - verde tenue
-            tr.style.backgroundColor = "rgba(16, 185, 129, 0.08)";
+          if (enSesionPzas > 0 && pendientePzas === 0) {
+            // Completamente agregado a sesión - verde tenue
+            tr.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
+            tr.style.borderLeft = "4px solid #10b981";
           } else if (enSesionPzas > 0) {
             // Parcialmente en sesión - amarillo tenue
-            tr.style.backgroundColor = "rgba(245, 158, 11, 0.08)";
+            tr.style.backgroundColor = "rgba(245, 158, 11, 0.1)";
+            tr.style.borderLeft = "4px solid #f59e0b";
           }
 
           const tdImg = document.createElement("td");
@@ -1121,13 +1126,16 @@
           tdPen.innerHTML = `<strong>${pendientePzas}</strong>`;
 
           const tdInput = document.createElement("td");
+          tdInput.style.position = "relative";
+          
           const input = document.createElement("input");
           input.type = "number";
           input.min = "1";
           input.max = String(pendientePzas);
           input.step = "1";
-          input.placeholder = "0";
+          input.placeholder = 0;
           input.className = "form-input input-mini-tabla cantidad-hoy";
+          input.title = `Ingresa la cantidad en PIEZAS (${piezas} pzas = 1 paquete)`;
           input.dataset.detalleId = String(item.detalleId);
           input.dataset.varianteId = String(item.varianteId);
           input.dataset.pendiente = String(pendientePzas);
@@ -1135,8 +1143,8 @@
           const draft = drafts.get(String(item.detalleId));
           if (draft) {
             input.value = String(draft);
+            updateHelper();
           }
-          tdInput.appendChild(input);
 
           const renderColor = () => {
             const val = Number.parseInt(input.value, 10);
@@ -1151,9 +1159,42 @@
             }
           };
 
-          input.addEventListener("input", renderColor);
-          input.addEventListener("change", renderColor);
+          // Helper text que muestra conversión a paquetes
+          const helperText = document.createElement("div");
+          helperText.style.cssText = "font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem; min-height: 1rem;";
+          
+          const updateHelper = () => {
+            const val = Number.parseInt(input.value, 10);
+            if (Number.isInteger(val) && val > 0) {
+              const paquetes = Math.floor(val / piezas);
+              const resto = val % piezas;
+              if (paquetes > 0) {
+                helperText.textContent = `≈ ${paquetes} paq${resto > 0 ? ` + ${resto} pzas` : ''}`;
+                helperText.style.color = "#10b981";
+              } else {
+                helperText.textContent = `${val} pzas (< 1 paq)`;
+                helperText.style.color = "#f59e0b";
+              }
+            } else {
+              helperText.textContent = "";
+            }
+          };
+          
+          input.addEventListener("input", () => {
+            renderColor();
+            updateHelper();
+          });
+          input.addEventListener("change", () => {
+            renderColor();
+            updateHelper();
+          });
           renderColor();
+          updateHelper();
+          
+          const wrapper = document.createElement("div");
+          wrapper.appendChild(input);
+          wrapper.appendChild(helperText);
+          tdInput.appendChild(wrapper);
 
           const tdBtn = document.createElement("td");
           const btn = document.createElement("button");
@@ -1190,9 +1231,11 @@
           const tr = document.createElement("tr");
           // Visual indicator: green for complete, yellow for partial
           if (isDone) {
-            tr.style.backgroundColor = "rgba(16, 185, 129, 0.08)"; // Verde tenue
+            tr.style.backgroundColor = "rgba(16, 185, 129, 0.1)"; // Verde tenue
+            tr.style.borderLeft = "4px solid #10b981";
           } else if (recibidoPzas > 0) {
-            tr.style.backgroundColor = "rgba(245, 158, 11, 0.08)"; // Amarillo tenue
+            tr.style.backgroundColor = "rgba(245, 158, 11, 0.1)"; // Amarillo tenue
+            tr.style.borderLeft = "4px solid #f59e0b";
           }
 
           const tdImg = document.createElement("td");
@@ -1307,10 +1350,12 @@
         // Actualizar color de fila
         const row = document.querySelector(`tr[data-detalle-id="${detalleId}"]`);
         if (row) {
-          if (pendientePzas === 0) {
-            row.style.backgroundColor = "rgba(16, 185, 129, 0.08)"; // Verde
+          if (enSesionPzas > 0 && pendientePzas === 0) {
+            row.style.backgroundColor = "rgba(16, 185, 129, 0.1)"; // Verde tenue
+            row.style.borderLeft = "4px solid #10b981";
           } else if (enSesionPzas > 0) {
-            row.style.backgroundColor = "rgba(245, 158, 11, 0.08)"; // Amarillo
+            row.style.backgroundColor = "rgba(245, 158, 11, 0.1)"; // Amarillo tenue
+            row.style.borderLeft = "4px solid #f59e0b";
           } else {
             row.style.backgroundColor = ""; // Sin color
           }

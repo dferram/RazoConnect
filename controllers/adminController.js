@@ -1299,19 +1299,19 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
         ? nuevoStock
         : stockAnterior + piezasRecibidasAhora;
 
-      // CRÍTICO: Registrar en inventarios_admin usando admin_creador_id de la orden
+      // CRÍTICO: Registrar en stock_admin usando admin_creador_id de la orden
       const adminCreadorId = ordenLock.rows[0].admin_creador_id;
       const adminIdRegistro = adminCreadorId || usuarioRecibeId || null;
 
       if (adminIdRegistro) {
         await client.query(
-          `INSERT INTO inventarios_admin (admin_id, variante_id, cantidad, registrado_por, ultima_actualizacion, tenant_id)
-           VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5)
-           ON CONFLICT (admin_id, variante_id)
+          `INSERT INTO stock_admin (admin_id, variante_id, cantidad, tenant_id, updated_at, created_at)
+           VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+           ON CONFLICT (admin_id, variante_id, tenant_id)
            DO UPDATE SET 
-             cantidad = inventarios_admin.cantidad + $3,
-             ultima_actualizacion = CURRENT_TIMESTAMP`,
-          [adminIdRegistro, varianteId, piezasRecibidasAhora, usuarioRecibeId, tenant_id]
+             cantidad = stock_admin.cantidad + $3,
+             updated_at = CURRENT_TIMESTAMP`,
+          [adminIdRegistro, varianteId, piezasRecibidasAhora, tenant_id]
         );
         
         console.log(`📦 [STOCK ASSIGNMENT] Inventario asignado al Admin ID ${adminIdRegistro} (OC #${ordenCompraId}, Recepción Masiva)`);
@@ -1323,9 +1323,9 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
             varianteId: varianteId,
             adminId: adminIdRegistro,
             tenantId: tenant_id,
-            tipo: 'ENTRADA',
+            tipo: 'ADICION',
             cantidad: piezasRecibidasAhora,
-            motivo: 'COMPRA',
+            motivo: `Recepción OC #${ordenCompraId}`,
             referenciaTipo: 'ORDEN_COMPRA',
             referenciaId: `OC-${ordenCompraId}`,
             observaciones: `Recepción masiva - Lote: ${referenciaProveedor}. SKU: ${detalle.sku}`,
@@ -12583,19 +12583,19 @@ const recibirInventario = async (req, res) => {
         [cantidadAumentar, detalle.varianteid]
       );
 
-      // 3.5. Registrar en inventarios_admin (UPSERT)
+      // 3.5. Registrar en stock_admin (UPSERT)
       // CRÍTICO: Usar admin_creador_id de la orden para asignar el stock al dueño correcto
       const adminIdRegistro = adminCreadorId || usuarioRecibeId || adminId || null;
 
       if (adminIdRegistro) {
         await client.query(
-          `INSERT INTO inventarios_admin (admin_id, variante_id, cantidad, registrado_por, ultima_actualizacion, tenant_id)
-           VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5)
-           ON CONFLICT (admin_id, variante_id)
+          `INSERT INTO stock_admin (admin_id, variante_id, cantidad, tenant_id, updated_at, created_at)
+           VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+           ON CONFLICT (admin_id, variante_id, tenant_id)
            DO UPDATE SET 
-             cantidad = inventarios_admin.cantidad + $3,
-             ultima_actualizacion = CURRENT_TIMESTAMP`,
-          [adminIdRegistro, detalle.varianteid, cantidadAumentar, usuarioRecibeId, tenant_id]
+             cantidad = stock_admin.cantidad + $3,
+             updated_at = CURRENT_TIMESTAMP`,
+          [adminIdRegistro, detalle.varianteid, cantidadAumentar, tenant_id]
         );
         
         console.log(`📦 [STOCK ASSIGNMENT] Inventario asignado al Admin ID ${adminIdRegistro} (OC #${ordenCompraId})`);
@@ -12606,9 +12606,9 @@ const recibirInventario = async (req, res) => {
             varianteId: detalle.varianteid,
             adminId: adminIdRegistro,
             tenantId: tenant_id,
-            tipo: 'ENTRADA',
+            tipo: 'ADICION',
             cantidad: cantidadAumentar,
-            motivo: 'COMPRA',
+            motivo: `Recepción OC #${ordenCompraId}`,
             referenciaTipo: 'ORDEN_COMPRA',
             referenciaId: `OC-${ordenCompraId}`,
             observaciones: `Recepción de ${cantidadRecibida} paquete${cantidadRecibida === 1 ? '' : 's'} x ${piezasPorPaquete} piezas. SKU: ${detalle.sku}`,

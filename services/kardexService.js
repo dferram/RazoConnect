@@ -39,6 +39,12 @@ class KardexService {
     ipOrigen = null
   }, client = null) {
     
+    // VALIDACIÓN CRÍTICA: Solo se permiten tipos MERMA o ADICION según constraint de DB
+    const tiposPermitidos = ['MERMA', 'ADICION'];
+    if (!tiposPermitidos.includes(tipo)) {
+      throw new Error(`Tipo de movimiento inválido: "${tipo}". Solo se permiten: ${tiposPermitidos.join(', ')}`);
+    }
+    
     const useExternalTransaction = !!client;
     const dbClient = client || await pool.connect();
 
@@ -47,13 +53,13 @@ class KardexService {
         await dbClient.query('BEGIN');
       }
 
-      // 1. Obtener stock actual de inventarios_admin
+      // 1. Obtener stock actual de stock_admin
       const stockQuery = `
-        SELECT ia.cantidad as stock_actual
-        FROM inventarios_admin ia
-        WHERE ia.variante_id = $1 
-          AND ia.admin_id = $2
-          AND ia.tenant_id = $3
+        SELECT sa.cantidad as stock_actual
+        FROM stock_admin sa
+        WHERE sa.variante_id = $1 
+          AND sa.admin_id = $2
+          AND sa.tenant_id = $3
         FOR UPDATE
       `;
       
@@ -84,12 +90,8 @@ class KardexService {
           stock_previo,
           stock_posterior,
           motivo,
-          referencia_tipo,
-          referencia_id,
-          observaciones,
-          ip_origen,
           fecha_movimiento
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
         RETURNING *
       `;
 
@@ -101,11 +103,7 @@ class KardexService {
         cantidadNumerica,
         stockPrevio,
         stockPosterior,
-        motivo,
-        referenciaTipo,
-        referenciaId,
-        observaciones,
-        ipOrigen
+        motivo
       ]);
 
       const movimiento = insertResult.rows[0];
