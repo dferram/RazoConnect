@@ -114,7 +114,7 @@
     diaPadre: {
       hero: [
         {
-          image: "https://images.unsplash.com/photo-1520975682071-a0d3d8a4b6d3?w=1600&h=900&fit=crop",
+          image: "https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=1600&h=900&fit=crop",
           eyebrow: "Celebración Especial",
           title: "Día del Padre",
           description: "Empaques elegantes para los héroes del hogar. Productos premium que expresan admiración y respeto.",

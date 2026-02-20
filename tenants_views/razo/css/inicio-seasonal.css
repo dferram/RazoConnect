@@ -366,6 +366,30 @@
   background: linear-gradient(135deg, rgba(136, 14, 79, 0.75), transparent);
 }
 
+/* ============================================
+   ESTILOS ESPECÍFICOS PARA DÍA DE LA MADRE
+   Texto del cuerpo en negro para mejor legibilidad
+   ============================================ */
+
+/* Descripción y textos del cuerpo en negro con sombra clara */
+body.theme-diamadre .hero-description,
+body.theme-diamadre .hero-eyebrow,
+body.theme-diamadre .welcome-subtitle,
+body.theme-diamadre .countdown-event-subtitle {
+  color: #000000 !important;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5), 
+               0px 0px 3px rgba(255, 255, 255, 0.3);
+}
+
+/* Mantener títulos en blanco */
+body.theme-diamadre .hero-title,
+body.theme-diamadre .welcome-title,
+body.theme-diamadre .countdown-event-title {
+  color: #ffffff !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3), 
+               1px 1px 3px rgba(0, 0, 0, 0.2);
+}
+
 .theme-diapadre #hero-banner .hero-slide::before {
   background: linear-gradient(135deg, rgba(13, 71, 161, 0.75), transparent);
 }
