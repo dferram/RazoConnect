@@ -199,9 +199,7 @@
       badge.classList.add("bg-success");
     } else {
       label.textContent = "Solicitar crédito";
-      badge.textContent = "Nuevo";
-      badge.classList.remove("d-none");
-      badge.classList.add("bg-warning", "text-dark");
+      badge.classList.add("d-none");
     }
   }
 
