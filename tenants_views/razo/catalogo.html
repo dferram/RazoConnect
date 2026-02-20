@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="css/auth-modal.css" />
     <link rel="stylesheet" href="css/mobile-responsive.css" />
     <link rel="stylesheet" href="css/search-autocomplete.css" />
+    <link rel="stylesheet" href="css/favoritos.css" />
   </head>
   <body>
     <div id="header-container"></div>
@@ -192,6 +193,7 @@
     <script src="https://sdk.mercadopago.com/js/v2"></script>
     <script src="js/api.js"></script>
     <script src="js/search-autocomplete.js"></script>
+    <script src="js/favoritos.js"></script>
 
     <script>
       // Initialize search autocomplete
@@ -764,6 +766,7 @@
           <div class="imagen-wrapper">
             ${badge}
             ${mediaContent}
+            <div class="favorito-container" data-variante-id="${varianteSeleccionadaId || productoId}"></div>
             <button class="cart-floating-btn ${
               botonAgregarDisabled ? "cart-floating-btn--disabled" : ""
             }"
@@ -870,6 +873,17 @@
         );
           productGrid.style.display = "grid";
           emptyState.style.display = "none";
+          
+          setTimeout(() => {
+            if (typeof FavoritosManager !== 'undefined') {
+              document.querySelectorAll('.favorito-container').forEach(container => {
+                const varianteId = container.getAttribute('data-variante-id');
+                if (varianteId) {
+                  FavoritosManager.renderIcon(parseInt(varianteId), container);
+                }
+              });
+            }
+          }, 100);
         }
 
         actualizarFiltroActivo();

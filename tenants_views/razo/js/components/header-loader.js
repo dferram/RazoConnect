@@ -35,6 +35,7 @@
       cargarMarcasMenu();
       actualizarNotificaciones();
       actualizarBadgeCarrito();
+      actualizarBadgeFavoritos();
     } catch (error) {
       console.error("Error cargando header cliente:", error);
     }
@@ -299,9 +300,55 @@
       inicializarUsuario();
       actualizarNotificaciones();
       actualizarBadgeCarrito();
+      actualizarBadgeFavoritos();
       
       console.log('✅ Header actualizado tras login');
     });
+  }
+
+  async function actualizarBadgeFavoritos() {
+    const badge = document.getElementById("favoritos-badge");
+    const icon = document.getElementById("favoritos-icon");
+    if (!badge || !icon) return;
+
+    const token = getTokenCliente();
+    if (!token) {
+      badge.style.display = "none";
+      icon.style.color = "#6B7280";
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/favoritos/notificaciones/count", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        badge.style.display = "none";
+        icon.style.color = "#6B7280";
+        return;
+      }
+
+      const data = await res.json();
+      const count = Number.parseInt(data?.count, 10) || 0;
+
+      if (count > 0) {
+        badge.textContent = count > 99 ? "99+" : count;
+        badge.style.display = "inline-block";
+        icon.style.color = "#F97316";
+      } else {
+        badge.style.display = "none";
+        icon.style.color = "#6B7280";
+      }
+    } catch (error) {
+      console.debug("Favoritos badge check skipped or failed:", error.message);
+      badge.style.display = "none";
+      icon.style.color = "#6B7280";
+    }
   }
 
   async function actualizarNotificaciones() {

@@ -1,10 +1,78 @@
 const SmartStockService = require('./SmartStockService');
+const pool = require('../db');
 
 function createServiceError(message, status = 500, code = "INVENTORY_SERVICE_ERROR") {
   const err = new Error(message);
   err.status = status;
   err.code = code;
   return err;
+}
+
+async function notificarRestockFavoritos(client, varianteId, stockNuevo, tenantId) {
+  try {
+    if (stockNuevo <= 0) {
+      return;
+    }
+
+    const favoritosQuery = `
+      SELECT 
+        cf.cliente_id,
+        cf.variante_id,
+        pv.sku,
+        p.nombreproducto
+      FROM clientes_favoritos cf
+      INNER JOIN producto_variantes pv ON cf.variante_id = pv.varianteid
+      INNER JOIN productos p ON pv.productoid = p.productoid
+      WHERE cf.variante_id = $1 
+        AND cf.alerta_restock_activa = TRUE
+        AND cf.tenant_id = $2
+    `;
+    
+    const favoritosResult = await client.query(favoritosQuery, [varianteId, tenantId]);
+
+    if (favoritosResult.rows.length === 0) {
+      return;
+    }
+
+    console.log(`🔔 [RESTOCK] Producto ${varianteId} vuelve a tener stock. Notificando a ${favoritosResult.rows.length} cliente(s)...`);
+
+    for (const favorito of favoritosResult.rows) {
+      const titulo = '¡Tu producto favorito está disponible!';
+      const mensaje = `El producto "${favorito.nombreproducto}" (${favorito.sku}) que agregaste a favoritos ya está disponible nuevamente. ¡Aprovecha antes de que se agote!`;
+      
+      await client.query(
+        `INSERT INTO notificaciones (
+          clienteid, tipo, titulo, mensaje, leida, 
+          metadata, url, prioridad, tenant_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          favorito.cliente_id,
+          'restock',
+          titulo,
+          mensaje,
+          false,
+          JSON.stringify({ varianteId: favorito.variante_id, sku: favorito.sku }),
+          `/producto-detalle.html?id=${favorito.variante_id}`,
+          'alta',
+          tenantId
+        ]
+      );
+
+      await client.query(
+        `UPDATE clientes_favoritos 
+         SET alerta_restock_activa = FALSE 
+         WHERE cliente_id = $1 AND variante_id = $2 AND tenant_id = $3`,
+        [favorito.cliente_id, favorito.variante_id, tenantId]
+      );
+
+      console.log(`   ✅ Notificación enviada a cliente ${favorito.cliente_id}`);
+    }
+
+    console.log(`🎉 [RESTOCK] ${favoritosResult.rows.length} notificación(es) de restock enviada(s) exitosamente`);
+
+  } catch (error) {
+    console.error('❌ [RESTOCK] Error al notificar favoritos:', error);
+  }
 }
 
 /**
@@ -138,6 +206,11 @@ async function registrarMovimiento(
   }
 
   console.log(`✅ [inventoryService] Movimiento registrado: ${delta > 0 ? 'ENTRADA' : 'SALIDA'} de ${Math.abs(delta)} unidades - Variante ${id} (${stockAnterior} → ${stockNuevo})`);
+
+  if (delta > 0 && stockAnterior <= 0 && stockNuevo > 0) {
+    console.log(`🔔 [RESTOCK TRIGGER] Producto pasó de sin stock (${stockAnterior}) a con stock (${stockNuevo}). Verificando favoritos...`);
+    await notificarRestockFavoritos(client, id, stockNuevo, tenantId);
+  }
 
   return { stockAnterior, stockNuevo };
 }
