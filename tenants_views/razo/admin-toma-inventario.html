@@ -1833,6 +1833,7 @@
           option.textContent = `#${sesion.sesion_id} — ${safeText(sesion.nombre)}`;
           sesionSelect.appendChild(option);
 
+          // Seleccionar la sesión recién creada
           sesionSelect.value = String(sesion.sesion_id);
           state.sesionId = sesion.sesion_id;
           state.sesionEstatus = sesion.estatus;
@@ -1840,11 +1841,22 @@
           toast("success", "Sesión creada exitosamente");
           sesionNombre.value = "";
 
+          // IMPORTANTE: Actualizar controles antes de cargar datos
+          updateControls();
+
           // IMPORTANTE: Mostrar modal de asignación de agente
           await mostrarModalAsignarAgente();
 
-          await loadDashboard();
-          updateControls();
+          // CRÍTICO: Cargar dashboard para modo auditor
+          if (!state.isAgente) {
+            await loadDashboard();
+          }
+
+          // CRÍTICO: Recargar catálogo de productos para modo operador
+          // Esto asegura que los productos se muestren sin necesidad de recargar la página
+          await loadProductCatalog();
+          
+          console.log(`✅ [SESIÓN CREADA] Sesión #${sesion.sesion_id} seleccionada y cargada automáticamente`);
         } catch (error) {
           console.error(error);
           toast("error", error.message || "Error al crear sesión");
