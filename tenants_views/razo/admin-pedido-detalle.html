@@ -992,15 +992,30 @@
                   const piezasPorPaquete = item.piezasPorPaquete || 1;
                   const cantidadSolicitada = item.cantidadPaquetes || 0;
                   const piezasNecesarias = cantidadSolicitada * piezasPorPaquete;
-                  const enStock = stock >= piezasNecesarias;
+                  const hayStockSuficiente = stock >= piezasNecesarias;
                   
                   // Integrity check
-                  if (enStock && stock === 0) {
+                  if (hayStockSuficiente && stock === 0) {
                     console.error(`[ERROR DE INTEGRIDAD] El producto SKU: ${item.sku} muestra stock fantasma.`);
                   }
                   
-                  const badgeClass = enStock ? 'badge-stock surtido' : 'badge-stock bajo-pedido';
-                  const badgeText = enStock ? 'SURTIDO' : 'BAJO PEDIDO';
+                  // Determinar estado del badge basado en stock Y estatus del pedido
+                  const pedidoConfirmado = pedido.estatus && pedido.estatus.toLowerCase() === 'confirmado';
+                  
+                  let badgeClass, badgeText;
+                  if (!hayStockSuficiente) {
+                    // No hay stock suficiente - BAJO PEDIDO (rojo)
+                    badgeClass = 'badge-stock bajo-pedido';
+                    badgeText = 'BAJO PEDIDO';
+                  } else if (pedidoConfirmado) {
+                    // Hay stock Y el pedido está confirmado - SURTIDO (naranja)
+                    badgeClass = 'badge-stock surtido';
+                    badgeText = 'SURTIDO';
+                  } else {
+                    // Hay stock pero el pedido NO está confirmado - CON STOCK (verde)
+                    badgeClass = 'badge-stock con-stock';
+                    badgeText = 'CON STOCK';
+                  }
                   
                   return `
               <div class="item-row">

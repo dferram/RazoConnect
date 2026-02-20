@@ -36,6 +36,10 @@
   background-color: var(--razo-orange, #F97316);
 }
 
+.badge-stock.con-stock {
+  background-color: #16a34a;
+}
+
 /* ============================================
    QUANTITY ADJUSTER (STEPPER)
    ============================================ */

@@ -1446,7 +1446,21 @@
               <tbody>
                 ${pedido.items.map(item => {
                   const stockReal = item.stockReal || 0;
-                  const esBajoPedido = stockReal === 0;
+                  const hayStockSuficiente = stockReal > 0;
+                  const pedidoConfirmado = pedido.estatus && pedido.estatus.toLowerCase() === 'confirmado';
+                  
+                  let badgeHtml;
+                  if (!hayStockSuficiente) {
+                    // No hay stock - BAJO PEDIDO (rojo)
+                    badgeHtml = '<span class="badge-stock bajo-pedido">BAJO PEDIDO</span>';
+                  } else if (pedidoConfirmado) {
+                    // Hay stock Y pedido confirmado - SURTIDO (naranja)
+                    badgeHtml = '<span class="badge-stock surtido">SURTIDO</span>';
+                  } else {
+                    // Hay stock pero NO confirmado - CON STOCK (verde)
+                    badgeHtml = '<span class="badge-stock con-stock">CON STOCK</span>';
+                  }
+                  
                   return `
                   <tr>
                     <td>${item.sku}</td>
@@ -1455,7 +1469,7 @@
                     <td>${item.cantidad}</td>
                     <td>$${item.precioUnitario.toFixed(2)}</td>
                     <td>$${item.subtotal.toFixed(2)}</td>
-                    <td>${esBajoPedido ? '<span class="badge-backorder">BAJO PEDIDO</span>' : '<span style="color: #28a745; font-weight: bold;">✓ Disponible</span>'}</td>
+                    <td>${badgeHtml}</td>
                   </tr>
                 `;
                 }).join('')}
