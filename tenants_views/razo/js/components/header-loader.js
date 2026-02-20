@@ -305,13 +305,13 @@
   }
 
   async function actualizarNotificaciones() {
-    const badge = document.getElementById("badgeNotificaciones");
+    const badge = document.getElementById("badgeNotificacionesCliente");
     if (!badge) return;
 
     const token = getTokenCliente();
     // Don't make API calls if no token (guest user)
     if (!token) {
-      badge.classList.add("d-none");
+      badge.style.display = "none";
       return;
     }
 
@@ -328,19 +328,19 @@
       const count = Number.parseInt(data?.count, 10) || 0;
 
       if (!res.ok || data?.success === false) {
-        badge.classList.add("d-none");
+        badge.style.display = "none";
         return;
       }
 
       if (count > 0) {
-        badge.classList.remove("d-none");
+        badge.style.display = "block";
       } else {
-        badge.classList.add("d-none");
+        badge.style.display = "none";
       }
     } catch (error) {
       // Silently fail for guest users
       console.debug("Notifications check skipped or failed:", error.message);
-      badge.classList.add("d-none");
+      badge.style.display = "none";
     }
   }
 

@@ -148,7 +148,8 @@
       const linkNotificaciones = document.createElement("a");
       linkNotificaciones.href = "/staff-notificaciones.html";
       linkNotificaciones.className = "dropdown-item";
-      linkNotificaciones.innerHTML = `<i class="bi bi-bell"></i> Notificaciones`;
+      linkNotificaciones.style.position = "relative";
+      linkNotificaciones.innerHTML = `<i class="bi bi-bell"></i> Notificaciones<span id="notificationBadgeAdmin" class="notification-badge" style="display: none; position: absolute; top: 50%; right: 12px; transform: translateY(-50%); background: #EF4444; border-radius: 50%; width: 8px; height: 8px; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);"></span>`;
 
       const itemsFragment = document.createDocumentFragment();
       itemsFragment.appendChild(header);
@@ -236,15 +237,12 @@
       const count = data.count || 0;
 
       const badge = document.getElementById('notificationBadgeAdmin');
-      const bell = document.querySelector('#notificationBellAdmin i');
 
-      if (badge && bell) {
+      if (badge) {
         if (count > 0) {
           badge.style.display = 'block';
-          bell.style.color = '#F97316';
         } else {
           badge.style.display = 'none';
-          bell.style.color = '#6B7280';
         }
       }
     } catch (error) {
