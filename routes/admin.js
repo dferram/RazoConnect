@@ -1217,6 +1217,42 @@ router.patch(
   reasignarOrdenController.reasignarOrdenCompra
 );
 
+// Session locking for inventory reception
+router.post(
+  "/ordenes-compra/:id/bloquear-sesion",
+  authenticate,
+  authorizeAdmin,
+  adminController.bloquearSesionRecepcion
+);
+
+router.post(
+  "/ordenes-compra/:id/desbloquear-sesion",
+  authenticate,
+  authorizeAdmin,
+  adminController.desbloquearSesionRecepcion
+);
+
+router.get(
+  "/ordenes-compra/:id/verificar-bloqueo",
+  authenticate,
+  authorizeAdmin,
+  adminController.verificarBloqueoSesion
+);
+
+router.post(
+  "/ordenes-compra/:id/reasignar-sesion",
+  authenticate,
+  authorizeSuperAdmin,
+  adminController.reasignarSesion
+);
+
+router.post(
+  "/ordenes-compra/:id/forzar-liberacion",
+  authenticate,
+  authorizeSuperAdmin,
+  adminController.forzarLiberacionSesion
+);
+
 router.post(
   "/recepcion-masiva",
   authenticate,

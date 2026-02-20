@@ -2966,17 +2966,20 @@ const getAjustesInventarioFiltrados = async (req, res) => {
       where.push(`li.fecha <= $${values.length}::timestamp`);
     }
 
-    // Filtro por tipo de origen (mapeo de UI a tipos de BD)
-    const tipoAjusteRaw = (req.query.tipoAjuste || "").toString().trim().toUpperCase();
-    const tipoOrigenMap = {
-      'ENTRADA': 'AUDITORIA',  // Conteo Inicial / Auditoría
-      'MERMA': 'MERMA',
-      'AJUSTE': 'AJUSTE_MANUAL',
-      'ADICION': 'ADICION'
-    };
+    // Filtro por tipo de origen directo desde frontend
+    const tipoOrigenRaw = (req.query.tipoOrigen || "").toString().trim().toUpperCase();
+    const tiposOrigenValidos = [
+      'ORDEN_COMPRA',      // Entradas de Almacén (recepciones de OC)
+      'AUDITORIA',         // Sesiones de Auditoría (conteos físicos)
+      'AJUSTE_MANUAL',     // Ajustes Manuales genéricos
+      'MERMA',             // Mermas específicas
+      'ADICION',           // Adiciones específicas
+      'VENTA',             // Salidas por venta
+      'DEVOLUCION'         // Devoluciones
+    ];
     
-    if (tipoAjusteRaw && tipoOrigenMap[tipoAjusteRaw]) {
-      values.push(tipoOrigenMap[tipoAjusteRaw]);
+    if (tipoOrigenRaw && tiposOrigenValidos.includes(tipoOrigenRaw)) {
+      values.push(tipoOrigenRaw);
       where.push(`li.tipo_origen = $${values.length}`);
     }
 
@@ -4090,21 +4093,37 @@ const getAllPedidos = async (req, res) => {
 
     const result = await db.query(query, params);
 
-    // VALIDACIÓN DE INTEGRIDAD FINANCIERA: Recalcular totales desde items
-    const pedidos = await Promise.all(result.rows.map(async (row) => {
-      // Obtener detalles del pedido para validar el total
+    // VALIDACIÓN DE INTEGRIDAD FINANCIERA: Obtener detalles en una sola query
+    const pedidoIds = result.rows.map(r => r.pedidoid);
+    
+    let detallesPorPedido = new Map();
+    if (pedidoIds.length > 0) {
       const detallesQuery = `
         SELECT 
+          PedidoID,
           CantidadPaquetes,
           PrecioPorPaquete
         FROM DetallesDelPedido
-        WHERE PedidoID = $1
+        WHERE PedidoID = ANY($1::int[])
       `;
       
-      const detallesResult = await db.query(detallesQuery, [row.pedidoid]);
+      const detallesResult = await db.query(detallesQuery, [pedidoIds]);
+      
+      // Agrupar detalles por pedido
+      detallesResult.rows.forEach(detalle => {
+        if (!detallesPorPedido.has(detalle.pedidoid)) {
+          detallesPorPedido.set(detalle.pedidoid, []);
+        }
+        detallesPorPedido.get(detalle.pedidoid).push(detalle);
+      });
+    }
+
+    // Procesar pedidos sin queries adicionales
+    const pedidos = result.rows.map((row) => {
+      const detalles = detallesPorPedido.get(row.pedidoid) || [];
       
       // Calcular subtotal desde items
-      const subtotalItems = detallesResult.rows.reduce((sum, detalle) => {
+      const subtotalItems = detalles.reduce((sum, detalle) => {
         const cantidad = parseFloat(detalle.cantidadpaquetes || 0);
         const precio = parseFloat(detalle.precioporpaquete || 0);
         return sum + (cantidad * precio);
@@ -4156,7 +4175,7 @@ const getAllPedidos = async (req, res) => {
           estado: row.estadonombre
         }
       };
-    }));
+    });
 
     // Contar pedidos con discrepancia
     const pedidosConDiscrepancia = pedidos.filter(p => p.tieneDiscrepancia);
@@ -11792,6 +11811,325 @@ const getAllOrdenesCompra = async (req, res) => {
  * Obtener lista de administradores que han creado órdenes de compra
  * GET /api/admin/ordenes-compra/administradores
  */
+/**
+ * Bloquear sesión de recepción de orden de compra
+ * POST /api/admin/ordenes-compra/:id/bloquear-sesion
+ */
+const bloquearSesionRecepcion = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const userId = req.user?.id || req.user?.adminId;
+    const ordenCompraId = parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de orden de compra inválido'
+      });
+    }
+
+    // Verificar si ya está bloqueada (db.query maneja el pool automáticamente)
+    const checkQuery = `
+      SELECT admin_trabajando_id, fecha_bloqueo, ultima_actividad,
+             (SELECT nombre FROM administradores WHERE adminid = admin_trabajando_id) as admin_nombre
+      FROM ordenesdecompra
+      WHERE ordencompraid = $1 AND tenant_id = $2
+    `;
+    const checkResult = await db.query(checkQuery, [ordenCompraId, tenant_id]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Orden de compra no encontrada'
+      });
+    }
+
+    const orden = checkResult.rows[0];
+
+    // Si ya está bloqueada por otro admin
+    if (orden.admin_trabajando_id && orden.admin_trabajando_id !== userId) {
+      return res.status(423).json({
+        success: false,
+        message: `Esta orden está siendo editada por ${orden.admin_nombre || 'otro administrador'}`,
+        data: {
+          bloqueadoPor: orden.admin_nombre,
+          fechaBloqueo: orden.fecha_bloqueo,
+          ultimaActividad: orden.ultima_actividad
+        }
+      });
+    }
+
+    // Bloquear la sesión (db.query maneja el pool automáticamente)
+    const lockQuery = `
+      UPDATE ordenesdecompra
+      SET admin_trabajando_id = $1,
+          fecha_bloqueo = CURRENT_TIMESTAMP,
+          ultima_actividad = CURRENT_TIMESTAMP
+      WHERE ordencompraid = $2 AND tenant_id = $3
+      RETURNING admin_trabajando_id, fecha_bloqueo
+    `;
+    const lockResult = await db.query(lockQuery, [userId, ordenCompraId, tenant_id]);
+
+    res.json({
+      success: true,
+      message: 'Sesión bloqueada exitosamente',
+      data: {
+        bloqueadoPor: userId,
+        fechaBloqueo: lockResult.rows[0].fecha_bloqueo
+      }
+    });
+  } catch (error) {
+    console.error('Error al bloquear sesión:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al bloquear sesión de recepción'
+    });
+  }
+};
+
+/**
+ * Desbloquear sesión de recepción
+ * POST /api/admin/ordenes-compra/:id/desbloquear-sesion
+ */
+const desbloquearSesionRecepcion = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const userId = req.user?.id || req.user?.adminId;
+    const ordenCompraId = parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de orden de compra inválido'
+      });
+    }
+
+    const unlockQuery = `
+      UPDATE ordenesdecompra
+      SET admin_trabajando_id = NULL,
+          fecha_bloqueo = NULL,
+          ultima_actividad = NULL
+      WHERE ordencompraid = $1 AND tenant_id = $2 AND admin_trabajando_id = $3
+      RETURNING ordencompraid
+    `;
+    const result = await db.query(unlockQuery, [ordenCompraId, tenant_id, userId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se pudo desbloquear la sesión (no existe o no eres el propietario)'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Sesión desbloqueada exitosamente'
+    });
+  } catch (error) {
+    console.error('Error al desbloquear sesión:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al desbloquear sesión'
+    });
+  }
+};
+
+/**
+ * Verificar estado de bloqueo de sesión
+ * GET /api/admin/ordenes-compra/:id/verificar-bloqueo
+ */
+const verificarBloqueoSesion = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const userId = req.user?.id || req.user?.adminId;
+    const ordenCompraId = parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de orden de compra inválido'
+      });
+    }
+
+    const query = `
+      SELECT admin_trabajando_id, fecha_bloqueo, ultima_actividad,
+             (SELECT nombre FROM administradores WHERE adminid = admin_trabajando_id) as admin_nombre,
+             (SELECT rol FROM administradores WHERE adminid = admin_trabajando_id) as admin_rol
+      FROM ordenesdecompra
+      WHERE ordencompraid = $1 AND tenant_id = $2
+    `;
+    const result = await db.query(query, [ordenCompraId, tenant_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Orden de compra no encontrada'
+      });
+    }
+
+    const orden = result.rows[0];
+    const bloqueada = !!orden.admin_trabajando_id;
+    const esPropietario = orden.admin_trabajando_id === userId;
+
+    res.json({
+      success: true,
+      data: {
+        bloqueada,
+        bloqueadoPor: orden.admin_trabajando_id,
+        nombreAdmin: orden.admin_nombre,
+        rolAdmin: orden.admin_rol,
+        fechaBloqueo: orden.fecha_bloqueo,
+        ultimaActividad: orden.ultima_actividad,
+        esPropietario,
+        puedeEditar: !bloqueada || esPropietario
+      }
+    });
+  } catch (error) {
+    console.error('Error al verificar bloqueo:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al verificar estado de bloqueo'
+    });
+  }
+};
+
+/**
+ * Reasignar sesión a otro admin (solo super admin)
+ * POST /api/admin/ordenes-compra/:id/reasignar-sesion
+ * Body: { nuevoAdminId }
+ */
+const reasignarSesion = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const userRole = req.user?.rol || req.user?.roles?.[0];
+    const ordenCompraId = parseInt(req.params.id, 10);
+    const { nuevoAdminId } = req.body;
+
+    // Solo super admin puede reasignar sesiones
+    if (userRole !== 'superadmin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Solo los super administradores pueden reasignar sesiones'
+      });
+    }
+
+    if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de orden de compra inválido'
+      });
+    }
+
+    if (!Number.isInteger(nuevoAdminId) || nuevoAdminId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de administrador inválido'
+      });
+    }
+
+    // Verificar que el nuevo admin existe
+    const adminCheck = await db.query(
+      'SELECT adminid, nombre FROM administradores WHERE adminid = $1 AND tenant_id = $2',
+      [nuevoAdminId, tenant_id]
+    );
+
+    if (adminCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Administrador no encontrado'
+      });
+    }
+
+    // Reasignar la sesión
+    const updateQuery = `
+      UPDATE ordenesdecompra
+      SET admin_trabajando_id = $1,
+          fecha_bloqueo = CURRENT_TIMESTAMP,
+          ultima_actividad = CURRENT_TIMESTAMP
+      WHERE ordencompraid = $2 AND tenant_id = $3
+      RETURNING ordencompraid
+    `;
+    const result = await db.query(updateQuery, [nuevoAdminId, ordenCompraId, tenant_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Orden de compra no encontrada'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Sesión reasignada a ${adminCheck.rows[0].nombre}`,
+      data: {
+        nuevoAdminId,
+        nuevoAdminNombre: adminCheck.rows[0].nombre
+      }
+    });
+  } catch (error) {
+    console.error('Error al reasignar sesión:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al reasignar sesión'
+    });
+  }
+};
+
+/**
+ * Forzar liberación de sesión (solo super admin)
+ * POST /api/admin/ordenes-compra/:id/forzar-liberacion
+ */
+const forzarLiberacionSesion = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const userRole = req.user?.rol || req.user?.roles?.[0];
+    const ordenCompraId = parseInt(req.params.id, 10);
+
+    // Solo super admin puede forzar liberación
+    if (userRole !== 'superadmin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Solo los super administradores pueden forzar la liberación de sesiones'
+      });
+    }
+
+    if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de orden de compra inválido'
+      });
+    }
+
+    const unlockQuery = `
+      UPDATE ordenesdecompra
+      SET admin_trabajando_id = NULL,
+          fecha_bloqueo = NULL,
+          ultima_actividad = NULL
+      WHERE ordencompraid = $1 AND tenant_id = $2
+      RETURNING ordencompraid, admin_trabajando_id
+    `;
+    const result = await db.query(unlockQuery, [ordenCompraId, tenant_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Orden de compra no encontrada'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Sesión liberada forzosamente por super administrador'
+    });
+  } catch (error) {
+    console.error('Error al forzar liberación:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al forzar liberación de sesión'
+    });
+  }
+};
+
 const getAdministradoresOrdenesCompra = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
@@ -16758,6 +17096,11 @@ module.exports = {
   crearTipoProductoAdmin,
   getAllOrdenesCompra,
   getAdministradoresOrdenesCompra,
+  bloquearSesionRecepcion,
+  desbloquearSesionRecepcion,
+  verificarBloqueoSesion,
+  reasignarSesion,
+  forzarLiberacionSesion,
   getDetallesOrdenCompra,
   getRecepcionOrdenCompra,
   getComprasPendientes,

@@ -9,7 +9,6 @@ let resumenTipoData = null;
 let filtrosActivos = {};
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await cargarTiposAjuste();
   await cargarSesionesAuditoria();
   await cargarOrdenesCompra();
   configurarEventListeners();
@@ -113,65 +112,13 @@ async function cargarOrdenesCompra() {
 }
 
 /**
- * Cargar tipos de ajuste disponibles
+ * Los tipos de movimiento ahora están hardcoded en el HTML:
+ * - ORDEN_COMPRA: Entradas de Almacén (recepciones de OC)
+ * - AUDITORIA: Sesiones de Auditoría (conteos físicos)
+ * - AJUSTE_MANUAL: Ajustes Manuales genéricos
+ * - MERMA: Mermas específicas
+ * - ADICION: Adiciones específicas
  */
-async function cargarTiposAjuste() {
-  try {
-    const token = localStorage.getItem('razoconnect_admin_token');
-    if (!token) {
-      console.warn('⚠️ No hay token de autenticación');
-      return;
-    }
-
-    const response = await fetch('/api/admin/ajustes-inventario/tipos', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (!response.ok) {
-      console.error('❌ Error HTTP:', response.status, response.statusText);
-      throw new Error('Error al cargar tipos de ajuste');
-    }
-
-    const result = await response.json();
-    console.log('✅ Respuesta tipos ajuste:', result);
-    
-    // Verificar que result.data sea un array
-    if (!result.data || !Array.isArray(result.data)) {
-      console.error('❌ result.data no es un array:', result.data);
-      return;
-    }
-    
-    const tipos = result.data;
-    const select = document.getElementById('filtroTipoAjuste');
-    
-    if (!select) {
-      console.error('❌ No se encontró el elemento select #filtroTipoAjuste');
-      return;
-    }
-    
-    if (tipos.length === 0) {
-      const option = document.createElement('option');
-      option.value = '';
-      option.textContent = 'No hay tipos de ajuste';
-      option.disabled = true;
-      select.appendChild(option);
-      console.log('⚠️ No hay tipos de ajuste disponibles');
-    } else {
-      tipos.forEach(tipo => {
-        const option = document.createElement('option');
-        option.value = tipo;
-        option.textContent = formatearTipoAjuste(tipo);
-        select.appendChild(option);
-      });
-      console.log(`✅ Cargados ${tipos.length} tipos de ajuste`);
-    }
-  } catch (error) {
-    console.error('❌ Error cargando tipos de ajuste:', error);
-    // No bloquear la página si falla la carga de tipos
-  }
-}
 
 /**
  * Configurar event listeners
@@ -187,6 +134,11 @@ function configurarEventListeners() {
       if (e.key === 'Enter') aplicarFiltros();
     });
   });
+  
+  // Restablecer fechas por defecto al limpiar
+  document.getElementById('btnLimpiar').addEventListener('click', () => {
+    setTimeout(establecerFechasPorDefecto, 100);
+  });
 }
 
 /**
@@ -196,7 +148,7 @@ function configurarEventListeners() {
 async function aplicarFiltros() {
   const fechaInicio = document.getElementById('filtroFechaInicio').value;
   const fechaFin = document.getElementById('filtroFechaFin').value;
-  const tipoAjuste = document.getElementById('filtroTipoAjuste').value;
+  const tipoMovimiento = document.getElementById('filtroTipoMovimiento').value;
   const sesionId = document.getElementById('filtroSesion').value;
   const ordenCompraId = document.getElementById('filtroOrdenCompra').value;
   const referencia = document.getElementById('filtroReferencia').value.trim();
@@ -226,7 +178,7 @@ async function aplicarFiltros() {
   filtrosActivos = {
     fechaInicio,
     fechaFin,
-    tipoAjuste,
+    tipoMovimiento,
     referencia
   };
 
@@ -246,9 +198,9 @@ async function cargarAjustes() {
     if (filtrosActivos.fechaInicio) params.append('fechaInicio', filtrosActivos.fechaInicio);
     if (filtrosActivos.fechaFin) params.append('fechaFin', filtrosActivos.fechaFin);
     
-    // Solo agregar filtros si NO son "TODOS/TODAS" (que significa mostrar todos)
-    if (filtrosActivos.tipoAjuste && filtrosActivos.tipoAjuste !== 'TODOS') {
-      params.append('tipoAjuste', filtrosActivos.tipoAjuste);
+    // Filtrar por tipo de movimiento (tipo_origen en BD)
+    if (filtrosActivos.tipoMovimiento) {
+      params.append('tipoOrigen', filtrosActivos.tipoMovimiento);
     }
     if (filtrosActivos.referencia) params.append('referencia', filtrosActivos.referencia);
     
@@ -479,7 +431,7 @@ function renderizarResumenTipo() {
 function limpiarFiltros() {
   document.getElementById('filtroFechaInicio').value = '';
   document.getElementById('filtroFechaFin').value = '';
-  document.getElementById('filtroTipoAjuste').value = '';
+  document.getElementById('filtroTipoMovimiento').value = '';
   document.getElementById('filtroSesion').value = '';
   document.getElementById('filtroOrdenCompra').value = '';
   document.getElementById('filtroReferencia').value = '';
