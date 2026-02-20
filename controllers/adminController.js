@@ -1041,8 +1041,12 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
 
     await client.query("BEGIN");
 
+    const { tenant_id } = req.tenant;
+    const userRole = req.user.rol;
+    const userId = req.user.id;
+
     const ordenLock = await client.query(
-      `SELECT oc.ordencompraid, oc.estatus, oc.proveedorid, COALESCE(p.diascredito, 0) AS diascredito
+      `SELECT oc.ordencompraid, oc.estatus, oc.proveedorid, oc.admin_creador_id, COALESCE(p.diascredito, 0) AS diascredito
        FROM ordenesdecompra oc
        INNER JOIN proveedores p ON p.proveedorid = oc.proveedorid
        WHERE oc.ordencompraid = $1
@@ -1294,6 +1298,43 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
       const nuevoStockSafe = Number.isInteger(nuevoStock)
         ? nuevoStock
         : stockAnterior + piezasRecibidasAhora;
+
+      // CRÍTICO: Registrar en inventarios_admin usando admin_creador_id de la orden
+      const adminCreadorId = ordenLock.rows[0].admin_creador_id;
+      const adminIdRegistro = adminCreadorId || usuarioRecibeId || null;
+
+      if (adminIdRegistro) {
+        await client.query(
+          `INSERT INTO inventarios_admin (admin_id, variante_id, cantidad, registrado_por, ultima_actualizacion, tenant_id)
+           VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, $5)
+           ON CONFLICT (admin_id, variante_id)
+           DO UPDATE SET 
+             cantidad = inventarios_admin.cantidad + $3,
+             ultima_actualizacion = CURRENT_TIMESTAMP`,
+          [adminIdRegistro, varianteId, piezasRecibidasAhora, usuarioRecibeId, tenant_id]
+        );
+        
+        console.log(`📦 [STOCK ASSIGNMENT] Inventario asignado al Admin ID ${adminIdRegistro} (OC #${ordenCompraId}, Recepción Masiva)`);
+
+        // Registrar movimiento en Kardex
+        try {
+          const kardexService = require('../services/kardexService');
+          await kardexService.registrarMovimiento({
+            varianteId: varianteId,
+            adminId: adminIdRegistro,
+            tenantId: tenant_id,
+            tipo: 'ENTRADA',
+            cantidad: piezasRecibidasAhora,
+            motivo: 'COMPRA',
+            referenciaTipo: 'ORDEN_COMPRA',
+            referenciaId: `OC-${ordenCompraId}`,
+            observaciones: `Recepción masiva - Lote: ${referenciaProveedor}. SKU: ${detalle.sku}`,
+            ipOrigen: req.ip || req.connection?.remoteAddress
+          }, client);
+        } catch (kardexError) {
+          console.error('⚠️ [KARDEX] Error al registrar movimiento de entrada:', kardexError.message);
+        }
+      }
 
       productosActualizados.push({
         detalleId,
