@@ -77,8 +77,8 @@ async function cargarOrdenesCompra() {
     const token = localStorage.getItem('razoconnect_admin_token');
     if (!token) return;
 
-    // Solo cargar órdenes RECIBIDAS (que ya entraron al inventario)
-    const response = await fetch('/api/admin/ordenes-compra?estatus=Recibida', {
+    // Solo cargar órdenes que tengan recepciones (Completa o Parcial)
+    const response = await fetch('/api/admin/ordenes-compra?estatus=Pendiente,Parcial', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -706,13 +706,24 @@ function obtenerBadgeOrigen(tipoOrigen) {
 
 /**
  * Obtener HTML de referencia clickeable según el origen
- * ✅ NUEVO: Referencias clickeables a OC o Sesión de Auditoría
+ * ✅ NUEVO: Referencias clickeables a OC o Sesión de Auditoría con indicador de estado
  */
 function obtenerReferenciaHTML(ajuste) {
   if (ajuste.ordenCompraId) {
-    return `<a href="/admin-ordenes-compra.html" class="referencia-origen" title="Ver Orden de Compra #${ajuste.ordenCompraNumero}" onclick="event.preventDefault(); window.location.href='/admin-ordenes-compra.html';">
-      <i class="bi bi-box-arrow-up-right"></i> OC #${ajuste.ordenCompraNumero}
-    </a>`;
+    // Indicador de estado de recepción (Completa/Parcial)
+    let estadoBadge = '';
+    if (ajuste.estadoRecepcion === 'Completa') {
+      estadoBadge = '<span style="display: inline-block; margin-left: 0.5rem; background: #10b981; color: white; padding: 0.15rem 0.5rem; border-radius: 0.75rem; font-size: 0.7rem; font-weight: 600;"><i class="bi bi-check-circle-fill"></i> Completa</span>';
+    } else if (ajuste.estadoRecepcion === 'Parcial') {
+      estadoBadge = '<span style="display: inline-block; margin-left: 0.5rem; background: #f59e0b; color: white; padding: 0.15rem 0.5rem; border-radius: 0.75rem; font-size: 0.7rem; font-weight: 600;"><i class="bi bi-clock-fill"></i> Parcial</span>';
+    }
+    
+    return `<div style="display: flex; align-items: center; gap: 0.25rem;">
+      <a href="/admin-ordenes-compra.html" class="referencia-origen" title="Ver Orden de Compra #${ajuste.ordenCompraNumero}" onclick="event.preventDefault(); window.location.href='/admin-ordenes-compra.html';">
+        <i class="bi bi-box-arrow-up-right"></i> OC #${ajuste.ordenCompraNumero}
+      </a>
+      ${estadoBadge}
+    </div>`;
   }
   
   if (ajuste.sesionAuditoriaId) {
