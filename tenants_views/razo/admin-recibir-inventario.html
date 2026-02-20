@@ -425,6 +425,8 @@
                 <th style="width: 60px;">Imagen</th>
                 <th>Producto</th>
                 <th style="width: 150px;">SKU</th>
+                <th style="width: 120px;">Medida</th>
+                <th style="width: 150px;">Color</th>
                 <th style="width: 120px;">Solicitado</th>
                 <th style="width: 120px;">Recibido</th>
                 <th style="width: 100px;"></th>
@@ -432,7 +434,7 @@
             </thead>
             <tbody id="tbodyProductosOrden">
               <tr>
-                <td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">
+                <td colspan="8" style="text-align: center; padding: 2rem; color: #6b7280;">
                   Cargando productos de la orden...
                 </td>
               </tr>
@@ -2011,7 +2013,7 @@
         const items = Array.isArray(currentState.items) ? currentState.items : [];
         
         if (items.length === 0) {
-          tbodyProductosOrden.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">No hay productos en la orden</td></tr>';
+          tbodyProductosOrden.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #6b7280;">No hay productos en la orden</td></tr>';
           return;
         }
 
@@ -2030,6 +2032,16 @@
             </td>
             <td><strong>${safeText(item.nombreProducto)}</strong></td>
             <td><code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(item.sku)}</code></td>
+            <td>${item.dimensiones || '—'}</td>
+            <td>
+              ${item.colorNombre 
+                ? `<div style="display: flex; align-items: center; gap: 0.5rem;">
+                     <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: ${item.colorHex || '#ccc'}; border: 1px solid #ddd;"></span>
+                     <span>${safeText(item.colorNombre)}</span>
+                   </div>`
+                : '—'
+              }
+            </td>
             <td style="text-align: center;">${solicitado} pzas</td>
             <td style="text-align: center; color: ${recibido > 0 ? '#10b981' : '#6b7280'}; font-weight: 700;">${recibido} pzas</td>
             <td style="text-align: center;">
