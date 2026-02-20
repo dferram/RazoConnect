@@ -245,15 +245,16 @@ async function generarPDFPedido(req, res) {
             doc.fillColor('#FFFFFF')
                .text('CANT.', 55, headerY + 6)
                .text('DESCRIPCIÓN', 110, headerY + 6)
-               .text('TAMAÑO', 340, headerY + 6)
-               .text('PRECIO UNIT.', 410, headerY + 6)
+               .text('TAMAÑO', 290, headerY + 6)
+               .text('ESTADO', 350, headerY + 6)
+               .text('P. UNIT.', 420, headerY + 6)
                .text('TOTAL', 480, headerY + 6, { align: 'right', width: 75 });
 
             return headerY + 30;
         };
 
         // Helper function to render items (SMART PAGINATION)
-        const renderItems = (items, startY, alternateColor = '#F9F9F9') => {
+        const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = '') => {
             let currentY = startY;
             doc.font('Helvetica').fillColor('#333333');
 
@@ -278,14 +279,47 @@ async function generarPDFPedido(req, res) {
                 const cantidadSegura = Math.round(parseInt(item.cantidad) || 0);
                 const tamanoSeguro = Math.round(parseInt(item.tamano_cantidad) || 1);
                 
+                // Determinar estado del badge
+                const stockActual = parseInt(item.stock_actual_variante) || 0;
+                const cantidadRequerida = cantidadSegura * tamanoSeguro;
+                const hayStockSuficiente = stockActual >= cantidadRequerida;
+                const pedidoConfirmado = pedidoEstatus && pedidoEstatus.toLowerCase() === 'confirmado';
+                
+                let badgeColor, badgeText;
+                if (!hayStockSuficiente) {
+                    badgeColor = '#DC2626'; // Rojo
+                    badgeText = 'BAJO PEDIDO';
+                } else if (pedidoConfirmado) {
+                    badgeColor = '#F97316'; // Naranja
+                    badgeText = 'SURTIDO';
+                } else {
+                    badgeColor = '#16A34A'; // Verde
+                    badgeText = 'CON STOCK';
+                }
+                
                 doc.fillColor('#333333')
                    .fontSize(9)
                    .font('Helvetica')
                    .text(cantidadSegura, 55, currentY)
-                   .text(descripcionLinea1, 110, currentY, { width: 220 })
-                   .text(descripcionLinea2, 110, currentY + 10, { width: 220 })
-                   .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unitario', 340, currentY)
-                   .text(`$${parseFloat(item.preciounitario).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 410, currentY)
+                   .text(descripcionLinea1, 110, currentY, { width: 170 })
+                   .text(descripcionLinea2, 110, currentY + 10, { width: 170 })
+                   .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unit.', 290, currentY);
+                
+                // Badge de estado con color
+                doc.save();
+                doc.roundedRect(350, currentY - 2, 60, 12, 3)
+                   .fillAndStroke(badgeColor, badgeColor);
+                doc.restore();
+                
+                doc.fontSize(7)
+                   .font('Helvetica-Bold')
+                   .fillColor('#FFFFFF')
+                   .text(badgeText, 350, currentY + 1, { width: 60, align: 'center' });
+                
+                doc.fillColor('#333333')
+                   .fontSize(9)
+                   .font('Helvetica')
+                   .text(`$${parseFloat(item.preciounitario).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 420, currentY)
                    .text(`$${parseFloat(item.subtotal).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 480, currentY, { align: 'right', width: 75 });
 
                 currentY += rowHeight;
@@ -297,7 +331,7 @@ async function generarPDFPedido(req, res) {
         // Render IN-STOCK items section
         if (itemsEnExistencia.length > 0) {
             yPosition = renderTableHeader('PRODUCTOS LISTOS PARA ENTREGA', yPosition, '#F97316');
-            yPosition = renderItems(itemsEnExistencia, yPosition, '#F9F9F9');
+            yPosition = renderItems(itemsEnExistencia, yPosition, '#F9F9F9', pedido.estatus);
             yPosition += 10;
         }
 
@@ -309,7 +343,7 @@ async function generarPDFPedido(req, res) {
             }
 
             yPosition = renderTableHeader('PRODUCTOS BAJO PEDIDO (PENDIENTES)', yPosition, '#DC2626');
-            yPosition = renderItems(itemsBajoPedido, yPosition, '#FEE2E2');
+            yPosition = renderItems(itemsBajoPedido, yPosition, '#FEE2E2', pedido.estatus);
             
             // Add informative note immediately after backorder table
             yPosition += 5;
