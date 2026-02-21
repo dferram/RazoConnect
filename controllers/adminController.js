@@ -3081,7 +3081,19 @@ const getAjustesInventarioFiltrados = async (req, res) => {
          oc.OrdenCompraID AS oc_numero,
          oc.Estatus AS oc_estatus,
          ts.nombre AS sesion_nombre,
-         ts.estatus AS sesion_estatus
+         ts.estatus AS sesion_estatus,
+         CASE 
+           WHEN li.orden_compra_id IS NOT NULL THEN (
+             SELECT CASE 
+               WHEN COALESCE(SUM(doc.cantidadrecibida), 0) = 0 THEN 'Pendiente'
+               WHEN COALESCE(SUM(doc.cantidadrecibida), 0) >= COALESCE(SUM(doc.cantidadsolicitada), 0) THEN 'Completa'
+               ELSE 'Parcial'
+             END
+             FROM detallesordencompra doc
+             WHERE doc.ordencompraid = li.orden_compra_id
+           )
+           ELSE NULL
+         END AS estado_recepcion
        FROM log_inventario li
        INNER JOIN producto_variantes pv ON pv.varianteid = li.varianteid
        INNER JOIN productos p ON p.productoid = pv.productoid
@@ -3145,6 +3157,7 @@ const getAjustesInventarioFiltrados = async (req, res) => {
         ordenCompraId: r.orden_compra_id,
         ordenCompraNumero: r.oc_numero,
         ordenCompraEstatus: r.oc_estatus,
+        estadoRecepcion: r.estado_recepcion,
         sesionAuditoriaId: r.sesion_auditoria_id,
         sesionNombre: r.sesion_nombre,
         sesionEstatus: r.sesion_estatus,
@@ -17204,12 +17217,164 @@ module.exports = {
   getVariantesProveedor,
   agregarProductoAOrdenCompra,
   quitarProductoDeOrdenCompra,
-  getSugerenciasOptimizacion,
-  crearGrupoOptimizado,
   getAjustesInventarioFiltrados,
   getTiposAjusteInventario,
   searchVariantesMovimientos,
+  getSugerenciasOptimizacion,
+  crearGrupoOptimizado,
+  getOrdenesCompraReportes,
+  getOrdenCompraReporteDetallado,
 };
+
+/**
+ * Obtener órdenes de compra para reportes con estado de recepción
+ * GET /api/admin/ordenes-compra/reportes
+ */
+async function getOrdenesCompraReportes(req, res) {
+  try {
+    const { tenant_id } = req.tenant;
+    const userId = req.user.id;
+    const userRol = req.user.rol;
+
+    // Filtro por admin si no es super admin
+    let adminFilter = '';
+    const queryParams = [tenant_id];
+
+    if (userRol !== 'superadmin') {
+      queryParams.push(userId);
+      adminFilter = `AND oc.admin_creador_id = $${queryParams.length}`;
+    }
+
+    const result = await db.query(
+      `SELECT 
+         oc.ordencompraid,
+         oc.proveedorid,
+         oc.fechacreacion,
+         oc.estatus,
+         oc.admin_creador_id,
+         p.nombreempresa AS proveedor_nombre,
+         a.nombre AS admin_nombre,
+         COUNT(DISTINCT doc.detalleoc_id) AS total_productos,
+         COALESCE(SUM(doc.cantidadsolicitada * pv.piezasporpaquete), 0) AS piezas_solicitadas,
+         COALESCE(SUM(doc.cantidadrecibida * pv.piezasporpaquete), 0) AS piezas_recibidas,
+         MAX(li.fecha) AS ultima_recepcion,
+         COUNT(DISTINCT li.logid) AS total_recepciones,
+         CASE 
+           WHEN COALESCE(SUM(doc.cantidadrecibida), 0) = 0 THEN 'Pendiente'
+           WHEN COALESCE(SUM(doc.cantidadrecibida), 0) >= COALESCE(SUM(doc.cantidadsolicitada), 0) THEN 'Completa'
+           ELSE 'Parcial'
+         END AS estado_recepcion
+       FROM ordenesdecompra oc
+       INNER JOIN proveedores p ON oc.proveedorid = p.proveedorid
+       LEFT JOIN administradores a ON oc.admin_creador_id = a.adminid
+       LEFT JOIN detallesordencompra doc ON oc.ordencompraid = doc.ordencompraid
+       LEFT JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
+       LEFT JOIN log_inventario li ON li.orden_compra_id = oc.ordencompraid AND li.tipo_origen = 'ORDEN_COMPRA'
+       WHERE oc.tenant_id = $1 ${adminFilter}
+       GROUP BY oc.ordencompraid, oc.proveedorid, oc.fechacreacion, oc.estatus, oc.admin_creador_id, p.nombreempresa, a.nombre
+       ORDER BY oc.fechacreacion DESC`,
+      queryParams
+    );
+
+    return res.json({
+      success: true,
+      ordenes: result.rows
+    });
+  } catch (error) {
+    console.error('Error al obtener órdenes para reportes:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener órdenes de compra',
+      error: error.message
+    });
+  }
+}
+
+/**
+ * Obtener detalle completo de una orden para reporte PDF
+ * GET /api/admin/ordenes-compra/:id/reporte-detallado
+ */
+async function getOrdenCompraReporteDetallado(req, res) {
+  try {
+    const { tenant_id } = req.tenant;
+    const ordenId = Number.parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(ordenId) || ordenId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de orden inválido'
+      });
+    }
+
+    // Obtener información de la orden
+    const ordenResult = await db.query(
+      `SELECT 
+         oc.ordencompraid,
+         oc.proveedorid,
+         oc.fechacreacion,
+         oc.fechaentregaesperada,
+         oc.estatus,
+         oc.admin_creador_id,
+         p.nombreempresa AS proveedor_nombre,
+         a.nombre AS admin_nombre,
+         CASE 
+           WHEN COALESCE(SUM(doc.cantidadrecibida), 0) = 0 THEN 'Pendiente'
+           WHEN COALESCE(SUM(doc.cantidadrecibida), 0) >= COALESCE(SUM(doc.cantidadsolicitada), 0) THEN 'Completa'
+           ELSE 'Parcial'
+         END AS estado_recepcion
+       FROM ordenesdecompra oc
+       INNER JOIN proveedores p ON oc.proveedorid = p.proveedorid
+       LEFT JOIN administradores a ON oc.admin_creador_id = a.adminid
+       LEFT JOIN detallesordencompra doc ON oc.ordencompraid = doc.ordencompraid
+       WHERE oc.ordencompraid = $1 AND oc.tenant_id = $2
+       GROUP BY oc.ordencompraid, oc.proveedorid, oc.fechacreacion, oc.fechaentregaesperada, oc.estatus, oc.admin_creador_id, p.nombreempresa, a.nombre`,
+      [ordenId, tenant_id]
+    );
+
+    if (ordenResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Orden de compra no encontrada'
+      });
+    }
+
+    // Obtener detalles de productos
+    const detallesResult = await db.query(
+      `SELECT 
+         doc.detalleoc_id AS detalleordencompraid,
+         doc.varianteid,
+         doc.cantidadsolicitada AS cantidad_solicitada,
+         doc.cantidadrecibida AS cantidad_recibida,
+         pv.sku,
+         pv.dimensiones,
+         pv.piezasporpaquete AS piezas_por_paquete,
+         pv.costounitario,
+         pv.color_nombre AS color,
+         p.nombreproducto
+       FROM detallesordencompra doc
+       INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
+       INNER JOIN productos p ON pv.productoid = p.productoid
+       WHERE doc.ordencompraid = $1
+       ORDER BY p.nombreproducto, pv.dimensiones`,
+      [ordenId]
+    );
+
+    return res.json({
+      success: true,
+      orden: {
+        ...ordenResult.rows[0],
+        detalles: detallesResult.rows
+      }
+    });
+  } catch (error) {
+    console.error('Error al obtener detalle de orden:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener detalle de la orden',
+      error: error.message
+    });
+  }
+}
 
 async function getSugerenciasOptimizacion(req, res) {
   try {

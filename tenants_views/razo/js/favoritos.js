@@ -43,6 +43,34 @@ const FavoritosManager = {
     }
   },
 
+  async toggleFromCatalog(productoId) {
+    const token = this.getToken();
+    if (!token) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Inicia sesión',
+        text: 'Debes iniciar sesión para agregar productos a favoritos',
+        confirmButtonColor: '#F97316',
+        confirmButtonText: 'Ir a login'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.location.href = '/login.html';
+        }
+      });
+      return { success: false };
+    }
+
+    // Abrir modal de selección de medida
+    if (typeof window.abrirModalVariantes === 'function') {
+      window.abrirModalVariantes(productoId, 'favorito');
+      return { success: true, needsVariantSelection: true };
+    } else {
+      // Fallback: redirigir a producto-detalle
+      window.location.href = `/producto-detalle.html?id=${productoId}`;
+      return { success: false };
+    }
+  },
+
   async toggle(varianteId) {
     const token = this.getToken();
     if (!token) {
@@ -132,14 +160,19 @@ const FavoritosManager = {
     return this.favoritos.has(varianteId);
   },
 
-  renderIcon(varianteId, container) {
+  renderIcon(varianteId, container, productoId = null) {
     if (!container) return;
 
-    const esFav = this.esFavorito(varianteId);
+    const esFav = varianteId ? this.esFavorito(varianteId) : false;
     
     const icon = document.createElement('button');
-    icon.className = 'btn-favorito';
-    icon.setAttribute('data-variante-id', varianteId);
+    icon.className = 'btn-favorito-card';
+    if (varianteId) {
+      icon.setAttribute('data-variante-id', varianteId);
+    }
+    if (productoId) {
+      icon.setAttribute('data-producto-id', productoId);
+    }
     icon.innerHTML = esFav 
       ? '<i class="bi bi-heart-fill"></i>' 
       : '<i class="bi bi-heart"></i>';
@@ -153,15 +186,23 @@ const FavoritosManager = {
       icon.disabled = true;
       icon.style.opacity = '0.6';
       
-      const result = await this.toggle(varianteId);
+      let result;
       
-      if (result.success) {
-        // Actualizar icono con animación
-        const iconElement = icon.querySelector('i');
-        iconElement.className = result.esFavorito 
-          ? 'bi bi-heart-fill' 
-          : 'bi bi-heart';
-        icon.title = result.esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos';
+      // Si es desde catálogo (tiene productoId pero no varianteId específica)
+      if (productoId && !varianteId) {
+        result = await this.toggleFromCatalog(productoId);
+      } else if (varianteId) {
+        // Si es desde producto-detalle (tiene varianteId)
+        result = await this.toggle(varianteId);
+        
+        if (result.success) {
+          // Actualizar icono con animación
+          const iconElement = icon.querySelector('i');
+          iconElement.className = result.esFavorito 
+            ? 'bi bi-heart-fill' 
+            : 'bi bi-heart';
+          icon.title = result.esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos';
+        }
       }
       
       // Rehabilitar botón

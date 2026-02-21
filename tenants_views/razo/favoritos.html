@@ -4,77 +4,70 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mis Favoritos - RazoConnect</title>
+  <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="/tenants_views/razo/css/favoritos.css">
-  <link rel="stylesheet" href="/tenants_views/razo/css/cliente-dashboard.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/favoritos.css">
   
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
   <div id="header-container"></div>
 
-  <div class="container py-5">
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="d-flex align-items-center justify-content-between">
-          <div>
-            <h1 class="mb-2">
-              <i class="bi bi-heart-fill text-danger me-2"></i>
-              Mis Favoritos
-            </h1>
-            <p class="text-muted mb-0">Productos que has guardado para comprar después</p>
+  <main class="main-content">
+    <div class="container-fluid px-4 py-4">
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+          <h1 class="page-title mb-1">
+            <i class="bi bi-heart-fill" style="color: #F97316;"></i>
+            Mis Favoritos
+          </h1>
+          <p class="text-muted mb-0">Productos que has guardado para comprar después</p>
+        </div>
+        <span id="total-favoritos" class="badge" style="background: #F97316; font-size: 0.9rem; padding: 0.5rem 1rem;">
+          0 productos
+        </span>
+      </div>
+
+      <div id="notificaciones-restock" class="alert d-none mb-4" style="background: #FFF7ED; border-left: 4px solid #F97316; border-radius: 8px;" role="alert">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-bell-fill me-3" style="font-size: 1.5rem; color: #F97316;"></i>
+          <div class="flex-grow-1">
+            <strong style="color: #333;">¡Tienes productos disponibles!</strong>
+            <p class="mb-0 text-muted">Algunos de tus productos favoritos que estaban agotados ya están disponibles.</p>
           </div>
-          <div>
-            <span id="total-favoritos" class="badge bg-primary" style="font-size: 1rem; padding: 0.5rem 1rem;">
-              0 productos
-            </span>
-          </div>
+          <button type="button" class="btn btn-sm" style="background: #F97316; color: white;" id="btn-marcar-leidas">
+            Marcar como visto
+          </button>
         </div>
       </div>
-    </div>
 
-    <div id="notificaciones-restock" class="alert alert-info d-none mb-4" role="alert">
-      <div class="d-flex align-items-center">
-        <i class="bi bi-bell-fill me-2" style="font-size: 1.5rem;"></i>
-        <div class="flex-grow-1">
-          <strong>¡Tienes productos disponibles!</strong>
-          <p class="mb-0">Algunos de tus productos favoritos que estaban agotados ya están disponibles.</p>
+      <div id="loading-favoritos" class="text-center py-5">
+        <div class="spinner-border" style="color: #F97316;" role="status">
+          <span class="visually-hidden">Cargando...</span>
         </div>
-        <button type="button" class="btn btn-sm btn-primary" id="btn-marcar-leidas">
-          Marcar como visto
-        </button>
+        <p class="mt-3 text-muted">Cargando tus favoritos...</p>
+      </div>
+
+      <div id="favoritos-container" class="productos-grid d-none">
+      </div>
+
+      <div id="favoritos-empty" class="text-center py-5 d-none">
+        <i class="bi bi-heart" style="font-size: 4rem; color: #E5E7EB;"></i>
+        <h3 class="mt-3 mb-2">No tienes favoritos aún</h3>
+        <p class="text-muted mb-4">Explora nuestro catálogo y agrega productos a tu lista de favoritos</p>
+        <a href="/catalogo.html" class="btn btn-lg" style="background: #F97316; color: white; border: none;">
+          <i class="bi bi-grid-3x3-gap me-2"></i>
+          Ver Catálogo
+        </a>
       </div>
     </div>
-
-    <div id="loading-favoritos" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Cargando...</span>
-      </div>
-      <p class="mt-3 text-muted">Cargando tus favoritos...</p>
-    </div>
-
-    <div id="favoritos-container" class="row g-4 d-none">
-    </div>
-
-    <div id="favoritos-empty" class="favorito-empty d-none">
-      <i class="bi bi-heart"></i>
-      <h3>No tienes favoritos aún</h3>
-      <p>Explora nuestro catálogo y agrega productos a tu lista de favoritos</p>
-      <a href="/catalogo.html" class="btn btn-primary btn-lg">
-        <i class="bi bi-grid-3x3-gap me-2"></i>
-        Ver Catálogo
-      </a>
-    </div>
-  </div>
-
-  <div id="footer-container"></div>
+  </main>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="/tenants_views/razo/js/components/header-loader.js"></script>
-  <script src="/tenants_views/razo/js/components/footer-loader.js"></script>
-  <script src="/tenants_views/razo/js/favoritos.js"></script>
+  <script src="js/components/header-loader.js"></script>
   <script>
     let favoritos = [];
 
@@ -141,51 +134,55 @@
         const tieneOferta = fav.precioOferta !== null;
 
         const card = document.createElement('div');
-        card.className = 'col-12 col-md-6 col-lg-4';
+        card.className = 'producto-card';
         card.innerHTML = `
-          <div class="favorito-card">
-            <img src="${fav.imagenUrl}" alt="${fav.nombreProducto}" class="favorito-card-image">
+          <div class="producto-card-inner">
+            <div class="producto-imagen-container">
+              <img src="${fav.imagenUrl}" alt="${fav.nombreProducto}" class="producto-imagen">
+              <button class="btn-favorito-card active" data-variante-id="${fav.varianteId}">
+                <i class="bi bi-heart-fill"></i>
+              </button>
+              ${!fav.disponible ? '<div class="badge-agotado">Agotado</div>' : ''}
+            </div>
             
-            <button class="btn-favorito" data-variante-id="${fav.varianteId}">
-              <i class="bi bi-heart-fill"></i>
-            </button>
-
-            <div class="favorito-card-body">
-              <h5 class="favorito-card-title">${fav.nombreProducto}</h5>
-              <p class="favorito-card-sku">SKU: ${fav.sku}</p>
-
-              ${fav.dimensiones ? `<p class="text-muted mb-2"><small>${fav.dimensiones}</small></p>` : ''}
+            <div class="producto-info">
+              <h3 class="producto-nombre">${fav.nombreProducto}</h3>
+              <p class="producto-sku">SKU: ${fav.sku}</p>
+              
+              ${fav.dimensiones ? `<p class="producto-dimensiones">${fav.dimensiones}</p>` : ''}
               ${fav.colorNombre ? `
-                <div class="mb-2">
-                  <span class="badge" style="background: ${fav.colorHex || '#6B7280'}; color: white;">
+                <div class="producto-color mb-2">
+                  <span class="color-badge" style="background: ${fav.colorHex || '#6B7280'};">
                     ${fav.colorNombre}
                   </span>
                 </div>
               ` : ''}
-
-              <div class="favorito-card-price">
-                $${precioFinal.toFixed(2)}
-                ${tieneOferta ? `<span class="favorito-card-price-oferta">$${fav.precioUnitario.toFixed(2)}</span>` : ''}
+              
+              <div class="producto-precio">
+                <span class="precio-actual">$${precioFinal.toFixed(2)}</span>
+                ${tieneOferta ? `<span class="precio-anterior">$${fav.precioUnitario.toFixed(2)}</span>` : ''}
               </div>
-
-              <span class="favorito-card-stock ${fav.disponible ? 'disponible' : 'agotado'}">
-                ${fav.disponible ? `✓ Disponible (${fav.stockDisponible} pzas)` : '✗ Agotado'}
-              </span>
-
+              
+              ${fav.disponible ? `
+                <p class="producto-stock"><i class="bi bi-check-circle-fill"></i> Disponible (${fav.stockDisponible} pzas)</p>
+              ` : `
+                <p class="producto-stock-agotado"><i class="bi bi-x-circle-fill"></i> Sin stock</p>
+              `}
+              
               ${fav.alertaRestockActiva ? `
-                <div class="favorito-card-alerta">
+                <div class="alerta-restock">
                   <i class="bi bi-bell-fill"></i>
-                  <span>Te notificaremos cuando vuelva a estar disponible</span>
+                  <span>Te avisaremos cuando esté disponible</span>
                 </div>
               ` : ''}
-
-              <div class="favorito-card-actions">
-                <a href="/producto-detalle.html?id=${fav.varianteId}" class="btn btn-outline-primary">
-                  <i class="bi bi-eye me-1"></i> Ver
+              
+              <div class="producto-acciones">
+                <a href="/producto-detalle.html?id=${fav.productoId}" class="btn-ver-opciones">
+                  Ver opciones
                 </a>
                 ${fav.disponible ? `
-                  <button class="btn btn-primary" onclick="agregarAlCarrito(${fav.varianteId})">
-                    <i class="bi bi-cart-plus me-1"></i> Agregar
+                  <button class="btn-agregar-carrito" onclick="agregarAlCarrito(${fav.varianteId})">
+                    <i class="bi bi-cart-plus"></i>
                   </button>
                 ` : ''}
               </div>
@@ -193,7 +190,7 @@
           </div>
         `;
 
-        const btnFavorito = card.querySelector('.btn-favorito');
+        const btnFavorito = card.querySelector('.btn-favorito-card');
         btnFavorito.addEventListener('click', async (e) => {
           e.preventDefault();
           await eliminarFavorito(fav.varianteId);

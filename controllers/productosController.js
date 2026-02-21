@@ -1431,6 +1431,60 @@ const buscarProductosAutocomplete = async (req, res) => {
   }
 };
 
+/**
+ * Obtener variantes de un producto con stock disponible
+ * GET /api/productos/:id/variantes
+ */
+const obtenerVariantesProducto = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const productoId = parseInt(req.params.id, 10);
+
+    if (!productoId || isNaN(productoId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de producto inválido'
+      });
+    }
+
+    const query = `
+      SELECT 
+        pv.varianteid,
+        pv.sku,
+        pv.dimensiones,
+        pv.color_nombre,
+        pv.color_hex,
+        pv.preciounitario,
+        pv.precioofertaunitario,
+        pv.piezasporpaquete,
+        COALESCE(SUM(sa.cantidad), 0) as stock_disponible
+      FROM producto_variantes pv
+      LEFT JOIN stock_admin sa ON pv.varianteid = sa.variante_id AND sa.tenant_id = $2
+      WHERE pv.productoid = $1
+        AND pv.activo = true
+      GROUP BY 
+        pv.varianteid, pv.sku, pv.dimensiones, pv.color_nombre, 
+        pv.color_hex, pv.preciounitario, pv.precioofertaunitario, pv.piezasporpaquete
+      ORDER BY pv.dimensiones, pv.color_nombre
+    `;
+
+    const result = await db.query(query, [productoId, tenant_id]);
+
+    return res.json({
+      success: true,
+      variantes: result.rows
+    });
+
+  } catch (error) {
+    console.error('Error al obtener variantes del producto:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al obtener variantes del producto',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   obtenerProveedoresPublicos,
   obtenerTiposProductoPublicos,
@@ -1441,4 +1495,5 @@ module.exports = {
   obtenerCategorias,
   obtenerAgentesPublicos,
   buscarProductosAutocomplete,
+  obtenerVariantesProducto,
 };

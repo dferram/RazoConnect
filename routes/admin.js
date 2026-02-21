@@ -1118,6 +1118,12 @@ router.get(
   adminController.getAllOrdenesCompra
 );
 router.get(
+  "/ordenes-compra/reportes",
+  authenticate,
+  authorizeAdmin,
+  adminController.getOrdenesCompraReportes
+);
+router.get(
   "/ordenes-compra/administradores",
   authenticate,
   authorizeAdmin,
@@ -1134,6 +1140,12 @@ router.get(
   authenticate,
   authorizeAdmin,
   adminController.getRecepcionOrdenCompra
+);
+router.get(
+  "/ordenes-compra/:id/reporte-detallado",
+  authenticate,
+  authorizeAdmin,
+  adminController.getOrdenCompraReporteDetallado
 );
 router.get(
   "/productos/variantes-proveedor/:proveedorId",

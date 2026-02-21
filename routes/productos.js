@@ -74,4 +74,11 @@ router.get("/productos/search", productosController.buscarProductosAutocomplete)
  */
 router.get("/productos/:id", productosController.obtenerProductoPorId);
 
+/**
+ * @route   GET /api/productos/:id/variantes
+ * @desc    Obtener variantes de un producto con stock disponible
+ * @access  Public
+ */
+router.get("/productos/:id/variantes", productosController.obtenerVariantesProducto);
+
 module.exports = router;
