@@ -1,5 +1,13 @@
 require("dotenv").config();
 
+// ============================================================================
+// AUDITORÍA DE SEGURIDAD AL INICIO
+// ============================================================================
+// Validar que todas las variables de entorno críticas estén configuradas
+// y que los secretos sean suficientemente fuertes (OWASP Security Misconfiguration)
+const { runSecurityAudit } = require("./utils/secretsValidator");
+runSecurityAudit();
+
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
@@ -34,11 +42,28 @@ const inventarioRoutes = require("./routes/inventario");
 const devolucionesRoutes = require("./routes/devoluciones");
 const favoritosRoutes = require("./routes/favoritos");
 
-// Importar middlewares
+// Importar middlewares de seguridad
 const tenantGuard = require("./middlewares/tenantGuard");
 const validateUserTenant = require("./middlewares/validateUserTenant");
 const createDynamicSessionMiddleware = require("./middlewares/dynamicSessionConfig");
 const noCacheMiddleware = require("./middlewares/noCacheMiddleware");
+
+// ============================================================================
+// MIDDLEWARES DE SEGURIDAD (OWASP Best Practices)
+// ============================================================================
+const { 
+  securityHeaders, 
+  preventParameterPollution, 
+  limitPayloadSize,
+  sanitizeErrors 
+} = require("./middlewares/securityHeaders");
+const { 
+  sanitizeInputs, 
+  preventSQLInjection 
+} = require("./middlewares/inputValidator");
+const { 
+  apiLimiter 
+} = require("./middlewares/rateLimiter");
 
 // Inicializar la aplicación Express
 const app = express();
@@ -48,13 +73,43 @@ const PORT = process.env.PORT || 3000;
 // Habilitar proxy (CRÍTICO para Azure - terminación SSL)
 app.set('trust proxy', 1);
 
-// Middlewares
+// ============================================================================
+// MIDDLEWARES DE SEGURIDAD GLOBALES
+// ============================================================================
+
+// 1. CABECERAS DE SEGURIDAD (OWASP Security Headers)
+// Aplica CSP, X-Frame-Options, HSTS, etc.
+app.use(securityHeaders);
+
+// 2. PREVENCIÓN DE PARAMETER POLLUTION
+// Previene ataques HPP (HTTP Parameter Pollution)
+app.use(preventParameterPollution);
+
+// 3. LÍMITE DE TAMAÑO DE PAYLOAD
+// Previene ataques DoS mediante payloads masivos
+app.use(limitPayloadSize('10mb'));
+
+// 4. CORS CONFIGURADO (mantener configuración existente)
 app.use(cors({
   origin: true,
   credentials: true
 })); // Habilitar CORS con credenciales
-app.use(express.json()); // Parsear JSON en el body de las peticiones
-app.use(express.urlencoded({ extended: true })); // Parsear datos de formularios
+
+// 5. PARSEO DE JSON Y URL-ENCODED
+app.use(express.json({ limit: '10mb' })); // Parsear JSON con límite de tamaño
+app.use(express.urlencoded({ extended: true, limit: '10mb' })); // Parsear datos de formularios
+
+// 6. SANITIZACIÓN DE INPUTS (Previene XSS y SQL Injection básicos)
+// Sanitiza req.body, req.query y req.params
+app.use(sanitizeInputs);
+
+// 7. DETECCIÓN DE SQL INJECTION
+// Capa adicional de protección (las queries parametrizadas son la defensa principal)
+app.use(preventSQLInjection);
+
+// 8. RATE LIMITING GLOBAL PARA APIS
+// Protege contra ataques de fuerza bruta y DDoS
+app.use('/api', apiLimiter);
 
 // ============================================================================
 // CONFIGURACIÓN DE SESIONES CON PERSISTENCIA EN POSTGRESQL Y DOMINIO DINÁMICO
@@ -291,14 +346,11 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "tenants_views", tenantFolder, "index.html"));
 });
 
-// Manejo de errores global
-app.use((err, req, res, next) => {
-  console.error("Error:", err.stack);
-  res.status(500).json({
-    error: "Error interno del servidor",
-    message: err.message,
-  });
-});
+// ============================================================================
+// MANEJO DE ERRORES GLOBAL CON SANITIZACIÓN
+// ============================================================================
+// Previene exposición de información sensible en errores (OWASP)
+app.use(sanitizeErrors);
 
 // Iniciar el servidor
 app.listen(PORT, async () => {

@@ -5,29 +5,42 @@ const agentesController = require("../controllers/agentesController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 const passport = require("passport");
 
+// ============================================================================
+// RATE LIMITERS DE SEGURIDAD
+// ============================================================================
+// Protección contra ataques de fuerza bruta en endpoints de autenticación
+const { 
+  authLimiter, 
+  registerLimiter, 
+  passwordResetLimiter 
+} = require("../middlewares/rateLimiter");
+
 /**
  * @route   POST /api/registro/cliente
  * @desc    Registrar un nuevo cliente
  * @access  Public
  * @body    { Nombre, Apellido, Email, Password, Telefono }
+ * @security Rate limited: 3 registros por hora por IP
  */
-router.post("/registro/cliente", authController.registroCliente);
+router.post("/registro/cliente", registerLimiter, authController.registroCliente);
 
 /**
  * @route   POST /api/registro/agente
  * @desc    Registrar un nuevo agente de ventas
  * @access  Public
  * @body    { Nombre, Apellido, Email, Password, CodigoAgente }
+ * @security Rate limited: 3 registros por hora por IP
  */
-router.post("/registro/agente", authController.registroAgente);
+router.post("/registro/agente", registerLimiter, authController.registroAgente);
 
 /**
  * @route   POST /api/login
  * @desc    Iniciar sesión (cliente o agente)
  * @access  Public
  * @body    { Email, Password }
+ * @security Rate limited: 5 intentos cada 15 minutos por IP
  */
-router.post("/login", authController.login);
+router.post("/login", authLimiter, authController.login);
 
 /**
  * @route   GET /api/clientes/verify
@@ -36,8 +49,21 @@ router.post("/login", authController.login);
  */
 router.get("/clientes/verify", authenticate, authController.verifyCliente);
 
-router.post("/auth/forgot-password", authController.forgotPassword);
-router.post("/auth/reset-password", authController.resetPassword);
+/**
+ * @route   POST /api/auth/forgot-password
+ * @desc    Solicitar recuperación de contraseña
+ * @access  Public
+ * @security Rate limited: 3 intentos por hora por IP
+ */
+router.post("/auth/forgot-password", passwordResetLimiter, authController.forgotPassword);
+
+/**
+ * @route   POST /api/auth/reset-password
+ * @desc    Restablecer contraseña con token
+ * @access  Public
+ * @security Rate limited: 3 intentos por hora por IP
+ */
+router.post("/auth/reset-password", passwordResetLimiter, authController.resetPassword);
 
 /**
  * @route   GET /api/auth/me
@@ -69,8 +95,9 @@ router.get(
  * @desc    Registrar un nuevo administrador (protegido por SUPER_ADMIN_KEY)
  * @access  Public (requiere adminKey en el body)
  * @body    { Nombre, Apellido, Email, Password, Rol?, adminKey }
+ * @security Rate limited: 3 intentos por hora por IP
  */
-router.post("/auth/registro-admin", authController.registroAdmin);
+router.post("/auth/registro-admin", registerLimiter, authController.registroAdmin);
 
 // Rutas privadas para agentes
 router.post(
