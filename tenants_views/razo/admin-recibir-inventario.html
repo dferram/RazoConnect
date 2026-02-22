@@ -350,7 +350,7 @@
                     </div>
                   </div>
 
-                  <div class="mt-3">
+                  <div class="mt-3" style="display: grid; gap: 0.75rem;">
                     <button
                       id="btnConfirmarGenerarCxp"
                       type="button"
@@ -358,6 +358,14 @@
                       disabled
                     >
                       Finalizar Recepción y Generar Cuenta por Pagar
+                    </button>
+                    <button
+                      id="btnCerrarSesion"
+                      type="button"
+                      class="btn btn-warning w-100"
+                      style="display: none;"
+                    >
+                      <i class="bi bi-x-circle"></i> Cerrar Sesión (Marcar pendientes como no recibidos)
                     </button>
                   </div>
                 </div>
@@ -619,7 +627,9 @@
           });
         }
 
-        input.value = '';
+        // FEATURE 2: Mantener el valor en el input después de agregar (NO limpiar)
+        // El valor se mantiene para que el usuario vea lo que acaba de registrar
+        // input.value = ''; // ← COMENTADO: Ya no limpiamos el input
         
         hasSessionData = true;
         showToastSuccess("Agregado a sesión");
@@ -629,6 +639,37 @@
         // CRÍTICO: Solo actualizar el contador del item específico, NO renderizar toda la tabla
         // para evitar que se reseteen los valores de otros inputs
         actualizarContadorPorRecibir(item.detalleId);
+        
+        // FEATURE 3: Si el producto está completamente recibido, removerlo de la tabla pendientes
+        const solicitadoPzas = solicitadoPzasValue(item);
+        const recibidoPzas = recibidoPzasValue(item);
+        const enSesionPzas = sesionRecepcion
+          .filter((x) => String(x.detalleId) === String(item.detalleId))
+          .reduce((acc, x) => acc + (Number.parseInt(x.cantidadPiezas || x.cantidad, 10) || 0), 0);
+        const pendientePzas = Math.max(solicitadoPzas - recibidoPzas - enSesionPzas, 0);
+        
+        if (pendientePzas === 0) {
+          // Producto completamente recibido - remover de la tabla pendientes
+          console.log(`✅ [COMPLETADO] Producto ${item.sku} completamente recibido, removiendo de pendientes`);
+          const row = tbodyPendiente?.querySelector(`tr[data-detalle-id="${item.detalleId}"]`);
+          if (row) {
+            row.remove();
+          }
+          // Actualizar el badge de pendientes
+          const items = Array.isArray(state.items) ? state.items : [];
+          const pendientes = items.filter((i) => {
+            const sol = solicitadoPzasValue(i);
+            const rec = recibidoPzasValue(i);
+            const ses = sesionRecepcion
+              .filter((x) => String(x.detalleId) === String(i.detalleId))
+              .reduce((acc, x) => acc + (Number.parseInt(x.cantidad, 10) || 0), 0);
+            const pen = Math.max(sol - rec - ses, 0);
+            return pen > 0;
+          });
+          if (pendienteBadge) {
+            pendienteBadge.textContent = `${pendientes.length} PENDIENTES`;
+          }
+        }
       };
 
       let sesionRecepcion = [];
@@ -1395,6 +1436,25 @@
         if (btnConfirmarGenerarCxp) {
           btnConfirmarGenerarCxp.style.display = count ? "inline-flex" : "none";
           btnConfirmarGenerarCxp.disabled = !count;
+        }
+
+        // FEATURE 1: Mostrar botón de cerrar sesión si hay items pendientes
+        const btnCerrarSesion = document.getElementById('btnCerrarSesion');
+        if (btnCerrarSesion) {
+          // Calcular si hay items pendientes de recibir
+          const items = Array.isArray(state.items) ? state.items : [];
+          const hasPendientes = items.some((i) => {
+            const sol = solicitadoPzasValue(i);
+            const rec = recibidoPzasValue(i);
+            const ses = sesionRecepcion
+              .filter((x) => String(x.detalleId) === String(i.detalleId))
+              .reduce((acc, x) => acc + (Number.parseInt(x.cantidad, 10) || 0), 0);
+            const pen = Math.max(sol - rec - ses, 0);
+            return pen > 0;
+          });
+          
+          // Mostrar botón solo si hay pendientes
+          btnCerrarSesion.style.display = hasPendientes ? "block" : "none";
         }
 
         if (sesionFloatingCounter) {
@@ -2489,6 +2549,98 @@
           });
         }
       });
+
+      // ============================================
+      // CERRAR SESIÓN DE RECEPCIÓN
+      // ============================================
+      const btnCerrarSesion = document.getElementById('btnCerrarSesion');
+
+      const cerrarSesionRecepcion = async () => {
+        const currentState = window.recepcionState || state;
+        
+        if (!currentState.orden || !currentState.orden.ordenCompraId) {
+          showToastError('No hay una orden seleccionada');
+          return;
+        }
+
+        // Confirmar con el usuario
+        const confirmacion = await Swal.fire({
+          title: '⚠️ Cerrar Sesión de Recepción',
+          html: `
+            <div style="text-align: left;">
+              <p style="margin-bottom: 1rem; color: #6b7280;">
+                Esta acción marcará todos los productos <strong>pendientes de recibir</strong> como <strong>no recibidos</strong> (cerrados por merma).
+              </p>
+              <div style="padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem; margin-bottom: 1rem;">
+                <strong>💡 Nota:</strong> Los productos que ya hayas registrado en la sesión NO se verán afectados.
+              </div>
+              <label for="swal-motivo" style="display: block; font-weight: 700; margin-bottom: 0.5rem;">Motivo del cierre (opcional):</label>
+              <textarea id="swal-motivo" class="swal2-textarea" placeholder="Ej: Proveedor no entregó productos faltantes..." style="width: 100%; min-height: 80px;"></textarea>
+            </div>
+          `,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, cerrar sesión',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#F97316',
+          focusCancel: true,
+          preConfirm: () => {
+            const motivo = document.getElementById('swal-motivo')?.value?.trim() || 'Sesión cerrada manualmente';
+            return { motivo };
+          }
+        });
+
+        if (!confirmacion.isConfirmed) return;
+
+        try {
+          Swal.fire({
+            title: 'Cerrando sesión...',
+            text: 'Por favor espera',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+          });
+
+          const resp = await apiCall(
+            `/admin/ordenes-compra/${currentState.orden.ordenCompraId}/cerrar-sesion`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ motivo: confirmacion.value.motivo })
+            }
+          );
+
+          if (!resp.ok) {
+            throw new Error(resp.data?.message || 'No se pudo cerrar la sesión');
+          }
+
+          // Limpiar sesión local
+          clearSesionRecepcionStorage(currentState.orden.ordenCompraId);
+          sesionRecepcion = [];
+          hasSessionData = false;
+
+          Swal.fire({
+            icon: 'success',
+            title: 'Sesión Cerrada',
+            text: resp.data?.message || 'La sesión se cerró exitosamente',
+            confirmButtonColor: '#F97316'
+          });
+
+          // Recargar la orden
+          await loadRecepcion(currentState.orden.ordenCompraId);
+        } catch (error) {
+          console.error(error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'No se pudo cerrar la sesión',
+            confirmButtonColor: '#F97316'
+          });
+        }
+      };
+
+      if (btnCerrarSesion) {
+        btnCerrarSesion.addEventListener('click', cerrarSesionRecepcion);
+      }
 
       // ============================================
       // REASIGNACIÓN DE SESIÓN

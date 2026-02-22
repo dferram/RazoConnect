@@ -1215,6 +1215,13 @@ router.post(
 );
 
 router.post(
+  "/ordenes-compra/:id/cerrar-sesion",
+  authenticate,
+  authorizeAdmin,
+  adminController.cerrarSesionRecepcion
+);
+
+router.post(
   "/ordenes-compra/:id/recibir-item",
   authenticate,
   authorizeAdmin,

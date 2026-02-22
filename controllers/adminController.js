@@ -12910,6 +12910,145 @@ const recibirInventario = async (req, res) => {
   }
 };
 
+/**
+ * Cerrar sesión de recepción y marcar items no recibidos como cerrados por merma
+ * POST /api/admin/ordenes-compra/:id/cerrar-sesion
+ */
+const cerrarSesionRecepcion = async (req, res) => {
+  const client = await db.pool.connect();
+
+  try {
+    const { id: ordenCompraId } = req.params;
+    const { motivo } = req.body;
+    const userId = req.user.id;
+    const userRole = req.user.rol;
+    const { tenant_id } = req.tenant;
+
+    if (!ordenCompraId) {
+      return res.status(400).json({
+        success: false,
+        message: "El ID de la orden de compra es requerido"
+      });
+    }
+
+    await client.query("BEGIN");
+
+    // Verificar que la orden existe y validar propiedad
+    let ordenCheckQuery = "SELECT OrdenCompraID, Estatus, admin_creador_id FROM OrdenesDeCompra WHERE OrdenCompraID = $1 AND tenant_id = $2";
+    let ordenCheckParams = [ordenCompraId, tenant_id];
+
+    // REGLA DE VISIBILIDAD: Admin solo puede cerrar sesión de sus propias órdenes
+    if (userRole === 'admin') {
+      ordenCheckQuery += " AND admin_creador_id = $3";
+      ordenCheckParams.push(userId);
+    }
+
+    const ordenCheck = await client.query(ordenCheckQuery, ordenCheckParams);
+
+    if (ordenCheck.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        success: false,
+        message: "Orden de compra no encontrada o no tienes permiso para cerrar esta sesión"
+      });
+    }
+
+    // Obtener todos los detalles pendientes (no completamente recibidos)
+    const detallesPendientesQuery = `
+      SELECT 
+        DetalleOC_ID,
+        VarianteID,
+        CantidadSolicitada,
+        CantidadRecibida,
+        PiezasPorPaquete
+      FROM DetallesOrdenCompra
+      WHERE OrdenCompraID = $1 
+        AND CantidadRecibida < CantidadSolicitada
+        AND (cerrado_por_merma IS NULL OR cerrado_por_merma = false)
+    `;
+
+    const detallesPendientes = await client.query(detallesPendientesQuery, [ordenCompraId]);
+
+    let itemsCerrados = 0;
+
+    // Marcar cada detalle pendiente como cerrado por merma
+    for (const detalle of detallesPendientes.rows) {
+      await client.query(
+        `UPDATE DetallesOrdenCompra 
+         SET cerrado_por_merma = true,
+             fecha_cierre_merma = CURRENT_TIMESTAMP,
+             admin_cierre_id = $1,
+             motivo_discrepancia = $2,
+             tipo_discrepancia = 'MERMA'
+         WHERE DetalleOC_ID = $3`,
+        [userId, motivo || 'Sesión cerrada - Producto no recibido', detalle.detalleoc_id]
+      );
+
+      itemsCerrados++;
+    }
+
+    // Actualizar el estatus de la orden
+    const estatusQuery = `
+      SELECT 
+        SUM(CantidadSolicitada) as TotalSolicitado,
+        SUM(CantidadRecibida) as TotalRecibido
+      FROM DetallesOrdenCompra
+      WHERE OrdenCompraID = $1
+    `;
+
+    const estatusResult = await client.query(estatusQuery, [ordenCompraId]);
+    const { totalsolicitado, totalrecibido } = estatusResult.rows[0];
+
+    let nuevoEstatus;
+    if (parseInt(totalrecibido) >= parseInt(totalsolicitado)) {
+      nuevoEstatus = "Completada";
+    } else if (parseInt(totalrecibido) > 0) {
+      nuevoEstatus = "Parcial";
+    } else {
+      nuevoEstatus = "Cancelada";
+    }
+
+    await client.query(
+      "UPDATE OrdenesDeCompra SET Estatus = $1 WHERE OrdenCompraID = $2 AND tenant_id = $3",
+      [nuevoEstatus, ordenCompraId, tenant_id]
+    );
+
+    // Liberar la sesión si estaba bloqueada
+    await client.query(
+      `UPDATE OrdenesDeCompra 
+       SET admin_trabajando_id = NULL,
+           fecha_bloqueo = NULL,
+           ultima_actividad = NULL
+       WHERE OrdenCompraID = $1 AND tenant_id = $2`,
+      [ordenCompraId, tenant_id]
+    );
+
+    await client.query("COMMIT");
+
+    res.json({
+      success: true,
+      message: `Sesión cerrada exitosamente. ${itemsCerrados} item(s) marcado(s) como no recibido(s).`,
+      data: {
+        ordenCompraId,
+        nuevoEstatus,
+        itemsCerrados,
+        totalRecibido: parseInt(totalrecibido),
+        totalSolicitado: parseInt(totalsolicitado)
+      }
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error al cerrar sesión de recepción:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error al cerrar la sesión de recepción"
+    });
+  } finally {
+    client.release();
+  }
+};
+
 const recibirItemOrdenCompra = async (req, res) => {
   const client = await db.pool.connect();
 
@@ -17270,6 +17409,7 @@ module.exports = {
   getOrderDetailsForExcel,
   cancelarOrdenCompra,
   recibirInventario,
+  cerrarSesionRecepcion,
   recibirItemOrdenCompra,
   getMovimientosInventario,
   getMisVentas,
