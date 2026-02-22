@@ -2492,8 +2492,8 @@ const confirmarPedido = async (req, res) => {
     await client.query("BEGIN");
 
     const pedidoResult = await client.query(
-      "SELECT PedidoID, Estatus FROM Pedidos WHERE PedidoID = $1 FOR UPDATE",
-      [pedidoId]
+      "SELECT PedidoID, Estatus FROM Pedidos WHERE PedidoID = $1 AND tenant_id = $2 FOR UPDATE",
+      [pedidoId, tenant_id]
     );
 
     if (!pedidoResult.rows.length) {
@@ -6636,8 +6636,8 @@ const crearProducto = async (req, res) => {
 
     if (proveedorId !== null) {
       const proveedorResult = await client.query(
-        "SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1",
-        [proveedorId]
+        "SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1 AND tenant_id = $2",
+        [proveedorId, tenant_id]
       );
 
       if (proveedorResult.rows.length === 0) {
@@ -7660,8 +7660,8 @@ const actualizarProducto = async (req, res) => {
         }
 
         const proveedorExiste = await client.query(
-          "SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1",
-          [parsedProveedor]
+          "SELECT ProveedorID FROM Proveedores WHERE ProveedorID = $1 AND tenant_id = $2",
+          [parsedProveedor, tenant_id]
         );
 
         if (proveedorExiste.rows.length === 0) {
@@ -9229,8 +9229,8 @@ const actualizarCategoria = async (req, res) => {
     }
 
     const categoriaResult = await db.query(
-      "SELECT * FROM Categorias WHERE CategoriaID = $1",
-      [categoriaId]
+      "SELECT * FROM Categorias WHERE CategoriaID = $1 AND tenant_id = $2",
+      [categoriaId, tenant_id]
     );
 
     if (categoriaResult.rows.length === 0) {
@@ -9256,8 +9256,8 @@ const actualizarCategoria = async (req, res) => {
 
     if (parentCategoriaId !== undefined && parentCategoriaId !== null) {
       const parentResult = await db.query(
-        "SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1",
-        [parentCategoriaId]
+        "SELECT CategoriaID FROM Categorias WHERE CategoriaID = $1 AND tenant_id = $2",
+        [parentCategoriaId, tenant_id]
       );
 
       if (parentResult.rows.length === 0) {
@@ -9274,8 +9274,8 @@ const actualizarCategoria = async (req, res) => {
 
     if (nombreNormalizado) {
       const existeNombre = await db.query(
-        "SELECT CategoriaID FROM Categorias WHERE LOWER(Nombre) = LOWER($1) AND CategoriaID <> $2",
-        [nombreNormalizado, categoriaId]
+        "SELECT CategoriaID FROM Categorias WHERE LOWER(Nombre) = LOWER($1) AND CategoriaID <> $2 AND tenant_id = $3",
+        [nombreNormalizado, categoriaId, tenant_id]
       );
 
       if (existeNombre.rows.length > 0) {
@@ -9419,8 +9419,8 @@ const toggleProductoVisibilidad = async (req, res) => {
 
     // Verificar que el producto existe
     const productoResult = await db.query(
-      "SELECT productoid, activo FROM productos WHERE productoid = $1",
-      [productoId]
+      "SELECT productoid, activo FROM productos WHERE productoid = $1 AND tenant_id = $2",
+      [productoId, tenant_id]
     );
 
     if (productoResult.rows.length === 0) {
@@ -9481,8 +9481,8 @@ const eliminarCategoria = async (req, res) => {
     }
 
     const categoriaResult = await db.query(
-      "SELECT * FROM Categorias WHERE CategoriaID = $1",
-      [categoriaId]
+      "SELECT * FROM Categorias WHERE CategoriaID = $1 AND tenant_id = $2",
+      [categoriaId, tenant_id]
     );
 
     if (categoriaResult.rows.length === 0) {
@@ -9494,8 +9494,8 @@ const eliminarCategoria = async (req, res) => {
 
     // Verificar si la categoría tiene subcategorías
     const subcategoriasResult = await db.query(
-      "SELECT COUNT(*) AS total FROM Categorias WHERE ParentCategoriaID = $1",
-      [categoriaId]
+      "SELECT COUNT(*) AS total FROM Categorias WHERE ParentCategoriaID = $1 AND tenant_id = $2",
+      [categoriaId, tenant_id]
     );
 
     if (parseInt(subcategoriasResult.rows[0].total, 10) > 0) {
@@ -9508,8 +9508,8 @@ const eliminarCategoria = async (req, res) => {
 
     // Verificar si hay productos asociados a la categoría
     const productosAsociados = await db.query(
-      "SELECT COUNT(*) AS total FROM Productos WHERE CategoriaID = $1",
-      [categoriaId]
+      "SELECT COUNT(*) AS total FROM Productos WHERE CategoriaID = $1 AND tenant_id = $2",
+      [categoriaId, tenant_id]
     );
 
     if (parseInt(productosAsociados.rows[0].total, 10) > 0) {
@@ -9757,8 +9757,8 @@ const crearAgente = async (req, res) => {
         if (!agenteIdRes) {
           // Intentar resolver por email
           const refetch = await db.query(
-            "SELECT AgenteID, Nombre, Apellido, Email, CodigoAgente FROM AgentesDeVentas WHERE Email = $1",
-            [email]
+            "SELECT AgenteID, Nombre, Apellido, Email, CodigoAgente FROM AgentesDeVentas WHERE Email = $1 AND tenant_id = $2",
+            [email, tenant_id]
           );
           if (refetch.rows.length) {
             agenteIdRes = refetch.rows[0].agenteid;
@@ -9768,8 +9768,8 @@ const crearAgente = async (req, res) => {
         let agenteData = null;
         if (agenteIdRes) {
           const refetch = await db.query(
-            "SELECT AgenteID, Nombre, Apellido, Email, CodigoAgente FROM AgentesDeVentas WHERE AgenteID = $1",
-            [agenteIdRes]
+            "SELECT AgenteID, Nombre, Apellido, Email, CodigoAgente FROM AgentesDeVentas WHERE AgenteID = $1 AND tenant_id = $2",
+            [agenteIdRes, tenant_id]
           );
           agenteData = refetch.rows[0] || null;
         }
@@ -16164,8 +16164,8 @@ const subirEvidenciaEntrega = async (req, res) => {
     const urlEvidencia = req.file.path;
 
     const pedidoResult = await db.query(
-      "SELECT pedidoid, estatus, clienteid FROM pedidos WHERE pedidoid = $1",
-      [pedidoId]
+      "SELECT pedidoid, estatus, clienteid FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2",
+      [pedidoId, tenant_id]
     );
 
     if (pedidoResult.rows.length === 0) {
