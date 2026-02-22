@@ -13,6 +13,11 @@
     <link rel="stylesheet" href="css/admin.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+      /* Fix SweetAlert z-index to appear above modals */
+      .swal2-container {
+        z-index: 10000 !important;
+      }
+      
       .pedido-detail-wrapper {
         max-width: 1200px;
         margin: 0 auto;
@@ -858,6 +863,10 @@
     <script src="js/admin-ajuste-pedidos.js"></script>
     <script src="js/instructional-banner.js"></script>
     <script>
+      // Global variables for order ID (needed by modal functions)
+      let selectedOrderId = null;
+      let selectedOrderStatus = null;
+
       (function () {
         "use strict";
 
@@ -870,9 +879,6 @@
           window.location.href = "/login.html";
           return;
         }
-
-        let selectedOrderId = null;
-        let selectedOrderStatus = null;
 
         document.addEventListener("DOMContentLoaded", init);
 

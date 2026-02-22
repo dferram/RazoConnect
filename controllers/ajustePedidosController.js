@@ -276,22 +276,23 @@ async function ajustarPedido(req, res) {
       const subtotalNuevo = nuevaCantidad * nuevoPrecioPorPaquete;
       const diferenciaSubtotal = subtotalNuevo - subtotalAnterior;
 
+      // ❌ DESHABILITADO: Stock NO se ajusta al modificar pedido
+      // ✅ NUEVO FLUJO: El stock se deduce SOLO cuando el pedido cambia a "Confirmado"
+      // Ver: adminController.js -> updatePedidoEstatus() para la lógica de deducción
+      
+      /* CÓDIGO ORIGINAL COMENTADO - NO AJUSTAR STOCK AL MODIFICAR PEDIDO
       if (!detalle.esbackorder) {
         if (diferenciaCantidad > 0) {
-          // Incremento de cantidad - Descontar stock usando SmartStockService
           const piezasNecesarias = diferenciaPiezas;
-          
           console.log(`📉 Descontando ${piezasNecesarias} piezas de variante ${detalle.varianteid}`);
-          
           const resultado = await SmartStockService.adjustStock({
             varianteId: detalle.varianteid,
-            cantidad: -piezasNecesarias,  // Negativo = descuento
+            cantidad: -piezasNecesarias,
             userId: req.user.id || req.user.userId,
             userRole: req.user.roles || [req.user.rol],
             tenantId: tenant_id,
             client: client
           });
-
           if (!resultado.success) {
             await client.query("ROLLBACK");
             transactionStarted = false;
@@ -301,23 +302,18 @@ async function ajustarPedido(req, res) {
               message: `Stock insuficiente para ${detalle.nombreproducto} (${detalle.sku}). ${resultado.message || 'No hay suficiente inventario disponible'}`
             });
           }
-
           console.log(`✅ Stock ajustado: ${resultado.oldStock} → ${resultado.newStock}`);
         } else if (diferenciaCantidad < 0) {
-          // Reducción de cantidad - Devolver stock usando SmartStockService
           const piezasDevolver = Math.abs(diferenciaPiezas);
-          
           console.log(`📈 Devolviendo ${piezasDevolver} piezas a variante ${detalle.varianteid}`);
-          
           const resultado = await SmartStockService.adjustStock({
             varianteId: detalle.varianteid,
-            cantidad: +piezasDevolver,  // Positivo = incremento
+            cantidad: +piezasDevolver,
             userId: req.user.id || req.user.userId,
             userRole: req.user.roles || [req.user.rol],
             tenantId: tenant_id,
             client: client
           });
-
           if (!resultado.success) {
             console.error(`⚠️ Error al devolver stock: ${resultado.message}`);
           } else {
@@ -325,6 +321,9 @@ async function ajustarPedido(req, res) {
           }
         }
       }
+      FIN CÓDIGO COMENTADO */
+      
+      console.log(`ℹ️ [Pedido ${pedidoId}] Stock NO modificado al ajustar - se deducirá al confirmar`)
 
       // Actualizar detalle del pedido con nuevos valores
       if (cambioTamano) {
@@ -400,16 +399,19 @@ async function ajustarPedido(req, res) {
 
       console.log(`📦 Agregando producto: ${variante.nombreproducto} - ${piezasNecesarias} piezas`);
 
-      // Descontar stock usando SmartStockService
+      // ❌ DESHABILITADO: Stock NO se descuenta al agregar producto
+      // ✅ NUEVO FLUJO: El stock se deduce SOLO cuando el pedido cambia a "Confirmado"
+      // Ver: adminController.js -> updatePedidoEstatus() para la lógica de deducción
+      
+      /* CÓDIGO ORIGINAL COMENTADO - NO DESCONTAR STOCK AL AGREGAR PRODUCTO
       const resultado = await SmartStockService.adjustStock({
         varianteId,
-        cantidad: -piezasNecesarias,  // Negativo = descuento
+        cantidad: -piezasNecesarias,
         userId: req.user.id || req.user.userId,
         userRole: req.user.roles || [req.user.rol],
         tenantId: tenant_id,
         client: client
       });
-
       if (!resultado.success) {
         await client.query("ROLLBACK");
         transactionStarted = false;
@@ -419,8 +421,10 @@ async function ajustarPedido(req, res) {
           message: `Stock insuficiente para ${variante.nombreproducto} (${variante.sku}). ${resultado.message || 'No hay suficiente inventario disponible'}`
         });
       }
-
       console.log(`✅ Stock descontado: ${resultado.oldStock} → ${resultado.newStock}`);
+      FIN CÓDIGO COMENTADO */
+      
+      console.log(`ℹ️ [Pedido ${pedidoId}] Stock NO deducido al agregar - se deducirá al confirmar`)
 
       const precioBase = parseFloat(variante.preciounitario) || 0;
       const precioOferta = variante.precioofertaunitario ? parseFloat(variante.precioofertaunitario) : null;

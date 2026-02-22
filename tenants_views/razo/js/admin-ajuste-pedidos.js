@@ -843,7 +843,15 @@ async function aplicarAjustePedido() {
       });
 
       cerrarModalAjuste();
-      loadOrders();
+      
+      // Recargar datos según la página actual
+      if (typeof loadOrders === 'function') {
+        // Estamos en admin-pedidos.html
+        loadOrders();
+      } else {
+        // Estamos en admin-pedido-detalle.html - recargar la página
+        window.location.reload();
+      }
     } else {
       throw new Error(data.message || 'Error al ajustar pedido');
     }
