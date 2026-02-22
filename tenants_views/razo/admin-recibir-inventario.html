@@ -1440,7 +1440,7 @@
           btnConfirmarGenerarCxp.disabled = !count;
         }
 
-        // FEATURE 1: Mostrar botón de cerrar sesión si hay items pendientes
+        // FEATURE 1: Mostrar botón de cerrar sesión SOLO si el admin está trabajando en la sesión Y hay items pendientes
         const btnCerrarSesion = document.getElementById('btnCerrarSesion');
         if (btnCerrarSesion) {
           // Calcular si hay items pendientes de recibir
@@ -1455,8 +1455,10 @@
             return pen > 0;
           });
           
-          // Mostrar botón solo si hay pendientes
-          btnCerrarSesion.style.display = hasPendientes ? "block" : "none";
+          // CRÍTICO: Solo mostrar si NO está en modo lectura (sesionBloqueada = false significa que el admin SÍ está trabajando)
+          // Y además hay productos pendientes
+          const puedeTrabajar = !sesionBloqueada;
+          btnCerrarSesion.style.display = (puedeTrabajar && hasPendientes) ? "block" : "none";
         }
 
         if (sesionFloatingCounter) {
@@ -2652,6 +2654,8 @@
         if (!confirmacion.isConfirmed) return;
 
         try {
+          console.log('🔴 [CERRAR SESIÓN] Iniciando cierre de sesión para OC:', currentState.orden.ordenCompraId);
+          
           Swal.fire({
             title: 'Cerrando sesión...',
             text: 'Por favor espera',
@@ -2668,24 +2672,75 @@
             }
           );
 
+          console.log('🔴 [CERRAR SESIÓN] Respuesta del servidor:', resp);
+
           if (!resp.ok) {
             throw new Error(resp.data?.message || 'No se pudo cerrar la sesión');
           }
 
+          console.log('🔴 [CERRAR SESIÓN] Limpiando sesión local...');
           // Limpiar sesión local
           clearSesionRecepcionStorage(currentState.orden.ordenCompraId);
           sesionRecepcion = [];
           hasSessionData = false;
 
-          Swal.fire({
+          console.log('🔴 [CERRAR SESIÓN] Desbloqueando sesión...');
+          // Desbloquear la sesión para que otros puedan trabajar
+          try {
+            await desbloquearSesion(currentState.orden.ordenCompraId);
+          } catch (desbloqueoError) {
+            console.warn('⚠️ Error al desbloquear sesión (no crítico):', desbloqueoError);
+          }
+
+          console.log('🔴 [CERRAR SESIÓN] Mostrando mensaje de éxito...');
+          await Swal.fire({
             icon: 'success',
             title: 'Sesión Cerrada',
             text: resp.data?.message || 'La sesión se cerró exitosamente',
             confirmButtonColor: '#F97316'
           });
 
-          // Recargar la orden
-          await loadRecepcion(currentState.orden.ordenCompraId);
+          console.log('🔴 [CERRAR SESIÓN] Limpiando estado y UI...');
+          // Limpiar completamente el estado y volver al inicio
+          state.orden = null;
+          state.items = [];
+          sesionBloqueada = false;
+          
+          // Resetear el selector de órdenes
+          if (ocSelect) {
+            ocSelect.value = '';
+            console.log('🔴 [CERRAR SESIÓN] Selector de OC reseteado');
+          }
+          
+          // Limpiar UI
+          if (ocProveedor) ocProveedor.textContent = "—";
+          if (ocMeta) ocMeta.textContent = "—";
+          if (ocBadge) ocBadge.textContent = "Selecciona una OC";
+          
+          // Ocultar secciones
+          if (recepcionSplit) {
+            recepcionSplit.style.display = "none";
+            console.log('🔴 [CERRAR SESIÓN] Sección de recepción ocultada');
+          }
+          if (botonesGestion) {
+            botonesGestion.style.display = "none";
+            console.log('🔴 [CERRAR SESIÓN] Botones de gestión ocultados');
+          }
+          
+          // Limpiar tablas
+          if (tbodyPendiente) tbodyPendiente.innerHTML = '';
+          if (tbodySesion) tbodySesion.innerHTML = '';
+          
+          console.log('🔴 [CERRAR SESIÓN] Renderizando tablas vacías...');
+          // Renderizar tablas vacías
+          renderSplit();
+          renderizarTablaSesion();
+          
+          console.log('🔴 [CERRAR SESIÓN] Recargando lista de órdenes...');
+          // Recargar lista de órdenes para actualizar estados
+          await loadOrdenes();
+          
+          console.log('✅ [CERRAR SESIÓN] Proceso completado exitosamente');
         } catch (error) {
           console.error(error);
           Swal.fire({

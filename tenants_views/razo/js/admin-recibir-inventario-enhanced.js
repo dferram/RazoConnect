@@ -204,39 +204,35 @@ function prepararDatosReporte() {
     });
   }
 
-  // 2. Productos CERRADOS POR MERMA (pendientes que no se recibieron)
+  // 2. Productos CERRADOS POR MERMA (marcados explícitamente en la BD)
   if (Array.isArray(state.items)) {
     state.items.forEach(item => {
-      const solicitado = parseInt(item.cantidadSolicitada, 10) || 0;
-      const recibido = parseInt(item.cantidadRecibida || item.piezasRecibidas || item.piezasrecibidas, 10) || 0;
-      
-      // Calcular cuánto está en sesión
-      const enSesion = window.sesionRecepcion ? window.sesionRecepcion
-        .filter(x => String(x.detalleId) === String(item.detalleId))
-        .reduce((acc, x) => acc + (parseInt(x.cantidadPiezas || x.cantidad, 10) || 0), 0) : 0;
-      
-      const pendiente = Math.max(solicitado - recibido - enSesion, 0);
-      
-      // Si hay pendiente, significa que se cerró por merma
-      if (pendiente > 0) {
-        const costoUnitario = parseFloat(item.costoUnitario || item.costounitario || 0);
-        const totalCosto = pendiente * costoUnitario;
-        const precioVenta = item.precioofertaunitario || item.preciounitario || 0;
-        const totalVenta = pendiente * precioVenta;
+      // Solo incluir si está marcado como cerrado por merma
+      if (item.cerrado_por_merma === true || item.cerrado_por_merma === 'true') {
+        const solicitado = parseInt(item.cantidadSolicitada, 10) || 0;
+        const recibido = parseInt(item.cantidadRecibida || item.piezasRecibidas || item.piezasrecibidas, 10) || 0;
+        const pendiente = Math.max(solicitado - recibido, 0);
         
-        cerradosPorMerma.push({
-          sku: item.sku || '',
-          producto: item.nombreProducto || '',
-          categoria: item.categoria || 'Sin categoría',
-          variante: `${item.color || 'Sin color'} / ${item.dimensiones || 'Sin medida'}`,
-          cantidadPiezas: pendiente,
-          costoUnitario: costoUnitario,
-          totalCosto: totalCosto,
-          precioVenta: precioVenta,
-          totalVenta: totalVenta,
-          tipo: 'CERRADO_MERMA',
-          motivo: item.motivo_discrepancia || 'Sesión cerrada - Producto no recibido'
-        });
+        if (pendiente > 0) {
+          const costoUnitario = parseFloat(item.costoUnitario || item.costounitario || 0);
+          const totalCosto = pendiente * costoUnitario;
+          const precioVenta = item.precioofertaunitario || item.preciounitario || 0;
+          const totalVenta = pendiente * precioVenta;
+          
+          cerradosPorMerma.push({
+            sku: item.sku || '',
+            producto: item.nombreProducto || '',
+            categoria: item.categoria || 'Sin categoría',
+            variante: `${item.color || 'Sin color'} / ${item.dimensiones || 'Sin medida'}`,
+            cantidadPiezas: pendiente,
+            costoUnitario: costoUnitario,
+            totalCosto: totalCosto,
+            precioVenta: precioVenta,
+            totalVenta: totalVenta,
+            tipo: 'CERRADO_MERMA',
+            motivo: item.motivo_discrepancia || 'Sesión cerrada - Producto no recibido'
+          });
+        }
       }
     });
   }
@@ -697,7 +693,9 @@ async function exportarExcel() {
 async function exportarPDF() {
   const datos = prepararDatosReporte();
   
-  if (datos.length === 0) {
+  console.log('📄 [PDF] Datos preparados:', datos);
+  
+  if (datos.recibidos.length === 0 && datos.cerradosPorMerma.length === 0) {
     Swal.fire({
       icon: 'warning',
       title: 'Sin Datos',
@@ -743,40 +741,86 @@ async function exportarPDF() {
     doc.text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, 240, 17);
     doc.text(`Proveedor: ${state.orden.proveedorNombre || 'N/A'}`, 40, 25);
 
-    // Table data
-    const tableData = datos.map(item => [
-      item.sku,
-      item.producto,
-      item.categoria,
-      item.variante,
-      item.cantidadPiezas.toLocaleString('es-MX'),
-      `$${item.costoUnitario.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      `$${item.totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      `$${item.precioVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-      `$${item.totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    ]);
+    // Preparar datos de tabla con secciones separadas
+    const tableData = [];
+    
+    // SECCIÓN 1: Productos recibidos
+    if (datos.recibidos.length > 0) {
+      tableData.push([
+        { content: '✅ PRODUCTOS RECIBIDOS', colSpan: 9, styles: { fillColor: [209, 250, 229], textColor: [6, 95, 70], fontStyle: 'bold', halign: 'center' } }
+      ]);
+      
+      datos.recibidos.forEach(item => {
+        tableData.push([
+          item.sku,
+          item.producto,
+          item.categoria,
+          item.variante,
+          item.cantidadPiezas.toLocaleString('es-MX'),
+          `$${item.costoUnitario.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          `$${item.totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          `$${item.precioVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          `$${item.totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        ]);
+      });
+    }
+    
+    // SECCIÓN 2: Productos cerrados por merma
+    if (datos.cerradosPorMerma.length > 0) {
+      tableData.push([
+        { content: '❌ PRODUCTOS CERRADOS POR MERMA (NO RECIBIDOS)', colSpan: 9, styles: { fillColor: [254, 226, 226], textColor: [153, 27, 27], fontStyle: 'bold', halign: 'center' } }
+      ]);
+      
+      datos.cerradosPorMerma.forEach(item => {
+        tableData.push([
+          item.sku,
+          item.producto,
+          item.categoria,
+          item.variante,
+          { content: item.cantidadPiezas.toLocaleString('es-MX'), styles: { textColor: [220, 38, 38], fontStyle: 'bold' } },
+          `$${item.costoUnitario.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          { content: `$${item.totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, styles: { textColor: [220, 38, 38], fontStyle: 'bold' } },
+          `$${item.precioVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          `$${item.totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        ]);
+      });
+    }
 
     // Calculate totals
-    let totalPiezas = 0;
-    let totalPaquetes = 0;
-    let totalInversion = 0;
-    let totalVentaEsperada = 0;
+    let totalPiezasRecibidas = 0;
+    let totalInversionRecibida = 0;
+    let totalVentaRecibida = 0;
+    
+    let totalPiezasMerma = 0;
+    let totalInversionMerma = 0;
+    let totalVentaMerma = 0;
 
-    // Calcular totales desde sesionRecepcion para obtener paquetes
+    datos.recibidos.forEach(item => {
+      totalPiezasRecibidas += item.cantidadPiezas;
+      totalInversionRecibida += item.totalCosto;
+      totalVentaRecibida += item.totalVenta;
+    });
+    
+    datos.cerradosPorMerma.forEach(item => {
+      totalPiezasMerma += item.cantidadPiezas;
+      totalInversionMerma += item.totalCosto;
+      totalVentaMerma += item.totalVenta;
+    });
+    
+    const totalPiezas = totalPiezasRecibidas + totalPiezasMerma;
+    const totalInversion = totalInversionRecibida + totalInversionMerma;
+    const totalVentaEsperada = totalVentaRecibida + totalVentaMerma;
+    
+    // Calcular paquetes solo de productos recibidos
+    let totalPaquetes = 0;
     if (Array.isArray(window.sesionRecepcion)) {
       window.sesionRecepcion.forEach(item => {
-        const cantidadPiezas = parseInt(item.cantidad, 10) || 0;
+        const cantidadPiezas = parseInt(item.cantidadPiezas || item.cantidad, 10) || 0;
         const piezasPorPaquete = parseInt(item.piezasPorPaquete || item.piezasporpaquete, 10) || 1;
         const paquetes = Math.ceil(cantidadPiezas / piezasPorPaquete);
         totalPaquetes += paquetes;
       });
     }
-
-    datos.forEach(item => {
-      totalPiezas += item.cantidadPiezas;
-      totalInversion += item.totalCosto;
-      totalVentaEsperada += item.totalVenta;
-    });
 
     // Add table WITHOUT footer (totals will be added separately at the end)
     doc.autoTable({

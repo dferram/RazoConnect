@@ -151,21 +151,20 @@ async function ajustarPedido(req, res) {
           await client.query(
             `INSERT INTO log_inventario (
               varianteid,
-              tipo_movimiento,
-              cantidad_piezas,
-              stock_previo,
-              stock_posterior,
-              referencia,
-              notas,
+              cantidadcambiado,
+              nuevostock,
+              motivo,
+              usuarioid,
+              tipo_origen,
               tenant_id
-            ) VALUES ($1, 'DEVOLUCION_AJUSTE', $2, $3, $4, $5, $6, $7)`,
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
             [
               detalle.varianteid,
-              piezasDevolver,
-              stockActual,
+              piezasDevolver, // Positivo porque es devolución
               nuevoStock,
-              `AJUSTE-PED-${pedidoId}`,
-              `Devolución por eliminación de producto en ajuste de pedido`,
+              `Devolución por eliminación de producto en ajuste de pedido #${pedidoId}`,
+              req.user.id || req.user.userId,
+              'DEVOLUCION',
               tenant_id
             ]
           );
