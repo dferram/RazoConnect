@@ -4389,6 +4389,86 @@ const updatePedidoEstatus = async (req, res) => {
       console.log(`[updatePedidoEstatus] ✅ Stock validado correctamente para todos los productos`);
     }
 
+    // ✅ DEDUCIR STOCK cuando el estatus cambia a "Confirmado"
+    if (estatus === 'Confirmado' && estatusActual !== 'Confirmado') {
+      console.log(`[updatePedidoEstatus] 📦 Deduciendo stock para pedido ${pedidoId}...`);
+      
+      const inventoryService = require('../services/inventoryService');
+      const SmartStockService = require('../services/SmartStockService');
+      
+      // Obtener detalles del pedido para deducir stock
+      const detallesResult = await db.query(
+        `SELECT 
+          d.detalleid,
+          d.varianteid,
+          d.cantidadpaquetes,
+          d.piezastotales,
+          pv.sku,
+          p.nombre as producto_nombre
+         FROM detallesdelpedido d
+         INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
+         INNER JOIN productos p ON p.productoid = pv.productoid
+         WHERE d.pedidoid = $1 AND p.tenant_id = $2`,
+        [pedidoId, tenant_id]
+      );
+
+      if (detallesResult.rows.length === 0) {
+        console.error(`[updatePedidoEstatus] ❌ No se encontraron productos para deducir stock`);
+        return res.status(400).json({
+          success: false,
+          message: "No se encontraron productos en el pedido para deducir stock"
+        });
+      }
+
+      const motivo = `Venta Pedido #${pedidoId}`;
+      
+      // Deducir stock para cada producto usando SmartStockService
+      for (const item of detallesResult.rows) {
+        const varianteId = parseInt(item.varianteid);
+        const piezasTotales = parseInt(item.piezastotales) || 0;
+        
+        if (piezasTotales <= 0) {
+          console.log(`[updatePedidoEstatus] ⏭️ Saltando item ${item.sku} - cantidad 0`);
+          continue;
+        }
+
+        try {
+          console.log(`[updatePedidoEstatus] 📉 Deduciendo ${piezasTotales} piezas de ${item.sku}`);
+          
+          // Usar SmartStockService para deducir stock (afecta producto_variantes y stock_admin)
+          const resultado = await SmartStockService.adjustStock({
+            varianteId,
+            cantidad: -1 * piezasTotales, // Negativo para deducir
+            userId: req.user.id,
+            userRole: req.user.roles || ['admin'],
+            tenantId: tenant_id,
+            motivo,
+            client: db // Usar conexión de db directa (no transacción)
+          });
+
+          if (!resultado.success) {
+            console.error(`[updatePedidoEstatus] ❌ Error al deducir stock de ${item.sku}:`, resultado.message);
+            return res.status(400).json({
+              success: false,
+              message: `Error al deducir stock del producto ${item.producto_nombre} (${item.sku}): ${resultado.message}`
+            });
+          }
+
+          console.log(`[updatePedidoEstatus] ✅ Stock deducido: ${item.sku} - ${piezasTotales} piezas (Stock nuevo: ${resultado.newStock})`);
+          
+        } catch (invError) {
+          console.error(`[updatePedidoEstatus] ❌ Error al deducir inventario para ${item.sku}:`, invError);
+          return res.status(500).json({
+            success: false,
+            message: `Error al deducir inventario del producto ${item.producto_nombre} (${item.sku})`,
+            error: invError.message
+          });
+        }
+      }
+
+      console.log(`[updatePedidoEstatus] 🎉 Stock deducido exitosamente para todos los productos del pedido ${pedidoId}`);
+    }
+
     // Actualizar el estatus del pedido (sin FechaActualizacion que no existe)
     const result = await db.query(
       `UPDATE pedidos 

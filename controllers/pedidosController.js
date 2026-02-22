@@ -1124,19 +1124,22 @@ const crearPedido = async (req, res) => {
           cantidadTotalCobrar: split.cantidadTotalCobrar,
         });
 
-        // ✅ ALLOCATION AUTOMÁTICA: Descontar stock del pool general
-        // IMPORTANTE: Esto se ejecuta DESPUÉS de insertar el detalle para tener el detalleId
+        // ❌ DESHABILITADO: Stock NO se deduce al crear el pedido
+        // ✅ NUEVO FLUJO: El stock se deduce SOLO cuando el admin cambia el estatus a "Confirmado"
+        // Esto permite que los pedidos se creen sin afectar inventario hasta que sean confirmados
+        // Ver: adminController.js -> updatePedidoEstatus() para la lógica de deducción
+        
+        /* CÓDIGO ORIGINAL COMENTADO - NO DEDUCIR STOCK AL CREAR PEDIDO
         const piezasRealmenteSurtidas = split.cantidadSurtida * tamanoValor;
         if (piezasRealmenteSurtidas > 0 && masterInfo) {
           try {
             console.log(`\n🔄 [Pedido ${pedidoId}] Procesando allocation para Variante ${masterInfo.varianteId}: ${piezasRealmenteSurtidas} piezas`);
 
-            // PASO 1: Allocation automática desde admins disponibles
             const allocationResult = await SmartStockService.allocateStockAutomatically({
               varianteId: masterInfo.varianteId,
               cantidadRequerida: piezasRealmenteSurtidas,
               tenantId: tenant_id,
-              estrategia: 'DESC' // Admin con más stock primero (evita fragmentación)
+              estrategia: 'DESC'
             });
 
             if (!allocationResult.success) {
@@ -1149,15 +1152,14 @@ const crearPedido = async (req, res) => {
               console.log(`   📦 Admin ${a.adminId} (${a.adminNombre}): ${a.cantidad} piezas`);
             });
 
-            // PASO 2: Descontar stock de cada admin y registrar trazabilidad
             const adjustResult = await SmartStockService.adjustStockMultiAdmin({
               allocations: allocationResult.allocations,
               varianteId: masterInfo.varianteId,
               pedidoId: pedidoId,
-              detalleId: detalleIdSurtido, // ✅ Ahora tenemos el ID del detalle
+              detalleId: detalleIdSurtido,
               tenantId: tenant_id,
               motivo: `Venta Pedido #${pedidoId}`,
-              client // ✅ Usar misma transacción
+              client
             });
 
             if (!adjustResult.success) {
@@ -1167,7 +1169,6 @@ const crearPedido = async (req, res) => {
 
             console.log(`✅ [MultiAdmin] ${adjustResult.totalDescontado} piezas descontadas exitosamente`);
 
-            // PASO 3: Log de auditoría (agregado para cada admin)
             for (const result of adjustResult.results) {
               if (result.success) {
                 await client.query(
@@ -1192,6 +1193,9 @@ const crearPedido = async (req, res) => {
             throw new Error(stockError.message || 'Stock insuficiente. El pedido no pudo ser procesado.');
           }
         }
+        FIN CÓDIGO COMENTADO */
+        
+        console.log(`ℹ️ [Pedido ${pedidoId}] Stock NO deducido al crear pedido - se deducirá al confirmar`)
       }
 
       // CRITICAL FIX: Insertar detalle backorder (SOLO si hay cantidad pendiente)
