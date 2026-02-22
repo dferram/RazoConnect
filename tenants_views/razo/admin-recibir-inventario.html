@@ -362,10 +362,12 @@
                     <button
                       id="btnCerrarSesion"
                       type="button"
-                      class="btn btn-warning w-100"
-                      style="display: none;"
+                      class="btn w-100"
+                      style="display: none; background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); color: white; font-weight: 600; border: none; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); transition: all 0.3s ease;"
+                      onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(220, 38, 38, 0.4)';"
+                      onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(220, 38, 38, 0.3)';"
                     >
-                      <i class="bi bi-x-circle"></i> Cerrar Sesión (Marcar pendientes como no recibidos)
+                      <i class="bi bi-x-octagon-fill"></i> Cerrar Sesión y Marcar Pendientes como No Recibidos
                     </button>
                   </div>
                 </div>
@@ -2563,27 +2565,84 @@
           return;
         }
 
+        // Calcular cuántos productos pendientes hay
+        const items = Array.isArray(state.items) ? state.items : [];
+        const pendientes = items.filter((i) => {
+          const sol = solicitadoPzasValue(i);
+          const rec = recibidoPzasValue(i);
+          const ses = sesionRecepcion
+            .filter((x) => String(x.detalleId) === String(i.detalleId))
+            .reduce((acc, x) => acc + (Number.parseInt(x.cantidad, 10) || 0), 0);
+          const pen = Math.max(sol - rec - ses, 0);
+          return pen > 0;
+        });
+
         // Confirmar con el usuario
         const confirmacion = await Swal.fire({
-          title: '⚠️ Cerrar Sesión de Recepción',
+          title: '<span style="color: #DC2626; font-weight: 800;">⚠️ Cerrar Sesión de Recepción</span>',
           html: `
-            <div style="text-align: left;">
-              <p style="margin-bottom: 1rem; color: #6b7280;">
-                Esta acción marcará todos los productos <strong>pendientes de recibir</strong> como <strong>no recibidos</strong> (cerrados por merma).
-              </p>
-              <div style="padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem; margin-bottom: 1rem;">
-                <strong>💡 Nota:</strong> Los productos que ya hayas registrado en la sesión NO se verán afectados.
+            <div style="text-align: left; padding: 0.5rem;">
+              <!-- Alerta principal -->
+              <div style="padding: 1rem; background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); border-left: 4px solid #DC2626; border-radius: 0.75rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);">
+                <div style="display: flex; align-items: start; gap: 0.75rem;">
+                  <div style="font-size: 1.5rem;">🚨</div>
+                  <div>
+                    <p style="margin: 0 0 0.5rem 0; color: #991B1B; font-weight: 700; font-size: 0.95rem;">
+                      Esta acción marcará <strong>${pendientes.length} producto(s) pendiente(s)</strong> como <strong>NO RECIBIDOS</strong>
+                    </p>
+                    <p style="margin: 0; color: #7F1D1D; font-size: 0.875rem;">
+                      Los productos se cerrarán por merma y no podrán ser recibidos posteriormente en esta orden.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <label for="swal-motivo" style="display: block; font-weight: 700; margin-bottom: 0.5rem;">Motivo del cierre (opcional):</label>
-              <textarea id="swal-motivo" class="swal2-textarea" placeholder="Ej: Proveedor no entregó productos faltantes..." style="width: 100%; min-height: 80px;"></textarea>
+
+              <!-- Info positiva -->
+              <div style="padding: 0.875rem; background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%); border-left: 4px solid #10B981; border-radius: 0.75rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);">
+                <div style="display: flex; align-items: start; gap: 0.75rem;">
+                  <div style="font-size: 1.25rem;">✅</div>
+                  <div>
+                    <p style="margin: 0; color: #065F46; font-weight: 600; font-size: 0.875rem;">
+                      Los productos que ya registraste en la sesión <strong>NO se verán afectados</strong> y se procesarán normalmente.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Campo de motivo -->
+              <div style="margin-bottom: 1rem;">
+                <label for="swal-motivo" style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: #111827; font-size: 0.95rem;">
+                  📝 Motivo del cierre (opcional):
+                </label>
+                <textarea 
+                  id="swal-motivo" 
+                  class="swal2-textarea" 
+                  placeholder="Ej: Proveedor no entregó productos faltantes, mercancía dañada en tránsito, cancelación de pedido..." 
+                  style="width: 100%; min-height: 90px; border: 2px solid #E5E7EB; border-radius: 0.5rem; padding: 0.75rem; font-size: 0.875rem; font-family: inherit; resize: vertical;"
+                ></textarea>
+              </div>
+
+              <!-- Advertencia final -->
+              <div style="padding: 0.75rem; background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 0.5rem; margin-top: 1rem;">
+                <p style="margin: 0; color: #92400E; font-size: 0.8rem; font-weight: 600;">
+                  ⚠️ Esta acción es <strong>irreversible</strong>. Los productos cerrados quedarán registrados como merma en el sistema.
+                </p>
+              </div>
             </div>
           `,
-          icon: 'warning',
+          width: '650px',
           showCancelButton: true,
-          confirmButtonText: 'Sí, cerrar sesión',
-          cancelButtonText: 'Cancelar',
-          confirmButtonColor: '#F97316',
+          confirmButtonText: '<i class="bi bi-check-circle-fill"></i> Sí, cerrar sesión',
+          cancelButtonText: '<i class="bi bi-x-circle"></i> Cancelar',
+          confirmButtonColor: '#DC2626',
+          cancelButtonColor: '#6B7280',
           focusCancel: true,
+          customClass: {
+            confirmButton: 'swal-btn-confirm-danger',
+            cancelButton: 'swal-btn-cancel',
+            popup: 'swal-popup-modern'
+          },
+          buttonsStyling: false,
           preConfirm: () => {
             const motivo = document.getElementById('swal-motivo')?.value?.trim() || 'Sesión cerrada manualmente';
             return { motivo };
@@ -3039,6 +3098,45 @@
         background-color: #F3F4F6;
         color: #F97316;
         border-radius: 0.375rem;
+      }
+
+      /* Estilos personalizados para botones de SweetAlert */
+      .swal-btn-confirm-danger {
+        background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%) !important;
+        color: white !important;
+        padding: 0.75rem 2rem !important;
+        border-radius: 0.5rem !important;
+        font-weight: 600 !important;
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
+        transition: all 0.3s ease !important;
+        font-size: 0.95rem !important;
+      }
+
+      .swal-btn-confirm-danger:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4) !important;
+      }
+
+      .swal-btn-cancel {
+        background: #F3F4F6 !important;
+        color: #374151 !important;
+        padding: 0.75rem 2rem !important;
+        border-radius: 0.5rem !important;
+        font-weight: 600 !important;
+        border: 2px solid #E5E7EB !important;
+        transition: all 0.3s ease !important;
+        font-size: 0.95rem !important;
+      }
+
+      .swal-btn-cancel:hover {
+        background: #E5E7EB !important;
+        border-color: #D1D5DB !important;
+      }
+
+      .swal-popup-modern {
+        border-radius: 1rem !important;
+        padding: 1.5rem !important;
       }
 
     </style>

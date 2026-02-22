@@ -166,51 +166,92 @@ function limpiarFiltros() {
 /**
  * MISIÓN 3: Prepare unified data for reports using SESSION data (input values)
  * Returns array with complete financial information from sesionRecepcion
+ * Incluye productos recibidos Y productos cerrados por merma
  */
 function prepararDatosReporte() {
-  if (!state.orden || !Array.isArray(window.sesionRecepcion) || window.sesionRecepcion.length === 0) {
-    return [];
+  if (!state.orden) {
+    return { recibidos: [], cerradosPorMerma: [] };
   }
 
-  const datos = [];
+  const recibidos = [];
+  const cerradosPorMerma = [];
   
-  // Usar sesionRecepcion en lugar de state.items para obtener cantidades reales ingresadas
-  window.sesionRecepcion.forEach(item => {
-    const cantidadPiezas = parseInt(item.cantidadPiezas || item.cantidad, 10) || 0;  // ← Compatibilidad con datos antiguos
-    const costoUnitario = parseFloat(item.costoUnitario || item.costounitario || 0);
-    const piezasPorPaquete = parseInt(item.piezasPorPaquete || item.piezasporpaquete, 10) || 1;
-    
-    // Calculate totals usando la cantidad de la sesión
-    const totalCosto = cantidadPiezas * costoUnitario;
-    
-    // Buscar información adicional del producto en state.items si está disponible
-    const itemInfo = Array.isArray(state.items) ? state.items.find(x => String(x.detalleId) === String(item.detalleId)) : null;
-    const precioVenta = itemInfo?.precioofertaunitario || itemInfo?.preciounitario || 0;
-    const totalVenta = cantidadPiezas * precioVenta;
-    
-    datos.push({
-      sku: item.sku || '',
-      producto: item.nombreProducto || '',
-      categoria: itemInfo?.categoria || 'Sin categoría',
-      variante: itemInfo ? `${itemInfo.color || 'Sin color'} / ${itemInfo.dimensiones || 'Sin medida'}` : 'N/A',
-      cantidadPiezas: cantidadPiezas,
-      costoUnitario: costoUnitario,
-      totalCosto: totalCosto,
-      precioVenta: precioVenta,
-      totalVenta: totalVenta
+  // 1. Productos RECIBIDOS (en sesión)
+  if (Array.isArray(window.sesionRecepcion) && window.sesionRecepcion.length > 0) {
+    window.sesionRecepcion.forEach(item => {
+      const cantidadPiezas = parseInt(item.cantidadPiezas || item.cantidad, 10) || 0;
+      const costoUnitario = parseFloat(item.costoUnitario || item.costounitario || 0);
+      const piezasPorPaquete = parseInt(item.piezasPorPaquete || item.piezasporpaquete, 10) || 1;
+      
+      const totalCosto = cantidadPiezas * costoUnitario;
+      
+      const itemInfo = Array.isArray(state.items) ? state.items.find(x => String(x.detalleId) === String(item.detalleId)) : null;
+      const precioVenta = itemInfo?.precioofertaunitario || itemInfo?.preciounitario || 0;
+      const totalVenta = cantidadPiezas * precioVenta;
+      
+      recibidos.push({
+        sku: item.sku || '',
+        producto: item.nombreProducto || '',
+        categoria: itemInfo?.categoria || 'Sin categoría',
+        variante: itemInfo ? `${itemInfo.color || 'Sin color'} / ${itemInfo.dimensiones || 'Sin medida'}` : 'N/A',
+        cantidadPiezas: cantidadPiezas,
+        costoUnitario: costoUnitario,
+        totalCosto: totalCosto,
+        precioVenta: precioVenta,
+        totalVenta: totalVenta,
+        tipo: 'RECIBIDO'
+      });
     });
-  });
+  }
 
-  return datos;
+  // 2. Productos CERRADOS POR MERMA (pendientes que no se recibieron)
+  if (Array.isArray(state.items)) {
+    state.items.forEach(item => {
+      const solicitado = parseInt(item.cantidadSolicitada, 10) || 0;
+      const recibido = parseInt(item.cantidadRecibida || item.piezasRecibidas || item.piezasrecibidas, 10) || 0;
+      
+      // Calcular cuánto está en sesión
+      const enSesion = window.sesionRecepcion ? window.sesionRecepcion
+        .filter(x => String(x.detalleId) === String(item.detalleId))
+        .reduce((acc, x) => acc + (parseInt(x.cantidadPiezas || x.cantidad, 10) || 0), 0) : 0;
+      
+      const pendiente = Math.max(solicitado - recibido - enSesion, 0);
+      
+      // Si hay pendiente, significa que se cerró por merma
+      if (pendiente > 0) {
+        const costoUnitario = parseFloat(item.costoUnitario || item.costounitario || 0);
+        const totalCosto = pendiente * costoUnitario;
+        const precioVenta = item.precioofertaunitario || item.preciounitario || 0;
+        const totalVenta = pendiente * precioVenta;
+        
+        cerradosPorMerma.push({
+          sku: item.sku || '',
+          producto: item.nombreProducto || '',
+          categoria: item.categoria || 'Sin categoría',
+          variante: `${item.color || 'Sin color'} / ${item.dimensiones || 'Sin medida'}`,
+          cantidadPiezas: pendiente,
+          costoUnitario: costoUnitario,
+          totalCosto: totalCosto,
+          precioVenta: precioVenta,
+          totalVenta: totalVenta,
+          tipo: 'CERRADO_MERMA',
+          motivo: item.motivo_discrepancia || 'Sesión cerrada - Producto no recibido'
+        });
+      }
+    });
+  }
+
+  return { recibidos, cerradosPorMerma };
 }
 
 /**
  * Export to Excel with comprehensive financial summary
+ * Muestra productos recibidos y cerrados por merma de manera diferenciada
  */
 async function exportarExcel() {
   const datos = prepararDatosReporte();
   
-  if (datos.length === 0) {
+  if (datos.recibidos.length === 0 && datos.cerradosPorMerma.length === 0) {
     Swal.fire({
       icon: 'warning',
       title: 'Sin Datos',
@@ -331,80 +372,211 @@ async function exportarExcel() {
       };
     });
 
-    // Data rows
+    // Data rows - SECCIÓN 1: PRODUCTOS RECIBIDOS
     let currentRow = 6;
-    let totalPiezas = 0;
-    let totalInversion = 0;
-    let totalVentaEsperada = 0;
+    let totalPiezasRecibidas = 0;
+    let totalInversionRecibida = 0;
+    let totalVentaRecibida = 0;
 
-    datos.forEach(item => {
-      const row = worksheet.getRow(currentRow);
-      row.height = 20;
-
-      // SKU
-      const cellA = worksheet.getCell(`A${currentRow}`);
-      cellA.value = item.sku;
-      cellA.alignment = { horizontal: 'left', vertical: 'middle' };
-      cellA.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-
-      // Producto
-      const cellB = worksheet.getCell(`B${currentRow}`);
-      cellB.value = item.producto;
-      cellB.alignment = { horizontal: 'left', vertical: 'middle' };
-      cellB.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-
-      // Categoría
-      const cellC = worksheet.getCell(`C${currentRow}`);
-      cellC.value = item.categoria;
-      cellC.alignment = { horizontal: 'left', vertical: 'middle' };
-      cellC.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-
-      // Variante
-      const cellD = worksheet.getCell(`D${currentRow}`);
-      cellD.value = item.variante;
-      cellD.alignment = { horizontal: 'left', vertical: 'middle' };
-      cellD.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-
-      // Cantidad
-      const cellE = worksheet.getCell(`E${currentRow}`);
-      cellE.value = item.cantidadPiezas.toLocaleString('es-MX');
-      cellE.alignment = { horizontal: 'center', vertical: 'middle' };
-      cellE.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-
-      // Costo Unitario
-      const cellF = worksheet.getCell(`F${currentRow}`);
-      cellF.value = item.costoUnitario;
-      cellF.numFmt = '$#,##0.00';
-      cellF.alignment = { horizontal: 'right', vertical: 'middle' };
-      cellF.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-
-      // Total Costo
-      const cellG = worksheet.getCell(`G${currentRow}`);
-      cellG.value = item.totalCosto;
-      cellG.numFmt = '$#,##0.00';
-      cellG.alignment = { horizontal: 'right', vertical: 'middle' };
-      cellG.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-
-      // Precio Venta
-      const cellH = worksheet.getCell(`H${currentRow}`);
-      cellH.value = item.precioVenta;
-      cellH.numFmt = '$#,##0.00';
-      cellH.alignment = { horizontal: 'right', vertical: 'middle' };
-      cellH.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-
-      // Total Venta
-      const cellI = worksheet.getCell(`I${currentRow}`);
-      cellI.value = item.totalVenta;
-      cellI.numFmt = '$#,##0.00';
-      cellI.alignment = { horizontal: 'right', vertical: 'middle' };
-      cellI.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-
-      totalPiezas += item.cantidadPiezas;
-      totalInversion += item.totalCosto;
-      totalVentaEsperada += item.totalVenta;
-
+    // Agregar encabezado de sección si hay productos recibidos
+    if (datos.recibidos.length > 0) {
+      worksheet.mergeCells(`A${currentRow}:I${currentRow}`);
+      const seccionRecibidosCell = worksheet.getCell(`A${currentRow}`);
+      seccionRecibidosCell.value = '✅ PRODUCTOS RECIBIDOS';
+      seccionRecibidosCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FF065F46' } };
+      seccionRecibidosCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      seccionRecibidosCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } };
+      seccionRecibidosCell.border = { top: { style: 'medium' }, left: { style: 'medium' }, bottom: { style: 'medium' }, right: { style: 'medium' } };
+      worksheet.getRow(currentRow).height = 25;
       currentRow++;
-    });
+
+      datos.recibidos.forEach(item => {
+        const row = worksheet.getRow(currentRow);
+        row.height = 20;
+
+        const fillColor = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0FDF4' } };
+
+        // SKU
+        const cellA = worksheet.getCell(`A${currentRow}`);
+        cellA.value = item.sku;
+        cellA.alignment = { horizontal: 'left', vertical: 'middle' };
+        cellA.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellA.fill = fillColor;
+
+        // Producto
+        const cellB = worksheet.getCell(`B${currentRow}`);
+        cellB.value = item.producto;
+        cellB.alignment = { horizontal: 'left', vertical: 'middle' };
+        cellB.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellB.fill = fillColor;
+
+        // Categoría
+        const cellC = worksheet.getCell(`C${currentRow}`);
+        cellC.value = item.categoria;
+        cellC.alignment = { horizontal: 'left', vertical: 'middle' };
+        cellC.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellC.fill = fillColor;
+
+        // Variante
+        const cellD = worksheet.getCell(`D${currentRow}`);
+        cellD.value = item.variante;
+        cellD.alignment = { horizontal: 'left', vertical: 'middle' };
+        cellD.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellD.fill = fillColor;
+
+        // Cantidad
+        const cellE = worksheet.getCell(`E${currentRow}`);
+        cellE.value = item.cantidadPiezas.toLocaleString('es-MX');
+        cellE.alignment = { horizontal: 'center', vertical: 'middle' };
+        cellE.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellE.fill = fillColor;
+
+        // Costo Unitario
+        const cellF = worksheet.getCell(`F${currentRow}`);
+        cellF.value = item.costoUnitario;
+        cellF.numFmt = '$#,##0.00';
+        cellF.alignment = { horizontal: 'right', vertical: 'middle' };
+        cellF.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellF.fill = fillColor;
+
+        // Total Costo
+        const cellG = worksheet.getCell(`G${currentRow}`);
+        cellG.value = item.totalCosto;
+        cellG.numFmt = '$#,##0.00';
+        cellG.alignment = { horizontal: 'right', vertical: 'middle' };
+        cellG.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellG.fill = fillColor;
+
+        // Precio Venta
+        const cellH = worksheet.getCell(`H${currentRow}`);
+        cellH.value = item.precioVenta;
+        cellH.numFmt = '$#,##0.00';
+        cellH.alignment = { horizontal: 'right', vertical: 'middle' };
+        cellH.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellH.fill = fillColor;
+
+        // Total Venta
+        const cellI = worksheet.getCell(`I${currentRow}`);
+        cellI.value = item.totalVenta;
+        cellI.numFmt = '$#,##0.00';
+        cellI.alignment = { horizontal: 'right', vertical: 'middle' };
+        cellI.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellI.fill = fillColor;
+
+        totalPiezasRecibidas += item.cantidadPiezas;
+        totalInversionRecibida += item.totalCosto;
+        totalVentaRecibida += item.totalVenta;
+
+        currentRow++;
+      });
+    }
+
+    // SECCIÓN 2: PRODUCTOS CERRADOS POR MERMA
+    let totalPiezasMerma = 0;
+    let totalInversionMerma = 0;
+    let totalVentaMerma = 0;
+
+    if (datos.cerradosPorMerma.length > 0) {
+      // Espacio entre secciones
+      currentRow++;
+
+      worksheet.mergeCells(`A${currentRow}:I${currentRow}`);
+      const seccionMermaCell = worksheet.getCell(`A${currentRow}`);
+      seccionMermaCell.value = '❌ PRODUCTOS CERRADOS POR MERMA (NO RECIBIDOS)';
+      seccionMermaCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FF991B1B' } };
+      seccionMermaCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      seccionMermaCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEE2E2' } };
+      seccionMermaCell.border = { top: { style: 'medium' }, left: { style: 'medium' }, bottom: { style: 'medium' }, right: { style: 'medium' } };
+      worksheet.getRow(currentRow).height = 25;
+      currentRow++;
+
+      datos.cerradosPorMerma.forEach(item => {
+        const row = worksheet.getRow(currentRow);
+        row.height = 20;
+
+        const fillColor = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF2F2' } };
+
+        // SKU
+        const cellA = worksheet.getCell(`A${currentRow}`);
+        cellA.value = item.sku;
+        cellA.alignment = { horizontal: 'left', vertical: 'middle' };
+        cellA.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellA.fill = fillColor;
+
+        // Producto
+        const cellB = worksheet.getCell(`B${currentRow}`);
+        cellB.value = item.producto;
+        cellB.alignment = { horizontal: 'left', vertical: 'middle' };
+        cellB.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellB.fill = fillColor;
+
+        // Categoría
+        const cellC = worksheet.getCell(`C${currentRow}`);
+        cellC.value = item.categoria;
+        cellC.alignment = { horizontal: 'left', vertical: 'middle' };
+        cellC.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellC.fill = fillColor;
+
+        // Variante
+        const cellD = worksheet.getCell(`D${currentRow}`);
+        cellD.value = item.variante;
+        cellD.alignment = { horizontal: 'left', vertical: 'middle' };
+        cellD.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellD.fill = fillColor;
+
+        // Cantidad
+        const cellE = worksheet.getCell(`E${currentRow}`);
+        cellE.value = item.cantidadPiezas.toLocaleString('es-MX');
+        cellE.alignment = { horizontal: 'center', vertical: 'middle' };
+        cellE.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellE.fill = fillColor;
+        cellE.font = { color: { argb: 'FFDC2626' }, bold: true };
+
+        // Costo Unitario
+        const cellF = worksheet.getCell(`F${currentRow}`);
+        cellF.value = item.costoUnitario;
+        cellF.numFmt = '$#,##0.00';
+        cellF.alignment = { horizontal: 'right', vertical: 'middle' };
+        cellF.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellF.fill = fillColor;
+
+        // Total Costo
+        const cellG = worksheet.getCell(`G${currentRow}`);
+        cellG.value = item.totalCosto;
+        cellG.numFmt = '$#,##0.00';
+        cellG.alignment = { horizontal: 'right', vertical: 'middle' };
+        cellG.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellG.fill = fillColor;
+        cellG.font = { color: { argb: 'FFDC2626' }, bold: true };
+
+        // Precio Venta
+        const cellH = worksheet.getCell(`H${currentRow}`);
+        cellH.value = item.precioVenta;
+        cellH.numFmt = '$#,##0.00';
+        cellH.alignment = { horizontal: 'right', vertical: 'middle' };
+        cellH.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellH.fill = fillColor;
+
+        // Total Venta
+        const cellI = worksheet.getCell(`I${currentRow}`);
+        cellI.value = item.totalVenta;
+        cellI.numFmt = '$#,##0.00';
+        cellI.alignment = { horizontal: 'right', vertical: 'middle' };
+        cellI.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        cellI.fill = fillColor;
+
+        totalPiezasMerma += item.cantidadPiezas;
+        totalInversionMerma += item.totalCosto;
+        totalVentaMerma += item.totalVenta;
+
+        currentRow++;
+      });
+    }
+
+    // Calcular totales generales
+    const totalPiezas = totalPiezasRecibidas + totalPiezasMerma;
+    const totalInversion = totalInversionRecibida + totalInversionMerma;
+    const totalVentaEsperada = totalVentaRecibida + totalVentaMerma;
 
     // Totals row
     const totalsRow = worksheet.getRow(currentRow);
