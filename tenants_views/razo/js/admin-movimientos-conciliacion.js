@@ -59,7 +59,8 @@ async function cargarSesionesAuditoria() {
       sesiones.forEach(sesion => {
         const option = document.createElement('option');
         option.value = sesion.sesionid;
-        option.textContent = `${sesion.nombre} (${new Date(sesion.fechacreacion).toLocaleDateString('es-MX')})`;
+        const fecha = sesion.fechacierre || sesion.fechainicio;
+        option.textContent = `${sesion.nombre} (${new Date(fecha).toLocaleDateString('es-MX')})`;
         select.appendChild(option);
       });
       console.log(`✅ Cargadas ${sesiones.length} sesiones de auditoría`);

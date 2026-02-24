@@ -3086,8 +3086,8 @@ const getAjustesInventarioFiltrados = async (req, res) => {
          p.productoid,
          p.nombreproducto,
          COALESCE(a.nombre, 'Sistema') AS usuario_nombre,
-         oc.OrdenCompraID AS oc_numero,
-         oc.Estatus AS oc_estatus,
+         oc.ordencompraid AS oc_numero,
+         oc.estatus AS oc_estatus,
          ts.nombre AS sesion_nombre,
          ts.estatus AS sesion_estatus,
          CASE 
@@ -3106,7 +3106,7 @@ const getAjustesInventarioFiltrados = async (req, res) => {
        INNER JOIN producto_variantes pv ON pv.varianteid = li.varianteid
        INNER JOIN productos p ON p.productoid = pv.productoid
        LEFT JOIN administradores a ON a.adminid = li.usuarioid
-       LEFT JOIN OrdenesDeCompra oc ON oc.OrdenCompraID = li.orden_compra_id
+       LEFT JOIN ordenesdecompra oc ON oc.ordencompraid = li.orden_compra_id
        LEFT JOIN toma_inventario_sesiones ts ON ts.sesionid = li.sesion_auditoria_id
        ${whereSql}
        ORDER BY li.fecha DESC
@@ -11842,24 +11842,24 @@ const getAllOrdenesCompra = async (req, res) => {
 
     let query = `
       SELECT 
-        oc.OrdenCompraID,
-        oc.ProveedorID,
-        oc.FechaCreacion,
-        oc.FechaEntregaEsperada,
-        oc.Estatus,
-        oc.OrigenOC,
+        oc.ordencompraid,
+        oc.proveedorid,
+        oc.fechacreacion,
+        oc.fechaentregaesperada,
+        oc.estatus,
+        oc.origenoc,
         oc.usuario_creador_id,
         oc.admin_creador_id,
-        p.NombreEmpresa as ProveedorNombre,
-        COUNT(doc.DetalleOC_ID) as TotalProductos,
-        a.nombre as AdminNombre,
-        CONCAT(c.Nombre, ' ', c.Apellido) as NombreCliente
-      FROM OrdenesDeCompra oc
-      INNER JOIN Proveedores p ON oc.ProveedorID = p.ProveedorID
-      LEFT JOIN DetallesOrdenCompra doc ON oc.OrdenCompraID = doc.OrdenCompraID
-      LEFT JOIN Administradores a ON oc.admin_creador_id = a.adminid
-      LEFT JOIN Pedidos ped ON oc.pedido_origen_id = ped.PedidoID
-      LEFT JOIN Clientes c ON ped.ClienteID = c.ClienteID
+        p.nombreempresa as proveedornombre,
+        COUNT(doc.detalleoc_id) as totalproductos,
+        a.nombre as adminnombre,
+        CONCAT(c.nombre, ' ', c.apellido) as nombrecliente
+      FROM ordenesdecompra oc
+      INNER JOIN proveedores p ON oc.proveedorid = p.proveedorid
+      LEFT JOIN detallesordencompra doc ON oc.ordencompraid = doc.ordencompraid
+      LEFT JOIN administradores a ON oc.admin_creador_id = a.adminid
+      LEFT JOIN pedidos ped ON oc.pedido_origen_id = ped.pedidoid
+      LEFT JOIN clientes c ON ped.clienteid = c.clienteid
       WHERE oc.tenant_id = $1
     `;
 
@@ -11883,9 +11883,9 @@ const getAllOrdenesCompra = async (req, res) => {
     // Filtrar por estatus si se proporciona
     if (estatus) {
       if (estatus === "Pendiente,Parcial") {
-        query += ` AND oc.Estatus IN ('Pendiente', 'Parcial')`;
+        query += ` AND oc.estatus IN ('Pendiente', 'Parcial')`;
       } else {
-        query += ` AND oc.Estatus = $${paramIndex}`;
+        query += ` AND oc.estatus = $${paramIndex}`;
         values.push(estatus);
         paramIndex++;
       }
@@ -11895,25 +11895,25 @@ const getAllOrdenesCompra = async (req, res) => {
     if (origen) {
       if (origen === 'backorder') {
         // Órdenes generadas automáticamente por backorder
-        query += ` AND oc.OrigenOC = 'backorder'`;
+        query += ` AND oc.origenoc = 'backorder'`;
       } else if (origen === 'manual') {
-        // Órdenes creadas manualmente (OrigenOC es NULL o 'manual')
-        query += ` AND (oc.OrigenOC IS NULL OR oc.OrigenOC = 'manual')`;
+        // Órdenes creadas manualmente (origenoc es NULL o 'manual')
+        query += ` AND (oc.origenoc IS NULL OR oc.origenoc = 'manual')`;
       }
     }
 
     // Filtrar por proveedor
     if (proveedorId) {
-      query += ` AND oc.ProveedorID = $${paramIndex}`;
+      query += ` AND oc.proveedorid = $${paramIndex}`;
       values.push(parseInt(proveedorId));
       paramIndex++;
     }
 
     query += `
-      GROUP BY oc.OrdenCompraID, oc.ProveedorID, oc.FechaCreacion, 
-               oc.FechaEntregaEsperada, oc.Estatus, oc.OrigenOC, oc.usuario_creador_id,
-               oc.admin_creador_id, p.NombreEmpresa, a.nombre, c.Nombre, c.Apellido
-      ORDER BY oc.FechaCreacion DESC
+      GROUP BY oc.ordencompraid, oc.proveedorid, oc.fechacreacion, 
+               oc.fechaentregaesperada, oc.estatus, oc.origenoc, oc.usuario_creador_id,
+               oc.admin_creador_id, p.nombreempresa, a.nombre, c.nombre, c.apellido
+      ORDER BY oc.fechacreacion DESC
     `;
 
     const result = await db.query(query, values);
