@@ -139,9 +139,14 @@ function renderizarProductosRecibidos() {
     const tr = document.createElement('tr');
     
     const variante = `${producto.color || ''} ${producto.dimensiones || ''}`.trim() || 'N/A';
+    const imagenUrl = producto.imagen_url || '/images/placeholder-product.png';
     
     tr.innerHTML = `
-      <td style="font-weight: 600; color: var(--razo-orange);">${producto.sku || 'N/A'}</td>
+      <td style="text-align: center; padding: 0.5rem;">
+        <img src="${imagenUrl}" alt="${producto.nombreproducto}" 
+             style="width: 50px; height: 50px; object-fit: cover; border-radius: 0.375rem; border: 1px solid #e5e7eb;"
+             onerror="this.src='/images/placeholder-product.png'">
+      </td>
       <td style="font-weight: 600;">${producto.nombreproducto || 'N/A'}</td>
       <td>${producto.categoria || 'N/A'}</td>
       <td style="font-size: 0.9rem;">${variante}</td>
@@ -178,9 +183,14 @@ function renderizarProductosFaltantes() {
     
     const variante = `${producto.color || ''} ${producto.dimensiones || ''}`.trim() || 'N/A';
     const motivo = producto.motivo_discrepancia || 'Cerrado por merma';
+    const imagenUrl = producto.imagen_url || '/images/placeholder-product.png';
     
     tr.innerHTML = `
-      <td style="font-weight: 600; color: #ef4444;">${producto.sku || 'N/A'}</td>
+      <td style="text-align: center; padding: 0.5rem;">
+        <img src="${imagenUrl}" alt="${producto.nombreproducto}" 
+             style="width: 50px; height: 50px; object-fit: cover; border-radius: 0.375rem; border: 1px solid #e5e7eb; opacity: 0.6;"
+             onerror="this.src='/images/placeholder-product.png'">
+      </td>
       <td style="font-weight: 600;">${producto.nombreproducto || 'N/A'}</td>
       <td>${producto.categoria || 'N/A'}</td>
       <td style="font-size: 0.9rem;">${variante}</td>
@@ -308,6 +318,21 @@ function mostrarError(mensaje) {
  * Event Listeners
  */
 document.getElementById('btnGenerarPDF').addEventListener('click', generarPDF);
+
+// Botón Ver CXP
+document.getElementById('btnVerCXP').addEventListener('click', () => {
+  const ordenId = getOrdenIdFromURL();
+  if (ordenId) {
+    window.location.href = `admin-cuentas-por-pagar.html?ordenId=${ordenId}`;
+  } else {
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo obtener el ID de la orden',
+      confirmButtonColor: '#F97316'
+    });
+  }
+});
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
