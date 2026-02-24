@@ -5,7 +5,7 @@
 -- Dumped from database version 17.7
 -- Dumped by pg_dump version 17.5
 
--- Started on 2026-02-20 12:43:28
+-- Started on 2026-02-23 23:33:53
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -28,7 +28,7 @@ CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 5548 (class 0 OID 0)
+-- TOC entry 5575 (class 0 OID 0)
 -- Dependencies: 3
 -- Name: EXTENSION pg_cron; Type: COMMENT; Schema: -; Owner: 
 --
@@ -55,7 +55,7 @@ CREATE EXTENSION IF NOT EXISTS azure WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 5550 (class 0 OID 0)
+-- TOC entry 5577 (class 0 OID 0)
 -- Dependencies: 4
 -- Name: EXTENSION azure; Type: COMMENT; Schema: -; Owner: 
 --
@@ -72,7 +72,7 @@ CREATE EXTENSION IF NOT EXISTS pgaadauth WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 5551 (class 0 OID 0)
+-- TOC entry 5578 (class 0 OID 0)
 -- Dependencies: 2
 -- Name: EXTENSION pgaadauth; Type: COMMENT; Schema: -; Owner: 
 --
@@ -81,7 +81,7 @@ COMMENT ON EXTENSION pgaadauth IS 'Microsoft Entra ID Authentication';
 
 
 --
--- TOC entry 1043 (class 1247 OID 24963)
+-- TOC entry 1047 (class 1247 OID 24963)
 -- Name: estado_solicitud_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -95,7 +95,7 @@ CREATE TYPE public.estado_solicitud_enum AS ENUM (
 ALTER TYPE public.estado_solicitud_enum OWNER TO ferram;
 
 --
--- TOC entry 1046 (class 1247 OID 24970)
+-- TOC entry 1050 (class 1247 OID 24970)
 -- Name: estatus_aplicacion_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -109,7 +109,7 @@ CREATE TYPE public.estatus_aplicacion_enum AS ENUM (
 ALTER TYPE public.estatus_aplicacion_enum OWNER TO ferram;
 
 --
--- TOC entry 1049 (class 1247 OID 24978)
+-- TOC entry 1053 (class 1247 OID 24978)
 -- Name: estatus_conteo_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -124,7 +124,7 @@ CREATE TYPE public.estatus_conteo_enum AS ENUM (
 ALTER TYPE public.estatus_conteo_enum OWNER TO ferram;
 
 --
--- TOC entry 1052 (class 1247 OID 24988)
+-- TOC entry 1056 (class 1247 OID 24988)
 -- Name: estatus_cxp_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -140,7 +140,7 @@ CREATE TYPE public.estatus_cxp_enum AS ENUM (
 ALTER TYPE public.estatus_cxp_enum OWNER TO ferram;
 
 --
--- TOC entry 1055 (class 1247 OID 25000)
+-- TOC entry 1059 (class 1247 OID 25000)
 -- Name: estatus_sesion_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -155,7 +155,7 @@ CREATE TYPE public.estatus_sesion_enum AS ENUM (
 ALTER TYPE public.estatus_sesion_enum OWNER TO ferram;
 
 --
--- TOC entry 1058 (class 1247 OID 25010)
+-- TOC entry 1062 (class 1247 OID 25010)
 -- Name: tipo_cambio_enum; Type: TYPE; Schema: public; Owner: ferram
 --
 
@@ -169,7 +169,7 @@ CREATE TYPE public.tipo_cambio_enum AS ENUM (
 ALTER TYPE public.tipo_cambio_enum OWNER TO ferram;
 
 --
--- TOC entry 413 (class 1255 OID 26600)
+-- TOC entry 417 (class 1255 OID 26600)
 -- Name: actualizar_estatus_deuda_vencida(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -207,7 +207,7 @@ $$;
 ALTER FUNCTION public.actualizar_estatus_deuda_vencida() OWNER TO ferram;
 
 --
--- TOC entry 368 (class 1255 OID 28236)
+-- TOC entry 371 (class 1255 OID 28236)
 -- Name: actualizar_monto_total_devolucion(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -228,7 +228,7 @@ $$;
 ALTER FUNCTION public.actualizar_monto_total_devolucion() OWNER TO ferram;
 
 --
--- TOC entry 366 (class 1255 OID 28231)
+-- TOC entry 369 (class 1255 OID 28231)
 -- Name: actualizar_timestamp_devolucion(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -245,7 +245,7 @@ $$;
 ALTER FUNCTION public.actualizar_timestamp_devolucion() OWNER TO ferram;
 
 --
--- TOC entry 367 (class 1255 OID 28235)
+-- TOC entry 370 (class 1255 OID 28235)
 -- Name: calcular_monto_total_devolucion(integer); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -268,8 +268,8 @@ $$;
 ALTER FUNCTION public.calcular_monto_total_devolucion(p_devolucion_id integer) OWNER TO ferram;
 
 --
--- TOC entry 5575 (class 0 OID 0)
--- Dependencies: 367
+-- TOC entry 5602 (class 0 OID 0)
+-- Dependencies: 370
 -- Name: FUNCTION calcular_monto_total_devolucion(p_devolucion_id integer); Type: COMMENT; Schema: public; Owner: ferram
 --
 
@@ -277,7 +277,7 @@ COMMENT ON FUNCTION public.calcular_monto_total_devolucion(p_devolucion_id integ
 
 
 --
--- TOC entry 398 (class 1255 OID 27426)
+-- TOC entry 402 (class 1255 OID 27426)
 -- Name: fn_validar_movimiento_inventario(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -304,8 +304,8 @@ $$;
 ALTER FUNCTION public.fn_validar_movimiento_inventario() OWNER TO ferram;
 
 --
--- TOC entry 5576 (class 0 OID 0)
--- Dependencies: 398
+-- TOC entry 5603 (class 0 OID 0)
+-- Dependencies: 402
 -- Name: FUNCTION fn_validar_movimiento_inventario(); Type: COMMENT; Schema: public; Owner: ferram
 --
 
@@ -313,7 +313,7 @@ COMMENT ON FUNCTION public.fn_validar_movimiento_inventario() IS 'Valida que los
 
 
 --
--- TOC entry 415 (class 1255 OID 27007)
+-- TOC entry 419 (class 1255 OID 27007)
 -- Name: generar_folio_remision(integer); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -350,8 +350,8 @@ $$;
 ALTER FUNCTION public.generar_folio_remision(p_tenant_id integer) OWNER TO ferram;
 
 --
--- TOC entry 5577 (class 0 OID 0)
--- Dependencies: 415
+-- TOC entry 5604 (class 0 OID 0)
+-- Dependencies: 419
 -- Name: FUNCTION generar_folio_remision(p_tenant_id integer); Type: COMMENT; Schema: public; Owner: ferram
 --
 
@@ -359,7 +359,7 @@ COMMENT ON FUNCTION public.generar_folio_remision(p_tenant_id integer) IS 'Gener
 
 
 --
--- TOC entry 395 (class 1255 OID 25964)
+-- TOC entry 399 (class 1255 OID 25964)
 -- Name: get_stock_admin(integer, integer); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -382,8 +382,8 @@ $$;
 ALTER FUNCTION public.get_stock_admin(p_admin_id integer, p_variante_id integer) OWNER TO ferram;
 
 --
--- TOC entry 5578 (class 0 OID 0)
--- Dependencies: 395
+-- TOC entry 5605 (class 0 OID 0)
+-- Dependencies: 399
 -- Name: FUNCTION get_stock_admin(p_admin_id integer, p_variante_id integer); Type: COMMENT; Schema: public; Owner: ferram
 --
 
@@ -391,7 +391,46 @@ COMMENT ON FUNCTION public.get_stock_admin(p_admin_id integer, p_variante_id int
 
 
 --
--- TOC entry 408 (class 1255 OID 25017)
+-- TOC entry 376 (class 1255 OID 28693)
+-- Name: get_stock_disponible(integer, integer, integer); Type: FUNCTION; Schema: public; Owner: ferram
+--
+
+CREATE FUNCTION public.get_stock_disponible(p_variante_id integer, p_admin_id integer, p_tenant_id integer) RETURNS integer
+    LANGUAGE plpgsql STABLE
+    AS $$
+DECLARE
+    v_cantidad INTEGER;
+    v_reservada INTEGER;
+BEGIN
+    SELECT cantidad, cantidad_reservada
+    INTO v_cantidad, v_reservada
+    FROM stock_admin
+    WHERE variante_id = p_variante_id
+      AND admin_id = p_admin_id
+      AND tenant_id = p_tenant_id;
+    
+    IF NOT FOUND THEN
+        RETURN 0;
+    END IF;
+    
+    RETURN GREATEST(0, v_cantidad - v_reservada);
+END;
+$$;
+
+
+ALTER FUNCTION public.get_stock_disponible(p_variante_id integer, p_admin_id integer, p_tenant_id integer) OWNER TO ferram;
+
+--
+-- TOC entry 5606 (class 0 OID 0)
+-- Dependencies: 376
+-- Name: FUNCTION get_stock_disponible(p_variante_id integer, p_admin_id integer, p_tenant_id integer); Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON FUNCTION public.get_stock_disponible(p_variante_id integer, p_admin_id integer, p_tenant_id integer) IS 'Calcula el stock realmente disponible para venta (cantidad física - reservas activas)';
+
+
+--
+-- TOC entry 412 (class 1255 OID 25017)
 -- Name: limitar_notificaciones_por_cliente(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -420,7 +459,7 @@ $$;
 ALTER FUNCTION public.limitar_notificaciones_por_cliente() OWNER TO ferram;
 
 --
--- TOC entry 369 (class 1255 OID 28494)
+-- TOC entry 372 (class 1255 OID 28494)
 -- Name: limpiar_bloqueos_antiguos(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -441,8 +480,8 @@ $$;
 ALTER FUNCTION public.limpiar_bloqueos_antiguos() OWNER TO ferram;
 
 --
--- TOC entry 5579 (class 0 OID 0)
--- Dependencies: 369
+-- TOC entry 5607 (class 0 OID 0)
+-- Dependencies: 372
 -- Name: FUNCTION limpiar_bloqueos_antiguos(); Type: COMMENT; Schema: public; Owner: ferram
 --
 
@@ -450,7 +489,7 @@ COMMENT ON FUNCTION public.limpiar_bloqueos_antiguos() IS 'Limpia bloqueos de se
 
 
 --
--- TOC entry 409 (class 1255 OID 25018)
+-- TOC entry 413 (class 1255 OID 25018)
 -- Name: limpiar_notificaciones_antiguas(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -473,7 +512,7 @@ $$;
 ALTER FUNCTION public.limpiar_notificaciones_antiguas() OWNER TO ferram;
 
 --
--- TOC entry 410 (class 1255 OID 25019)
+-- TOC entry 414 (class 1255 OID 25019)
 -- Name: obtener_siguiente_sku(integer); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -520,7 +559,7 @@ $$;
 ALTER FUNCTION public.obtener_siguiente_sku(p_categoria_id integer) OWNER TO ferram;
 
 --
--- TOC entry 418 (class 1255 OID 27621)
+-- TOC entry 422 (class 1255 OID 27621)
 -- Name: recalcular_total_pedido(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -649,8 +688,8 @@ $_$;
 ALTER FUNCTION public.recalcular_total_pedido() OWNER TO ferram;
 
 --
--- TOC entry 5580 (class 0 OID 0)
--- Dependencies: 418
+-- TOC entry 5608 (class 0 OID 0)
+-- Dependencies: 422
 -- Name: FUNCTION recalcular_total_pedido(); Type: COMMENT; Schema: public; Owner: ferram
 --
 
@@ -658,7 +697,7 @@ COMMENT ON FUNCTION public.recalcular_total_pedido() IS 'Valida totales de pedid
 
 
 --
--- TOC entry 411 (class 1255 OID 25020)
+-- TOC entry 415 (class 1255 OID 25020)
 -- Name: suspender_clientes_morosos(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -688,7 +727,7 @@ $$;
 ALTER FUNCTION public.suspender_clientes_morosos() OWNER TO ferram;
 
 --
--- TOC entry 417 (class 1255 OID 27816)
+-- TOC entry 421 (class 1255 OID 27816)
 -- Name: sync_producto_variante_stock(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -729,8 +768,8 @@ $$;
 ALTER FUNCTION public.sync_producto_variante_stock() OWNER TO ferram;
 
 --
--- TOC entry 5581 (class 0 OID 0)
--- Dependencies: 417
+-- TOC entry 5609 (class 0 OID 0)
+-- Dependencies: 421
 -- Name: FUNCTION sync_producto_variante_stock(); Type: COMMENT; Schema: public; Owner: ferram
 --
 
@@ -739,7 +778,7 @@ Se dispara en cada cambio de inventarios_admin para mantener integridad de datos
 
 
 --
--- TOC entry 414 (class 1255 OID 26601)
+-- TOC entry 418 (class 1255 OID 26601)
 -- Name: trigger_actualizar_estatus_deuda(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -775,7 +814,7 @@ $$;
 ALTER FUNCTION public.trigger_actualizar_estatus_deuda() OWNER TO ferram;
 
 --
--- TOC entry 388 (class 1255 OID 25962)
+-- TOC entry 392 (class 1255 OID 25962)
 -- Name: update_inventarios_admin_timestamp(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -792,7 +831,7 @@ $$;
 ALTER FUNCTION public.update_inventarios_admin_timestamp() OWNER TO ferram;
 
 --
--- TOC entry 400 (class 1255 OID 26129)
+-- TOC entry 404 (class 1255 OID 26129)
 -- Name: update_landing_config_timestamp(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -809,7 +848,7 @@ $$;
 ALTER FUNCTION public.update_landing_config_timestamp() OWNER TO ferram;
 
 --
--- TOC entry 416 (class 1255 OID 27019)
+-- TOC entry 420 (class 1255 OID 27019)
 -- Name: update_remision_timestamp(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -826,7 +865,7 @@ $$;
 ALTER FUNCTION public.update_remision_timestamp() OWNER TO ferram;
 
 --
--- TOC entry 401 (class 1255 OID 27789)
+-- TOC entry 405 (class 1255 OID 27789)
 -- Name: update_sesiones_inventario_timestamp(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -843,7 +882,7 @@ $$;
 ALTER FUNCTION public.update_sesiones_inventario_timestamp() OWNER TO ferram;
 
 --
--- TOC entry 365 (class 1255 OID 27977)
+-- TOC entry 368 (class 1255 OID 27977)
 -- Name: update_stock_admin_timestamp(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -860,7 +899,7 @@ $$;
 ALTER FUNCTION public.update_stock_admin_timestamp() OWNER TO ferram;
 
 --
--- TOC entry 412 (class 1255 OID 25021)
+-- TOC entry 416 (class 1255 OID 25021)
 -- Name: update_ultima_actualizacion(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -877,7 +916,7 @@ $$;
 ALTER FUNCTION public.update_ultima_actualizacion() OWNER TO ferram;
 
 --
--- TOC entry 397 (class 1255 OID 25965)
+-- TOC entry 401 (class 1255 OID 25965)
 -- Name: upsert_inventario_admin(integer, integer, integer); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -903,8 +942,8 @@ $$;
 ALTER FUNCTION public.upsert_inventario_admin(p_admin_id integer, p_variante_id integer, p_cantidad_incremento integer) OWNER TO ferram;
 
 --
--- TOC entry 5582 (class 0 OID 0)
--- Dependencies: 397
+-- TOC entry 5610 (class 0 OID 0)
+-- Dependencies: 401
 -- Name: FUNCTION upsert_inventario_admin(p_admin_id integer, p_variante_id integer, p_cantidad_incremento integer); Type: COMMENT; Schema: public; Owner: ferram
 --
 
@@ -912,7 +951,7 @@ COMMENT ON FUNCTION public.upsert_inventario_admin(p_admin_id integer, p_variant
 
 
 --
--- TOC entry 421 (class 1255 OID 28317)
+-- TOC entry 425 (class 1255 OID 28317)
 -- Name: validar_agrupacion_ordenes(integer[]); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -953,8 +992,8 @@ $$;
 ALTER FUNCTION public.validar_agrupacion_ordenes(orden_ids integer[]) OWNER TO ferram;
 
 --
--- TOC entry 5583 (class 0 OID 0)
--- Dependencies: 421
+-- TOC entry 5611 (class 0 OID 0)
+-- Dependencies: 425
 -- Name: FUNCTION validar_agrupacion_ordenes(orden_ids integer[]); Type: COMMENT; Schema: public; Owner: ferram
 --
 
@@ -962,7 +1001,7 @@ COMMENT ON FUNCTION public.validar_agrupacion_ordenes(orden_ids integer[]) IS 'V
 
 
 --
--- TOC entry 420 (class 1255 OID 28240)
+-- TOC entry 424 (class 1255 OID 28240)
 -- Name: validar_cantidad_devuelta(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -1004,7 +1043,7 @@ $$;
 ALTER FUNCTION public.validar_cantidad_devuelta() OWNER TO ferram;
 
 --
--- TOC entry 419 (class 1255 OID 27625)
+-- TOC entry 423 (class 1255 OID 27625)
 -- Name: validar_pedido_manual(integer); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -1065,8 +1104,8 @@ $$;
 ALTER FUNCTION public.validar_pedido_manual(p_pedido_id integer) OWNER TO ferram;
 
 --
--- TOC entry 5584 (class 0 OID 0)
--- Dependencies: 419
+-- TOC entry 5612 (class 0 OID 0)
+-- Dependencies: 423
 -- Name: FUNCTION validar_pedido_manual(p_pedido_id integer); Type: COMMENT; Schema: public; Owner: ferram
 --
 
@@ -1074,7 +1113,7 @@ COMMENT ON FUNCTION public.validar_pedido_manual(p_pedido_id integer) IS 'Valida
 
 
 --
--- TOC entry 399 (class 1255 OID 28233)
+-- TOC entry 403 (class 1255 OID 28233)
 -- Name: validar_plazo_devolucion(); Type: FUNCTION; Schema: public; Owner: ferram
 --
 
@@ -1150,7 +1189,7 @@ CREATE SEQUENCE public.administradores_adminid_seq
 ALTER SEQUENCE public.administradores_adminid_seq OWNER TO ferram;
 
 --
--- TOC entry 5644 (class 0 OID 0)
+-- TOC entry 5672 (class 0 OID 0)
 -- Dependencies: 226
 -- Name: administradores_adminid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1188,7 +1227,7 @@ CREATE TABLE public.agentesdeventas (
 ALTER TABLE public.agentesdeventas OWNER TO ferram;
 
 --
--- TOC entry 5645 (class 0 OID 0)
+-- TOC entry 5673 (class 0 OID 0)
 -- Dependencies: 227
 -- Name: COLUMN agentesdeventas.porcentaje_comision; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1213,7 +1252,7 @@ CREATE SEQUENCE public.agentesdeventas_agenteid_seq
 ALTER SEQUENCE public.agentesdeventas_agenteid_seq OWNER TO ferram;
 
 --
--- TOC entry 5646 (class 0 OID 0)
+-- TOC entry 5674 (class 0 OID 0)
 -- Dependencies: 228
 -- Name: agentesdeventas_agenteid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1245,7 +1284,7 @@ CREATE TABLE public.ajustes_inventario (
 ALTER TABLE public.ajustes_inventario OWNER TO ferram;
 
 --
--- TOC entry 5647 (class 0 OID 0)
+-- TOC entry 5675 (class 0 OID 0)
 -- Dependencies: 332
 -- Name: TABLE ajustes_inventario; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1254,7 +1293,7 @@ COMMENT ON TABLE public.ajustes_inventario IS 'Registro histórico de todos los 
 
 
 --
--- TOC entry 5648 (class 0 OID 0)
+-- TOC entry 5676 (class 0 OID 0)
 -- Dependencies: 332
 -- Name: COLUMN ajustes_inventario.tipo_ajuste; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1279,7 +1318,7 @@ CREATE SEQUENCE public.ajustes_inventario_ajuste_id_seq
 ALTER SEQUENCE public.ajustes_inventario_ajuste_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5649 (class 0 OID 0)
+-- TOC entry 5677 (class 0 OID 0)
 -- Dependencies: 331
 -- Name: ajustes_inventario_ajuste_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1305,7 +1344,7 @@ CREATE TABLE public.auditoria_comentarios (
 ALTER TABLE public.auditoria_comentarios OWNER TO ferram;
 
 --
--- TOC entry 5650 (class 0 OID 0)
+-- TOC entry 5678 (class 0 OID 0)
 -- Dependencies: 330
 -- Name: TABLE auditoria_comentarios; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1330,7 +1369,7 @@ CREATE SEQUENCE public.auditoria_comentarios_comentario_id_seq
 ALTER SEQUENCE public.auditoria_comentarios_comentario_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5651 (class 0 OID 0)
+-- TOC entry 5679 (class 0 OID 0)
 -- Dependencies: 329
 -- Name: auditoria_comentarios_comentario_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1371,7 +1410,7 @@ CREATE SEQUENCE public.carritodecompra_carritoid_seq
 ALTER SEQUENCE public.carritodecompra_carritoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5652 (class 0 OID 0)
+-- TOC entry 5680 (class 0 OID 0)
 -- Dependencies: 230
 -- Name: carritodecompra_carritoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1413,7 +1452,7 @@ CREATE SEQUENCE public.cat_cxp_etiquetas_etiqueta_id_seq
 ALTER SEQUENCE public.cat_cxp_etiquetas_etiqueta_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5653 (class 0 OID 0)
+-- TOC entry 5681 (class 0 OID 0)
 -- Dependencies: 232
 -- Name: cat_cxp_etiquetas_etiqueta_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1456,7 +1495,7 @@ CREATE SEQUENCE public.cat_motivos_ajuste_motivo_id_seq
 ALTER SEQUENCE public.cat_motivos_ajuste_motivo_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5654 (class 0 OID 0)
+-- TOC entry 5682 (class 0 OID 0)
 -- Dependencies: 326
 -- Name: cat_motivos_ajuste_motivo_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1495,7 +1534,7 @@ CREATE SEQUENCE public.cat_tamanopaquetes_tamanoid_seq
 ALTER SEQUENCE public.cat_tamanopaquetes_tamanoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5655 (class 0 OID 0)
+-- TOC entry 5683 (class 0 OID 0)
 -- Dependencies: 234
 -- Name: cat_tamanopaquetes_tamanoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1527,7 +1566,7 @@ CREATE TABLE public.categorias (
 ALTER TABLE public.categorias OWNER TO ferram;
 
 --
--- TOC entry 5656 (class 0 OID 0)
+-- TOC entry 5684 (class 0 OID 0)
 -- Dependencies: 235
 -- Name: COLUMN categorias.imagen_landing; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1536,7 +1575,7 @@ COMMENT ON COLUMN public.categorias.imagen_landing IS 'URL de la imagen para el 
 
 
 --
--- TOC entry 5657 (class 0 OID 0)
+-- TOC entry 5685 (class 0 OID 0)
 -- Dependencies: 235
 -- Name: COLUMN categorias.link_landing; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1545,7 +1584,7 @@ COMMENT ON COLUMN public.categorias.link_landing IS 'URL de destino cuando se ha
 
 
 --
--- TOC entry 5658 (class 0 OID 0)
+-- TOC entry 5686 (class 0 OID 0)
 -- Dependencies: 235
 -- Name: COLUMN categorias.nombre_landing; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1570,7 +1609,7 @@ CREATE SEQUENCE public.categorias_categoriaid_seq
 ALTER SEQUENCE public.categorias_categoriaid_seq OWNER TO ferram;
 
 --
--- TOC entry 5659 (class 0 OID 0)
+-- TOC entry 5687 (class 0 OID 0)
 -- Dependencies: 236
 -- Name: categorias_categoriaid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1604,7 +1643,7 @@ CREATE TABLE public.cliente_creditos (
 ALTER TABLE public.cliente_creditos OWNER TO ferram;
 
 --
--- TOC entry 5660 (class 0 OID 0)
+-- TOC entry 5688 (class 0 OID 0)
 -- Dependencies: 237
 -- Name: COLUMN cliente_creditos.dias_credito; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1629,7 +1668,7 @@ CREATE SEQUENCE public.cliente_creditos_credito_id_seq
 ALTER SEQUENCE public.cliente_creditos_credito_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5661 (class 0 OID 0)
+-- TOC entry 5689 (class 0 OID 0)
 -- Dependencies: 238
 -- Name: cliente_creditos_credito_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1678,7 +1717,7 @@ CREATE SEQUENCE public.cliente_direcciones_direccionid_seq
 ALTER SEQUENCE public.cliente_direcciones_direccionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5662 (class 0 OID 0)
+-- TOC entry 5690 (class 0 OID 0)
 -- Dependencies: 240
 -- Name: cliente_direcciones_direccionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1704,7 +1743,7 @@ CREATE TABLE public.cliente_saldo_favor (
 ALTER TABLE public.cliente_saldo_favor OWNER TO ferram;
 
 --
--- TOC entry 5663 (class 0 OID 0)
+-- TOC entry 5691 (class 0 OID 0)
 -- Dependencies: 352
 -- Name: TABLE cliente_saldo_favor; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1713,7 +1752,7 @@ COMMENT ON TABLE public.cliente_saldo_favor IS 'Saldo a favor del cliente por de
 
 
 --
--- TOC entry 5664 (class 0 OID 0)
+-- TOC entry 5692 (class 0 OID 0)
 -- Dependencies: 352
 -- Name: COLUMN cliente_saldo_favor.saldo_disponible; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1746,7 +1785,7 @@ CREATE TABLE public.cliente_saldo_favor_movimientos (
 ALTER TABLE public.cliente_saldo_favor_movimientos OWNER TO ferram;
 
 --
--- TOC entry 5665 (class 0 OID 0)
+-- TOC entry 5693 (class 0 OID 0)
 -- Dependencies: 354
 -- Name: TABLE cliente_saldo_favor_movimientos; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1755,7 +1794,7 @@ COMMENT ON TABLE public.cliente_saldo_favor_movimientos IS 'Historial de movimie
 
 
 --
--- TOC entry 5666 (class 0 OID 0)
+-- TOC entry 5694 (class 0 OID 0)
 -- Dependencies: 354
 -- Name: COLUMN cliente_saldo_favor_movimientos.tipo_movimiento; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1780,7 +1819,7 @@ CREATE SEQUENCE public.cliente_saldo_favor_movimientos_movimiento_id_seq
 ALTER SEQUENCE public.cliente_saldo_favor_movimientos_movimiento_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5667 (class 0 OID 0)
+-- TOC entry 5695 (class 0 OID 0)
 -- Dependencies: 353
 -- Name: cliente_saldo_favor_movimientos_movimiento_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1805,7 +1844,7 @@ CREATE SEQUENCE public.cliente_saldo_favor_saldo_id_seq
 ALTER SEQUENCE public.cliente_saldo_favor_saldo_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5668 (class 0 OID 0)
+-- TOC entry 5696 (class 0 OID 0)
 -- Dependencies: 351
 -- Name: cliente_saldo_favor_saldo_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1855,7 +1894,7 @@ CREATE SEQUENCE public.clientes_clienteid_seq
 ALTER SEQUENCE public.clientes_clienteid_seq OWNER TO ferram;
 
 --
--- TOC entry 5669 (class 0 OID 0)
+-- TOC entry 5697 (class 0 OID 0)
 -- Dependencies: 242
 -- Name: clientes_clienteid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -1881,7 +1920,7 @@ CREATE TABLE public.clientes_favoritos (
 ALTER TABLE public.clientes_favoritos OWNER TO ferram;
 
 --
--- TOC entry 5670 (class 0 OID 0)
+-- TOC entry 5698 (class 0 OID 0)
 -- Dependencies: 361
 -- Name: TABLE clientes_favoritos; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1890,7 +1929,7 @@ COMMENT ON TABLE public.clientes_favoritos IS 'Lista de productos favoritos de c
 
 
 --
--- TOC entry 5671 (class 0 OID 0)
+-- TOC entry 5699 (class 0 OID 0)
 -- Dependencies: 361
 -- Name: COLUMN clientes_favoritos.favorito_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1899,7 +1938,7 @@ COMMENT ON COLUMN public.clientes_favoritos.favorito_id IS 'ID único del favori
 
 
 --
--- TOC entry 5672 (class 0 OID 0)
+-- TOC entry 5700 (class 0 OID 0)
 -- Dependencies: 361
 -- Name: COLUMN clientes_favoritos.cliente_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1908,7 +1947,7 @@ COMMENT ON COLUMN public.clientes_favoritos.cliente_id IS 'FK a clientes - Dueñ
 
 
 --
--- TOC entry 5673 (class 0 OID 0)
+-- TOC entry 5701 (class 0 OID 0)
 -- Dependencies: 361
 -- Name: COLUMN clientes_favoritos.variante_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1917,7 +1956,7 @@ COMMENT ON COLUMN public.clientes_favoritos.variante_id IS 'FK a producto_varian
 
 
 --
--- TOC entry 5674 (class 0 OID 0)
+-- TOC entry 5702 (class 0 OID 0)
 -- Dependencies: 361
 -- Name: COLUMN clientes_favoritos.alerta_restock_activa; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1926,7 +1965,7 @@ COMMENT ON COLUMN public.clientes_favoritos.alerta_restock_activa IS 'TRUE si el
 
 
 --
--- TOC entry 5675 (class 0 OID 0)
+-- TOC entry 5703 (class 0 OID 0)
 -- Dependencies: 361
 -- Name: COLUMN clientes_favoritos.fecha_agregado; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1935,7 +1974,7 @@ COMMENT ON COLUMN public.clientes_favoritos.fecha_agregado IS 'Timestamp de cuá
 
 
 --
--- TOC entry 5676 (class 0 OID 0)
+-- TOC entry 5704 (class 0 OID 0)
 -- Dependencies: 361
 -- Name: COLUMN clientes_favoritos.tenant_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -1960,7 +1999,7 @@ CREATE SEQUENCE public.clientes_favoritos_favorito_id_seq
 ALTER SEQUENCE public.clientes_favoritos_favorito_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5677 (class 0 OID 0)
+-- TOC entry 5705 (class 0 OID 0)
 -- Dependencies: 360
 -- Name: clientes_favoritos_favorito_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2003,7 +2042,7 @@ CREATE SEQUENCE public.comisiones_comisionid_seq
 ALTER SEQUENCE public.comisiones_comisionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5678 (class 0 OID 0)
+-- TOC entry 5706 (class 0 OID 0)
 -- Dependencies: 244
 -- Name: comisiones_comisionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2050,7 +2089,7 @@ CREATE SEQUENCE public.communicationlogs_logid_seq
 ALTER SEQUENCE public.communicationlogs_logid_seq OWNER TO ferram;
 
 --
--- TOC entry 5679 (class 0 OID 0)
+-- TOC entry 5707 (class 0 OID 0)
 -- Dependencies: 246
 -- Name: communicationlogs_logid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2098,7 +2137,7 @@ CREATE SEQUENCE public.control_cambios_id_seq
 ALTER SEQUENCE public.control_cambios_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5680 (class 0 OID 0)
+-- TOC entry 5708 (class 0 OID 0)
 -- Dependencies: 248
 -- Name: control_cambios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2146,7 +2185,7 @@ CREATE SEQUENCE public.credito_movimientos_movimiento_id_seq
 ALTER SEQUENCE public.credito_movimientos_movimiento_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5681 (class 0 OID 0)
+-- TOC entry 5709 (class 0 OID 0)
 -- Dependencies: 250
 -- Name: credito_movimientos_movimiento_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2175,7 +2214,7 @@ CREATE TABLE public.cuentas_por_cobrar (
 ALTER TABLE public.cuentas_por_cobrar OWNER TO ferram;
 
 --
--- TOC entry 5682 (class 0 OID 0)
+-- TOC entry 5710 (class 0 OID 0)
 -- Dependencies: 251
 -- Name: COLUMN cuentas_por_cobrar.remision_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2200,7 +2239,7 @@ CREATE SEQUENCE public.cuentas_por_cobrar_cxcid_seq
 ALTER SEQUENCE public.cuentas_por_cobrar_cxcid_seq OWNER TO ferram;
 
 --
--- TOC entry 5683 (class 0 OID 0)
+-- TOC entry 5711 (class 0 OID 0)
 -- Dependencies: 252
 -- Name: cuentas_por_cobrar_cxcid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2256,7 +2295,7 @@ CREATE SEQUENCE public.cuentas_por_pagar_cxp_id_seq
 ALTER SEQUENCE public.cuentas_por_pagar_cxp_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5684 (class 0 OID 0)
+-- TOC entry 5712 (class 0 OID 0)
 -- Dependencies: 254
 -- Name: cuentas_por_pagar_cxp_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2289,7 +2328,7 @@ CREATE TABLE public.cupones (
 ALTER TABLE public.cupones OWNER TO ferram;
 
 --
--- TOC entry 5685 (class 0 OID 0)
+-- TOC entry 5713 (class 0 OID 0)
 -- Dependencies: 311
 -- Name: COLUMN cupones.agente_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2314,7 +2353,7 @@ CREATE SEQUENCE public.cupones_cuponid_seq
 ALTER SEQUENCE public.cupones_cuponid_seq OWNER TO ferram;
 
 --
--- TOC entry 5686 (class 0 OID 0)
+-- TOC entry 5714 (class 0 OID 0)
 -- Dependencies: 310
 -- Name: cupones_cuponid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2355,7 +2394,7 @@ CREATE SEQUENCE public.cxp_etiquetas_asignadas_asignacion_id_seq
 ALTER SEQUENCE public.cxp_etiquetas_asignadas_asignacion_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5687 (class 0 OID 0)
+-- TOC entry 5715 (class 0 OID 0)
 -- Dependencies: 256
 -- Name: cxp_etiquetas_asignadas_asignacion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2399,7 +2438,7 @@ CREATE SEQUENCE public.datos_bancarios_empresa_id_seq
 ALTER SEQUENCE public.datos_bancarios_empresa_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5688 (class 0 OID 0)
+-- TOC entry 5716 (class 0 OID 0)
 -- Dependencies: 258
 -- Name: datos_bancarios_empresa_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2432,7 +2471,7 @@ CREATE TABLE public.detalles_remision (
 ALTER TABLE public.detalles_remision OWNER TO ferram;
 
 --
--- TOC entry 5689 (class 0 OID 0)
+-- TOC entry 5717 (class 0 OID 0)
 -- Dependencies: 322
 -- Name: TABLE detalles_remision; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2441,7 +2480,7 @@ COMMENT ON TABLE public.detalles_remision IS 'Detalle de productos incluidos en 
 
 
 --
--- TOC entry 5690 (class 0 OID 0)
+-- TOC entry 5718 (class 0 OID 0)
 -- Dependencies: 322
 -- Name: COLUMN detalles_remision.cantidad_paquetes_surtidos; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2450,7 +2489,7 @@ COMMENT ON COLUMN public.detalles_remision.cantidad_paquetes_surtidos IS 'Cantid
 
 
 --
--- TOC entry 5691 (class 0 OID 0)
+-- TOC entry 5719 (class 0 OID 0)
 -- Dependencies: 322
 -- Name: COLUMN detalles_remision.piezas_surtidas; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2459,7 +2498,7 @@ COMMENT ON COLUMN public.detalles_remision.piezas_surtidas IS 'Total de piezas s
 
 
 --
--- TOC entry 5692 (class 0 OID 0)
+-- TOC entry 5720 (class 0 OID 0)
 -- Dependencies: 322
 -- Name: COLUMN detalles_remision.subtotal; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2484,7 +2523,7 @@ CREATE SEQUENCE public.detalles_remision_detalle_remision_id_seq
 ALTER SEQUENCE public.detalles_remision_detalle_remision_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5693 (class 0 OID 0)
+-- TOC entry 5721 (class 0 OID 0)
 -- Dependencies: 321
 -- Name: detalles_remision_detalle_remision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2517,7 +2556,7 @@ CREATE TABLE public.detallesdelpedido (
 ALTER TABLE public.detallesdelpedido OWNER TO ferram;
 
 --
--- TOC entry 5694 (class 0 OID 0)
+-- TOC entry 5722 (class 0 OID 0)
 -- Dependencies: 259
 -- Name: COLUMN detallesdelpedido.cantidad_surtida_remisiones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2542,7 +2581,7 @@ CREATE SEQUENCE public.detallesdelpedido_detalleid_seq
 ALTER SEQUENCE public.detallesdelpedido_detalleid_seq OWNER TO ferram;
 
 --
--- TOC entry 5695 (class 0 OID 0)
+-- TOC entry 5723 (class 0 OID 0)
 -- Dependencies: 260
 -- Name: detallesdelpedido_detalleid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2582,7 +2621,7 @@ CREATE TABLE public.detallesordencompra (
 ALTER TABLE public.detallesordencompra OWNER TO ferram;
 
 --
--- TOC entry 5696 (class 0 OID 0)
+-- TOC entry 5724 (class 0 OID 0)
 -- Dependencies: 261
 -- Name: COLUMN detallesordencompra.pedido_original_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2591,7 +2630,7 @@ COMMENT ON COLUMN public.detallesordencompra.pedido_original_id IS 'ID del pedid
 
 
 --
--- TOC entry 5697 (class 0 OID 0)
+-- TOC entry 5725 (class 0 OID 0)
 -- Dependencies: 261
 -- Name: COLUMN detallesordencompra.motivo_discrepancia; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2600,7 +2639,7 @@ COMMENT ON COLUMN public.detallesordencompra.motivo_discrepancia IS 'Razón de l
 
 
 --
--- TOC entry 5698 (class 0 OID 0)
+-- TOC entry 5726 (class 0 OID 0)
 -- Dependencies: 261
 -- Name: COLUMN detallesordencompra.tipo_discrepancia; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2609,7 +2648,7 @@ COMMENT ON COLUMN public.detallesordencompra.tipo_discrepancia IS 'Tipo de anoma
 
 
 --
--- TOC entry 5699 (class 0 OID 0)
+-- TOC entry 5727 (class 0 OID 0)
 -- Dependencies: 261
 -- Name: COLUMN detallesordencompra.cerrado_por_merma; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2618,7 +2657,7 @@ COMMENT ON COLUMN public.detallesordencompra.cerrado_por_merma IS 'Indica si el 
 
 
 --
--- TOC entry 5700 (class 0 OID 0)
+-- TOC entry 5728 (class 0 OID 0)
 -- Dependencies: 261
 -- Name: COLUMN detallesordencompra.cantidad_excedente; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2627,7 +2666,7 @@ COMMENT ON COLUMN public.detallesordencompra.cantidad_excedente IS 'Cantidad adi
 
 
 --
--- TOC entry 5701 (class 0 OID 0)
+-- TOC entry 5729 (class 0 OID 0)
 -- Dependencies: 261
 -- Name: COLUMN detallesordencompra.backorder_cancelado; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2652,7 +2691,7 @@ CREATE SEQUENCE public.detallesordencompra_detalleoc_id_seq
 ALTER SEQUENCE public.detallesordencompra_detalleoc_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5702 (class 0 OID 0)
+-- TOC entry 5730 (class 0 OID 0)
 -- Dependencies: 262
 -- Name: detallesordencompra_detalleoc_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2692,7 +2731,7 @@ CREATE SEQUENCE public.developers_dev_id_seq
 ALTER SEQUENCE public.developers_dev_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5703 (class 0 OID 0)
+-- TOC entry 5731 (class 0 OID 0)
 -- Dependencies: 316
 -- Name: developers_dev_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2728,7 +2767,7 @@ CREATE TABLE public.devoluciones (
 ALTER TABLE public.devoluciones OWNER TO ferram;
 
 --
--- TOC entry 5704 (class 0 OID 0)
+-- TOC entry 5732 (class 0 OID 0)
 -- Dependencies: 344
 -- Name: TABLE devoluciones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2737,7 +2776,7 @@ COMMENT ON TABLE public.devoluciones IS 'Solicitudes de devolución de clientes 
 
 
 --
--- TOC entry 5705 (class 0 OID 0)
+-- TOC entry 5733 (class 0 OID 0)
 -- Dependencies: 344
 -- Name: COLUMN devoluciones.estado; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2746,7 +2785,7 @@ COMMENT ON COLUMN public.devoluciones.estado IS 'PENDIENTE: Recién creada | EN_
 
 
 --
--- TOC entry 5706 (class 0 OID 0)
+-- TOC entry 5734 (class 0 OID 0)
 -- Dependencies: 344
 -- Name: COLUMN devoluciones.monto_total; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2755,7 +2794,7 @@ COMMENT ON COLUMN public.devoluciones.monto_total IS 'Monto total de la devoluci
 
 
 --
--- TOC entry 5707 (class 0 OID 0)
+-- TOC entry 5735 (class 0 OID 0)
 -- Dependencies: 344
 -- Name: COLUMN devoluciones.admin_resolutor_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2764,7 +2803,7 @@ COMMENT ON COLUMN public.devoluciones.admin_resolutor_id IS 'Admin que aprobó o
 
 
 --
--- TOC entry 5708 (class 0 OID 0)
+-- TOC entry 5736 (class 0 OID 0)
 -- Dependencies: 344
 -- Name: COLUMN devoluciones.motivo_rechazo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2801,7 +2840,7 @@ CREATE TABLE public.devoluciones_detalles (
 ALTER TABLE public.devoluciones_detalles OWNER TO ferram;
 
 --
--- TOC entry 5709 (class 0 OID 0)
+-- TOC entry 5737 (class 0 OID 0)
 -- Dependencies: 346
 -- Name: TABLE devoluciones_detalles; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2810,7 +2849,7 @@ COMMENT ON TABLE public.devoluciones_detalles IS 'Productos específicos incluid
 
 
 --
--- TOC entry 5710 (class 0 OID 0)
+-- TOC entry 5738 (class 0 OID 0)
 -- Dependencies: 346
 -- Name: COLUMN devoluciones_detalles.motivo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2819,7 +2858,7 @@ COMMENT ON COLUMN public.devoluciones_detalles.motivo IS 'Razón de la devoluci�
 
 
 --
--- TOC entry 5711 (class 0 OID 0)
+-- TOC entry 5739 (class 0 OID 0)
 -- Dependencies: 346
 -- Name: COLUMN devoluciones_detalles.condicion_producto; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2828,7 +2867,7 @@ COMMENT ON COLUMN public.devoluciones_detalles.condicion_producto IS 'Estado fí
 
 
 --
--- TOC entry 5712 (class 0 OID 0)
+-- TOC entry 5740 (class 0 OID 0)
 -- Dependencies: 346
 -- Name: COLUMN devoluciones_detalles.subtotal; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2853,7 +2892,7 @@ CREATE SEQUENCE public.devoluciones_detalles_detalle_devolucion_id_seq
 ALTER SEQUENCE public.devoluciones_detalles_detalle_devolucion_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5713 (class 0 OID 0)
+-- TOC entry 5741 (class 0 OID 0)
 -- Dependencies: 345
 -- Name: devoluciones_detalles_detalle_devolucion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2878,7 +2917,7 @@ CREATE SEQUENCE public.devoluciones_devolucion_id_seq
 ALTER SEQUENCE public.devoluciones_devolucion_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5714 (class 0 OID 0)
+-- TOC entry 5742 (class 0 OID 0)
 -- Dependencies: 343
 -- Name: devoluciones_devolucion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -2908,7 +2947,7 @@ CREATE TABLE public.errores_sincronizacion (
 ALTER TABLE public.errores_sincronizacion OWNER TO ferram;
 
 --
--- TOC entry 5715 (class 0 OID 0)
+-- TOC entry 5743 (class 0 OID 0)
 -- Dependencies: 336
 -- Name: TABLE errores_sincronizacion; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2917,7 +2956,7 @@ COMMENT ON TABLE public.errores_sincronizacion IS 'Registro de discrepancias ent
 
 
 --
--- TOC entry 5716 (class 0 OID 0)
+-- TOC entry 5744 (class 0 OID 0)
 -- Dependencies: 336
 -- Name: COLUMN errores_sincronizacion.monto_backend; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2926,7 +2965,7 @@ COMMENT ON COLUMN public.errores_sincronizacion.monto_backend IS 'Monto total al
 
 
 --
--- TOC entry 5717 (class 0 OID 0)
+-- TOC entry 5745 (class 0 OID 0)
 -- Dependencies: 336
 -- Name: COLUMN errores_sincronizacion.monto_calculado; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2935,7 +2974,7 @@ COMMENT ON COLUMN public.errores_sincronizacion.monto_calculado IS 'Monto recalc
 
 
 --
--- TOC entry 5718 (class 0 OID 0)
+-- TOC entry 5746 (class 0 OID 0)
 -- Dependencies: 336
 -- Name: COLUMN errores_sincronizacion.diferencia; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2944,7 +2983,7 @@ COMMENT ON COLUMN public.errores_sincronizacion.diferencia IS 'Diferencia absolu
 
 
 --
--- TOC entry 5719 (class 0 OID 0)
+-- TOC entry 5747 (class 0 OID 0)
 -- Dependencies: 336
 -- Name: COLUMN errores_sincronizacion.detalles; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -2969,7 +3008,7 @@ CREATE SEQUENCE public.errores_sincronizacion_error_id_seq
 ALTER SEQUENCE public.errores_sincronizacion_error_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5720 (class 0 OID 0)
+-- TOC entry 5748 (class 0 OID 0)
 -- Dependencies: 335
 -- Name: errores_sincronizacion_error_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3005,7 +3044,7 @@ CREATE TABLE public.notificaciones (
 ALTER TABLE public.notificaciones OWNER TO ferram;
 
 --
--- TOC entry 5721 (class 0 OID 0)
+-- TOC entry 5749 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: TABLE notificaciones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3014,7 +3053,7 @@ COMMENT ON TABLE public.notificaciones IS 'Notificaciones para clientes del sist
 
 
 --
--- TOC entry 5722 (class 0 OID 0)
+-- TOC entry 5750 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: COLUMN notificaciones.tipo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3023,7 +3062,7 @@ COMMENT ON COLUMN public.notificaciones.tipo IS 'Tipo de notificación: pedido, 
 
 
 --
--- TOC entry 5723 (class 0 OID 0)
+-- TOC entry 5751 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: COLUMN notificaciones.metadata; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3032,7 +3071,7 @@ COMMENT ON COLUMN public.notificaciones.metadata IS 'Información adicional en f
 
 
 --
--- TOC entry 5724 (class 0 OID 0)
+-- TOC entry 5752 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: COLUMN notificaciones.url; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3041,7 +3080,7 @@ COMMENT ON COLUMN public.notificaciones.url IS 'URL de redirección al hacer cli
 
 
 --
--- TOC entry 5725 (class 0 OID 0)
+-- TOC entry 5753 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: COLUMN notificaciones.prioridad; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3070,7 +3109,7 @@ CREATE VIEW public.estadisticas_notificaciones AS
 ALTER VIEW public.estadisticas_notificaciones OWNER TO ferram;
 
 --
--- TOC entry 5726 (class 0 OID 0)
+-- TOC entry 5754 (class 0 OID 0)
 -- Dependencies: 359
 -- Name: VIEW estadisticas_notificaciones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3109,7 +3148,7 @@ CREATE SEQUENCE public.estados_estadoid_seq
 ALTER SEQUENCE public.estados_estadoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5727 (class 0 OID 0)
+-- TOC entry 5755 (class 0 OID 0)
 -- Dependencies: 265
 -- Name: estados_estadoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3137,7 +3176,7 @@ CREATE TABLE public.evidencias_devolucion (
 ALTER TABLE public.evidencias_devolucion OWNER TO ferram;
 
 --
--- TOC entry 5728 (class 0 OID 0)
+-- TOC entry 5756 (class 0 OID 0)
 -- Dependencies: 348
 -- Name: TABLE evidencias_devolucion; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3146,7 +3185,7 @@ COMMENT ON TABLE public.evidencias_devolucion IS 'Fotos y documentos adjuntos po
 
 
 --
--- TOC entry 5729 (class 0 OID 0)
+-- TOC entry 5757 (class 0 OID 0)
 -- Dependencies: 348
 -- Name: COLUMN evidencias_devolucion.url_imagen; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3171,7 +3210,7 @@ CREATE SEQUENCE public.evidencias_devolucion_evidencia_id_seq
 ALTER SEQUENCE public.evidencias_devolucion_evidencia_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5730 (class 0 OID 0)
+-- TOC entry 5758 (class 0 OID 0)
 -- Dependencies: 347
 -- Name: evidencias_devolucion_evidencia_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3200,7 +3239,7 @@ CREATE TABLE public.historial_pedidos (
 ALTER TABLE public.historial_pedidos OWNER TO ferram;
 
 --
--- TOC entry 5731 (class 0 OID 0)
+-- TOC entry 5759 (class 0 OID 0)
 -- Dependencies: 334
 -- Name: TABLE historial_pedidos; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3209,7 +3248,7 @@ COMMENT ON TABLE public.historial_pedidos IS 'Registro de auditoría para cambio
 
 
 --
--- TOC entry 5732 (class 0 OID 0)
+-- TOC entry 5760 (class 0 OID 0)
 -- Dependencies: 334
 -- Name: COLUMN historial_pedidos.accion; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3218,7 +3257,7 @@ COMMENT ON COLUMN public.historial_pedidos.accion IS 'Tipo de acción: AJUSTE_MA
 
 
 --
--- TOC entry 5733 (class 0 OID 0)
+-- TOC entry 5761 (class 0 OID 0)
 -- Dependencies: 334
 -- Name: COLUMN historial_pedidos.detalles; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3227,7 +3266,7 @@ COMMENT ON COLUMN public.historial_pedidos.detalles IS 'JSON con detalles espec�
 
 
 --
--- TOC entry 5734 (class 0 OID 0)
+-- TOC entry 5762 (class 0 OID 0)
 -- Dependencies: 334
 -- Name: COLUMN historial_pedidos.monto_anterior; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3236,7 +3275,7 @@ COMMENT ON COLUMN public.historial_pedidos.monto_anterior IS 'Monto total del pe
 
 
 --
--- TOC entry 5735 (class 0 OID 0)
+-- TOC entry 5763 (class 0 OID 0)
 -- Dependencies: 334
 -- Name: COLUMN historial_pedidos.monto_nuevo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3261,7 +3300,7 @@ CREATE SEQUENCE public.historial_pedidos_historial_id_seq
 ALTER SEQUENCE public.historial_pedidos_historial_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5736 (class 0 OID 0)
+-- TOC entry 5764 (class 0 OID 0)
 -- Dependencies: 333
 -- Name: historial_pedidos_historial_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3292,7 +3331,7 @@ CREATE TABLE public.inventario_mermas (
 ALTER TABLE public.inventario_mermas OWNER TO ferram;
 
 --
--- TOC entry 5737 (class 0 OID 0)
+-- TOC entry 5765 (class 0 OID 0)
 -- Dependencies: 350
 -- Name: TABLE inventario_mermas; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3301,7 +3340,7 @@ COMMENT ON TABLE public.inventario_mermas IS 'Registro de productos que no puede
 
 
 --
--- TOC entry 5738 (class 0 OID 0)
+-- TOC entry 5766 (class 0 OID 0)
 -- Dependencies: 350
 -- Name: COLUMN inventario_mermas.motivo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3310,7 +3349,7 @@ COMMENT ON COLUMN public.inventario_mermas.motivo IS 'Razón de la merma: DEVOLU
 
 
 --
--- TOC entry 5739 (class 0 OID 0)
+-- TOC entry 5767 (class 0 OID 0)
 -- Dependencies: 350
 -- Name: COLUMN inventario_mermas.devolucion_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3335,12 +3374,71 @@ CREATE SEQUENCE public.inventario_mermas_merma_id_seq
 ALTER SEQUENCE public.inventario_mermas_merma_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5740 (class 0 OID 0)
+-- TOC entry 5768 (class 0 OID 0)
 -- Dependencies: 349
 -- Name: inventario_mermas_merma_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
 
 ALTER SEQUENCE public.inventario_mermas_merma_id_seq OWNED BY public.inventario_mermas.merma_id;
+
+
+--
+-- TOC entry 363 (class 1259 OID 28677)
+-- Name: inventario_reservas_log; Type: TABLE; Schema: public; Owner: ferram
+--
+
+CREATE TABLE public.inventario_reservas_log (
+    log_id integer NOT NULL,
+    stockadminid integer NOT NULL,
+    variante_id integer NOT NULL,
+    admin_id integer NOT NULL,
+    pedido_id integer NOT NULL,
+    detalle_id integer,
+    cantidad_reservada integer NOT NULL,
+    accion character varying(20) NOT NULL,
+    cantidad_antes integer NOT NULL,
+    cantidad_despues integer NOT NULL,
+    fecha_accion timestamp without time zone DEFAULT now(),
+    usuario_id integer,
+    tenant_id integer NOT NULL,
+    CONSTRAINT chk_accion_reserva CHECK (((accion)::text = ANY ((ARRAY['RESERVAR'::character varying, 'LIBERAR'::character varying, 'CONFIRMAR'::character varying, 'CANCELAR'::character varying])::text[])))
+);
+
+
+ALTER TABLE public.inventario_reservas_log OWNER TO ferram;
+
+--
+-- TOC entry 5769 (class 0 OID 0)
+-- Dependencies: 363
+-- Name: TABLE inventario_reservas_log; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON TABLE public.inventario_reservas_log IS 'Auditoría completa de todas las operaciones de reserva de inventario. Permite rastrear quién reservó qué y cuándo.';
+
+
+--
+-- TOC entry 362 (class 1259 OID 28676)
+-- Name: inventario_reservas_log_log_id_seq; Type: SEQUENCE; Schema: public; Owner: ferram
+--
+
+CREATE SEQUENCE public.inventario_reservas_log_log_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.inventario_reservas_log_log_id_seq OWNER TO ferram;
+
+--
+-- TOC entry 5770 (class 0 OID 0)
+-- Dependencies: 362
+-- Name: inventario_reservas_log_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
+--
+
+ALTER SEQUENCE public.inventario_reservas_log_log_id_seq OWNED BY public.inventario_reservas_log.log_id;
 
 
 --
@@ -3378,7 +3476,7 @@ CREATE SEQUENCE public.itemsdelcarrito_itemid_seq
 ALTER SEQUENCE public.itemsdelcarrito_itemid_seq OWNER TO ferram;
 
 --
--- TOC entry 5741 (class 0 OID 0)
+-- TOC entry 5771 (class 0 OID 0)
 -- Dependencies: 267
 -- Name: itemsdelcarrito_itemid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3415,7 +3513,7 @@ CREATE TABLE public.landing_page_config (
 ALTER TABLE public.landing_page_config OWNER TO ferram;
 
 --
--- TOC entry 5742 (class 0 OID 0)
+-- TOC entry 5772 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: TABLE landing_page_config; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3424,7 +3522,7 @@ COMMENT ON TABLE public.landing_page_config IS 'Stores dynamic content configura
 
 
 --
--- TOC entry 5743 (class 0 OID 0)
+-- TOC entry 5773 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: COLUMN landing_page_config.section_key; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3433,7 +3531,7 @@ COMMENT ON COLUMN public.landing_page_config.section_key IS 'Unique identifier f
 
 
 --
--- TOC entry 5744 (class 0 OID 0)
+-- TOC entry 5774 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: COLUMN landing_page_config.content_type; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3442,7 +3540,7 @@ COMMENT ON COLUMN public.landing_page_config.content_type IS 'Type of content: i
 
 
 --
--- TOC entry 5745 (class 0 OID 0)
+-- TOC entry 5775 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: COLUMN landing_page_config.value_draft; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3451,7 +3549,7 @@ COMMENT ON COLUMN public.landing_page_config.value_draft IS 'Draft value (not vi
 
 
 --
--- TOC entry 5746 (class 0 OID 0)
+-- TOC entry 5776 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: COLUMN landing_page_config.value_published; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3460,7 +3558,7 @@ COMMENT ON COLUMN public.landing_page_config.value_published IS 'Published value
 
 
 --
--- TOC entry 5747 (class 0 OID 0)
+-- TOC entry 5777 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: COLUMN landing_page_config.metadata; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3469,7 +3567,7 @@ COMMENT ON COLUMN public.landing_page_config.metadata IS 'Additional metadata (o
 
 
 --
--- TOC entry 5748 (class 0 OID 0)
+-- TOC entry 5778 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: COLUMN landing_page_config.section; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3478,7 +3576,7 @@ COMMENT ON COLUMN public.landing_page_config.section IS 'Sección: categories, b
 
 
 --
--- TOC entry 5749 (class 0 OID 0)
+-- TOC entry 5779 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: COLUMN landing_page_config.name; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3487,7 +3585,7 @@ COMMENT ON COLUMN public.landing_page_config.name IS 'Nombre del item (ej: Navid
 
 
 --
--- TOC entry 5750 (class 0 OID 0)
+-- TOC entry 5780 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: COLUMN landing_page_config.image; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3496,7 +3594,7 @@ COMMENT ON COLUMN public.landing_page_config.image IS 'URL de la imagen del item
 
 
 --
--- TOC entry 5751 (class 0 OID 0)
+-- TOC entry 5781 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: COLUMN landing_page_config.href; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3505,7 +3603,7 @@ COMMENT ON COLUMN public.landing_page_config.href IS 'Enlace de destino al hacer
 
 
 --
--- TOC entry 5752 (class 0 OID 0)
+-- TOC entry 5782 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: COLUMN landing_page_config.description; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3514,7 +3612,7 @@ COMMENT ON COLUMN public.landing_page_config.description IS 'Descripción opcion
 
 
 --
--- TOC entry 5753 (class 0 OID 0)
+-- TOC entry 5783 (class 0 OID 0)
 -- Dependencies: 313
 -- Name: COLUMN landing_page_config.orden; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3539,7 +3637,7 @@ CREATE SEQUENCE public.landing_page_config_config_id_seq
 ALTER SEQUENCE public.landing_page_config_config_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5754 (class 0 OID 0)
+-- TOC entry 5784 (class 0 OID 0)
 -- Dependencies: 312
 -- Name: landing_page_config_config_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3583,7 +3681,7 @@ CREATE SEQUENCE public.log_eventosusuario_eventoid_seq
 ALTER SEQUENCE public.log_eventosusuario_eventoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5755 (class 0 OID 0)
+-- TOC entry 5785 (class 0 OID 0)
 -- Dependencies: 269
 -- Name: log_eventosusuario_eventoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3618,7 +3716,7 @@ CREATE TABLE public.log_inventario (
 ALTER TABLE public.log_inventario OWNER TO ferram;
 
 --
--- TOC entry 5756 (class 0 OID 0)
+-- TOC entry 5786 (class 0 OID 0)
 -- Dependencies: 270
 -- Name: COLUMN log_inventario.tipo_origen; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3627,7 +3725,7 @@ COMMENT ON COLUMN public.log_inventario.tipo_origen IS 'Tipo de operación que g
 
 
 --
--- TOC entry 5757 (class 0 OID 0)
+-- TOC entry 5787 (class 0 OID 0)
 -- Dependencies: 270
 -- Name: COLUMN log_inventario.orden_compra_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3636,7 +3734,7 @@ COMMENT ON COLUMN public.log_inventario.orden_compra_id IS 'ID de la orden de co
 
 
 --
--- TOC entry 5758 (class 0 OID 0)
+-- TOC entry 5788 (class 0 OID 0)
 -- Dependencies: 270
 -- Name: COLUMN log_inventario.sesion_auditoria_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3645,7 +3743,7 @@ COMMENT ON COLUMN public.log_inventario.sesion_auditoria_id IS 'ID de la sesión
 
 
 --
--- TOC entry 5759 (class 0 OID 0)
+-- TOC entry 5789 (class 0 OID 0)
 -- Dependencies: 270
 -- Name: COLUMN log_inventario.ajuste_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3670,7 +3768,7 @@ CREATE SEQUENCE public.log_inventario_logid_seq
 ALTER SEQUENCE public.log_inventario_logid_seq OWNER TO ferram;
 
 --
--- TOC entry 5760 (class 0 OID 0)
+-- TOC entry 5790 (class 0 OID 0)
 -- Dependencies: 271
 -- Name: log_inventario_logid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3718,7 +3816,7 @@ CREATE SEQUENCE public.log_movimientos_logid_seq
 ALTER SEQUENCE public.log_movimientos_logid_seq OWNER TO ferram;
 
 --
--- TOC entry 5761 (class 0 OID 0)
+-- TOC entry 5791 (class 0 OID 0)
 -- Dependencies: 273
 -- Name: log_movimientos_logid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3750,7 +3848,7 @@ CREATE TABLE public.medidas (
 ALTER TABLE public.medidas OWNER TO ferram;
 
 --
--- TOC entry 5762 (class 0 OID 0)
+-- TOC entry 5792 (class 0 OID 0)
 -- Dependencies: 274
 -- Name: TABLE medidas; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3775,7 +3873,7 @@ CREATE SEQUENCE public.medidas_medidaid_seq
 ALTER SEQUENCE public.medidas_medidaid_seq OWNER TO ferram;
 
 --
--- TOC entry 5763 (class 0 OID 0)
+-- TOC entry 5793 (class 0 OID 0)
 -- Dependencies: 275
 -- Name: medidas_medidaid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3809,7 +3907,7 @@ CREATE TABLE public.movimientos_inventario (
 ALTER TABLE public.movimientos_inventario OWNER TO ferram;
 
 --
--- TOC entry 5764 (class 0 OID 0)
+-- TOC entry 5794 (class 0 OID 0)
 -- Dependencies: 325
 -- Name: TABLE movimientos_inventario; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3818,7 +3916,7 @@ COMMENT ON TABLE public.movimientos_inventario IS 'Registro auditable de todos l
 
 
 --
--- TOC entry 5765 (class 0 OID 0)
+-- TOC entry 5795 (class 0 OID 0)
 -- Dependencies: 325
 -- Name: COLUMN movimientos_inventario.tipo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3827,7 +3925,7 @@ COMMENT ON COLUMN public.movimientos_inventario.tipo IS 'MERMA: Reducción de st
 
 
 --
--- TOC entry 5766 (class 0 OID 0)
+-- TOC entry 5796 (class 0 OID 0)
 -- Dependencies: 325
 -- Name: COLUMN movimientos_inventario.stock_previo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3836,7 +3934,7 @@ COMMENT ON COLUMN public.movimientos_inventario.stock_previo IS 'Stock antes del
 
 
 --
--- TOC entry 5767 (class 0 OID 0)
+-- TOC entry 5797 (class 0 OID 0)
 -- Dependencies: 325
 -- Name: COLUMN movimientos_inventario.stock_posterior; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3845,7 +3943,7 @@ COMMENT ON COLUMN public.movimientos_inventario.stock_posterior IS 'Stock despu�
 
 
 --
--- TOC entry 5768 (class 0 OID 0)
+-- TOC entry 5798 (class 0 OID 0)
 -- Dependencies: 325
 -- Name: COLUMN movimientos_inventario.motivo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3870,7 +3968,7 @@ CREATE SEQUENCE public.movimientos_inventario_movimiento_id_seq
 ALTER SEQUENCE public.movimientos_inventario_movimiento_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5769 (class 0 OID 0)
+-- TOC entry 5799 (class 0 OID 0)
 -- Dependencies: 324
 -- Name: movimientos_inventario_movimiento_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3895,7 +3993,7 @@ CREATE SEQUENCE public.notificaciones_notificacionid_seq
 ALTER SEQUENCE public.notificaciones_notificacionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5770 (class 0 OID 0)
+-- TOC entry 5800 (class 0 OID 0)
 -- Dependencies: 276
 -- Name: notificaciones_notificacionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -3925,7 +4023,7 @@ CREATE TABLE public.ordenes_grupos (
 ALTER TABLE public.ordenes_grupos OWNER TO ferram;
 
 --
--- TOC entry 5771 (class 0 OID 0)
+-- TOC entry 5801 (class 0 OID 0)
 -- Dependencies: 356
 -- Name: TABLE ordenes_grupos; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3934,7 +4032,7 @@ COMMENT ON TABLE public.ordenes_grupos IS 'Grupos de órdenes de compra consolid
 
 
 --
--- TOC entry 5772 (class 0 OID 0)
+-- TOC entry 5802 (class 0 OID 0)
 -- Dependencies: 356
 -- Name: COLUMN ordenes_grupos.grupoid; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3943,7 +4041,7 @@ COMMENT ON COLUMN public.ordenes_grupos.grupoid IS 'ID único del grupo';
 
 
 --
--- TOC entry 5773 (class 0 OID 0)
+-- TOC entry 5803 (class 0 OID 0)
 -- Dependencies: 356
 -- Name: COLUMN ordenes_grupos.proveedorid; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3952,7 +4050,7 @@ COMMENT ON COLUMN public.ordenes_grupos.proveedorid IS 'Proveedor común a todas
 
 
 --
--- TOC entry 5774 (class 0 OID 0)
+-- TOC entry 5804 (class 0 OID 0)
 -- Dependencies: 356
 -- Name: COLUMN ordenes_grupos.admin_creador_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3961,7 +4059,7 @@ COMMENT ON COLUMN public.ordenes_grupos.admin_creador_id IS 'Administrador que c
 
 
 --
--- TOC entry 5775 (class 0 OID 0)
+-- TOC entry 5805 (class 0 OID 0)
 -- Dependencies: 356
 -- Name: COLUMN ordenes_grupos.estatus; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3970,7 +4068,7 @@ COMMENT ON COLUMN public.ordenes_grupos.estatus IS 'Estado del grupo: borrador, 
 
 
 --
--- TOC entry 5776 (class 0 OID 0)
+-- TOC entry 5806 (class 0 OID 0)
 -- Dependencies: 356
 -- Name: COLUMN ordenes_grupos.nombre_grupo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -3995,7 +4093,7 @@ CREATE SEQUENCE public.ordenes_grupos_grupoid_seq
 ALTER SEQUENCE public.ordenes_grupos_grupoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5777 (class 0 OID 0)
+-- TOC entry 5807 (class 0 OID 0)
 -- Dependencies: 355
 -- Name: ordenes_grupos_grupoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4033,7 +4131,7 @@ CREATE TABLE public.ordenesdecompra (
 ALTER TABLE public.ordenesdecompra OWNER TO ferram;
 
 --
--- TOC entry 5778 (class 0 OID 0)
+-- TOC entry 5808 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: COLUMN ordenesdecompra.origenoc; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4042,7 +4140,7 @@ COMMENT ON COLUMN public.ordenesdecompra.origenoc IS 'Origen de la orden: manual
 
 
 --
--- TOC entry 5779 (class 0 OID 0)
+-- TOC entry 5809 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: COLUMN ordenesdecompra.pedido_origen_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4051,7 +4149,7 @@ COMMENT ON COLUMN public.ordenesdecompra.pedido_origen_id IS 'ID del pedido de c
 
 
 --
--- TOC entry 5780 (class 0 OID 0)
+-- TOC entry 5810 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: COLUMN ordenesdecompra.admin_creador_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4060,7 +4158,7 @@ COMMENT ON COLUMN public.ordenesdecompra.admin_creador_id IS 'Administrador que 
 
 
 --
--- TOC entry 5781 (class 0 OID 0)
+-- TOC entry 5811 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: COLUMN ordenesdecompra.grupo_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4069,7 +4167,7 @@ COMMENT ON COLUMN public.ordenesdecompra.grupo_id IS 'ID del grupo al que perten
 
 
 --
--- TOC entry 5782 (class 0 OID 0)
+-- TOC entry 5812 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: COLUMN ordenesdecompra.admin_trabajando_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4078,7 +4176,7 @@ COMMENT ON COLUMN public.ordenesdecompra.admin_trabajando_id IS 'ID del administ
 
 
 --
--- TOC entry 5783 (class 0 OID 0)
+-- TOC entry 5813 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: COLUMN ordenesdecompra.fecha_bloqueo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4087,7 +4185,7 @@ COMMENT ON COLUMN public.ordenesdecompra.fecha_bloqueo IS 'Fecha y hora en que s
 
 
 --
--- TOC entry 5784 (class 0 OID 0)
+-- TOC entry 5814 (class 0 OID 0)
 -- Dependencies: 277
 -- Name: COLUMN ordenesdecompra.ultima_actividad; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4112,7 +4210,7 @@ CREATE SEQUENCE public.ordenesdecompra_ordencompraid_seq
 ALTER SEQUENCE public.ordenesdecompra_ordencompraid_seq OWNER TO ferram;
 
 --
--- TOC entry 5785 (class 0 OID 0)
+-- TOC entry 5815 (class 0 OID 0)
 -- Dependencies: 278
 -- Name: ordenesdecompra_ordencompraid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4150,7 +4248,7 @@ CREATE TABLE public.pagos_clientes (
 ALTER TABLE public.pagos_clientes OWNER TO ferram;
 
 --
--- TOC entry 5786 (class 0 OID 0)
+-- TOC entry 5816 (class 0 OID 0)
 -- Dependencies: 279
 -- Name: TABLE pagos_clientes; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4159,7 +4257,7 @@ COMMENT ON TABLE public.pagos_clientes IS 'Registro de pagos realizados por clie
 
 
 --
--- TOC entry 5787 (class 0 OID 0)
+-- TOC entry 5817 (class 0 OID 0)
 -- Dependencies: 279
 -- Name: COLUMN pagos_clientes.tipo_pago; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4168,7 +4266,7 @@ COMMENT ON COLUMN public.pagos_clientes.tipo_pago IS 'Método de pago utilizado 
 
 
 --
--- TOC entry 5788 (class 0 OID 0)
+-- TOC entry 5818 (class 0 OID 0)
 -- Dependencies: 279
 -- Name: COLUMN pagos_clientes.estatus; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4177,7 +4275,7 @@ COMMENT ON COLUMN public.pagos_clientes.estatus IS 'PENDIENTE: En revisión | AP
 
 
 --
--- TOC entry 5789 (class 0 OID 0)
+-- TOC entry 5819 (class 0 OID 0)
 -- Dependencies: 279
 -- Name: COLUMN pagos_clientes.movimientos_aplicados; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4202,7 +4300,7 @@ CREATE SEQUENCE public.pagos_clientes_pago_id_seq
 ALTER SEQUENCE public.pagos_clientes_pago_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5790 (class 0 OID 0)
+-- TOC entry 5820 (class 0 OID 0)
 -- Dependencies: 280
 -- Name: pagos_clientes_pago_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4249,7 +4347,7 @@ CREATE SEQUENCE public.pagos_cxp_pago_id_seq
 ALTER SEQUENCE public.pagos_cxp_pago_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5791 (class 0 OID 0)
+-- TOC entry 5821 (class 0 OID 0)
 -- Dependencies: 282
 -- Name: pagos_cxp_pago_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4292,7 +4390,7 @@ CREATE SEQUENCE public.passwordresettokens_tokenid_seq
 ALTER SEQUENCE public.passwordresettokens_tokenid_seq OWNER TO ferram;
 
 --
--- TOC entry 5792 (class 0 OID 0)
+-- TOC entry 5822 (class 0 OID 0)
 -- Dependencies: 284
 -- Name: passwordresettokens_tokenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4321,7 +4419,7 @@ CREATE TABLE public.pedido_surtido_detalle (
 ALTER TABLE public.pedido_surtido_detalle OWNER TO ferram;
 
 --
--- TOC entry 5793 (class 0 OID 0)
+-- TOC entry 5823 (class 0 OID 0)
 -- Dependencies: 342
 -- Name: TABLE pedido_surtido_detalle; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4330,7 +4428,7 @@ COMMENT ON TABLE public.pedido_surtido_detalle IS 'Registro granular de qué adm
 
 
 --
--- TOC entry 5794 (class 0 OID 0)
+-- TOC entry 5824 (class 0 OID 0)
 -- Dependencies: 342
 -- Name: COLUMN pedido_surtido_detalle.pedido_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4339,7 +4437,7 @@ COMMENT ON COLUMN public.pedido_surtido_detalle.pedido_id IS 'ID del pedido al q
 
 
 --
--- TOC entry 5795 (class 0 OID 0)
+-- TOC entry 5825 (class 0 OID 0)
 -- Dependencies: 342
 -- Name: COLUMN pedido_surtido_detalle.detalle_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4348,7 +4446,7 @@ COMMENT ON COLUMN public.pedido_surtido_detalle.detalle_id IS 'ID del detalle es
 
 
 --
--- TOC entry 5796 (class 0 OID 0)
+-- TOC entry 5826 (class 0 OID 0)
 -- Dependencies: 342
 -- Name: COLUMN pedido_surtido_detalle.variante_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4357,7 +4455,7 @@ COMMENT ON COLUMN public.pedido_surtido_detalle.variante_id IS 'ID de la variant
 
 
 --
--- TOC entry 5797 (class 0 OID 0)
+-- TOC entry 5827 (class 0 OID 0)
 -- Dependencies: 342
 -- Name: COLUMN pedido_surtido_detalle.admin_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4366,7 +4464,7 @@ COMMENT ON COLUMN public.pedido_surtido_detalle.admin_id IS 'ID del administrado
 
 
 --
--- TOC entry 5798 (class 0 OID 0)
+-- TOC entry 5828 (class 0 OID 0)
 -- Dependencies: 342
 -- Name: COLUMN pedido_surtido_detalle.cantidad; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4391,7 +4489,7 @@ CREATE SEQUENCE public.pedido_surtido_detalle_surtido_id_seq
 ALTER SEQUENCE public.pedido_surtido_detalle_surtido_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5799 (class 0 OID 0)
+-- TOC entry 5829 (class 0 OID 0)
 -- Dependencies: 341
 -- Name: pedido_surtido_detalle_surtido_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4438,7 +4536,7 @@ CREATE TABLE public.pedidos (
 ALTER TABLE public.pedidos OWNER TO ferram;
 
 --
--- TOC entry 5800 (class 0 OID 0)
+-- TOC entry 5830 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: COLUMN pedidos.url_evidencia_entrega; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4447,7 +4545,7 @@ COMMENT ON COLUMN public.pedidos.url_evidencia_entrega IS 'URL de la foto de la 
 
 
 --
--- TOC entry 5801 (class 0 OID 0)
+-- TOC entry 5831 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: COLUMN pedidos.fecha_entrega_real; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4456,7 +4554,7 @@ COMMENT ON COLUMN public.pedidos.fecha_entrega_real IS 'Fecha y hora real en que
 
 
 --
--- TOC entry 5802 (class 0 OID 0)
+-- TOC entry 5832 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: COLUMN pedidos.estatus_deuda; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4465,7 +4563,7 @@ COMMENT ON COLUMN public.pedidos.estatus_deuda IS 'Estado de la deuda: PENDIENTE
 
 
 --
--- TOC entry 5803 (class 0 OID 0)
+-- TOC entry 5833 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: COLUMN pedidos.dias_atraso; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4474,7 +4572,7 @@ COMMENT ON COLUMN public.pedidos.dias_atraso IS 'Días de atraso (Actualizado di
 
 
 --
--- TOC entry 5804 (class 0 OID 0)
+-- TOC entry 5834 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: COLUMN pedidos.tiene_remisiones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4483,7 +4581,7 @@ COMMENT ON COLUMN public.pedidos.tiene_remisiones IS 'Indica si el pedido tiene 
 
 
 --
--- TOC entry 5805 (class 0 OID 0)
+-- TOC entry 5835 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: COLUMN pedidos.completamente_surtido; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4492,7 +4590,7 @@ COMMENT ON COLUMN public.pedidos.completamente_surtido IS 'TRUE cuando todos los
 
 
 --
--- TOC entry 5806 (class 0 OID 0)
+-- TOC entry 5836 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: COLUMN pedidos.monto_surtido; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4501,7 +4599,7 @@ COMMENT ON COLUMN public.pedidos.monto_surtido IS 'Monto real acumulado de las r
 
 
 --
--- TOC entry 5807 (class 0 OID 0)
+-- TOC entry 5837 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: COLUMN pedidos.monto_backorder; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4510,7 +4608,7 @@ COMMENT ON COLUMN public.pedidos.monto_backorder IS 'Valor monetario de los prod
 
 
 --
--- TOC entry 5808 (class 0 OID 0)
+-- TOC entry 5838 (class 0 OID 0)
 -- Dependencies: 285
 -- Name: COLUMN pedidos.es_prioritario; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4535,7 +4633,7 @@ CREATE SEQUENCE public.pedidos_pedidoid_seq
 ALTER SEQUENCE public.pedidos_pedidoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5809 (class 0 OID 0)
+-- TOC entry 5839 (class 0 OID 0)
 -- Dependencies: 286
 -- Name: pedidos_pedidoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4595,7 +4693,7 @@ CREATE SEQUENCE public.producto_imagenes_color_imagencolorid_seq
 ALTER SEQUENCE public.producto_imagenes_color_imagencolorid_seq OWNER TO ferram;
 
 --
--- TOC entry 5810 (class 0 OID 0)
+-- TOC entry 5840 (class 0 OID 0)
 -- Dependencies: 308
 -- Name: producto_imagenes_color_imagencolorid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4620,7 +4718,7 @@ CREATE SEQUENCE public.producto_imagenes_imagenid_seq
 ALTER SEQUENCE public.producto_imagenes_imagenid_seq OWNER TO ferram;
 
 --
--- TOC entry 5811 (class 0 OID 0)
+-- TOC entry 5841 (class 0 OID 0)
 -- Dependencies: 288
 -- Name: producto_imagenes_imagenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4676,7 +4774,7 @@ CREATE SEQUENCE public.producto_variante_imagenes_imagenid_seq
 ALTER SEQUENCE public.producto_variante_imagenes_imagenid_seq OWNER TO ferram;
 
 --
--- TOC entry 5812 (class 0 OID 0)
+-- TOC entry 5842 (class 0 OID 0)
 -- Dependencies: 291
 -- Name: producto_variante_imagenes_imagenid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4712,7 +4810,7 @@ CREATE TABLE public.producto_variantes (
 ALTER TABLE public.producto_variantes OWNER TO ferram;
 
 --
--- TOC entry 5813 (class 0 OID 0)
+-- TOC entry 5843 (class 0 OID 0)
 -- Dependencies: 292
 -- Name: COLUMN producto_variantes.stock; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4721,7 +4819,7 @@ COMMENT ON COLUMN public.producto_variantes.stock IS 'COLUMNA LEGACY - No usar. 
 
 
 --
--- TOC entry 5814 (class 0 OID 0)
+-- TOC entry 5844 (class 0 OID 0)
 -- Dependencies: 292
 -- Name: COLUMN producto_variantes.tipoproductoid; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4746,7 +4844,7 @@ CREATE SEQUENCE public.producto_variantes_varianteid_seq
 ALTER SEQUENCE public.producto_variantes_varianteid_seq OWNER TO ferram;
 
 --
--- TOC entry 5815 (class 0 OID 0)
+-- TOC entry 5845 (class 0 OID 0)
 -- Dependencies: 293
 -- Name: producto_variantes_varianteid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4792,7 +4890,7 @@ CREATE SEQUENCE public.productos_productoid_seq1
 ALTER SEQUENCE public.productos_productoid_seq1 OWNER TO ferram;
 
 --
--- TOC entry 5816 (class 0 OID 0)
+-- TOC entry 5846 (class 0 OID 0)
 -- Dependencies: 295
 -- Name: productos_productoid_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4835,7 +4933,7 @@ CREATE SEQUENCE public.proveedor_reglas_empaque_reglaid_seq
 ALTER SEQUENCE public.proveedor_reglas_empaque_reglaid_seq OWNER TO ferram;
 
 --
--- TOC entry 5817 (class 0 OID 0)
+-- TOC entry 5847 (class 0 OID 0)
 -- Dependencies: 297
 -- Name: proveedor_reglas_empaque_reglaid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4888,7 +4986,7 @@ CREATE TABLE public.proveedores (
 ALTER TABLE public.proveedores OWNER TO ferram;
 
 --
--- TOC entry 5818 (class 0 OID 0)
+-- TOC entry 5848 (class 0 OID 0)
 -- Dependencies: 298
 -- Name: COLUMN proveedores.imagen_landing; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4897,7 +4995,7 @@ COMMENT ON COLUMN public.proveedores.imagen_landing IS 'URL de la imagen para el
 
 
 --
--- TOC entry 5819 (class 0 OID 0)
+-- TOC entry 5849 (class 0 OID 0)
 -- Dependencies: 298
 -- Name: COLUMN proveedores.link_landing; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4906,7 +5004,7 @@ COMMENT ON COLUMN public.proveedores.link_landing IS 'URL de destino cuando se h
 
 
 --
--- TOC entry 5820 (class 0 OID 0)
+-- TOC entry 5850 (class 0 OID 0)
 -- Dependencies: 298
 -- Name: COLUMN proveedores.nombre_landing; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4931,7 +5029,7 @@ CREATE SEQUENCE public.proveedores_proveedorid_seq
 ALTER SEQUENCE public.proveedores_proveedorid_seq OWNER TO ferram;
 
 --
--- TOC entry 5821 (class 0 OID 0)
+-- TOC entry 5851 (class 0 OID 0)
 -- Dependencies: 299
 -- Name: proveedores_proveedorid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -4965,7 +5063,7 @@ CREATE TABLE public.remisiones (
 ALTER TABLE public.remisiones OWNER TO ferram;
 
 --
--- TOC entry 5822 (class 0 OID 0)
+-- TOC entry 5852 (class 0 OID 0)
 -- Dependencies: 320
 -- Name: TABLE remisiones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4974,7 +5072,7 @@ COMMENT ON TABLE public.remisiones IS 'Remisiones (Delivery Notes) - Documento q
 
 
 --
--- TOC entry 5823 (class 0 OID 0)
+-- TOC entry 5853 (class 0 OID 0)
 -- Dependencies: 320
 -- Name: COLUMN remisiones.folio; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4983,7 +5081,7 @@ COMMENT ON COLUMN public.remisiones.folio IS 'Folio único de la remisión (ej: 
 
 
 --
--- TOC entry 5824 (class 0 OID 0)
+-- TOC entry 5854 (class 0 OID 0)
 -- Dependencies: 320
 -- Name: COLUMN remisiones.total_remision; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -4992,7 +5090,7 @@ COMMENT ON COLUMN public.remisiones.total_remision IS 'Monto total de la remisi�
 
 
 --
--- TOC entry 5825 (class 0 OID 0)
+-- TOC entry 5855 (class 0 OID 0)
 -- Dependencies: 320
 -- Name: COLUMN remisiones.estado; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5001,7 +5099,7 @@ COMMENT ON COLUMN public.remisiones.estado IS 'BORRADOR: En proceso | EMITIDA: C
 
 
 --
--- TOC entry 5826 (class 0 OID 0)
+-- TOC entry 5856 (class 0 OID 0)
 -- Dependencies: 320
 -- Name: COLUMN remisiones.pdf_url; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5026,7 +5124,7 @@ CREATE SEQUENCE public.remisiones_remision_id_seq
 ALTER SEQUENCE public.remisiones_remision_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5827 (class 0 OID 0)
+-- TOC entry 5857 (class 0 OID 0)
 -- Dependencies: 319
 -- Name: remisiones_remision_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -5059,7 +5157,7 @@ CREATE TABLE public.sesiones_inventario (
 ALTER TABLE public.sesiones_inventario OWNER TO ferram;
 
 --
--- TOC entry 5828 (class 0 OID 0)
+-- TOC entry 5858 (class 0 OID 0)
 -- Dependencies: 338
 -- Name: TABLE sesiones_inventario; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5068,7 +5166,7 @@ COMMENT ON TABLE public.sesiones_inventario IS 'Sesiones de inventario asignadas
 
 
 --
--- TOC entry 5829 (class 0 OID 0)
+-- TOC entry 5859 (class 0 OID 0)
 -- Dependencies: 338
 -- Name: COLUMN sesiones_inventario.estatus; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5077,7 +5175,7 @@ COMMENT ON COLUMN public.sesiones_inventario.estatus IS 'Estado de la sesión: A
 
 
 --
--- TOC entry 5830 (class 0 OID 0)
+-- TOC entry 5860 (class 0 OID 0)
 -- Dependencies: 338
 -- Name: COLUMN sesiones_inventario.agente_asignado_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5086,7 +5184,7 @@ COMMENT ON COLUMN public.sesiones_inventario.agente_asignado_id IS 'Agente respo
 
 
 --
--- TOC entry 5831 (class 0 OID 0)
+-- TOC entry 5861 (class 0 OID 0)
 -- Dependencies: 338
 -- Name: COLUMN sesiones_inventario.admin_creador_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5111,7 +5209,7 @@ CREATE SEQUENCE public.sesiones_inventario_sesion_id_seq
 ALTER SEQUENCE public.sesiones_inventario_sesion_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5832 (class 0 OID 0)
+-- TOC entry 5862 (class 0 OID 0)
 -- Dependencies: 337
 -- Name: sesiones_inventario_sesion_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -5134,7 +5232,7 @@ CREATE TABLE public.session (
 ALTER TABLE public.session OWNER TO ferram;
 
 --
--- TOC entry 5833 (class 0 OID 0)
+-- TOC entry 5863 (class 0 OID 0)
 -- Dependencies: 318
 -- Name: TABLE session; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5143,7 +5241,7 @@ COMMENT ON TABLE public.session IS 'Tabla de sesiones de usuario para express-se
 
 
 --
--- TOC entry 5834 (class 0 OID 0)
+-- TOC entry 5864 (class 0 OID 0)
 -- Dependencies: 318
 -- Name: COLUMN session.sid; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5152,7 +5250,7 @@ COMMENT ON COLUMN public.session.sid IS 'Session ID único generado por express-
 
 
 --
--- TOC entry 5835 (class 0 OID 0)
+-- TOC entry 5865 (class 0 OID 0)
 -- Dependencies: 318
 -- Name: COLUMN session.sess; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5161,7 +5259,7 @@ COMMENT ON COLUMN public.session.sess IS 'Datos de la sesión en formato JSON (u
 
 
 --
--- TOC entry 5836 (class 0 OID 0)
+-- TOC entry 5866 (class 0 OID 0)
 -- Dependencies: 318
 -- Name: COLUMN session.expire; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5191,7 +5289,7 @@ CREATE TABLE public.solicitudes_credito (
 ALTER TABLE public.solicitudes_credito OWNER TO ferram;
 
 --
--- TOC entry 5837 (class 0 OID 0)
+-- TOC entry 5867 (class 0 OID 0)
 -- Dependencies: 300
 -- Name: COLUMN solicitudes_credito.ingresos_mensuales; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5200,7 +5298,7 @@ COMMENT ON COLUMN public.solicitudes_credito.ingresos_mensuales IS 'Ingresos men
 
 
 --
--- TOC entry 5838 (class 0 OID 0)
+-- TOC entry 5868 (class 0 OID 0)
 -- Dependencies: 300
 -- Name: COLUMN solicitudes_credito.plazo_preferido; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5225,7 +5323,7 @@ CREATE SEQUENCE public.solicitudes_credito_solicitud_id_seq
 ALTER SEQUENCE public.solicitudes_credito_solicitud_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5839 (class 0 OID 0)
+-- TOC entry 5869 (class 0 OID 0)
 -- Dependencies: 301
 -- Name: solicitudes_credito_solicitud_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -5246,6 +5344,9 @@ CREATE TABLE public.stock_admin (
     cantidad integer DEFAULT 0 NOT NULL,
     updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    cantidad_reservada integer DEFAULT 0 NOT NULL,
+    CONSTRAINT chk_cantidad_reservada_no_negativa CHECK ((cantidad_reservada >= 0)),
+    CONSTRAINT chk_reserva_no_excede_stock CHECK ((cantidad_reservada <= cantidad)),
     CONSTRAINT stock_admin_cantidad_check CHECK ((cantidad >= 0))
 );
 
@@ -5253,7 +5354,7 @@ CREATE TABLE public.stock_admin (
 ALTER TABLE public.stock_admin OWNER TO ferram;
 
 --
--- TOC entry 5840 (class 0 OID 0)
+-- TOC entry 5870 (class 0 OID 0)
 -- Dependencies: 340
 -- Name: TABLE stock_admin; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5262,7 +5363,7 @@ COMMENT ON TABLE public.stock_admin IS 'Distributed inventory per administrator.
 
 
 --
--- TOC entry 5841 (class 0 OID 0)
+-- TOC entry 5871 (class 0 OID 0)
 -- Dependencies: 340
 -- Name: COLUMN stock_admin.admin_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5271,7 +5372,7 @@ COMMENT ON COLUMN public.stock_admin.admin_id IS 'FK to usuarios/administradores
 
 
 --
--- TOC entry 5842 (class 0 OID 0)
+-- TOC entry 5872 (class 0 OID 0)
 -- Dependencies: 340
 -- Name: COLUMN stock_admin.variante_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5280,7 +5381,7 @@ COMMENT ON COLUMN public.stock_admin.variante_id IS 'FK to producto_variantes. T
 
 
 --
--- TOC entry 5843 (class 0 OID 0)
+-- TOC entry 5873 (class 0 OID 0)
 -- Dependencies: 340
 -- Name: COLUMN stock_admin.tenant_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5289,7 +5390,7 @@ COMMENT ON COLUMN public.stock_admin.tenant_id IS 'Tenant isolation. Must match 
 
 
 --
--- TOC entry 5844 (class 0 OID 0)
+-- TOC entry 5874 (class 0 OID 0)
 -- Dependencies: 340
 -- Name: COLUMN stock_admin.cantidad; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5298,12 +5399,39 @@ COMMENT ON COLUMN public.stock_admin.cantidad IS 'Stock quantity available for t
 
 
 --
--- TOC entry 5845 (class 0 OID 0)
+-- TOC entry 5875 (class 0 OID 0)
 -- Dependencies: 340
 -- Name: COLUMN stock_admin.updated_at; Type: COMMENT; Schema: public; Owner: ferram
 --
 
 COMMENT ON COLUMN public.stock_admin.updated_at IS 'Last modification timestamp. Auto-updated by trigger.';
+
+
+--
+-- TOC entry 5876 (class 0 OID 0)
+-- Dependencies: 340
+-- Name: COLUMN stock_admin.cantidad_reservada; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON COLUMN public.stock_admin.cantidad_reservada IS 'Cantidad de piezas reservadas por pedidos pendientes de confirmación. Stock disponible = cantidad - cantidad_reservada';
+
+
+--
+-- TOC entry 5877 (class 0 OID 0)
+-- Dependencies: 340
+-- Name: CONSTRAINT chk_cantidad_reservada_no_negativa ON stock_admin; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON CONSTRAINT chk_cantidad_reservada_no_negativa ON public.stock_admin IS 'Garantiza que nunca se liberen más reservas de las que existen';
+
+
+--
+-- TOC entry 5878 (class 0 OID 0)
+-- Dependencies: 340
+-- Name: CONSTRAINT chk_reserva_no_excede_stock ON stock_admin; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON CONSTRAINT chk_reserva_no_excede_stock ON public.stock_admin IS 'Garantiza que no se reserve más inventario del que existe físicamente';
 
 
 --
@@ -5323,7 +5451,7 @@ CREATE SEQUENCE public.stock_admin_stockadminid_seq
 ALTER SEQUENCE public.stock_admin_stockadminid_seq OWNER TO ferram;
 
 --
--- TOC entry 5846 (class 0 OID 0)
+-- TOC entry 5879 (class 0 OID 0)
 -- Dependencies: 339
 -- Name: stock_admin_stockadminid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -5365,7 +5493,7 @@ CREATE SEQUENCE public.tenants_tenant_id_seq
 ALTER SEQUENCE public.tenants_tenant_id_seq OWNER TO ferram;
 
 --
--- TOC entry 5847 (class 0 OID 0)
+-- TOC entry 5880 (class 0 OID 0)
 -- Dependencies: 314
 -- Name: tenants_tenant_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -5391,7 +5519,7 @@ CREATE TABLE public.tipoproducto (
 ALTER TABLE public.tipoproducto OWNER TO ferram;
 
 --
--- TOC entry 5848 (class 0 OID 0)
+-- TOC entry 5881 (class 0 OID 0)
 -- Dependencies: 302
 -- Name: TABLE tipoproducto; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5416,7 +5544,7 @@ CREATE SEQUENCE public.tipoproducto_tipoproductoid_seq
 ALTER SEQUENCE public.tipoproducto_tipoproductoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5849 (class 0 OID 0)
+-- TOC entry 5882 (class 0 OID 0)
 -- Dependencies: 303
 -- Name: tipoproducto_tipoproductoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -5450,7 +5578,7 @@ CREATE TABLE public.toma_inventario_conteos (
 ALTER TABLE public.toma_inventario_conteos OWNER TO ferram;
 
 --
--- TOC entry 5850 (class 0 OID 0)
+-- TOC entry 5883 (class 0 OID 0)
 -- Dependencies: 304
 -- Name: TABLE toma_inventario_conteos; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5459,7 +5587,7 @@ COMMENT ON TABLE public.toma_inventario_conteos IS 'Registros individuales de co
 
 
 --
--- TOC entry 5851 (class 0 OID 0)
+-- TOC entry 5884 (class 0 OID 0)
 -- Dependencies: 304
 -- Name: COLUMN toma_inventario_conteos.estatus_aplicacion; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5468,7 +5596,7 @@ COMMENT ON COLUMN public.toma_inventario_conteos.estatus_aplicacion IS 'Estado d
 
 
 --
--- TOC entry 5852 (class 0 OID 0)
+-- TOC entry 5885 (class 0 OID 0)
 -- Dependencies: 304
 -- Name: COLUMN toma_inventario_conteos.usuario_a_tipo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5477,7 +5605,7 @@ COMMENT ON COLUMN public.toma_inventario_conteos.usuario_a_tipo IS 'Tipo de usua
 
 
 --
--- TOC entry 5853 (class 0 OID 0)
+-- TOC entry 5886 (class 0 OID 0)
 -- Dependencies: 304
 -- Name: COLUMN toma_inventario_conteos.usuario_b_tipo; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5502,7 +5630,7 @@ CREATE SEQUENCE public.toma_inventario_conteos_conteoid_seq
 ALTER SEQUENCE public.toma_inventario_conteos_conteoid_seq OWNER TO ferram;
 
 --
--- TOC entry 5854 (class 0 OID 0)
+-- TOC entry 5887 (class 0 OID 0)
 -- Dependencies: 305
 -- Name: toma_inventario_conteos_conteoid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -5530,7 +5658,7 @@ CREATE TABLE public.toma_inventario_sesiones (
 ALTER TABLE public.toma_inventario_sesiones OWNER TO ferram;
 
 --
--- TOC entry 5855 (class 0 OID 0)
+-- TOC entry 5888 (class 0 OID 0)
 -- Dependencies: 306
 -- Name: TABLE toma_inventario_sesiones; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5539,7 +5667,7 @@ COMMENT ON TABLE public.toma_inventario_sesiones IS 'Cabecera para agrupador tom
 
 
 --
--- TOC entry 5856 (class 0 OID 0)
+-- TOC entry 5889 (class 0 OID 0)
 -- Dependencies: 306
 -- Name: COLUMN toma_inventario_sesiones.agente_asignado_id; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5564,7 +5692,7 @@ CREATE SEQUENCE public.toma_inventario_sesiones_sesionid_seq
 ALTER SEQUENCE public.toma_inventario_sesiones_sesionid_seq OWNER TO ferram;
 
 --
--- TOC entry 5857 (class 0 OID 0)
+-- TOC entry 5890 (class 0 OID 0)
 -- Dependencies: 307
 -- Name: toma_inventario_sesiones_sesionid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: ferram
 --
@@ -5609,7 +5737,7 @@ CREATE VIEW public.v_movimientos_inventario_detalle AS
 ALTER VIEW public.v_movimientos_inventario_detalle OWNER TO ferram;
 
 --
--- TOC entry 5858 (class 0 OID 0)
+-- TOC entry 5891 (class 0 OID 0)
 -- Dependencies: 328
 -- Name: VIEW v_movimientos_inventario_detalle; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5651,7 +5779,7 @@ CREATE VIEW public.v_remisiones_completas AS
 ALTER VIEW public.v_remisiones_completas OWNER TO ferram;
 
 --
--- TOC entry 5859 (class 0 OID 0)
+-- TOC entry 5892 (class 0 OID 0)
 -- Dependencies: 323
 -- Name: VIEW v_remisiones_completas; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5679,7 +5807,7 @@ CREATE VIEW public.v_resumen_bancario_proveedores AS
 ALTER VIEW public.v_resumen_bancario_proveedores OWNER TO ferram;
 
 --
--- TOC entry 5860 (class 0 OID 0)
+-- TOC entry 5893 (class 0 OID 0)
 -- Dependencies: 357
 -- Name: VIEW v_resumen_bancario_proveedores; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5726,7 +5854,7 @@ CREATE VIEW public.vista_cxc_con_vencimiento AS
 ALTER VIEW public.vista_cxc_con_vencimiento OWNER TO ferram;
 
 --
--- TOC entry 5861 (class 0 OID 0)
+-- TOC entry 5894 (class 0 OID 0)
 -- Dependencies: 358
 -- Name: VIEW vista_cxc_con_vencimiento; Type: COMMENT; Schema: public; Owner: ferram
 --
@@ -5735,7 +5863,44 @@ COMMENT ON VIEW public.vista_cxc_con_vencimiento IS 'Cuentas por cobrar con aná
 
 
 --
--- TOC entry 4364 (class 2604 OID 25345)
+-- TOC entry 364 (class 1259 OID 28694)
+-- Name: vista_stock_con_reservas; Type: VIEW; Schema: public; Owner: ferram
+--
+
+CREATE VIEW public.vista_stock_con_reservas AS
+ SELECT sa.stockadminid,
+    sa.admin_id,
+    COALESCE((((a.nombre)::text || ' '::text) || (a.apellido)::text), ('Admin ID '::text || sa.admin_id)) AS admin_nombre,
+    sa.variante_id,
+    pv.sku,
+    p.nombreproducto,
+    sa.cantidad AS stock_fisico,
+    sa.cantidad_reservada AS stock_reservado,
+    (sa.cantidad - sa.cantidad_reservada) AS stock_disponible,
+    round((((sa.cantidad_reservada)::numeric / (NULLIF(sa.cantidad, 0))::numeric) * (100)::numeric), 2) AS porcentaje_reservado,
+    sa.tenant_id,
+    sa.updated_at
+   FROM (((public.stock_admin sa
+     LEFT JOIN public.producto_variantes pv ON ((pv.varianteid = sa.variante_id)))
+     LEFT JOIN public.productos p ON (((p.productoid = pv.productoid) AND (p.tenant_id = sa.tenant_id))))
+     LEFT JOIN public.administradores a ON (((a.adminid = sa.admin_id) AND (a.tenant_id = sa.tenant_id))))
+  WHERE (sa.cantidad > 0)
+  ORDER BY sa.cantidad_reservada DESC, sa.tenant_id, sa.admin_id;
+
+
+ALTER VIEW public.vista_stock_con_reservas OWNER TO ferram;
+
+--
+-- TOC entry 5895 (class 0 OID 0)
+-- Dependencies: 364
+-- Name: VIEW vista_stock_con_reservas; Type: COMMENT; Schema: public; Owner: ferram
+--
+
+COMMENT ON VIEW public.vista_stock_con_reservas IS 'Vista consolidada del inventario mostrando stock físico, reservado y disponible por admin';
+
+
+--
+-- TOC entry 4374 (class 2604 OID 25345)
 -- Name: administradores adminid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5743,7 +5908,7 @@ ALTER TABLE ONLY public.administradores ALTER COLUMN adminid SET DEFAULT nextval
 
 
 --
--- TOC entry 4369 (class 2604 OID 25346)
+-- TOC entry 4379 (class 2604 OID 25346)
 -- Name: agentesdeventas agenteid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5751,7 +5916,7 @@ ALTER TABLE ONLY public.agentesdeventas ALTER COLUMN agenteid SET DEFAULT nextva
 
 
 --
--- TOC entry 4589 (class 2604 OID 27455)
+-- TOC entry 4599 (class 2604 OID 27455)
 -- Name: ajustes_inventario ajuste_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5759,7 +5924,7 @@ ALTER TABLE ONLY public.ajustes_inventario ALTER COLUMN ajuste_id SET DEFAULT ne
 
 
 --
--- TOC entry 4586 (class 2604 OID 27432)
+-- TOC entry 4596 (class 2604 OID 27432)
 -- Name: auditoria_comentarios comentario_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5767,7 +5932,7 @@ ALTER TABLE ONLY public.auditoria_comentarios ALTER COLUMN comentario_id SET DEF
 
 
 --
--- TOC entry 4374 (class 2604 OID 25347)
+-- TOC entry 4384 (class 2604 OID 25347)
 -- Name: carritodecompra carritoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5775,7 +5940,7 @@ ALTER TABLE ONLY public.carritodecompra ALTER COLUMN carritoid SET DEFAULT nextv
 
 
 --
--- TOC entry 4377 (class 2604 OID 25348)
+-- TOC entry 4387 (class 2604 OID 25348)
 -- Name: cat_cxp_etiquetas etiqueta_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5783,7 +5948,7 @@ ALTER TABLE ONLY public.cat_cxp_etiquetas ALTER COLUMN etiqueta_id SET DEFAULT n
 
 
 --
--- TOC entry 4583 (class 2604 OID 27413)
+-- TOC entry 4593 (class 2604 OID 27413)
 -- Name: cat_motivos_ajuste motivo_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5791,7 +5956,7 @@ ALTER TABLE ONLY public.cat_motivos_ajuste ALTER COLUMN motivo_id SET DEFAULT ne
 
 
 --
--- TOC entry 4381 (class 2604 OID 25349)
+-- TOC entry 4391 (class 2604 OID 25349)
 -- Name: cat_tamanopaquetes tamanoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5799,7 +5964,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes ALTER COLUMN tamanoid SET DEFAULT nex
 
 
 --
--- TOC entry 4383 (class 2604 OID 25350)
+-- TOC entry 4393 (class 2604 OID 25350)
 -- Name: categorias categoriaid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5807,7 +5972,7 @@ ALTER TABLE ONLY public.categorias ALTER COLUMN categoriaid SET DEFAULT nextval(
 
 
 --
--- TOC entry 4387 (class 2604 OID 25351)
+-- TOC entry 4397 (class 2604 OID 25351)
 -- Name: cliente_creditos credito_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5815,7 +5980,7 @@ ALTER TABLE ONLY public.cliente_creditos ALTER COLUMN credito_id SET DEFAULT nex
 
 
 --
--- TOC entry 4397 (class 2604 OID 25352)
+-- TOC entry 4407 (class 2604 OID 25352)
 -- Name: cliente_direcciones direccionid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5823,7 +5988,7 @@ ALTER TABLE ONLY public.cliente_direcciones ALTER COLUMN direccionid SET DEFAULT
 
 
 --
--- TOC entry 4628 (class 2604 OID 28172)
+-- TOC entry 4639 (class 2604 OID 28172)
 -- Name: cliente_saldo_favor saldo_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5831,7 +5996,7 @@ ALTER TABLE ONLY public.cliente_saldo_favor ALTER COLUMN saldo_id SET DEFAULT ne
 
 
 --
--- TOC entry 4632 (class 2604 OID 28190)
+-- TOC entry 4643 (class 2604 OID 28190)
 -- Name: cliente_saldo_favor_movimientos movimiento_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5839,7 +6004,7 @@ ALTER TABLE ONLY public.cliente_saldo_favor_movimientos ALTER COLUMN movimiento_
 
 
 --
--- TOC entry 4399 (class 2604 OID 25353)
+-- TOC entry 4409 (class 2604 OID 25353)
 -- Name: clientes clienteid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5847,7 +6012,7 @@ ALTER TABLE ONLY public.clientes ALTER COLUMN clienteid SET DEFAULT nextval('pub
 
 
 --
--- TOC entry 4640 (class 2604 OID 28546)
+-- TOC entry 4651 (class 2604 OID 28546)
 -- Name: clientes_favoritos favorito_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5855,7 +6020,7 @@ ALTER TABLE ONLY public.clientes_favoritos ALTER COLUMN favorito_id SET DEFAULT 
 
 
 --
--- TOC entry 4403 (class 2604 OID 25354)
+-- TOC entry 4413 (class 2604 OID 25354)
 -- Name: comisiones comisionid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5863,7 +6028,7 @@ ALTER TABLE ONLY public.comisiones ALTER COLUMN comisionid SET DEFAULT nextval('
 
 
 --
--- TOC entry 4407 (class 2604 OID 25355)
+-- TOC entry 4417 (class 2604 OID 25355)
 -- Name: communicationlogs logid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5871,7 +6036,7 @@ ALTER TABLE ONLY public.communicationlogs ALTER COLUMN logid SET DEFAULT nextval
 
 
 --
--- TOC entry 4410 (class 2604 OID 25356)
+-- TOC entry 4420 (class 2604 OID 25356)
 -- Name: control_cambios id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5879,7 +6044,7 @@ ALTER TABLE ONLY public.control_cambios ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 --
--- TOC entry 4414 (class 2604 OID 25357)
+-- TOC entry 4424 (class 2604 OID 25357)
 -- Name: credito_movimientos movimiento_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5887,7 +6052,7 @@ ALTER TABLE ONLY public.credito_movimientos ALTER COLUMN movimiento_id SET DEFAU
 
 
 --
--- TOC entry 4417 (class 2604 OID 25358)
+-- TOC entry 4427 (class 2604 OID 25358)
 -- Name: cuentas_por_cobrar cxcid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5895,7 +6060,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar ALTER COLUMN cxcid SET DEFAULT nextva
 
 
 --
--- TOC entry 4420 (class 2604 OID 25359)
+-- TOC entry 4430 (class 2604 OID 25359)
 -- Name: cuentas_por_pagar cxp_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5903,7 +6068,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar ALTER COLUMN cxp_id SET DEFAULT nextva
 
 
 --
--- TOC entry 4552 (class 2604 OID 25896)
+-- TOC entry 4562 (class 2604 OID 25896)
 -- Name: cupones cuponid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5911,7 +6076,7 @@ ALTER TABLE ONLY public.cupones ALTER COLUMN cuponid SET DEFAULT nextval('public
 
 
 --
--- TOC entry 4426 (class 2604 OID 25360)
+-- TOC entry 4436 (class 2604 OID 25360)
 -- Name: cxp_etiquetas_asignadas asignacion_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5919,7 +6084,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas ALTER COLUMN asignacion_id SET D
 
 
 --
--- TOC entry 4429 (class 2604 OID 25361)
+-- TOC entry 4439 (class 2604 OID 25361)
 -- Name: datos_bancarios_empresa id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5927,7 +6092,7 @@ ALTER TABLE ONLY public.datos_bancarios_empresa ALTER COLUMN id SET DEFAULT next
 
 
 --
--- TOC entry 4578 (class 2604 OID 26972)
+-- TOC entry 4588 (class 2604 OID 26972)
 -- Name: detalles_remision detalle_remision_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5935,7 +6100,7 @@ ALTER TABLE ONLY public.detalles_remision ALTER COLUMN detalle_remision_id SET D
 
 
 --
--- TOC entry 4433 (class 2604 OID 25362)
+-- TOC entry 4443 (class 2604 OID 25362)
 -- Name: detallesdelpedido detalleid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5943,7 +6108,7 @@ ALTER TABLE ONLY public.detallesdelpedido ALTER COLUMN detalleid SET DEFAULT nex
 
 
 --
--- TOC entry 4439 (class 2604 OID 25363)
+-- TOC entry 4449 (class 2604 OID 25363)
 -- Name: detallesordencompra detalleoc_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5951,7 +6116,7 @@ ALTER TABLE ONLY public.detallesordencompra ALTER COLUMN detalleoc_id SET DEFAUL
 
 
 --
--- TOC entry 4569 (class 2604 OID 26158)
+-- TOC entry 4579 (class 2604 OID 26158)
 -- Name: developers dev_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5959,7 +6124,7 @@ ALTER TABLE ONLY public.developers ALTER COLUMN dev_id SET DEFAULT nextval('publ
 
 
 --
--- TOC entry 4610 (class 2604 OID 28060)
+-- TOC entry 4621 (class 2604 OID 28060)
 -- Name: devoluciones devolucion_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5967,7 +6132,7 @@ ALTER TABLE ONLY public.devoluciones ALTER COLUMN devolucion_id SET DEFAULT next
 
 
 --
--- TOC entry 4617 (class 2604 OID 28092)
+-- TOC entry 4628 (class 2604 OID 28092)
 -- Name: devoluciones_detalles detalle_devolucion_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5975,7 +6140,7 @@ ALTER TABLE ONLY public.devoluciones_detalles ALTER COLUMN detalle_devolucion_id
 
 
 --
--- TOC entry 4595 (class 2604 OID 27606)
+-- TOC entry 4605 (class 2604 OID 27606)
 -- Name: errores_sincronizacion error_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5983,7 +6148,7 @@ ALTER TABLE ONLY public.errores_sincronizacion ALTER COLUMN error_id SET DEFAULT
 
 
 --
--- TOC entry 4454 (class 2604 OID 25364)
+-- TOC entry 4464 (class 2604 OID 25364)
 -- Name: estados estadoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5991,7 +6156,7 @@ ALTER TABLE ONLY public.estados ALTER COLUMN estadoid SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4620 (class 2604 OID 28125)
+-- TOC entry 4631 (class 2604 OID 28125)
 -- Name: evidencias_devolucion evidencia_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -5999,7 +6164,7 @@ ALTER TABLE ONLY public.evidencias_devolucion ALTER COLUMN evidencia_id SET DEFA
 
 
 --
--- TOC entry 4592 (class 2604 OID 27538)
+-- TOC entry 4602 (class 2604 OID 27538)
 -- Name: historial_pedidos historial_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6007,7 +6172,7 @@ ALTER TABLE ONLY public.historial_pedidos ALTER COLUMN historial_id SET DEFAULT 
 
 
 --
--- TOC entry 4624 (class 2604 OID 28143)
+-- TOC entry 4635 (class 2604 OID 28143)
 -- Name: inventario_mermas merma_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6015,7 +6180,15 @@ ALTER TABLE ONLY public.inventario_mermas ALTER COLUMN merma_id SET DEFAULT next
 
 
 --
--- TOC entry 4455 (class 2604 OID 25365)
+-- TOC entry 4655 (class 2604 OID 28680)
+-- Name: inventario_reservas_log log_id; Type: DEFAULT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.inventario_reservas_log ALTER COLUMN log_id SET DEFAULT nextval('public.inventario_reservas_log_log_id_seq'::regclass);
+
+
+--
+-- TOC entry 4465 (class 2604 OID 25365)
 -- Name: itemsdelcarrito itemid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6023,7 +6196,7 @@ ALTER TABLE ONLY public.itemsdelcarrito ALTER COLUMN itemid SET DEFAULT nextval(
 
 
 --
--- TOC entry 4559 (class 2604 OID 26117)
+-- TOC entry 4569 (class 2604 OID 26117)
 -- Name: landing_page_config config_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6031,7 +6204,7 @@ ALTER TABLE ONLY public.landing_page_config ALTER COLUMN config_id SET DEFAULT n
 
 
 --
--- TOC entry 4457 (class 2604 OID 25366)
+-- TOC entry 4467 (class 2604 OID 25366)
 -- Name: log_eventosusuario eventoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6039,7 +6212,7 @@ ALTER TABLE ONLY public.log_eventosusuario ALTER COLUMN eventoid SET DEFAULT nex
 
 
 --
--- TOC entry 4460 (class 2604 OID 25367)
+-- TOC entry 4470 (class 2604 OID 25367)
 -- Name: log_inventario logid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6047,7 +6220,7 @@ ALTER TABLE ONLY public.log_inventario ALTER COLUMN logid SET DEFAULT nextval('p
 
 
 --
--- TOC entry 4464 (class 2604 OID 25368)
+-- TOC entry 4474 (class 2604 OID 25368)
 -- Name: log_movimientos logid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6055,7 +6228,7 @@ ALTER TABLE ONLY public.log_movimientos ALTER COLUMN logid SET DEFAULT nextval('
 
 
 --
--- TOC entry 4467 (class 2604 OID 25369)
+-- TOC entry 4477 (class 2604 OID 25369)
 -- Name: medidas medidaid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6063,7 +6236,7 @@ ALTER TABLE ONLY public.medidas ALTER COLUMN medidaid SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4580 (class 2604 OID 27378)
+-- TOC entry 4590 (class 2604 OID 27378)
 -- Name: movimientos_inventario movimiento_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6071,7 +6244,7 @@ ALTER TABLE ONLY public.movimientos_inventario ALTER COLUMN movimiento_id SET DE
 
 
 --
--- TOC entry 4448 (class 2604 OID 25370)
+-- TOC entry 4458 (class 2604 OID 25370)
 -- Name: notificaciones notificacionid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6079,7 +6252,7 @@ ALTER TABLE ONLY public.notificaciones ALTER COLUMN notificacionid SET DEFAULT n
 
 
 --
--- TOC entry 4635 (class 2604 OID 28276)
+-- TOC entry 4646 (class 2604 OID 28276)
 -- Name: ordenes_grupos grupoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6087,7 +6260,7 @@ ALTER TABLE ONLY public.ordenes_grupos ALTER COLUMN grupoid SET DEFAULT nextval(
 
 
 --
--- TOC entry 4473 (class 2604 OID 25371)
+-- TOC entry 4483 (class 2604 OID 25371)
 -- Name: ordenesdecompra ordencompraid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6095,7 +6268,7 @@ ALTER TABLE ONLY public.ordenesdecompra ALTER COLUMN ordencompraid SET DEFAULT n
 
 
 --
--- TOC entry 4481 (class 2604 OID 25372)
+-- TOC entry 4491 (class 2604 OID 25372)
 -- Name: pagos_clientes pago_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6103,7 +6276,7 @@ ALTER TABLE ONLY public.pagos_clientes ALTER COLUMN pago_id SET DEFAULT nextval(
 
 
 --
--- TOC entry 4486 (class 2604 OID 25373)
+-- TOC entry 4496 (class 2604 OID 25373)
 -- Name: pagos_cxp pago_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6111,7 +6284,7 @@ ALTER TABLE ONLY public.pagos_cxp ALTER COLUMN pago_id SET DEFAULT nextval('publ
 
 
 --
--- TOC entry 4489 (class 2604 OID 25374)
+-- TOC entry 4499 (class 2604 OID 25374)
 -- Name: passwordresettokens tokenid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6119,7 +6292,7 @@ ALTER TABLE ONLY public.passwordresettokens ALTER COLUMN tokenid SET DEFAULT nex
 
 
 --
--- TOC entry 4607 (class 2604 OID 28026)
+-- TOC entry 4618 (class 2604 OID 28026)
 -- Name: pedido_surtido_detalle surtido_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6127,7 +6300,7 @@ ALTER TABLE ONLY public.pedido_surtido_detalle ALTER COLUMN surtido_id SET DEFAU
 
 
 --
--- TOC entry 4491 (class 2604 OID 25375)
+-- TOC entry 4501 (class 2604 OID 25375)
 -- Name: pedidos pedidoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6135,7 +6308,7 @@ ALTER TABLE ONLY public.pedidos ALTER COLUMN pedidoid SET DEFAULT nextval('publi
 
 
 --
--- TOC entry 4507 (class 2604 OID 25376)
+-- TOC entry 4517 (class 2604 OID 25376)
 -- Name: producto_imagenes imagenid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6143,7 +6316,7 @@ ALTER TABLE ONLY public.producto_imagenes ALTER COLUMN imagenid SET DEFAULT next
 
 
 --
--- TOC entry 4549 (class 2604 OID 25880)
+-- TOC entry 4559 (class 2604 OID 25880)
 -- Name: producto_imagenes_color imagencolorid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6151,7 +6324,7 @@ ALTER TABLE ONLY public.producto_imagenes_color ALTER COLUMN imagencolorid SET D
 
 
 --
--- TOC entry 4511 (class 2604 OID 25377)
+-- TOC entry 4521 (class 2604 OID 25377)
 -- Name: producto_variante_imagenes imagenid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6159,7 +6332,7 @@ ALTER TABLE ONLY public.producto_variante_imagenes ALTER COLUMN imagenid SET DEF
 
 
 --
--- TOC entry 4514 (class 2604 OID 25378)
+-- TOC entry 4524 (class 2604 OID 25378)
 -- Name: producto_variantes varianteid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6167,7 +6340,7 @@ ALTER TABLE ONLY public.producto_variantes ALTER COLUMN varianteid SET DEFAULT n
 
 
 --
--- TOC entry 4523 (class 2604 OID 25379)
+-- TOC entry 4533 (class 2604 OID 25379)
 -- Name: productos productoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6175,7 +6348,7 @@ ALTER TABLE ONLY public.productos ALTER COLUMN productoid SET DEFAULT nextval('p
 
 
 --
--- TOC entry 4526 (class 2604 OID 25380)
+-- TOC entry 4536 (class 2604 OID 25380)
 -- Name: proveedor_reglas_empaque reglaid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6183,7 +6356,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque ALTER COLUMN reglaid SET DEFAUL
 
 
 --
--- TOC entry 4529 (class 2604 OID 25381)
+-- TOC entry 4539 (class 2604 OID 25381)
 -- Name: proveedores proveedorid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6191,7 +6364,7 @@ ALTER TABLE ONLY public.proveedores ALTER COLUMN proveedorid SET DEFAULT nextval
 
 
 --
--- TOC entry 4571 (class 2604 OID 26939)
+-- TOC entry 4581 (class 2604 OID 26939)
 -- Name: remisiones remision_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6199,7 +6372,7 @@ ALTER TABLE ONLY public.remisiones ALTER COLUMN remision_id SET DEFAULT nextval(
 
 
 --
--- TOC entry 4598 (class 2604 OID 27759)
+-- TOC entry 4608 (class 2604 OID 27759)
 -- Name: sesiones_inventario sesion_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6207,7 +6380,7 @@ ALTER TABLE ONLY public.sesiones_inventario ALTER COLUMN sesion_id SET DEFAULT n
 
 
 --
--- TOC entry 4532 (class 2604 OID 25382)
+-- TOC entry 4542 (class 2604 OID 25382)
 -- Name: solicitudes_credito solicitud_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6215,7 +6388,7 @@ ALTER TABLE ONLY public.solicitudes_credito ALTER COLUMN solicitud_id SET DEFAUL
 
 
 --
--- TOC entry 4603 (class 2604 OID 27955)
+-- TOC entry 4613 (class 2604 OID 27955)
 -- Name: stock_admin stockadminid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6223,7 +6396,7 @@ ALTER TABLE ONLY public.stock_admin ALTER COLUMN stockadminid SET DEFAULT nextva
 
 
 --
--- TOC entry 4565 (class 2604 OID 26147)
+-- TOC entry 4575 (class 2604 OID 26147)
 -- Name: tenants tenant_id; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6231,7 +6404,7 @@ ALTER TABLE ONLY public.tenants ALTER COLUMN tenant_id SET DEFAULT nextval('publ
 
 
 --
--- TOC entry 4536 (class 2604 OID 25383)
+-- TOC entry 4546 (class 2604 OID 25383)
 -- Name: tipoproducto tipoproductoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6239,7 +6412,7 @@ ALTER TABLE ONLY public.tipoproducto ALTER COLUMN tipoproductoid SET DEFAULT nex
 
 
 --
--- TOC entry 4540 (class 2604 OID 25384)
+-- TOC entry 4550 (class 2604 OID 25384)
 -- Name: toma_inventario_conteos conteoid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6247,7 +6420,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos ALTER COLUMN conteoid SET DEFAUL
 
 
 --
--- TOC entry 4545 (class 2604 OID 25385)
+-- TOC entry 4555 (class 2604 OID 25385)
 -- Name: toma_inventario_sesiones sesionid; Type: DEFAULT; Schema: public; Owner: ferram
 --
 
@@ -6255,7 +6428,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones ALTER COLUMN sesionid SET DEFAU
 
 
 --
--- TOC entry 4353 (class 0 OID 24745)
+-- TOC entry 4363 (class 0 OID 24745)
 -- Dependencies: 222
 -- Data for Name: job; Type: TABLE DATA; Schema: cron; Owner: azuresu
 --
@@ -6266,7 +6439,7 @@ COPY cron.job (jobid, schedule, command, nodename, nodeport, database, username,
 
 
 --
--- TOC entry 4355 (class 0 OID 24764)
+-- TOC entry 4365 (class 0 OID 24764)
 -- Dependencies: 224
 -- Data for Name: job_run_details; Type: TABLE DATA; Schema: cron; Owner: azuresu
 --
@@ -6309,15 +6482,19 @@ COPY cron.job_run_details (jobid, runid, job_pid, database, username, command, s
 1	31	1622157	postgres	ferram	SELECT actualizar_estatus_deuda_vencida();	succeeded	1 row	2026-02-10 00:05:00.091486+00	2026-02-10 00:05:00.110038+00
 1	35	2193684	postgres	ferram	SELECT actualizar_estatus_deuda_vencida();	succeeded	1 row	2026-02-14 00:05:00.08572+00	2026-02-14 00:05:00.124041+00
 1	27	1069791	postgres	ferram	SELECT actualizar_estatus_deuda_vencida();	succeeded	1 row	2026-02-06 00:05:00.094468+00	2026-02-06 00:05:00.108982+00
+1	43	3311837	postgres	ferram	SELECT actualizar_estatus_deuda_vencida();	succeeded	1 row	2026-02-22 00:05:00.046502+00	2026-02-22 00:05:00.052749+00
 1	32	1760539	postgres	ferram	SELECT actualizar_estatus_deuda_vencida();	succeeded	1 row	2026-02-11 00:05:00.083808+00	2026-02-11 00:05:00.10129+00
 1	41	3034948	postgres	ferram	SELECT actualizar_estatus_deuda_vencida();	succeeded	1 row	2026-02-20 00:05:00.050151+00	2026-02-20 00:05:00.059261+00
 1	39	2745875	postgres	ferram	SELECT actualizar_estatus_deuda_vencida();	succeeded	1 row	2026-02-18 00:05:00.052676+00	2026-02-18 00:05:00.058909+00
 1	36	2331515	postgres	ferram	SELECT actualizar_estatus_deuda_vencida();	succeeded	1 row	2026-02-15 00:05:00.08488+00	2026-02-15 00:05:00.11647+00
+1	45	3587748	postgres	ferram	SELECT actualizar_estatus_deuda_vencida();	succeeded	1 row	2026-02-24 00:05:00.05369+00	2026-02-24 00:05:00.068462+00
+1	42	3173929	postgres	ferram	SELECT actualizar_estatus_deuda_vencida();	succeeded	1 row	2026-02-21 00:05:00.052331+00	2026-02-21 00:05:00.05763+00
+1	44	3449994	postgres	ferram	SELECT actualizar_estatus_deuda_vencida();	succeeded	1 row	2026-02-23 00:05:00.050583+00	2026-02-23 00:05:00.066923+00
 \.
 
 
 --
--- TOC entry 5411 (class 0 OID 25022)
+-- TOC entry 5436 (class 0 OID 25022)
 -- Dependencies: 225
 -- Data for Name: administradores; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6332,7 +6509,7 @@ COPY public.administradores (adminid, nombre, email, passwordhash, rol, activo, 
 
 
 --
--- TOC entry 5413 (class 0 OID 25031)
+-- TOC entry 5438 (class 0 OID 25031)
 -- Dependencies: 227
 -- Data for Name: agentesdeventas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6346,7 +6523,7 @@ COPY public.agentesdeventas (agenteid, nombre, apellido, email, passwordhash, co
 
 
 --
--- TOC entry 5516 (class 0 OID 27452)
+-- TOC entry 5541 (class 0 OID 27452)
 -- Dependencies: 332
 -- Data for Name: ajustes_inventario; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6356,7 +6533,7 @@ COPY public.ajustes_inventario (ajuste_id, variante_id, admin_id, cantidad, tipo
 
 
 --
--- TOC entry 5514 (class 0 OID 27429)
+-- TOC entry 5539 (class 0 OID 27429)
 -- Dependencies: 330
 -- Data for Name: auditoria_comentarios; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6366,7 +6543,7 @@ COPY public.auditoria_comentarios (comentario_id, conteo_id, comentario, usuario
 
 
 --
--- TOC entry 5415 (class 0 OID 25039)
+-- TOC entry 5440 (class 0 OID 25039)
 -- Dependencies: 229
 -- Data for Name: carritodecompra; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6396,7 +6573,6 @@ COPY public.carritodecompra (carritoid, clienteid, fechacreacion, ultimamodifica
 31	42	2026-01-25 05:45:18.424985	2026-01-25 16:01:15.687248	1
 32	43	2026-01-25 16:21:49.922147	2026-01-25 16:22:20.579352	1
 35	46	2026-01-27 07:32:18.783067	2026-01-27 07:32:30.503145	1
-29	38	2026-01-22 23:34:36.449085	2026-02-08 01:42:10.052243	1
 22	31	2026-01-19 21:59:40.057306	2026-01-19 22:23:08.83303	1
 14	22	2026-01-14 18:43:26.491021	2026-01-14 19:14:11.683148	1
 30	41	2026-01-25 05:06:59.929206	2026-01-25 05:16:11.889763	1
@@ -6404,6 +6580,7 @@ COPY public.carritodecompra (carritoid, clienteid, fechacreacion, ultimamodifica
 26	35	2026-01-21 21:07:42.805647	2026-01-21 21:40:21.060377	1
 1	1	2026-01-06 18:27:31.675743	2026-02-18 21:37:23.741132	1
 24	33	2026-01-21 02:06:56.638329	2026-01-21 02:38:40.436273	1
+29	38	2026-01-22 23:34:36.449085	2026-02-20 21:16:53.058837	1
 36	47	2026-01-27 07:41:37.825419	2026-01-27 07:50:38.797116	1
 21	30	2026-01-16 19:38:08.367855	2026-01-28 03:40:10.39409	1
 28	37	2026-01-22 17:33:51.275257	2026-01-28 18:15:13.563258	1
@@ -6413,7 +6590,7 @@ COPY public.carritodecompra (carritoid, clienteid, fechacreacion, ultimamodifica
 
 
 --
--- TOC entry 5417 (class 0 OID 25044)
+-- TOC entry 5442 (class 0 OID 25044)
 -- Dependencies: 231
 -- Data for Name: cat_cxp_etiquetas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6423,7 +6600,7 @@ COPY public.cat_cxp_etiquetas (etiqueta_id, nombre, color_hex, icono, activo, te
 
 
 --
--- TOC entry 5512 (class 0 OID 27410)
+-- TOC entry 5537 (class 0 OID 27410)
 -- Dependencies: 327
 -- Data for Name: cat_motivos_ajuste; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6447,7 +6624,7 @@ COPY public.cat_motivos_ajuste (motivo_id, codigo, descripcion, tipo_aplicable, 
 
 
 --
--- TOC entry 5419 (class 0 OID 25050)
+-- TOC entry 5444 (class 0 OID 25050)
 -- Dependencies: 233
 -- Data for Name: cat_tamanopaquetes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6468,7 +6645,7 @@ COPY public.cat_tamanopaquetes (tamanoid, cantidad, tenant_id) FROM stdin;
 
 
 --
--- TOC entry 5421 (class 0 OID 25054)
+-- TOC entry 5446 (class 0 OID 25054)
 -- Dependencies: 235
 -- Data for Name: categorias; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6482,20 +6659,16 @@ COPY public.categorias (categoriaid, nombre, descripcion, parentcategoriaid, act
 
 
 --
--- TOC entry 5423 (class 0 OID 25061)
+-- TOC entry 5448 (class 0 OID 25061)
 -- Dependencies: 237
 -- Data for Name: cliente_creditos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.cliente_creditos (credito_id, cliente_id, limite_credito, saldo_deudor, dias_gracia, estado_credito, fecha_creacion, ultima_actualizacion, exportado_en, reporte_id, tenant_id, dias_credito) FROM stdin;
 1	4	15000.00	0.00	15	ACTIVO	2026-01-09 23:36:57.33902	2026-01-10 02:08:00.663228	\N	\N	1	15
-7	32	20000.00	0.00	15	ACTIVO	2026-01-20 19:14:29.907653	2026-01-20 19:14:29.907653	\N	\N	1	30
 8	15	5000.00	0.00	15	ACTIVO	2026-01-20 19:21:45.603522	2026-01-20 19:21:45.603522	\N	\N	1	30
 9	29	30000.00	0.00	15	ACTIVO	2026-01-20 19:21:50.388838	2026-01-20 19:21:50.388838	\N	\N	1	30
 10	22	20000.00	0.00	15	ACTIVO	2026-01-20 19:21:55.111512	2026-01-20 19:21:55.111512	\N	\N	1	30
-11	34	9000.00	0.00	15	ACTIVO	2026-01-21 18:50:40.46227	2026-01-21 18:50:40.46227	\N	\N	1	30
-12	35	25000.00	0.00	15	ACTIVO	2026-01-21 18:50:44.738294	2026-01-21 22:27:20.700348	\N	\N	1	30
-13	36	20000.00	0.00	15	ACTIVO	2026-01-22 04:35:02.543414	2026-01-22 04:35:02.543414	\N	\N	1	30
 14	41	8000.00	0.00	15	ACTIVO	2026-01-25 05:19:28.099179	2026-01-25 05:19:28.099179	\N	\N	1	30
 15	42	25000.00	0.00	15	ACTIVO	2026-01-25 15:11:03.04806	2026-01-25 15:11:03.04806	\N	\N	1	30
 16	44	4000.00	0.00	15	ACTIVO	2026-01-25 18:47:16.476677	2026-01-25 18:47:16.476677	\N	\N	1	30
@@ -6507,11 +6680,15 @@ COPY public.cliente_creditos (credito_id, cliente_id, limite_credito, saldo_deud
 3	14	9000.00	3318.00	15	SUSPENDIDO	2026-01-10 04:02:57.380947	2026-02-10 14:00:00.63105	\N	\N	1	30
 4	5	20000.00	3220.80	15	SUSPENDIDO	2026-01-10 04:46:21.20041	2026-02-10 14:00:00.63105	\N	\N	1	30
 6	27	18000.00	0.00	15	SUSPENDIDO	2026-01-15 03:05:55.323743	2026-02-15 14:00:00.4824	\N	\N	1	30
+12	35	25000.00	0.00	15	SUSPENDIDO	2026-01-21 18:50:44.738294	2026-02-21 14:00:00.193985	\N	\N	1	30
+11	34	9000.00	0.00	15	SUSPENDIDO	2026-01-21 18:50:40.46227	2026-02-21 14:00:00.193985	\N	\N	1	30
+7	32	20000.00	0.00	15	SUSPENDIDO	2026-01-20 19:14:29.907653	2026-02-21 14:00:00.193985	\N	\N	1	30
+13	36	20000.00	0.00	15	SUSPENDIDO	2026-01-22 04:35:02.543414	2026-02-22 14:00:00.27253	\N	\N	1	30
 \.
 
 
 --
--- TOC entry 5425 (class 0 OID 25074)
+-- TOC entry 5450 (class 0 OID 25074)
 -- Dependencies: 239
 -- Data for Name: cliente_direcciones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6557,7 +6734,7 @@ COPY public.cliente_direcciones (direccionid, clienteid, etiqueta, receptor, cal
 
 
 --
--- TOC entry 5536 (class 0 OID 28169)
+-- TOC entry 5561 (class 0 OID 28169)
 -- Dependencies: 352
 -- Data for Name: cliente_saldo_favor; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6567,7 +6744,7 @@ COPY public.cliente_saldo_favor (saldo_id, cliente_id, saldo_disponible, ultima_
 
 
 --
--- TOC entry 5538 (class 0 OID 28187)
+-- TOC entry 5563 (class 0 OID 28187)
 -- Dependencies: 354
 -- Data for Name: cliente_saldo_favor_movimientos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6577,7 +6754,7 @@ COPY public.cliente_saldo_favor_movimientos (movimiento_id, cliente_id, tipo_mov
 
 
 --
--- TOC entry 5427 (class 0 OID 25080)
+-- TOC entry 5452 (class 0 OID 25080)
 -- Dependencies: 241
 -- Data for Name: clientes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6634,17 +6811,20 @@ COPY public.clientes (clienteid, nombre, apellido, email, passwordhash, telefono
 
 
 --
--- TOC entry 5542 (class 0 OID 28543)
+-- TOC entry 5567 (class 0 OID 28543)
 -- Dependencies: 361
 -- Data for Name: clientes_favoritos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.clientes_favoritos (favorito_id, cliente_id, variante_id, alerta_restock_activa, fecha_agregado, tenant_id) FROM stdin;
+6	1	293	t	2026-02-21 00:03:33.511547	1
+7	1	241	f	2026-02-21 00:07:04.884618	1
+8	1	242	t	2026-02-21 00:07:07.093064	1
 \.
 
 
 --
--- TOC entry 5429 (class 0 OID 25088)
+-- TOC entry 5454 (class 0 OID 25088)
 -- Dependencies: 243
 -- Data for Name: comisiones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6672,11 +6852,12 @@ COPY public.comisiones (comisionid, pedidoid, agenteid, montocomision, fechacalc
 20	39	1	1139.75	2026-01-27 16:57:46.697152	Pendiente	1
 21	40	1	556.44	2026-01-27 17:01:05.273869	Pendiente	1
 22	42	3	171.56	2026-01-31 01:09:40.41034	Pendiente	1
+23	45	3	94.90	2026-02-20 21:18:28.931357	Pendiente	1
 \.
 
 
 --
--- TOC entry 5431 (class 0 OID 25094)
+-- TOC entry 5456 (class 0 OID 25094)
 -- Dependencies: 245
 -- Data for Name: communicationlogs; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -6801,11 +6982,13 @@ COPY public.communicationlogs (logid, "timestamp", destinatario, asunto, estatus
 117	2026-02-18 21:38:21.839891	dferram8@gmail.com	💰 Nuevo Pedido #44 - $5813.80	Enviado	\N	\N	\N	\N	1
 118	2026-02-18 21:38:21.840678	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #44	Enviado	\N	\N	\N	\N	1
 119	2026-02-18 21:38:21.847849	dferramm@gmail.com	Confirmación de Pedido #44	Enviado	\N	\N	\N	\N	1
+120	2026-02-20 21:18:30.672437	dferram8@gmail.com	⚠️ Alerta: Backorder generado para el pedido #45	Enviado	\N	\N	\N	\N	1
+121	2026-02-20 21:18:30.690598	dferram8@gmail.com	💰 Nuevo Pedido #45 - $1898.00	Enviado	\N	\N	\N	\N	1
 \.
 
 
 --
--- TOC entry 5433 (class 0 OID 25102)
+-- TOC entry 5458 (class 0 OID 25102)
 -- Dependencies: 247
 -- Data for Name: control_cambios; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -7087,7 +7270,7 @@ COPY public.control_cambios (id, entidad, entidad_id, tipo_cambio, datos_anterio
 
 
 --
--- TOC entry 5435 (class 0 OID 25110)
+-- TOC entry 5460 (class 0 OID 25110)
 -- Dependencies: 249
 -- Data for Name: credito_movimientos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -7101,7 +7284,7 @@ COPY public.credito_movimientos (movimiento_id, credito_id, tipo_movimiento, mon
 
 
 --
--- TOC entry 5437 (class 0 OID 25117)
+-- TOC entry 5462 (class 0 OID 25117)
 -- Dependencies: 251
 -- Data for Name: cuentas_por_cobrar; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -7111,17 +7294,19 @@ COPY public.cuentas_por_cobrar (cxcid, pedido_id, cliente_id, tipo_movimiento, m
 
 
 --
--- TOC entry 5439 (class 0 OID 25122)
+-- TOC entry 5464 (class 0 OID 25122)
 -- Dependencies: 253
 -- Data for Name: cuentas_por_pagar; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.cuentas_por_pagar (cxp_id, proveedor_id, orden_compra_id, fecha_emision, fecha_vencimiento, monto_total, monto_pagado, estatus, referencia_factura, comprobante_pago, notas, usuario_creador_id, monto_original, fecha_cierre, exportado_en, reporte_id, tenant_id) FROM stdin;
+1	1	11	2026-02-20 22:55:04.67738	2026-02-20	4409.02	0.00	PENDIENTE	REM-103	\N	\N	8	4409.02	\N	\N	\N	1
+2	1	11	2026-02-22 00:01:43.377424	2026-02-22	46356.80	0.00	PENDIENTE	R166	\N	\N	2	46356.80	\N	\N	\N	1
 \.
 
 
 --
--- TOC entry 5497 (class 0 OID 25893)
+-- TOC entry 5522 (class 0 OID 25893)
 -- Dependencies: 311
 -- Data for Name: cupones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -7131,7 +7316,7 @@ COPY public.cupones (cuponid, codigo, descripcion, tipo_descuento, valor, fecha_
 
 
 --
--- TOC entry 5441 (class 0 OID 25135)
+-- TOC entry 5466 (class 0 OID 25135)
 -- Dependencies: 255
 -- Data for Name: cxp_etiquetas_asignadas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -7141,7 +7326,7 @@ COPY public.cxp_etiquetas_asignadas (asignacion_id, cxp_id, etiqueta_id, fecha_a
 
 
 --
--- TOC entry 5443 (class 0 OID 25140)
+-- TOC entry 5468 (class 0 OID 25140)
 -- Dependencies: 257
 -- Data for Name: datos_bancarios_empresa; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -7152,7 +7337,7 @@ COPY public.datos_bancarios_empresa (id, banco, numero_cuenta, clabe, titular, u
 
 
 --
--- TOC entry 5508 (class 0 OID 26969)
+-- TOC entry 5533 (class 0 OID 26969)
 -- Dependencies: 322
 -- Data for Name: detalles_remision; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -7162,7 +7347,7 @@ COPY public.detalles_remision (detalle_remision_id, remision_id, detalle_pedido_
 
 
 --
--- TOC entry 5445 (class 0 OID 25146)
+-- TOC entry 5470 (class 0 OID 25146)
 -- Dependencies: 259
 -- Data for Name: detallesdelpedido; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -7245,13 +7430,11 @@ COPY public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes
 100	11	220	2	257.40	12	42.90	3	t	0	2	1	0
 101	11	23	1	610.80	12	50.90	4	t	0	1	1	0
 102	11	233	2	317.40	12	52.90	3	t	0	2	1	0
-103	12	70	1	370.80	12	30.90	4	t	0	1	1	0
 104	12	77	1	634.80	12	52.90	4	t	0	1	1	0
 105	12	78	1	934.80	12	77.90	4	t	0	1	1	0
 106	12	14	1	514.80	12	42.90	4	t	0	1	1	0
 107	12	15	1	634.80	12	52.90	4	t	0	1	1	0
 108	12	58	1	778.80	12	64.90	4	t	0	1	1	0
-109	12	73	1	238.80	12	19.90	4	t	0	1	1	0
 110	13	205	2	279.60	8	69.90	5	t	0	2	1	0
 111	13	206	2	431.60	8	107.90	5	t	0	2	1	0
 112	13	11	2	171.60	8	42.90	5	t	0	2	1	0
@@ -7331,41 +7514,19 @@ COPY public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes
 186	18	43	1	257.40	6	42.90	3	t	0	1	1	0
 187	18	46	1	257.40	6	42.90	3	t	0	1	1	0
 188	18	45	1	257.40	6	42.90	3	t	0	1	1	0
-189	19	56	2	778.80	24	64.90	4	t	0	2	1	0
-190	19	14	1	257.40	6	42.90	3	t	0	1	1	0
 191	19	15	1	317.40	6	52.90	3	t	0	1	1	0
 192	19	255	1	168.00	12	14.00	4	t	0	1	1	0
 193	19	40	1	298.80	12	24.90	4	t	0	1	1	0
 194	19	178	1	293.40	6	48.90	3	t	0	1	1	0
 195	19	179	1	359.40	6	59.90	3	t	0	1	1	0
-196	19	165	2	299.60	8	74.90	5	t	0	2	1	0
-197	19	166	2	431.60	8	107.90	5	t	0	2	1	0
-198	19	158	1	647.40	6	107.90	3	t	0	1	1	0
-200	19	154	1	419.40	6	69.90	3	t	0	1	1	0
 201	19	152	1	419.40	6	69.90	3	t	0	1	1	0
-202	19	153	1	659.40	6	109.90	3	t	0	1	1	0
-203	19	134	1	317.40	6	52.90	3	t	0	1	1	0
 204	19	129	1	257.40	6	42.90	3	t	0	1	1	0
-205	19	205	2	279.60	8	69.90	5	t	0	2	1	0
-206	19	206	2	431.60	8	107.90	5	t	0	2	1	0
 207	19	127	2	299.60	8	74.90	5	t	0	2	1	0
 208	19	214	1	634.80	12	52.90	4	t	0	1	1	0
-209	19	175	2	179.60	8	44.90	5	t	0	2	1	0
-210	19	83	1	257.40	6	42.90	3	t	0	1	1	0
-211	19	77	1	317.40	6	52.90	3	t	0	1	1	0
 212	19	41	1	418.80	12	34.90	4	t	0	1	1	0
-213	19	73	1	119.40	6	19.90	3	t	0	1	1	0
-214	19	78	1	467.40	6	77.90	3	t	0	1	1	0
 215	19	58	1	389.40	6	64.90	3	t	0	1	1	0
 216	19	12	1	257.40	6	42.90	3	t	0	1	1	0
-217	19	144	1	281.40	6	46.90	3	t	0	1	1	0
-218	19	143	1	203.40	6	33.90	3	t	0	1	1	0
 219	19	206	1	647.40	6	107.90	3	t	0	1	1	0
-220	19	126	1	647.40	6	107.90	3	t	0	1	1	0
-221	19	176	1	814.80	12	67.90	4	t	0	1	1	0
-222	19	175	1	538.80	12	44.90	4	t	0	1	1	0
-223	19	51	1	317.40	6	52.90	3	t	0	1	1	0
-224	19	52	1	389.40	6	64.90	3	t	0	1	1	0
 225	19	77	1	634.80	12	52.90	4	t	0	1	1	0
 226	19	9	2	171.60	8	42.90	5	t	0	2	1	0
 227	19	8	2	123.60	8	30.90	5	t	0	2	1	0
@@ -7387,6 +7548,19 @@ COPY public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes
 243	19	71	1	887.40	6	147.90	3	t	0	1	1	0
 244	19	42	1	634.80	12	52.90	4	t	0	1	1	0
 199	19	161	1	959.40	6	159.90	3	t	0	1	1	0
+189	19	56	1	778.80	12	64.90	4	t	0	2	1	0
+196	19	165	3	299.60	12	74.90	5	t	0	2	1	0
+200	19	154	2	419.40	12	69.90	3	t	0	1	1	0
+202	19	153	2	659.40	12	109.90	3	t	0	1	1	0
+203	19	134	2	317.40	12	52.90	3	t	0	1	1	0
+205	19	205	3	279.60	12	69.90	5	t	0	2	1	0
+209	19	175	3	179.60	12	44.90	5	t	0	2	1	0
+214	19	78	2	467.40	12	77.90	3	t	0	1	1	0
+217	19	144	2	281.40	12	46.90	3	t	0	1	1	0
+218	19	143	2	203.40	12	33.90	3	t	0	1	1	0
+220	19	126	2	647.40	12	107.90	3	t	0	1	1	0
+223	19	51	2	317.40	12	52.90	3	t	0	1	1	0
+224	19	52	2	389.40	12	64.90	3	t	0	1	1	0
 250	21	134	1	317.40	6	52.90	3	t	0	1	1	0
 251	21	76	2	259.60	8	64.90	5	t	0	2	1	0
 252	21	88	2	259.60	8	64.90	5	t	0	2	1	0
@@ -7645,11 +7819,27 @@ COPY public.detallesdelpedido (detalleid, pedidoid, varianteid, cantidadpaquetes
 512	44	293	1	169.00	1	169.00	1	f	0	0	1	0
 514	44	291	5	514.80	60	42.90	4	f	0	0	1	0
 516	44	261	5	456.00	60	38.00	4	f	0	0	1	0
+517	45	157	1	263.40	6	43.90	3	t	0	1	1	0
+518	45	160	1	479.40	6	79.90	3	t	0	1	1	0
+519	45	151	1	317.40	6	52.90	3	t	0	1	1	0
+520	45	40	1	149.40	6	24.90	3	f	1	0	1	0
+521	45	41	1	209.40	6	34.90	3	t	0	1	1	0
+522	45	177	1	257.40	6	42.90	3	t	0	1	1	0
+523	45	273	1	10.00	1	10.00	1	t	0	1	1	0
+524	45	134	1	211.60	4	52.90	5	t	0	1	1	0
+526	4	85	1	259.60	4	64.90	5	f	1	0	1	0
+527	17	284	1	478.80	12	39.90	4	f	1	0	1	0
+528	17	78	1	934.80	12	77.90	4	f	1	0	1	0
+529	12	73	2	79.60	8	19.90	5	f	2	0	1	0
+530	12	10	1	79.60	4	19.90	5	f	1	0	1	0
+531	12	8	1	370.80	12	30.90	4	f	1	0	1	0
+190	19	14	2	257.40	12	42.90	3	t	0	1	1	0
+532	19	10	1	238.80	12	19.90	4	f	1	0	1	0
 \.
 
 
 --
--- TOC entry 5447 (class 0 OID 25153)
+-- TOC entry 5472 (class 0 OID 25153)
 -- Dependencies: 261
 -- Data for Name: detallesordencompra; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -7764,33 +7954,6 @@ COPY public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantid
 6	1	116	3	0	6	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 7	1	118	3	0	6	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 8	1	120	3	0	6	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-148	11	54	1	0	12	76.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-152	11	3	1	0	12	20.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-153	11	4	4	0	12	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-154	11	5	4	0	12	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-155	11	56	4	0	12	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-156	11	57	1	0	12	76.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-157	11	8	1	0	12	20.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-158	11	9	4	0	12	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-159	11	47	4	0	12	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-160	11	48	4	0	12	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-161	11	49	1	0	12	76.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-162	11	11	2	0	12	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-163	11	51	2	0	12	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-164	11	52	2	0	12	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-165	11	12	2	0	12	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-166	11	13	2	0	12	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-167	11	59	2	0	12	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-168	11	14	2	0	12	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-169	11	15	2	0	12	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-170	11	58	2	0	12	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-171	11	16	2	0	12	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-172	11	17	2	0	12	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-173	11	50	2	0	12	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-174	11	60	2	0	12	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-175	11	61	2	0	12	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-176	11	62	2	0	12	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-177	11	63	1	0	12	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 9	1	122	1	0	6	76.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 10	1	7	5	0	6	13.23	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 11	1	117	5	0	6	20.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
@@ -7881,6 +8044,8 @@ COPY public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantid
 99	1	87	12	0	1	0.00	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 86	1	88	26	0	12	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 76	1	77	14	0	12	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
+168	11	14	2	2	12	27.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+167	11	59	2	2	12	41.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
 77	1	78	13	0	12	48.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 100	2	175	1	0	1	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 101	2	78	1	0	1	48.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
@@ -7924,24 +8089,6 @@ COPY public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantid
 139	9	138	1	0	1	45.43	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 140	9	4	1	0	1	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 141	9	167	1	0	1	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-178	11	64	2	0	12	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-179	11	116	3	0	12	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-180	11	118	3	0	12	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-181	11	120	3	0	12	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-182	11	43	3	0	12	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-183	11	44	3	0	12	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-184	11	119	6	0	12	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-185	11	142	5	0	12	17.43	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-186	11	143	5	0	12	20.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-187	11	144	5	0	12	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-188	11	77	4	0	12	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-190	11	40	3	0	12	13.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-191	11	41	5	0	12	20.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-192	11	42	4	0	12	32.13	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-193	11	175	2	0	12	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-194	11	176	2	0	12	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-195	11	205	3	0	12	45.43	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-196	11	206	1	0	12	69.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 200	13	198	12	0	1	0.00	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 201	13	199	12	0	1	0.00	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 202	13	200	12	0	1	0.00	0	1	\N	\N	\N	f	\N	\N	0	f	\N
@@ -7990,6 +8137,13 @@ COPY public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantid
 336	28	240	6	0	1	0.00	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 337	28	238	6	0	1	0.00	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 338	28	230	12	0	1	0.00	0	1	\N	\N	\N	f	\N	\N	0	f	\N
+192	11	42	4	1	12	32.13	12	1	\N	Sesión cerrada manualmente	MERMA	t	2026-02-22 04:36:52.507755	8	0	f	\N
+196	11	206	1	1	12	69.93	12	1	\N	\N	\N	f	\N	\N	0	f	\N
+195	11	205	3	3	12	45.43	36	1	\N	\N	\N	f	\N	\N	0	f	\N
+188	11	77	4	4	12	34.93	48	1	\N	\N	\N	f	\N	\N	0	f	\N
+190	11	40	3	3	12	13.93	36	1	\N	\N	\N	f	\N	\N	0	f	\N
+191	11	41	5	5	12	20.93	60	1	\N	\N	\N	f	\N	\N	0	f	\N
+193	11	175	2	2	12	27.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
 360	29	179	12	0	1	0.00	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 361	29	165	12	0	1	0.00	0	1	\N	\N	\N	f	\N	\N	0	f	\N
 362	29	166	12	0	1	0.00	0	1	\N	\N	\N	f	\N	\N	0	f	\N
@@ -8307,16 +8461,59 @@ COPY public.detallesordencompra (detalleoc_id, ordencompraid, varianteid, cantid
 677	20	258	12	0	1	0.00	0	1	44	\N	\N	f	\N	\N	0	f	\N
 678	20	261	12	0	1	0.00	0	1	44	\N	\N	f	\N	\N	0	f	\N
 679	1	291	12	0	1	0.00	0	1	44	\N	\N	f	\N	\N	0	f	\N
-680	11	251	24	0	1	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-681	11	1	48	0	1	27.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-682	11	2	48	0	1	34.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-683	11	53	48	0	1	41.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
-189	11	78	50	0	12	48.93	0	1	\N	\N	\N	f	\N	\N	0	f	\N
+688	1	177	12	0	1	0.00	0	1	45	\N	\N	f	\N	\N	0	f	\N
+689	1	134	12	0	1	0.00	0	1	45	\N	\N	f	\N	\N	0	f	\N
+189	11	78	50	2	12	48.93	24	1	\N	Sesión cerrada manualmente	MERMA	t	2026-02-22 04:36:52.507755	8	0	f	\N
+684	1	157	12	0	1	0.00	0	1	45	\N	\N	f	\N	\N	0	f	\N
+685	1	160	12	0	1	0.00	0	1	45	\N	\N	f	\N	\N	0	f	\N
+686	1	151	12	0	1	0.00	0	1	45	\N	\N	f	\N	\N	0	f	\N
+687	1	41	12	0	1	0.00	0	1	45	\N	\N	f	\N	\N	0	f	\N
+690	20	273	1	0	1	0.00	0	1	45	\N	\N	f	\N	\N	0	f	\N
+680	11	251	24	24	1	34.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+194	11	176	2	2	12	41.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+165	11	12	2	2	12	27.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+166	11	13	2	2	12	34.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+148	11	54	1	1	12	76.93	12	1	\N	\N	\N	f	\N	\N	0	f	\N
+683	11	53	48	48	1	41.93	48	1	\N	\N	\N	f	\N	\N	0	f	\N
+682	11	2	48	48	1	34.93	48	1	\N	\N	\N	f	\N	\N	0	f	\N
+681	11	1	48	48	1	27.93	48	1	\N	\N	\N	f	\N	\N	0	f	\N
+176	11	62	2	2	12	41.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+175	11	61	2	2	12	34.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+174	11	60	2	2	12	27.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+172	11	17	2	2	12	34.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+171	11	16	2	2	12	27.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+173	11	50	2	2	12	41.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+157	11	8	1	1	12	20.93	12	1	\N	\N	\N	f	\N	\N	0	f	\N
+161	11	49	1	1	12	76.93	12	1	\N	\N	\N	f	\N	\N	0	f	\N
+160	11	48	4	4	12	41.93	48	1	\N	\N	\N	f	\N	\N	0	f	\N
+159	11	47	4	4	12	34.93	48	1	\N	\N	\N	f	\N	\N	0	f	\N
+158	11	9	4	4	12	27.93	48	1	\N	\N	\N	f	\N	\N	0	f	\N
+164	11	52	2	2	12	41.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+163	11	51	2	2	12	34.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+162	11	11	2	2	12	27.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+155	11	56	4	4	12	41.93	48	1	\N	\N	\N	f	\N	\N	0	f	\N
+153	11	4	4	4	12	27.93	48	1	\N	\N	\N	f	\N	\N	0	f	\N
+154	11	5	4	4	12	34.93	48	1	\N	\N	\N	f	\N	\N	0	f	\N
+152	11	3	1	1	12	20.93	12	1	\N	\N	\N	f	\N	\N	0	f	\N
+156	11	57	1	1	12	76.93	12	1	\N	\N	\N	f	\N	\N	0	f	\N
+187	11	144	5	5	12	27.93	60	1	\N	\N	\N	f	\N	\N	0	f	\N
+185	11	142	5	5	12	17.43	60	1	\N	\N	\N	f	\N	\N	0	f	\N
+186	11	143	5	5	12	20.93	60	1	\N	\N	\N	f	\N	\N	0	f	\N
+178	11	64	2	2	12	41.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+177	11	63	1	1	12	27.93	12	1	\N	\N	\N	f	\N	\N	0	f	\N
+169	11	15	2	2	12	34.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+170	11	58	2	2	12	41.93	24	1	\N	\N	\N	f	\N	\N	0	f	\N
+181	11	120	3	1	12	41.93	18	1	\N	Sesión cerrada manualmente	MERMA	t	2026-02-22 04:36:52.507755	8	0	f	\N
+182	11	43	3	1	12	27.93	18	1	\N	Sesión cerrada manualmente	MERMA	t	2026-02-22 04:36:52.507755	8	0	f	\N
+183	11	44	3	1	12	34.93	18	1	\N	Sesión cerrada manualmente	MERMA	t	2026-02-22 04:36:52.507755	8	0	f	\N
+184	11	119	6	3	12	41.93	36	1	\N	Sesión cerrada manualmente	MERMA	t	2026-02-22 04:36:52.507755	8	0	f	\N
+179	11	116	3	1	12	27.93	18	1	\N	Sesión cerrada manualmente	MERMA	t	2026-02-22 04:36:52.507755	8	0	f	\N
+180	11	118	3	1	12	34.93	18	1	\N	Sesión cerrada manualmente	MERMA	t	2026-02-22 04:36:52.507755	8	0	f	\N
 \.
 
 
 --
--- TOC entry 5503 (class 0 OID 26155)
+-- TOC entry 5528 (class 0 OID 26155)
 -- Dependencies: 317
 -- Data for Name: developers; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -8327,7 +8524,7 @@ COPY public.developers (dev_id, username, password_hash, created_at) FROM stdin;
 
 
 --
--- TOC entry 5528 (class 0 OID 28057)
+-- TOC entry 5553 (class 0 OID 28057)
 -- Dependencies: 344
 -- Data for Name: devoluciones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -8337,7 +8534,7 @@ COPY public.devoluciones (devolucion_id, pedido_id, cliente_id, fecha_solicitud,
 
 
 --
--- TOC entry 5530 (class 0 OID 28089)
+-- TOC entry 5555 (class 0 OID 28089)
 -- Dependencies: 346
 -- Data for Name: devoluciones_detalles; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -8347,7 +8544,7 @@ COPY public.devoluciones_detalles (detalle_devolucion_id, devolucion_id, detalle
 
 
 --
--- TOC entry 5520 (class 0 OID 27603)
+-- TOC entry 5545 (class 0 OID 27603)
 -- Dependencies: 336
 -- Data for Name: errores_sincronizacion; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -8517,11 +8714,52 @@ COPY public.errores_sincronizacion (error_id, pedido_id, fecha_deteccion, monto_
 183	44	2026-02-18 21:38:20.088491	5813.80	683.80	5130.00	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 2, "total_actual": 5813.80, "subtotal_items": 683.80, "monto_descuento": 0.00, "total_calculado": 683.80}	f	\N	1
 184	44	2026-02-18 21:38:20.088491	5813.80	3257.80	2556.00	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 3, "total_actual": 5813.80, "subtotal_items": 3257.80, "monto_descuento": 0.00, "total_calculado": 3257.80}	f	\N	1
 185	44	2026-02-18 21:38:20.088491	5813.80	3533.80	2280.00	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 4, "total_actual": 5813.80, "subtotal_items": 3533.80, "monto_descuento": 0.00, "total_calculado": 3533.80}	f	\N	1
+186	45	2026-02-20 21:18:28.931357	1898.00	263.40	1634.60	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 1, "total_actual": 1898.00, "subtotal_items": 263.40, "monto_descuento": 0.00, "total_calculado": 263.40}	f	\N	1
+187	45	2026-02-20 21:18:28.931357	1898.00	742.80	1155.20	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 2, "total_actual": 1898.00, "subtotal_items": 742.80, "monto_descuento": 0.00, "total_calculado": 742.80}	f	\N	1
+188	45	2026-02-20 21:18:28.931357	1898.00	1060.20	837.80	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 3, "total_actual": 1898.00, "subtotal_items": 1060.20, "monto_descuento": 0.00, "total_calculado": 1060.20}	f	\N	1
+189	45	2026-02-20 21:18:28.931357	1898.00	1209.60	688.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 4, "total_actual": 1898.00, "subtotal_items": 1209.60, "monto_descuento": 0.00, "total_calculado": 1209.60}	f	\N	1
+190	45	2026-02-20 21:18:28.931357	1898.00	1419.00	479.00	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 5, "total_actual": 1898.00, "subtotal_items": 1419.00, "monto_descuento": 0.00, "total_calculado": 1419.00}	f	\N	1
+191	45	2026-02-20 21:18:28.931357	1898.00	1676.40	221.60	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 6, "total_actual": 1898.00, "subtotal_items": 1676.40, "monto_descuento": 0.00, "total_calculado": 1676.40}	f	\N	1
+192	45	2026-02-20 21:18:28.931357	1898.00	1686.40	211.60	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 7, "total_actual": 1898.00, "subtotal_items": 1686.40, "monto_descuento": 0.00, "total_calculado": 1686.40}	f	\N	1
+193	4	2026-02-22 04:29:49.551284	1633.20	1712.80	79.60	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 6, "total_actual": 1633.20, "subtotal_items": 1712.80, "monto_descuento": 0.00, "total_calculado": 1712.80}	f	\N	1
+194	4	2026-02-22 04:52:09.805402	1712.80	1633.20	79.60	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "DELETE", "count_items": 5, "total_actual": 1712.80, "subtotal_items": 1633.20, "monto_descuento": 0.00, "total_calculado": 1633.20}	f	\N	1
+195	4	2026-02-22 04:52:24.256894	1633.20	1892.80	259.60	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 6, "total_actual": 1633.20, "subtotal_items": 1892.80, "monto_descuento": 0.00, "total_calculado": 1892.80}	f	\N	1
+196	17	2026-02-22 20:03:53.960185	14599.20	15078.00	478.80	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 21, "total_actual": 14599.20, "subtotal_items": 15078.00, "monto_descuento": 0.00, "total_calculado": 15078.00}	f	\N	1
+197	17	2026-02-22 20:03:53.960185	14599.20	16012.80	1413.60	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 22, "total_actual": 14599.20, "subtotal_items": 16012.80, "monto_descuento": 0.00, "total_calculado": 16012.80}	f	\N	1
+198	12	2026-02-22 20:56:03.091492	4107.60	3868.80	238.80	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "DELETE", "count_items": 6, "total_actual": 4107.60, "subtotal_items": 3868.80, "monto_descuento": 0.00, "total_calculado": 3868.80}	f	\N	1
+199	12	2026-02-22 20:59:41.411606	3868.80	4028.00	159.20	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 7, "total_actual": 3868.80, "subtotal_items": 4028.00, "monto_descuento": 0.00, "total_calculado": 4028.00}	f	\N	1
+200	12	2026-02-22 20:59:41.411606	3868.80	4107.60	238.80	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 8, "total_actual": 3868.80, "subtotal_items": 4107.60, "monto_descuento": 0.00, "total_calculado": 4107.60}	f	\N	1
+201	12	2026-02-22 21:06:58.995947	4107.60	3736.80	370.80	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "DELETE", "count_items": 7, "total_actual": 4107.60, "subtotal_items": 3736.80, "monto_descuento": 0.00, "total_calculado": 3736.80}	f	\N	1
+202	19	2026-02-23 01:20:20.984896	30168.40	29389.60	778.80	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 56, "total_actual": 30168.40, "subtotal_items": 29389.60, "monto_descuento": 0.00, "total_calculado": 29389.60}	f	\N	1
+203	19	2026-02-23 01:20:20.984896	30168.40	29647.00	521.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 56, "total_actual": 30168.40, "subtotal_items": 29647.00, "monto_descuento": 0.00, "total_calculado": 29647.00}	f	\N	1
+204	19	2026-02-23 03:41:41.833386	29647.00	28783.80	863.20	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "DELETE", "count_items": 55, "total_actual": 29647.00, "subtotal_items": 28783.80, "monto_descuento": 0.00, "total_calculado": 28783.80}	f	\N	1
+205	19	2026-02-23 03:41:41.833386	29647.00	29083.40	563.60	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 55, "total_actual": 29647.00, "subtotal_items": 29083.40, "monto_descuento": 0.00, "total_calculado": 29083.40}	f	\N	1
+206	19	2026-02-23 03:43:50.085506	29083.40	29383.00	299.60	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 55, "total_actual": 29083.40, "subtotal_items": 29383.00, "monto_descuento": 0.00, "total_calculado": 29383.00}	f	\N	1
+207	19	2026-02-23 03:46:00.087755	29383.00	29083.40	299.60	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 55, "total_actual": 29383.00, "subtotal_items": 29083.40, "monto_descuento": 0.00, "total_calculado": 29083.40}	f	\N	1
+208	19	2026-02-23 03:57:21.664732	29083.40	28436.00	647.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "DELETE", "count_items": 54, "total_actual": 29083.40, "subtotal_items": 28436.00, "monto_descuento": 0.00, "total_calculado": 28436.00}	f	\N	1
+209	19	2026-02-23 04:02:18.576943	28436.00	28855.40	419.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 54, "total_actual": 28436.00, "subtotal_items": 28855.40, "monto_descuento": 0.00, "total_calculado": 28855.40}	f	\N	1
+210	19	2026-02-23 04:04:56.230474	28855.40	29514.80	659.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 54, "total_actual": 28855.40, "subtotal_items": 29514.80, "monto_descuento": 0.00, "total_calculado": 29514.80}	f	\N	1
+211	19	2026-02-23 04:07:31.78338	29514.80	29832.20	317.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 54, "total_actual": 29514.80, "subtotal_items": 29832.20, "monto_descuento": 0.00, "total_calculado": 29832.20}	f	\N	1
+212	19	2026-02-23 04:12:26.281318	29832.20	28969.00	863.20	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "DELETE", "count_items": 53, "total_actual": 29832.20, "subtotal_items": 28969.00, "monto_descuento": 0.00, "total_calculado": 28969.00}	f	\N	1
+213	19	2026-02-23 04:12:26.281318	29832.20	29248.60	583.60	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 53, "total_actual": 29832.20, "subtotal_items": 29248.60, "monto_descuento": 0.00, "total_calculado": 29248.60}	f	\N	1
+214	19	2026-02-23 04:17:08.043153	29248.60	29428.20	179.60	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 53, "total_actual": 29248.60, "subtotal_items": 29428.20, "monto_descuento": 0.00, "total_calculado": 29428.20}	f	\N	1
+215	19	2026-02-23 04:22:16.925754	29428.20	29170.80	257.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "DELETE", "count_items": 52, "total_actual": 29428.20, "subtotal_items": 29170.80, "monto_descuento": 0.00, "total_calculado": 29170.80}	f	\N	1
+216	19	2026-02-23 04:22:16.925754	29428.20	29638.20	210.00	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 52, "total_actual": 29428.20, "subtotal_items": 29638.20, "monto_descuento": 0.00, "total_calculado": 29638.20}	f	\N	1
+217	19	2026-02-23 04:27:27.27279	29638.20	29320.80	317.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "DELETE", "count_items": 51, "total_actual": 29638.20, "subtotal_items": 29320.80, "monto_descuento": 0.00, "total_calculado": 29320.80}	f	\N	1
+218	19	2026-02-23 04:31:17.143714	29320.80	29201.40	119.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "DELETE", "count_items": 50, "total_actual": 29320.80, "subtotal_items": 29201.40, "monto_descuento": 0.00, "total_calculado": 29201.40}	f	\N	1
+219	19	2026-02-23 04:31:17.143714	29320.80	29440.20	119.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "INSERT", "count_items": 51, "total_actual": 29320.80, "subtotal_items": 29440.20, "monto_descuento": 0.00, "total_calculado": 29440.20}	f	\N	1
+220	19	2026-02-23 04:34:22.222521	29440.20	29721.60	281.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 51, "total_actual": 29440.20, "subtotal_items": 29721.60, "monto_descuento": 0.00, "total_calculado": 29721.60}	f	\N	1
+221	19	2026-02-23 04:34:22.222521	29440.20	29925.00	484.80	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 51, "total_actual": 29440.20, "subtotal_items": 29925.00, "monto_descuento": 0.00, "total_calculado": 29925.00}	f	\N	1
+222	19	2026-02-23 04:40:53.908875	29925.00	30572.40	647.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 51, "total_actual": 29925.00, "subtotal_items": 30572.40, "monto_descuento": 0.00, "total_calculado": 30572.40}	f	\N	1
+223	19	2026-02-23 04:44:18.65867	30572.40	29757.60	814.80	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "DELETE", "count_items": 50, "total_actual": 30572.40, "subtotal_items": 29757.60, "monto_descuento": 0.00, "total_calculado": 29757.60}	f	\N	1
+224	19	2026-02-23 04:44:18.65867	30572.40	29218.80	1353.60	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "DELETE", "count_items": 49, "total_actual": 30572.40, "subtotal_items": 29218.80, "monto_descuento": 0.00, "total_calculado": 29218.80}	f	\N	1
+225	19	2026-02-23 04:51:09.932443	29218.80	29536.20	317.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 49, "total_actual": 29218.80, "subtotal_items": 29536.20, "monto_descuento": 0.00, "total_calculado": 29536.20}	f	\N	1
+226	19	2026-02-23 04:52:24.146251	29536.20	29925.60	389.40	{"tabla": "detallesdelpedido", "cupon_id": null, "operacion": "UPDATE", "count_items": 49, "total_actual": 29536.20, "subtotal_items": 29925.60, "monto_descuento": 0.00, "total_calculado": 29925.60}	f	\N	1
 \.
 
 
 --
--- TOC entry 5450 (class 0 OID 25179)
+-- TOC entry 5475 (class 0 OID 25179)
 -- Dependencies: 264
 -- Data for Name: estados; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -8563,7 +8801,7 @@ COPY public.estados (estadoid, nombre, abreviatura) FROM stdin;
 
 
 --
--- TOC entry 5532 (class 0 OID 28122)
+-- TOC entry 5557 (class 0 OID 28122)
 -- Dependencies: 348
 -- Data for Name: evidencias_devolucion; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -8573,7 +8811,7 @@ COPY public.evidencias_devolucion (evidencia_id, devolucion_id, url_imagen, desc
 
 
 --
--- TOC entry 5518 (class 0 OID 27535)
+-- TOC entry 5543 (class 0 OID 27535)
 -- Dependencies: 334
 -- Data for Name: historial_pedidos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -8588,11 +8826,36 @@ COPY public.historial_pedidos (historial_id, pedido_id, accion, detalles, monto_
 7	41	AJUSTE_MANUAL	[{"sku": "CAJ-006-00285", "tipo": "MODIFICADO", "producto": "Caja Smart", "diferencia": 0, "tamanoNuevo": 2, "cambioTamano": true, "cantidadNueva": 1, "subtotalNuevo": 61.5, "tamanoAnterior": 1, "cantidadAnterior": 1, "subtotalAnterior": 20.5, "diferenciaSubtotal": 41}]	277.90	318.90	8	2026-02-03 14:59:07.410551	1
 8	43	AJUSTE_MANUAL	[{"sku": "BOL-003-00274", "tipo": "MODIFICADO", "producto": "Bolsa Milan", "diferencia": 0, "tamanoNuevo": 1, "cambioTamano": true, "cantidadNueva": 3, "subtotalNuevo": 126, "tamanoAnterior": 8, "cantidadAnterior": 3, "subtotalAnterior": 1260, "diferenciaSubtotal": -1134}]	6330.00	5196.00	8	2026-02-16 19:52:56.31629	1
 9	43	AJUSTE_MANUAL	[{"sku": "COJ-003-00293", "tipo": "MODIFICADO", "producto": "Cojin 3D", "diferencia": -27, "tamanoNuevo": 1, "cambioTamano": false, "cantidadNueva": 3, "subtotalNuevo": 507, "tamanoAnterior": 1, "cantidadAnterior": 30, "subtotalAnterior": 5070, "diferenciaSubtotal": -4563}]	5196.00	633.00	8	2026-02-16 19:53:09.005133	1
+10	4	AJUSTE_MANUAL	[{"sku": "COD-00024-00082", "tipo": "AGREGADO", "cantidad": 1, "producto": "Cubo Felicidades", "subtotal": 79.6, "piezasDescontadas": 4}]	1633.20	1712.80	8	2026-02-22 04:29:49.551284	1
+11	4	AJUSTE_MANUAL	[{"sku": "COD-00024-00082", "tipo": "ELIMINADO", "cantidad": 1, "producto": "Cubo Felicidades", "subtotal": 79.6, "piezasDevueltas": 4}]	1712.80	1633.20	8	2026-02-22 04:52:09.805402	1
+12	4	AJUSTE_MANUAL	[{"sku": "COD-00024-00085", "tipo": "AGREGADO", "cantidad": 1, "producto": "Cubo Felicidades", "subtotal": 259.6, "piezasDescontadas": 4}]	1633.20	1892.80	8	2026-02-22 04:52:24.256894	1
+13	17	AJUSTE_MANUAL	[{"sku": "COD-00048-00284", "tipo": "AGREGADO", "cantidad": 1, "producto": "Lunch Natural", "subtotal": 478.79999999999995, "piezasDescontadas": 12}, {"sku": "COD-00022-00078", "tipo": "AGREGADO", "cantidad": 1, "producto": "Camisera Colors Love", "subtotal": 934.8000000000001, "piezasDescontadas": 12}]	14599.20	16012.80	2	2026-02-22 20:03:53.960185	1
+14	12	AJUSTE_MANUAL	[{"sku": "COD-00020-00073", "tipo": "ELIMINADO_BACKORDER", "cantidad": 1, "producto": "Cubo TQM", "subtotal": 238.8}]	4107.60	3868.80	2	2026-02-22 20:56:03.091492	1
+15	12	AJUSTE_MANUAL	[{"sku": "COD-00020-00073", "tipo": "AGREGADO", "cantidad": 2, "producto": "Cubo TQM", "subtotal": 159.2, "piezasDescontadas": 8}, {"sku": "COD-00005-00010", "tipo": "AGREGADO", "cantidad": 1, "producto": "Cubo Love Craft", "subtotal": 79.6, "piezasDescontadas": 4}]	3868.80	4107.60	2	2026-02-22 20:59:41.411606	1
+16	12	AJUSTE_MANUAL	[{"sku": "COD-00019-00070", "tipo": "ELIMINADO_BACKORDER", "cantidad": 1, "producto": "Cubo Love", "subtotal": 370.8}, {"sku": "COD-00004-00008", "tipo": "AGREGADO", "cantidad": 1, "producto": "Cubo Love Black", "subtotal": 370.79999999999995, "piezasDescontadas": 12}]	4107.60	4107.60	2	2026-02-22 21:06:58.995947	1
+17	19	AJUSTE_MANUAL	[{"sku": "COD-00002-00056", "tipo": "MODIFICADO", "producto": "Cubo LV Oro", "diferencia": -1, "tamanoNuevo": 4, "cambioTamano": false, "cantidadNueva": 1, "subtotalNuevo": 778.8, "tamanoAnterior": 4, "cantidadAnterior": 2, "subtotalAnterior": 1557.6, "diferenciaSubtotal": -778.8}, {"sku": "COD-00007-00014", "tipo": "MODIFICADO", "producto": "Cubo RedBlack Love", "diferencia": 1, "tamanoNuevo": 3, "cambioTamano": false, "cantidadNueva": 2, "subtotalNuevo": 514.8, "tamanoAnterior": 3, "cantidadAnterior": 1, "subtotalAnterior": 257.4, "diferenciaSubtotal": 257.4}]	30168.40	29647.00	2	2026-02-23 01:20:20.984896	1
+18	19	AJUSTE_MANUAL	[{"sku": "COD-00054-00166", "tipo": "ELIMINADO_BACKORDER", "cantidad": 2, "producto": "Torre Cumple Colors", "subtotal": 863.2}, {"sku": "COD-00054-00165", "tipo": "MODIFICADO", "producto": "Torre Cumple Colors", "diferencia": 1, "tamanoNuevo": 5, "cambioTamano": false, "cantidadNueva": 3, "subtotalNuevo": 898.8000000000001, "tamanoAnterior": 5, "cantidadAnterior": 2, "subtotalAnterior": 599.2, "diferenciaSubtotal": 299.6}]	29647.00	29083.40	2	2026-02-23 03:41:41.833386	1
+19	19	AJUSTE_MANUAL	[{"sku": "COD-00054-00165", "tipo": "MODIFICADO", "producto": "Torre Cumple Colors", "diferencia": 1, "tamanoNuevo": 5, "cambioTamano": false, "cantidadNueva": 4, "subtotalNuevo": 1198.4, "tamanoAnterior": 5, "cantidadAnterior": 3, "subtotalAnterior": 898.8000000000001, "diferenciaSubtotal": 299.6}]	29083.40	29383.00	2	2026-02-23 03:43:50.085506	1
+20	19	AJUSTE_MANUAL	[{"sku": "COD-00054-00165", "tipo": "MODIFICADO", "producto": "Torre Cumple Colors", "diferencia": -1, "tamanoNuevo": 5, "cambioTamano": false, "cantidadNueva": 3, "subtotalNuevo": 898.8000000000001, "tamanoAnterior": 5, "cantidadAnterior": 4, "subtotalAnterior": 1198.4, "diferenciaSubtotal": -299.6}]	29383.00	29083.40	2	2026-02-23 03:46:00.087755	1
+21	19	AJUSTE_MANUAL	[{"sku": "COD-00050-00158", "tipo": "ELIMINADO_BACKORDER", "cantidad": 1, "producto": "Baúl Colors Cumple", "subtotal": 647.4}]	29083.40	28436.00	2	2026-02-23 03:57:21.664732	1
+22	19	AJUSTE_MANUAL	[{"sku": "COD-00047-00154", "tipo": "MODIFICADO", "producto": "Baúl Cumple", "diferencia": 1, "tamanoNuevo": 3, "cambioTamano": false, "cantidadNueva": 2, "subtotalNuevo": 838.8, "tamanoAnterior": 3, "cantidadAnterior": 1, "subtotalAnterior": 419.4, "diferenciaSubtotal": 419.4}]	28436.00	28855.40	2	2026-02-23 04:02:18.576943	1
+23	19	AJUSTE_MANUAL	[{"sku": "COD-00046-00153", "tipo": "MODIFICADO", "producto": "Baúl Natural", "diferencia": 1, "tamanoNuevo": 3, "cambioTamano": false, "cantidadNueva": 2, "subtotalNuevo": 1318.8, "tamanoAnterior": 3, "cantidadAnterior": 1, "subtotalAnterior": 659.4, "diferenciaSubtotal": 659.4}]	28855.40	29514.80	2	2026-02-23 04:04:56.230474	1
+24	19	AJUSTE_MANUAL	[{"sku": "COD-00042-00134", "tipo": "MODIFICADO", "producto": "Camisera Cumple", "diferencia": 1, "tamanoNuevo": 3, "cambioTamano": false, "cantidadNueva": 2, "subtotalNuevo": 634.8, "tamanoAnterior": 3, "cantidadAnterior": 1, "subtotalAnterior": 317.4, "diferenciaSubtotal": 317.4}]	29514.80	29832.20	2	2026-02-23 04:07:31.78338	1
+25	19	AJUSTE_MANUAL	[{"sku": "COD-00039-00206", "tipo": "ELIMINADO_BACKORDER", "cantidad": 2, "producto": "Baúl Colors Love", "subtotal": 863.2}, {"sku": "COD-00039-00205", "tipo": "MODIFICADO", "producto": "Baúl Colors Love", "diferencia": 1, "tamanoNuevo": 5, "cambioTamano": false, "cantidadNueva": 3, "subtotalNuevo": 838.8000000000001, "tamanoAnterior": 5, "cantidadAnterior": 2, "subtotalAnterior": 559.2, "diferenciaSubtotal": 279.6}]	29832.20	29248.60	2	2026-02-23 04:12:26.281318	1
+26	19	AJUSTE_MANUAL	[{"sku": "COD-00034-00175", "tipo": "MODIFICADO", "producto": "Corazón Colors Love", "diferencia": 1, "tamanoNuevo": 5, "cambioTamano": false, "cantidadNueva": 3, "subtotalNuevo": 538.8, "tamanoAnterior": 5, "cantidadAnterior": 2, "subtotalAnterior": 359.2, "diferenciaSubtotal": 179.59999999999997}]	29248.60	29428.20	2	2026-02-23 04:17:08.043153	1
+27	19	AJUSTE_MANUAL	[{"sku": "COD-00024-00083", "tipo": "ELIMINADO_BACKORDER", "cantidad": 1, "producto": "Cubo Felicidades", "subtotal": 257.4}, {"sku": "COD-00022-00078", "tipo": "MODIFICADO", "producto": "Camisera Colors Love", "diferencia": 1, "tamanoNuevo": 3, "cambioTamano": false, "cantidadNueva": 2, "subtotalNuevo": 934.8, "tamanoAnterior": 3, "cantidadAnterior": 1, "subtotalAnterior": 467.4, "diferenciaSubtotal": 467.4}]	29428.20	29638.20	2	2026-02-23 04:22:16.925754	1
+28	19	AJUSTE_MANUAL	[{"sku": "COD-00022-00077", "tipo": "ELIMINADO_BACKORDER", "cantidad": 1, "producto": "Camisera Colors Love", "subtotal": 317.4}]	29638.20	29320.80	2	2026-02-23 04:27:27.27279	1
+29	19	AJUSTE_MANUAL	[{"sku": "COD-00020-00073", "tipo": "ELIMINADO_BACKORDER", "cantidad": 1, "producto": "Cubo TQM", "subtotal": 119.4}, {"sku": "COD-00005-00010", "tipo": "AGREGADO", "cantidad": 1, "producto": "Cubo Love Craft", "subtotal": 238.79999999999998, "piezasDescontadas": 12}]	29320.80	29440.20	2	2026-02-23 04:31:17.143714	1
+30	19	AJUSTE_MANUAL	[{"sku": "COD-00044-00144", "tipo": "MODIFICADO", "producto": "Cubo Natural", "diferencia": 1, "tamanoNuevo": 3, "cambioTamano": false, "cantidadNueva": 2, "subtotalNuevo": 562.8, "tamanoAnterior": 3, "cantidadAnterior": 1, "subtotalAnterior": 281.4, "diferenciaSubtotal": 281.4}, {"sku": "COD-00044-00143", "tipo": "MODIFICADO", "producto": "Cubo Natural", "diferencia": 1, "tamanoNuevo": 3, "cambioTamano": false, "cantidadNueva": 2, "subtotalNuevo": 406.8, "tamanoAnterior": 3, "cantidadAnterior": 1, "subtotalAnterior": 203.4, "diferenciaSubtotal": 203.4}]	29440.20	29925.00	2	2026-02-23 04:34:22.222521	1
+31	19	AJUSTE_MANUAL	[{"sku": "COD-00037-00126", "tipo": "MODIFICADO", "producto": "Torre RedBlack", "diferencia": 1, "tamanoNuevo": 3, "cambioTamano": false, "cantidadNueva": 2, "subtotalNuevo": 1294.8, "tamanoAnterior": 3, "cantidadAnterior": 1, "subtotalAnterior": 647.4, "diferenciaSubtotal": 647.4}]	29925.00	30572.40	2	2026-02-23 04:40:53.908875	1
+32	19	AJUSTE_MANUAL	[{"sku": "COD-00034-00176", "tipo": "ELIMINADO_BACKORDER", "cantidad": 1, "producto": "Corazón Colors Love", "subtotal": 814.8}, {"sku": "COD-00034-00175", "tipo": "ELIMINADO_BACKORDER", "cantidad": 1, "producto": "Corazón Colors Love", "subtotal": 538.8}]	30572.40	29218.80	2	2026-02-23 04:44:18.65867	1
+33	19	AJUSTE_MANUAL	[{"sku": "COD-00005-00051", "tipo": "MODIFICADO", "producto": "Cubo Love Craft", "diferencia": 1, "tamanoNuevo": 3, "cambioTamano": false, "cantidadNueva": 2, "subtotalNuevo": 634.8, "tamanoAnterior": 3, "cantidadAnterior": 1, "subtotalAnterior": 317.4, "diferenciaSubtotal": 317.4}]	29218.80	29536.20	2	2026-02-23 04:51:09.932443	1
+34	19	AJUSTE_MANUAL	[{"sku": "COD-00005-00052", "tipo": "MODIFICADO", "producto": "Cubo Love Craft", "diferencia": 1, "tamanoNuevo": 3, "cambioTamano": false, "cantidadNueva": 2, "subtotalNuevo": 778.8, "tamanoAnterior": 3, "cantidadAnterior": 1, "subtotalAnterior": 389.4, "diferenciaSubtotal": 389.4}]	29536.20	29925.60	2	2026-02-23 04:52:24.146251	1
 \.
 
 
 --
--- TOC entry 5534 (class 0 OID 28140)
+-- TOC entry 5559 (class 0 OID 28140)
 -- Dependencies: 350
 -- Data for Name: inventario_mermas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -8602,7 +8865,17 @@ COPY public.inventario_mermas (merma_id, variante_id, admin_id, cantidad, motivo
 
 
 --
--- TOC entry 5452 (class 0 OID 25183)
+-- TOC entry 5569 (class 0 OID 28677)
+-- Dependencies: 363
+-- Data for Name: inventario_reservas_log; Type: TABLE DATA; Schema: public; Owner: ferram
+--
+
+COPY public.inventario_reservas_log (log_id, stockadminid, variante_id, admin_id, pedido_id, detalle_id, cantidad_reservada, accion, cantidad_antes, cantidad_despues, fecha_accion, usuario_id, tenant_id) FROM stdin;
+\.
+
+
+--
+-- TOC entry 5477 (class 0 OID 25183)
 -- Dependencies: 266
 -- Data for Name: itemsdelcarrito; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -8666,7 +8939,7 @@ COPY public.itemsdelcarrito (itemid, carritoid, varianteid, cantidadpaquetes, ta
 
 
 --
--- TOC entry 5499 (class 0 OID 26114)
+-- TOC entry 5524 (class 0 OID 26114)
 -- Dependencies: 313
 -- Data for Name: landing_page_config; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -8738,7 +9011,7 @@ COPY public.landing_page_config (config_id, section_key, content_type, value_dra
 
 
 --
--- TOC entry 5454 (class 0 OID 25187)
+-- TOC entry 5479 (class 0 OID 25187)
 -- Dependencies: 268
 -- Data for Name: log_eventosusuario; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -8748,15 +9021,27 @@ COPY public.log_eventosusuario (eventoid, "timestamp", clienteid, sessionid, tip
 
 
 --
--- TOC entry 5456 (class 0 OID 25194)
+-- TOC entry 5481 (class 0 OID 25194)
 -- Dependencies: 270
 -- Data for Name: log_inventario; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.log_inventario (logid, varianteid, fecha, cantidadcambiado, nuevostock, motivo, usuarioid, es_excepcion, cxp_id, tenant_id, tipo_origen, orden_compra_id, sesion_auditoria_id, ajuste_id) FROM stdin;
 80	291	2026-02-18 21:38:20.088491	-12	6	Venta Pedido #44 - Admin 2	1	f	\N	1	\N	\N	\N	\N
+84	14	2026-02-20 22:55:04.67738	24	24	Recepción OC #11 (Lote: REM-103)	8	f	1	1	ORDEN_COMPRA	11	\N	\N
+85	58	2026-02-20 22:55:04.67738	20	20	Recepción OC #11 (Lote: REM-103)	8	f	1	1	ORDEN_COMPRA	11	\N	\N
+86	42	2026-02-20 22:55:04.67738	12	54	Recepción OC #11 (Lote: REM-103)	8	f	1	1	ORDEN_COMPRA	11	\N	\N
+87	40	2026-02-20 22:55:04.67738	24	36	Recepción OC #11 (Lote: REM-103)	8	f	1	1	ORDEN_COMPRA	11	\N	\N
+88	41	2026-02-20 22:55:04.67738	12	12	Recepción OC #11 (Lote: REM-103)	8	f	1	1	ORDEN_COMPRA	11	\N	\N
+89	206	2026-02-20 22:55:04.67738	6	6	Recepción OC #11 (Lote: REM-103)	8	f	1	1	ORDEN_COMPRA	11	\N	\N
+90	205	2026-02-20 22:55:04.67738	24	24	Recepción OC #11 (Lote: REM-103)	8	f	1	1	ORDEN_COMPRA	11	\N	\N
+91	251	2026-02-20 22:55:04.67738	12	12	Recepción OC #11 (Lote: REM-103)	8	f	1	1	ORDEN_COMPRA	11	\N	\N
+138	15	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+139	58	2026-02-22 00:01:43.377424	4	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+140	82	2026-02-22 04:52:09.805402	4	12	Devolución por eliminación de producto en ajuste de pedido #4	8	f	\N	1	DEVOLUCION	\N	\N	\N
 81	134	2026-02-20 18:19:15.977177	6	6	Auditoría Inventario - Sesión #5	2	f	\N	1	AUDITORIA	\N	5	\N
 82	96	2026-02-20 18:19:15.977177	4	4	Auditoría Inventario - Sesión #5	2	f	\N	1	AUDITORIA	\N	5	\N
+92	206	2026-02-22 00:01:43.377424	6	12	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
 2	208	2026-02-03 23:19:08.821254	72	72	Auditoría Inventario - Sesión #1	2	f	\N	1	AUDITORIA	\N	1	\N
 3	207	2026-02-03 23:19:08.821254	24	24	Auditoría Inventario - Sesión #1	2	f	\N	1	AUDITORIA	\N	1	\N
 4	140	2026-02-03 23:19:08.821254	36	36	Auditoría Inventario - Sesión #1	2	f	\N	1	AUDITORIA	\N	1	\N
@@ -8836,11 +9121,57 @@ COPY public.log_inventario (logid, varianteid, fecha, cantidadcambiado, nuevosto
 78	99	2026-02-07 21:01:26.523643	4	4	Auditoría Inventario - Sesión #2	2	f	\N	1	AUDITORIA	\N	2	\N
 79	100	2026-02-07 21:01:26.523643	4	4	Auditoría Inventario - Sesión #2	2	f	\N	1	AUDITORIA	\N	2	\N
 1	157	2026-01-21 03:41:29.857975	-6	0	Venta Pedido #19	4	f	\N	1	AJUSTE_MANUAL	\N	\N	\N
+83	40	2026-02-20 21:18:28.931357	-6	6	Venta Pedido #45 - Admin 2	38	f	\N	1	\N	\N	\N	\N
+93	205	2026-02-22 00:01:43.377424	12	36	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+94	251	2026-02-22 00:01:43.377424	12	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+95	78	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+96	77	2026-02-22 00:01:43.377424	48	48	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+97	40	2026-02-22 00:01:43.377424	12	48	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+98	41	2026-02-22 00:01:43.377424	48	60	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+99	175	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+100	176	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+101	59	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+102	12	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+103	13	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+104	54	2026-02-22 00:01:43.377424	12	12	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+105	53	2026-02-22 00:01:43.377424	48	48	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+106	2	2026-02-22 00:01:43.377424	48	48	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+107	1	2026-02-22 00:01:43.377424	48	48	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+108	62	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+109	61	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+110	60	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+111	17	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+112	16	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+113	50	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+114	120	2026-02-22 00:01:43.377424	18	39	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+115	43	2026-02-22 00:01:43.377424	18	42	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+116	44	2026-02-22 00:01:43.377424	18	36	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+117	119	2026-02-22 00:01:43.377424	36	54	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+118	116	2026-02-22 00:01:43.377424	18	30	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+119	118	2026-02-22 00:01:43.377424	18	36	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+120	8	2026-02-22 00:01:43.377424	12	12	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+121	49	2026-02-22 00:01:43.377424	12	12	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+122	48	2026-02-22 00:01:43.377424	48	48	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+123	47	2026-02-22 00:01:43.377424	48	48	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+124	9	2026-02-22 00:01:43.377424	48	48	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+125	52	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+126	51	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+127	11	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+128	56	2026-02-22 00:01:43.377424	48	48	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+129	4	2026-02-22 00:01:43.377424	48	48	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+130	5	2026-02-22 00:01:43.377424	48	48	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+131	3	2026-02-22 00:01:43.377424	12	12	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+132	57	2026-02-22 00:01:43.377424	12	12	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+133	144	2026-02-22 00:01:43.377424	60	72	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+134	142	2026-02-22 00:01:43.377424	60	96	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+135	143	2026-02-22 00:01:43.377424	60	60	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+136	64	2026-02-22 00:01:43.377424	24	24	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
+137	63	2026-02-22 00:01:43.377424	12	12	Recepción OC #11 (Lote: R166)	2	f	2	1	ORDEN_COMPRA	11	\N	\N
 \.
 
 
 --
--- TOC entry 5458 (class 0 OID 25200)
+-- TOC entry 5483 (class 0 OID 25200)
 -- Dependencies: 272
 -- Data for Name: log_movimientos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -9399,11 +9730,21 @@ COPY public.log_movimientos (logid, usuarioid, nombreusuario, rol, accion, entid
 562	2	Fernando García	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.178.61:64638	2026-02-20 18:17:54.385448	1
 563	2	Fernando García	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.178.61:64802	2026-02-20 18:33:43.415453	1
 564	2	Fernando García	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.178.61:64804	2026-02-20 18:40:18.770467	1
+565	2	Fernando García	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.178.61:65031	2026-02-20 18:50:57.375378	1
+566	8	Fernando Ramírez	admin	LOGIN	Admin	8	{"email": "dferram8@gmail.com", "origen": "admin"}	::1	2026-02-20 18:58:35.535099	1
+567	2	Fernando García	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.178.61:65178	2026-02-20 19:02:07.077466	1
+568	2	Fernando García	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	189.128.178.61:65286	2026-02-20 19:20:46.829697	1
+569	8	Fernando Ramírez	admin	LOGIN	Admin	8	{"email": "dferram8@gmail.com", "origen": "admin"}	187.194.218.39:19581	2026-02-21 23:35:31.131514	1
+570	2	Fernando García	admin	LOGIN	Admin	2	{"email": "fegarcia@hotmail.com", "origen": "admin"}	187.194.218.39:11004	2026-02-21 23:47:23.660706	1
+571	8	Fernando Ramírez	admin	LOGIN	Admin	8	{"email": "dferram8@gmail.com", "origen": "admin"}	187.194.218.39:1485	2026-02-21 23:50:20.766498	1
+572	8	Fernando Ramírez	admin	LOGIN	Admin	8	{"email": "dferram8@gmail.com", "origen": "admin"}	::1	2026-02-22 03:14:19.431289	1
+573	8	Fernando Ramírez	admin	LOGIN	Admin	8	{"email": "dferram8@gmail.com", "origen": "admin"}	187.194.218.39:36373	2026-02-22 03:48:33.929862	1
+574	8	Fernando Ramírez	admin	LOGIN	Admin	8	{"email": "dferram8@gmail.com", "origen": "admin"}	::1	2026-02-24 02:30:08.402178	1
 \.
 
 
 --
--- TOC entry 5460 (class 0 OID 25208)
+-- TOC entry 5485 (class 0 OID 25208)
 -- Dependencies: 274
 -- Data for Name: medidas; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -9413,17 +9754,73 @@ COPY public.medidas (medidaid, tipoproductoid, nombremedida, descripcion, alto, 
 
 
 --
--- TOC entry 5510 (class 0 OID 27375)
+-- TOC entry 5535 (class 0 OID 27375)
 -- Dependencies: 325
 -- Data for Name: movimientos_inventario; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.movimientos_inventario (movimiento_id, admin_id, variante_id, tenant_id, tipo, cantidad, stock_previo, stock_posterior, motivo, observaciones, fecha_movimiento, ip_origen) FROM stdin;
+2	2	14	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-20 22:55:04.67738	\N
+3	2	58	1	ADICION	20	20	40	Recepción OC #11	\N	2026-02-20 22:55:04.67738	\N
+4	2	42	1	ADICION	12	54	66	Recepción OC #11	\N	2026-02-20 22:55:04.67738	\N
+5	2	40	1	ADICION	24	30	54	Recepción OC #11	\N	2026-02-20 22:55:04.67738	\N
+6	2	41	1	ADICION	12	12	24	Recepción OC #11	\N	2026-02-20 22:55:04.67738	\N
+7	2	206	1	ADICION	6	6	12	Recepción OC #11	\N	2026-02-20 22:55:04.67738	\N
+8	2	205	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-20 22:55:04.67738	\N
+9	2	251	1	ADICION	12	12	24	Recepción OC #11	\N	2026-02-20 22:55:04.67738	\N
+10	2	206	1	ADICION	6	12	18	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+11	2	205	1	ADICION	12	36	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+12	2	251	1	ADICION	12	24	36	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+13	2	78	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+14	2	77	1	ADICION	48	48	96	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+15	2	40	1	ADICION	12	42	54	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+16	2	41	1	ADICION	48	60	108	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+17	2	175	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+18	2	176	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+19	2	59	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+20	2	12	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+21	2	13	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+22	2	54	1	ADICION	12	12	24	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+23	2	53	1	ADICION	48	48	96	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+24	2	2	1	ADICION	48	48	96	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+25	2	1	1	ADICION	48	48	96	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+26	2	62	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+27	2	61	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+28	2	60	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+29	2	17	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+30	2	16	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+31	2	50	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+32	2	120	1	ADICION	18	39	57	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+33	2	43	1	ADICION	18	42	60	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+34	2	44	1	ADICION	18	36	54	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+35	2	119	1	ADICION	36	54	90	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+36	2	116	1	ADICION	18	30	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+37	2	118	1	ADICION	18	36	54	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+38	2	8	1	ADICION	12	12	24	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+39	2	49	1	ADICION	12	12	24	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+40	2	48	1	ADICION	48	48	96	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+41	2	47	1	ADICION	48	48	96	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+42	2	9	1	ADICION	48	48	96	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+43	2	52	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+44	2	51	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+45	2	11	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+46	2	56	1	ADICION	48	48	96	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+47	2	4	1	ADICION	48	48	96	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+48	2	5	1	ADICION	48	48	96	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+49	2	3	1	ADICION	12	12	24	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+50	2	57	1	ADICION	12	12	24	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+51	2	144	1	ADICION	60	72	132	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+52	2	142	1	ADICION	60	96	156	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+53	2	143	1	ADICION	60	60	120	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+54	2	64	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+55	2	63	1	ADICION	12	12	24	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+56	2	15	1	ADICION	24	24	48	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
+57	2	58	1	ADICION	4	24	28	Recepción OC #11	\N	2026-02-22 00:01:43.377424	\N
 \.
 
 
 --
--- TOC entry 5449 (class 0 OID 25162)
+-- TOC entry 5474 (class 0 OID 25162)
 -- Dependencies: 263
 -- Data for Name: notificaciones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -9605,6 +10002,7 @@ COPY public.notificaciones (notificacionid, clienteid, tipo, titulo, mensaje, le
 178	27	sistema	Recordatorio de Pago	Tu pago del pedido #5 vence en 3 días	f	2026-01-27 14:00:00.083526	{"monto": 2187, "pedidoid": 5}	\N	alta	\N	\N	1
 179	\N	pedido	Pedido #38 cancelado por cliente	El cliente Fernando (dferramm@gmail.com) ha cancelado el pedido #38.\n\n📊 Resumen de cancelación:\n• Ítems en stock: 0\n• Ítems en backorder: 1\n• Backorders cancelados: 1\n• Piezas restauradas al inventario: 0\n• Órdenes de Compra canceladas: 1\n\nEstatus anterior: Parcialmente Surtido	f	2026-01-27 14:50:54.137037	{"accion": "cancelacion_pedido", "pedido_id": "38", "cliente_id": 1, "items_stock": 0, "monto_total": "279.60", "items_backorder": 1, "monto_revertido": 0, "piezas_restauradas": 0, "backorders_cancelados": 1}	\N	alta	4	\N	1
 180	\N	pedido	Pedido #38 cancelado por cliente	El cliente Fernando (dferramm@gmail.com) ha cancelado el pedido #38.\n\n📊 Resumen de cancelación:\n• Ítems en stock: 0\n• Ítems en backorder: 1\n• Backorders cancelados: 1\n• Piezas restauradas al inventario: 0\n• Órdenes de Compra canceladas: 1\n\nEstatus anterior: Parcialmente Surtido	f	2026-01-27 14:50:54.137037	{"accion": "cancelacion_pedido", "pedido_id": "38", "cliente_id": 1, "items_stock": 0, "monto_total": "279.60", "items_backorder": 1, "monto_revertido": 0, "piezas_restauradas": 0, "backorders_cancelados": 1}	\N	alta	5	\N	1
+249	\N	sistema	Reporte Diario	Reporte Diario: Se han suspendido 3 cuentas por falta de pago.	f	2026-02-21 14:00:00.212771	{"evento": "suspension_credito"}	\N	normal	2	\N	1
 181	\N	pedido	Pedido #38 cancelado por cliente	El cliente Fernando (dferramm@gmail.com) ha cancelado el pedido #38.\n\n📊 Resumen de cancelación:\n• Ítems en stock: 0\n• Ítems en backorder: 1\n• Backorders cancelados: 1\n• Piezas restauradas al inventario: 0\n• Órdenes de Compra canceladas: 1\n\nEstatus anterior: Parcialmente Surtido	f	2026-01-27 14:50:54.137037	{"accion": "cancelacion_pedido", "pedido_id": "38", "cliente_id": 1, "items_stock": 0, "monto_total": "279.60", "items_backorder": 1, "monto_revertido": 0, "piezas_restauradas": 0, "backorders_cancelados": 1}	\N	alta	7	\N	1
 182	\N	pedido	Pedido #38 cancelado por cliente	El cliente Fernando (dferramm@gmail.com) ha cancelado el pedido #38.\n\n📊 Resumen de cancelación:\n• Ítems en stock: 0\n• Ítems en backorder: 1\n• Backorders cancelados: 1\n• Piezas restauradas al inventario: 0\n• Órdenes de Compra canceladas: 1\n\nEstatus anterior: Parcialmente Surtido	f	2026-01-27 14:50:54.137037	{"accion": "cancelacion_pedido", "pedido_id": "38", "cliente_id": 1, "items_stock": 0, "monto_total": "279.60", "items_backorder": 1, "monto_revertido": 0, "piezas_restauradas": 0, "backorders_cancelados": 1}	\N	alta	2	\N	1
 183	\N	pedido	Pedido #38 cancelado por cliente	El cliente Fernando (dferramm@gmail.com) ha cancelado el pedido #38.\n\n📊 Resumen de cancelación:\n• Ítems en stock: 0\n• Ítems en backorder: 1\n• Backorders cancelados: 1\n• Piezas restauradas al inventario: 0\n• Órdenes de Compra canceladas: 1\n\nEstatus anterior: Parcialmente Surtido	f	2026-01-27 14:50:54.137037	{"accion": "cancelacion_pedido", "pedido_id": "38", "cliente_id": 1, "items_stock": 0, "monto_total": "279.60", "items_backorder": 1, "monto_revertido": 0, "piezas_restauradas": 0, "backorders_cancelados": 1}	\N	alta	8	\N	1
@@ -9640,6 +10038,7 @@ COPY public.notificaciones (notificacionid, clienteid, tipo, titulo, mensaje, le
 230	\N	pedido	Pedido #41 cancelado por cliente	El cliente Fernando (dferramm@gmail.com) ha cancelado el pedido #41.\n\n📊 Resumen de cancelación:\n• Ítems en stock: 0\n• Ítems en backorder: 2\n• Backorders cancelados: 2\n• Piezas restauradas al inventario: 0\n\nEstatus anterior: Parcialmente Surtido	f	2026-02-17 01:27:00.347515	{"accion": "cancelacion_pedido", "pedido_id": "41", "cliente_id": 1, "items_stock": 0, "monto_total": "318.90", "items_backorder": 2, "monto_revertido": 0, "piezas_restauradas": 0, "backorders_cancelados": 2}	\N	alta	5	\N	1
 231	\N	pedido	Pedido #41 cancelado por cliente	El cliente Fernando (dferramm@gmail.com) ha cancelado el pedido #41.\n\n📊 Resumen de cancelación:\n• Ítems en stock: 0\n• Ítems en backorder: 2\n• Backorders cancelados: 2\n• Piezas restauradas al inventario: 0\n\nEstatus anterior: Parcialmente Surtido	f	2026-02-17 01:27:00.347515	{"accion": "cancelacion_pedido", "pedido_id": "41", "cliente_id": 1, "items_stock": 0, "monto_total": "318.90", "items_backorder": 2, "monto_revertido": 0, "piezas_restauradas": 0, "backorders_cancelados": 2}	\N	alta	7	\N	1
 232	\N	pedido	Pedido #41 cancelado por cliente	El cliente Fernando (dferramm@gmail.com) ha cancelado el pedido #41.\n\n📊 Resumen de cancelación:\n• Ítems en stock: 0\n• Ítems en backorder: 2\n• Backorders cancelados: 2\n• Piezas restauradas al inventario: 0\n\nEstatus anterior: Parcialmente Surtido	f	2026-02-17 01:27:00.347515	{"accion": "cancelacion_pedido", "pedido_id": "41", "cliente_id": 1, "items_stock": 0, "monto_total": "318.90", "items_backorder": 2, "monto_revertido": 0, "piezas_restauradas": 0, "backorders_cancelados": 2}	\N	alta	8	\N	1
+248	\N	sistema	Sesión de Recepción Asignada	Se te ha asignado la sesión de recepción de la Orden de Compra #11. Puedes continuar trabajando en ella.	f	2026-02-20 22:36:56.947594	{"tipo": "reasignacion_sesion", "ordenCompraId": 11}	/admin-recibir-inventario.html	alta	8	\N	1
 233	\N	pedido	Pedido #41 cancelado por cliente	El cliente Fernando (dferramm@gmail.com) ha cancelado el pedido #41.\n\n📊 Resumen de cancelación:\n• Ítems en stock: 0\n• Ítems en backorder: 2\n• Backorders cancelados: 2\n• Piezas restauradas al inventario: 0\n\nEstatus anterior: Parcialmente Surtido	f	2026-02-17 01:27:00.347515	{"accion": "cancelacion_pedido", "pedido_id": "41", "cliente_id": 1, "items_stock": 0, "monto_total": "318.90", "items_backorder": 2, "monto_revertido": 0, "piezas_restauradas": 0, "backorders_cancelados": 2}	\N	alta	2	\N	1
 234	\N	pedido	Pedido #43 cancelado por cliente	El cliente Fernando (dferramm@gmail.com) ha cancelado el pedido #43.\n\n📊 Resumen de cancelación:\n• Ítems en stock: 0\n• Ítems en backorder: 2\n• Backorders cancelados: 2\n• Piezas restauradas al inventario: 0\n\nEstatus anterior: Parcialmente Surtido	f	2026-02-17 01:27:33.542781	{"accion": "cancelacion_pedido", "pedido_id": "43", "cliente_id": 1, "items_stock": 0, "monto_total": "633.00", "items_backorder": 2, "monto_revertido": 0, "piezas_restauradas": 0, "backorders_cancelados": 2}	\N	alta	4	\N	1
 235	\N	pedido	Pedido #43 cancelado por cliente	El cliente Fernando (dferramm@gmail.com) ha cancelado el pedido #43.\n\n📊 Resumen de cancelación:\n• Ítems en stock: 0\n• Ítems en backorder: 2\n• Backorders cancelados: 2\n• Piezas restauradas al inventario: 0\n\nEstatus anterior: Parcialmente Surtido	f	2026-02-17 01:27:33.542781	{"accion": "cancelacion_pedido", "pedido_id": "43", "cliente_id": 1, "items_stock": 0, "monto_total": "633.00", "items_backorder": 2, "monto_revertido": 0, "piezas_restauradas": 0, "backorders_cancelados": 2}	\N	alta	5	\N	1
@@ -9654,11 +10053,44 @@ COPY public.notificaciones (notificacionid, clienteid, tipo, titulo, mensaje, le
 244	\N	sistema	Auditoría de Inventario Requerida	Se requiere tu participación en la toma de inventario: conteo inicial 2.	f	2026-02-20 17:59:40.103327	\N	/admin-toma-inventario.html?sesionId=5	alta	\N	1	1
 245	\N	sistema	Auditoría de Inventario Requerida	Se requiere tu participación en la toma de inventario: conteo inicial 2.	f	2026-02-20 17:59:40.113527	\N	/admin-toma-inventario.html?sesionId=5	alta	\N	2	1
 246	\N	sistema	Auditoría de Inventario Requerida	Se requiere tu participación en la toma de inventario: conteo inicial 2.	f	2026-02-20 17:59:40.117717	\N	/admin-toma-inventario.html?sesionId=5	alta	\N	3	1
+247	\N	sistema	Sesión de Recepción Asignada	Se te ha asignado la sesión de recepción de la Orden de Compra #11. Puedes continuar trabajando en ella.	f	2026-02-20 19:18:21.079356	{"tipo": "reasignacion_sesion", "ordenCompraId": 11}	/admin-recibir-inventario.html	alta	2	\N	1
+250	\N	sistema	Sesión de Recepción Asignada	Se te ha asignado la sesión de recepción de la Orden de Compra #11. Puedes continuar trabajando en ella.	f	2026-02-21 23:36:07.65706	{"tipo": "reasignacion_sesion", "ordenCompraId": 11}	/admin-recibir-inventario.html	alta	2	\N	1
+251	\N	sistema	Sesión de Recepción Asignada	Se te ha asignado la sesión de recepción de la Orden de Compra #11. Puedes continuar trabajando en ella.	f	2026-02-21 23:41:24.919904	{"tipo": "reasignacion_sesion", "ordenCompraId": 11}	/admin-recibir-inventario.html	alta	8	\N	1
+252	\N	sistema	Sesión de Recepción Asignada	Se te ha asignado la sesión de recepción de la Orden de Compra #11. Puedes continuar trabajando en ella.	f	2026-02-21 23:43:42.442453	{"tipo": "reasignacion_sesion", "ordenCompraId": 11}	/admin-recibir-inventario.html	alta	2	\N	1
+253	11	pedido	⚠️ Pedido Modificado	Tu pedido #4 ha sido modificado por el administrador. El monto cambió de $1633.20 a $1712.80 (+$79.60). Revisa los detalles actualizados.	f	2026-02-22 04:29:49.551284	{"pedidoId": 4, "diferencia": 79.59999999999991, "monto_nuevo": 1712.8, "monto_anterior": 1633.2, "items_agregados": 1, "items_eliminados": 0, "items_modificados": 0, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=4	alta	\N	\N	1
+254	\N	sistema	Sesión de Recepción Asignada	Se te ha asignado la sesión de recepción de la Orden de Compra #11. Puedes continuar trabajando en ella.	f	2026-02-22 04:36:43.063717	{"tipo": "reasignacion_sesion", "ordenCompraId": 11}	/admin-recibir-inventario.html	alta	8	\N	1
+255	11	pedido	⚠️ Pedido Modificado	Tu pedido #4 ha sido modificado por el administrador. El monto cambió de $1712.80 a $1633.20 ($-79.60). Revisa los detalles actualizados.	f	2026-02-22 04:52:09.805402	{"pedidoId": 4, "diferencia": -79.59999999999991, "monto_nuevo": 1633.2, "monto_anterior": 1712.8, "items_agregados": 0, "items_eliminados": 1, "items_modificados": 0, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=4	alta	\N	\N	1
+256	11	pedido	⚠️ Pedido Modificado	Tu pedido #4 ha sido modificado por el administrador. El monto cambió de $1633.20 a $1892.80 (+$259.60). Revisa los detalles actualizados.	f	2026-02-22 04:52:24.256894	{"pedidoId": 4, "diferencia": 259.5999999999999, "monto_nuevo": 1892.8, "monto_anterior": 1633.2, "items_agregados": 1, "items_eliminados": 0, "items_modificados": 0, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=4	alta	\N	\N	1
+257	\N	sistema	Reporte Diario	Reporte Diario: Se han suspendido 1 cuentas por falta de pago.	f	2026-02-22 14:00:00.278399	{"evento": "suspension_credito"}	\N	normal	2	\N	1
+258	31	pedido	⚠️ Pedido Modificado	Tu pedido #17 ha sido modificado por el administrador. El monto cambió de $14599.20 a $16012.80 (+$1413.60). Revisa los detalles actualizados.	f	2026-02-22 20:03:53.960185	{"pedidoId": 17, "diferencia": 1413.5999999999985, "monto_nuevo": 16012.8, "monto_anterior": 14599.2, "items_agregados": 2, "items_eliminados": 0, "items_modificados": 0, "cambios_realizados": 2}	/dashboard.html?tab=pedidos&pedido=17	alta	\N	\N	1
+259	28	pedido	⚠️ Pedido Modificado	Tu pedido #12 ha sido modificado por el administrador. El monto cambió de $4107.60 a $3868.80 ($-238.80). Revisa los detalles actualizados.	f	2026-02-22 20:56:03.091492	{"pedidoId": 12, "diferencia": -238.80000000000018, "monto_nuevo": 3868.8, "monto_anterior": 4107.6, "items_agregados": 0, "items_eliminados": 1, "items_modificados": 0, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=12	alta	\N	\N	1
+260	28	pedido	⚠️ Pedido Modificado	Tu pedido #12 ha sido modificado por el administrador. El monto cambió de $3868.80 a $4107.60 (+$238.80). Revisa los detalles actualizados.	f	2026-02-22 20:59:41.411606	{"pedidoId": 12, "diferencia": 238.80000000000018, "monto_nuevo": 4107.6, "monto_anterior": 3868.8, "items_agregados": 2, "items_eliminados": 0, "items_modificados": 0, "cambios_realizados": 2}	/dashboard.html?tab=pedidos&pedido=12	alta	\N	\N	1
+261	28	pedido	⚠️ Pedido Modificado	Tu pedido #12 ha sido modificado por el administrador. El monto cambió de $4107.60 a $4107.60 (+$0.00). Revisa los detalles actualizados.	f	2026-02-22 21:06:58.995947	{"pedidoId": 12, "diferencia": 0, "monto_nuevo": 4107.6, "monto_anterior": 4107.6, "items_agregados": 1, "items_eliminados": 1, "items_modificados": 0, "cambios_realizados": 2}	/dashboard.html?tab=pedidos&pedido=12	alta	\N	\N	1
+262	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $30168.40 a $29647.00 ($-521.40). Revisa los detalles actualizados.	f	2026-02-23 01:20:20.984896	{"pedidoId": 19, "diferencia": -521.4000000000015, "monto_nuevo": 29647, "monto_anterior": 30168.4, "items_agregados": 0, "items_eliminados": 0, "items_modificados": 2, "cambios_realizados": 2}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+263	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29647.00 a $29083.40 ($-563.60). Revisa los detalles actualizados.	f	2026-02-23 03:41:41.833386	{"pedidoId": 19, "diferencia": -563.5999999999985, "monto_nuevo": 29083.4, "monto_anterior": 29647, "items_agregados": 0, "items_eliminados": 1, "items_modificados": 1, "cambios_realizados": 2}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+264	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29083.40 a $29383.00 (+$299.60). Revisa los detalles actualizados.	f	2026-02-23 03:43:50.085506	{"pedidoId": 19, "diferencia": 299.59999999999854, "monto_nuevo": 29383, "monto_anterior": 29083.4, "items_agregados": 0, "items_eliminados": 0, "items_modificados": 1, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+265	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29383.00 a $29083.40 ($-299.60). Revisa los detalles actualizados.	f	2026-02-23 03:46:00.087755	{"pedidoId": 19, "diferencia": -299.59999999999854, "monto_nuevo": 29083.4, "monto_anterior": 29383, "items_agregados": 0, "items_eliminados": 0, "items_modificados": 1, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+266	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29083.40 a $28436.00 ($-647.40). Revisa los detalles actualizados.	f	2026-02-23 03:57:21.664732	{"pedidoId": 19, "diferencia": -647.4000000000015, "monto_nuevo": 28436, "monto_anterior": 29083.4, "items_agregados": 0, "items_eliminados": 1, "items_modificados": 0, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+267	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $28436.00 a $28855.40 (+$419.40). Revisa los detalles actualizados.	f	2026-02-23 04:02:18.576943	{"pedidoId": 19, "diferencia": 419.40000000000146, "monto_nuevo": 28855.4, "monto_anterior": 28436, "items_agregados": 0, "items_eliminados": 0, "items_modificados": 1, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+268	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $28855.40 a $29514.80 (+$659.40). Revisa los detalles actualizados.	f	2026-02-23 04:04:56.230474	{"pedidoId": 19, "diferencia": 659.3999999999978, "monto_nuevo": 29514.8, "monto_anterior": 28855.4, "items_agregados": 0, "items_eliminados": 0, "items_modificados": 1, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+269	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29514.80 a $29832.20 (+$317.40). Revisa los detalles actualizados.	f	2026-02-23 04:07:31.78338	{"pedidoId": 19, "diferencia": 317.40000000000146, "monto_nuevo": 29832.2, "monto_anterior": 29514.8, "items_agregados": 0, "items_eliminados": 0, "items_modificados": 1, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+270	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29832.20 a $29248.60 ($-583.60). Revisa los detalles actualizados.	f	2026-02-23 04:12:26.281318	{"pedidoId": 19, "diferencia": -583.6000000000022, "monto_nuevo": 29248.6, "monto_anterior": 29832.2, "items_agregados": 0, "items_eliminados": 1, "items_modificados": 1, "cambios_realizados": 2}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+271	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29248.60 a $29428.20 (+$179.60). Revisa los detalles actualizados.	f	2026-02-23 04:17:08.043153	{"pedidoId": 19, "diferencia": 179.60000000000218, "monto_nuevo": 29428.2, "monto_anterior": 29248.6, "items_agregados": 0, "items_eliminados": 0, "items_modificados": 1, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+272	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29428.20 a $29638.20 (+$210.00). Revisa los detalles actualizados.	f	2026-02-23 04:22:16.925754	{"pedidoId": 19, "diferencia": 210, "monto_nuevo": 29638.2, "monto_anterior": 29428.2, "items_agregados": 0, "items_eliminados": 1, "items_modificados": 1, "cambios_realizados": 2}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+273	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29638.20 a $29320.80 ($-317.40). Revisa los detalles actualizados.	f	2026-02-23 04:27:27.27279	{"pedidoId": 19, "diferencia": -317.40000000000146, "monto_nuevo": 29320.8, "monto_anterior": 29638.2, "items_agregados": 0, "items_eliminados": 1, "items_modificados": 0, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+274	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29320.80 a $29440.20 (+$119.40). Revisa los detalles actualizados.	f	2026-02-23 04:31:17.143714	{"pedidoId": 19, "diferencia": 119.40000000000146, "monto_nuevo": 29440.2, "monto_anterior": 29320.8, "items_agregados": 1, "items_eliminados": 1, "items_modificados": 0, "cambios_realizados": 2}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+275	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29440.20 a $29925.00 (+$484.80). Revisa los detalles actualizados.	f	2026-02-23 04:34:22.222521	{"pedidoId": 19, "diferencia": 484.7999999999993, "monto_nuevo": 29925, "monto_anterior": 29440.2, "items_agregados": 0, "items_eliminados": 0, "items_modificados": 2, "cambios_realizados": 2}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+276	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29925.00 a $30572.40 (+$647.40). Revisa los detalles actualizados.	f	2026-02-23 04:40:53.908875	{"pedidoId": 19, "diferencia": 647.4000000000015, "monto_nuevo": 30572.4, "monto_anterior": 29925, "items_agregados": 0, "items_eliminados": 0, "items_modificados": 1, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+277	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $30572.40 a $29218.80 ($-1353.60). Revisa los detalles actualizados.	f	2026-02-23 04:44:18.65867	{"pedidoId": 19, "diferencia": -1353.6000000000022, "monto_nuevo": 29218.8, "monto_anterior": 30572.4, "items_agregados": 0, "items_eliminados": 2, "items_modificados": 0, "cambios_realizados": 2}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+278	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29218.80 a $29536.20 (+$317.40). Revisa los detalles actualizados.	f	2026-02-23 04:51:09.932443	{"pedidoId": 19, "diferencia": 317.40000000000146, "monto_nuevo": 29536.2, "monto_anterior": 29218.8, "items_agregados": 0, "items_eliminados": 0, "items_modificados": 1, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+279	4	pedido	⚠️ Pedido Modificado	Tu pedido #19 ha sido modificado por el administrador. El monto cambió de $29536.20 a $29925.60 (+$389.40). Revisa los detalles actualizados.	f	2026-02-23 04:52:24.146251	{"pedidoId": 19, "diferencia": 389.3999999999978, "monto_nuevo": 29925.6, "monto_anterior": 29536.2, "items_agregados": 0, "items_eliminados": 0, "items_modificados": 1, "cambios_realizados": 1}	/dashboard.html?tab=pedidos&pedido=19	alta	\N	\N	1
+280	47	sistema	Recordatorio de Pago	Tu pago del pedido #40 vence en 3 días	f	2026-02-23 14:00:00.409773	{"monto": 11128.8, "pedidoid": 40}	\N	alta	\N	\N	1
+281	48	sistema	Recordatorio de Pago	Tu pago del pedido #39 vence en 3 días	f	2026-02-23 14:00:00.409773	{"monto": 22929.6, "pedidoid": 39}	\N	alta	\N	\N	1
 \.
 
 
 --
--- TOC entry 5540 (class 0 OID 28273)
+-- TOC entry 5565 (class 0 OID 28273)
 -- Dependencies: 356
 -- Data for Name: ordenes_grupos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -9669,13 +10101,17 @@ COPY public.ordenes_grupos (grupoid, proveedorid, admin_creador_id, tenant_id, e
 
 
 --
--- TOC entry 5463 (class 0 OID 25217)
+-- TOC entry 5488 (class 0 OID 25217)
 -- Dependencies: 277
 -- Data for Name: ordenesdecompra; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.ordenesdecompra (ordencompraid, proveedorid, fechacreacion, fechaentregaesperada, estatus, origenoc, fechasolicitud, total, usuario_creador_id, exportado_en, reporte_id, tenant_id, pedido_origen_id, admin_creador_id, grupo_id, admin_trabajando_id, fecha_bloqueo, ultima_actividad) FROM stdin;
-11	1	2026-01-15 04:31:10.215737	2026-01-16	Pendiente	manual	2026-01-15 04:31:10.215737	4634.28	2	\N	\N	1	\N	2	\N	8	2026-02-20 05:17:27.401245	2026-02-20 05:17:27.401245
+19	1	2026-01-18 16:46:16.776878	2026-02-01	Pendiente	backorder	2026-01-18 16:46:16.776878	0.00	\N	\N	\N	1	10	2	\N	8	2026-02-22 05:33:04.806683	2026-02-22 05:33:04.806683
+25	1	2026-01-19 01:57:59.614797	2026-02-02	Pendiente	backorder	2026-01-19 01:57:59.614797	0.00	\N	\N	\N	1	15	2	\N	\N	\N	\N
+11	1	2026-01-15 04:31:10.215737	2026-01-16	Parcial	manual	2026-01-15 04:31:10.215737	84633.36	2	\N	\N	1	\N	2	\N	\N	\N	\N
+10	1	2026-01-10 20:16:43.838777	2026-01-24	Pendiente	backorder	2026-01-10 20:16:43.838777	0.00	\N	\N	\N	1	4	2	\N	\N	\N	\N
+12	1	2026-01-15 04:35:29.369711	2026-01-29	Pendiente	backorder	2026-01-15 04:35:29.369711	0.00	\N	\N	\N	1	5	2	\N	\N	\N	\N
 1	1	2026-01-06 07:42:44.79385	2026-01-06	Pendiente	manual	2026-01-06 07:42:44.79385	7125.27	4	\N	\N	1	\N	4	\N	\N	\N	\N
 2	1	2026-01-10 04:47:36.243832	\N	Pendiente	backorder	2026-01-10 04:47:36.243832	681.24	2	\N	\N	1	\N	2	\N	\N	\N	\N
 9	1	2026-01-10 04:55:02.875726	\N	Pendiente	backorder	2026-01-10 04:55:02.875726	681.24	2	\N	\N	1	\N	2	\N	\N	\N	\N
@@ -9685,16 +10121,12 @@ COPY public.ordenesdecompra (ordencompraid, proveedorid, fechacreacion, fechaent
 6	1	2026-01-10 04:48:32.370162	2026-01-24	Pendiente	backorder	2026-01-10 04:48:32.370162	0.00	\N	\N	\N	1	3	2	\N	\N	\N	\N
 7	1	2026-01-10 04:48:32.370162	2026-01-24	Pendiente	backorder	2026-01-10 04:48:32.370162	0.00	\N	\N	\N	1	3	2	\N	\N	\N	\N
 8	1	2026-01-10 04:48:32.370162	2026-01-24	Pendiente	backorder	2026-01-10 04:48:32.370162	0.00	\N	\N	\N	1	3	2	\N	\N	\N	\N
-10	1	2026-01-10 20:16:43.838777	2026-01-24	Pendiente	backorder	2026-01-10 20:16:43.838777	0.00	\N	\N	\N	1	4	2	\N	\N	\N	\N
-12	1	2026-01-15 04:35:29.369711	2026-01-29	Pendiente	backorder	2026-01-15 04:35:29.369711	0.00	\N	\N	\N	1	5	2	\N	\N	\N	\N
 13	1	2026-01-16 20:46:20.651684	2026-01-30	Pendiente	backorder	2026-01-16 20:46:20.651684	0.00	\N	\N	\N	1	6	2	\N	\N	\N	\N
-19	1	2026-01-18 16:46:16.776878	2026-02-01	Pendiente	backorder	2026-01-18 16:46:16.776878	0.00	\N	\N	\N	1	10	2	\N	\N	\N	\N
 20	3	2026-01-18 16:46:16.776878	2026-02-01	Pendiente	backorder	2026-01-18 16:46:16.776878	0.00	\N	\N	\N	1	10	2	\N	\N	\N	\N
 21	1	2026-01-18 17:11:19.338879	2026-02-01	Pendiente	backorder	2026-01-18 17:11:19.338879	0.00	\N	\N	\N	1	11	2	\N	\N	\N	\N
 22	1	2026-01-18 23:55:33.476941	2026-02-01	Pendiente	backorder	2026-01-18 23:55:33.476941	0.00	\N	\N	\N	1	12	2	\N	\N	\N	\N
 23	1	2026-01-19 01:41:10.973292	2026-02-02	Pendiente	backorder	2026-01-19 01:41:10.973292	0.00	\N	\N	\N	1	13	2	\N	\N	\N	\N
 24	1	2026-01-19 01:52:43.737157	2026-02-02	Pendiente	backorder	2026-01-19 01:52:43.737157	0.00	\N	\N	\N	1	14	2	\N	\N	\N	\N
-25	1	2026-01-19 01:57:59.614797	2026-02-02	Pendiente	backorder	2026-01-19 01:57:59.614797	0.00	\N	\N	\N	1	15	2	\N	\N	\N	\N
 26	1	2026-01-19 02:22:56.187025	2026-02-02	Pendiente	backorder	2026-01-19 02:22:56.187025	0.00	\N	\N	\N	1	16	2	\N	\N	\N	\N
 27	1	2026-01-19 22:32:15.069745	2026-02-02	Pendiente	backorder	2026-01-19 22:32:15.069745	0.00	\N	\N	\N	1	17	2	\N	\N	\N	\N
 28	1	2026-01-21 03:05:51.169737	2026-02-04	Pendiente	backorder	2026-01-21 03:05:51.169737	0.00	\N	\N	\N	1	18	2	\N	\N	\N	\N
@@ -9714,8 +10146,8 @@ COPY public.ordenesdecompra (ordencompraid, proveedorid, fechacreacion, fechaent
 44	1	2026-01-27 13:23:45.954946	2026-02-10	Pendiente	backorder	2026-01-27 13:23:45.954946	0.00	\N	\N	\N	1	\N	2	1	8	2026-02-20 17:47:29.819755	2026-02-20 17:47:29.819755
 41	1	2026-01-25 18:54:38.068861	2026-02-08	Pendiente	backorder	2026-01-25 18:54:38.068861	0.00	\N	\N	\N	1	\N	2	\N	8	2026-02-20 17:48:00.9444	2026-02-20 17:48:00.9444
 46	1	2026-01-27 14:50:39.321383	\N	Cancelada	backorder	2026-01-27 14:50:39.321383	0.00	\N	\N	\N	1	\N	2	\N	\N	\N	\N
-47	1	2026-01-27 16:57:46.697152	2026-02-10	Pendiente	backorder	2026-01-27 16:57:46.697152	0.00	\N	\N	\N	1	39	2	\N	\N	\N	\N
 45	1	2026-01-27 13:37:42.691184	2026-02-10	Pendiente	backorder	2026-01-27 13:37:42.691184	0.00	\N	\N	\N	1	\N	2	1	\N	\N	\N
+47	1	2026-01-27 16:57:46.697152	2026-02-10	Pendiente	backorder	2026-01-27 16:57:46.697152	0.00	\N	\N	\N	1	39	2	\N	\N	\N	\N
 29	1	2026-01-21 03:41:29.857975	2026-02-04	Pendiente	backorder	2026-01-21 03:41:29.857975	0.00	\N	\N	\N	1	19	2	\N	\N	\N	\N
 43	1	2026-01-27 07:35:45.507836	2026-02-10	Pendiente	backorder	2026-01-27 07:35:45.507836	0.00	\N	\N	\N	1	35	2	\N	\N	\N	\N
 39	1	2026-01-25 16:27:28.791365	2026-02-08	Pendiente	backorder	2026-01-25 16:27:28.791365	0.00	\N	\N	\N	1	27	2	\N	\N	\N	\N
@@ -9723,7 +10155,7 @@ COPY public.ordenesdecompra (ordencompraid, proveedorid, fechacreacion, fechaent
 
 
 --
--- TOC entry 5465 (class 0 OID 25227)
+-- TOC entry 5490 (class 0 OID 25227)
 -- Dependencies: 279
 -- Data for Name: pagos_clientes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -9734,7 +10166,7 @@ COPY public.pagos_clientes (pago_id, cliente_id, credito_id, monto, tipo_pago, e
 
 
 --
--- TOC entry 5467 (class 0 OID 25239)
+-- TOC entry 5492 (class 0 OID 25239)
 -- Dependencies: 281
 -- Data for Name: pagos_cxp; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -9744,7 +10176,7 @@ COPY public.pagos_cxp (pago_id, cxp_id, fecha_pago, monto, metodo_pago, referenc
 
 
 --
--- TOC entry 5469 (class 0 OID 25247)
+-- TOC entry 5494 (class 0 OID 25247)
 -- Dependencies: 283
 -- Data for Name: passwordresettokens; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -9761,60 +10193,62 @@ COPY public.passwordresettokens (tokenid, token, clienteid, agenteid, expiraen, 
 
 
 --
--- TOC entry 5526 (class 0 OID 28023)
+-- TOC entry 5551 (class 0 OID 28023)
 -- Dependencies: 342
 -- Data for Name: pedido_surtido_detalle; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.pedido_surtido_detalle (surtido_id, pedido_id, detalle_id, variante_id, admin_id, cantidad, tenant_id, created_at) FROM stdin;
 1	44	513	291	2	12	1	2026-02-18 21:38:20.088491
+2	45	520	40	2	6	1	2026-02-20 21:18:28.931357
 \.
 
 
 --
--- TOC entry 5471 (class 0 OID 25252)
+-- TOC entry 5496 (class 0 OID 25252)
 -- Dependencies: 285
 -- Data for Name: pedidos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.pedidos (pedidoid, clienteid, agenteid, direccionenvioid, fechapedido, montototal, estatus, costoenvio, es_credito, fecha_vencimiento, pagado, transaccion_id, comprobante_url, metodo_pago, cupon_id, monto_descuento, saldo_pendiente, url_evidencia_entrega, fecha_entrega_real, tenant_id, estatus_deuda, dias_atraso, tiene_remisiones, completamente_surtido, monto_surtido, monto_backorder, es_prioritario) FROM stdin;
-34	45	1	31	2026-01-27 02:27:10.096214	30127.80	Parcialmente Surtido	0.00	t	2026-02-11 23:59:59	f	\N	\N	credito	\N	0.00	30127.80	\N	\N	1	VENCIDA	9	f	f	0.00	30127.80	f
-24	36	1	25	2026-01-22 04:36:27.766119	12050.40	Parcialmente Surtido	0.00	t	2026-02-06 04:36:27.766119	f	\N	\N	credito	\N	0.00	12050.40	\N	\N	1	VENCIDA	14	f	f	0.00	12050.40	f
 41	1	\N	12	2026-01-30 00:13:22.085188	318.90	Cancelado	0.00	f	\N	t	\N	https://res.cloudinary.com/daylne1ml/image/upload/v1769732000/razoconnect_comprobantes/gojeei3nixlgwyle1woy.png	transferencia	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	0.00	f
-4	11	3	1	2026-01-10 20:16:43.838777	1633.20	Parcialmente Surtido	0.00	t	2026-01-25 20:16:43.838777	f	\N	\N	credito	\N	0.00	1892.80	\N	\N	1	VENCIDA	26	f	f	0.00	1633.20	f
-1	13	1	2	2026-01-10 02:19:20.708121	2989.20	Parcialmente Surtido	0.00	t	2026-01-25 02:19:20.708121	f	\N	\N	credito	\N	0.00	2989.20	\N	\N	1	VENCIDA	26	f	f	0.00	0.00	f
-2	14	\N	3	2026-01-10 04:11:53.991453	3318.00	Parcialmente Surtido	0.00	t	2026-01-25 04:11:53.991453	f	\N	\N	credito	\N	0.00	3318.00	\N	\N	1	VENCIDA	26	f	f	0.00	0.00	f
+17	31	3	20	2026-01-19 22:32:15.069745	16012.80	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	16012.80	f
 6	30	\N	11	2026-01-16 20:46:20.651684	4726.80	Parcialmente Surtido	0.00	f	\N	f	\N	\N	transferencia	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	3379.80	f
-11	29	3	14	2026-01-18 17:11:19.338879	20160.00	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	20160.00	f
 12	28	3	15	2026-01-18 23:55:33.476941	4107.60	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	4107.60	f
+11	29	3	14	2026-01-18 17:11:19.338879	20160.00	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	20160.00	f
 14	26	3	18	2026-01-19 01:52:43.737157	778.80	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	778.80	f
 44	1	\N	12	2026-02-18 21:38:20.088491	5813.80	Cancelado	0.00	f	\N	t	\N	https://res.cloudinary.com/daylne1ml/image/upload/v1771450699/razoconnect_comprobantes/nth3q4h0e2wtdbabxumn.png	transferencia	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	0.00	f
 16	22	3	16	2026-01-19 02:22:56.187025	4375.80	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	4375.80	f
-17	31	3	20	2026-01-19 22:32:15.069745	14599.20	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	14599.20	f
 23	33	3	22	2026-01-21 22:54:57.527739	10336.80	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	8679.20	f
 10	24	3	13	2026-01-18 16:46:16.776878	5575.20	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	5170.20	f
 13	25	3	17	2026-01-19 01:41:10.973292	5176.80	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	2588.40	f
 15	21	3	9	2026-01-19 01:57:59.614797	12979.00	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	9106.60	f
-19	4	3	19	2026-01-21 03:41:29.857975	30168.40	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	30168.40	f
+19	4	3	19	2026-01-21 03:41:29.857975	29925.60	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	29925.60	f
 27	43	1	29	2026-01-25 16:27:28.791365	706.80	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	706.80	f
+34	45	1	31	2026-01-27 02:27:10.096214	30127.80	Parcialmente Surtido	0.00	t	2026-02-11 23:59:59	f	\N	\N	credito	\N	0.00	30127.80	\N	\N	1	VENCIDA	13	f	f	0.00	30127.80	f
+24	36	1	25	2026-01-22 04:36:27.766119	12050.40	Parcialmente Surtido	0.00	t	2026-02-06 04:36:27.766119	f	\N	\N	credito	\N	0.00	12050.40	\N	\N	1	VENCIDA	18	f	f	0.00	12050.40	f
+1	13	1	2	2026-01-10 02:19:20.708121	2989.20	Parcialmente Surtido	0.00	t	2026-01-25 02:19:20.708121	f	\N	\N	credito	\N	0.00	2989.20	\N	\N	1	VENCIDA	30	f	f	0.00	0.00	f
+2	14	\N	3	2026-01-10 04:11:53.991453	3318.00	Parcialmente Surtido	0.00	t	2026-01-25 04:11:53.991453	f	\N	\N	credito	\N	0.00	3318.00	\N	\N	1	VENCIDA	30	f	f	0.00	0.00	f
+4	11	3	1	2026-01-10 20:16:43.838777	1892.80	Parcialmente Surtido	0.00	t	2026-01-25 20:16:43.838777	f	\N	\N	credito	\N	0.00	1892.80	\N	\N	1	VENCIDA	30	f	f	0.00	1892.80	f
 35	46	1	32	2026-01-27 07:35:45.507836	1240.80	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	1240.80	f
 40	47	1	33	2026-01-27 17:01:05.273869	11128.80	Parcialmente Surtido	0.00	t	2026-02-26 23:59:59	f	\N	\N	credito	\N	0.00	11128.80	\N	\N	1	PENDIENTE	0	f	f	0.00	11128.80	f
 42	38	3	26	2026-01-31 01:09:40.41034	3431.20	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	3431.20	f
 39	48	1	34	2026-01-27 16:57:46.697152	22929.60	Parcialmente Surtido	0.00	t	2026-02-26 23:59:59	f	\N	\N	credito	\N	0.00	22794.90	\N	\N	1	PENDIENTE	0	f	f	0.00	22929.60	f
-3	5	2	4	2026-01-10 04:48:32.370162	3220.80	Parcialmente Surtido	0.00	t	2026-01-25 04:48:32.370162	f	\N	\N	credito	\N	0.00	3220.80	\N	\N	1	VENCIDA	26	f	f	0.00	0.00	f
-5	27	\N	10	2026-01-15 04:35:29.369711	2187.00	Parcialmente Surtido	0.00	t	2026-01-30 04:35:29.369711	f	\N	\N	credito	\N	0.00	2187.00	\N	\N	1	VENCIDA	21	f	f	0.00	2187.00	f
-22	35	1	23	2026-01-21 22:28:49.937319	20573.40	Parcialmente Surtido	0.00	t	2026-02-05 22:28:49.937319	f	\N	\N	credito	\N	0.00	20573.40	\N	\N	1	VENCIDA	15	f	f	0.00	20573.40	f
-21	34	1	24	2026-01-21 20:47:16.492053	3121.00	Parcialmente Surtido	0.00	t	2026-02-05 20:47:16.492053	f	\N	\N	credito	\N	0.00	2042.60	\N	\N	1	VENCIDA	15	f	f	0.00	2042.60	f
-18	32	\N	21	2026-01-21 03:05:51.169737	19495.20	Parcialmente Surtido	0.00	t	2026-02-05 03:05:51.169737	f	\N	\N	credito	\N	0.00	19495.20	\N	\N	1	VENCIDA	15	f	f	0.00	19495.20	f
-28	44	\N	30	2026-01-25 18:49:42.885682	2601.40	Parcialmente Surtido	0.00	t	2026-02-09 23:59:59	f	\N	\N	credito	\N	0.00	1459.40	\N	\N	1	VENCIDA	11	f	f	0.00	1459.40	f
-25	41	\N	27	2026-01-25 05:21:01.074982	4060.80	Parcialmente Surtido	0.00	t	2026-02-09 05:21:01.074982	f	\N	\N	credito	\N	0.00	4060.80	\N	\N	1	VENCIDA	11	f	f	0.00	4060.80	f
-26	42	\N	28	2026-01-25 16:01:57.26449	15869.40	Parcialmente Surtido	0.00	t	2026-02-09 23:59:59	f	\N	\N	credito	\N	0.00	15869.40	\N	\N	1	VENCIDA	11	f	f	0.00	15869.40	f
+3	5	2	4	2026-01-10 04:48:32.370162	3220.80	Parcialmente Surtido	0.00	t	2026-01-25 04:48:32.370162	f	\N	\N	credito	\N	0.00	3220.80	\N	\N	1	VENCIDA	30	f	f	0.00	0.00	f
+5	27	\N	10	2026-01-15 04:35:29.369711	2187.00	Parcialmente Surtido	0.00	t	2026-01-30 04:35:29.369711	f	\N	\N	credito	\N	0.00	2187.00	\N	\N	1	VENCIDA	25	f	f	0.00	2187.00	f
+22	35	1	23	2026-01-21 22:28:49.937319	20573.40	Parcialmente Surtido	0.00	t	2026-02-05 22:28:49.937319	f	\N	\N	credito	\N	0.00	20573.40	\N	\N	1	VENCIDA	19	f	f	0.00	20573.40	f
+21	34	1	24	2026-01-21 20:47:16.492053	3121.00	Parcialmente Surtido	0.00	t	2026-02-05 20:47:16.492053	f	\N	\N	credito	\N	0.00	2042.60	\N	\N	1	VENCIDA	19	f	f	0.00	2042.60	f
+18	32	\N	21	2026-01-21 03:05:51.169737	19495.20	Parcialmente Surtido	0.00	t	2026-02-05 03:05:51.169737	f	\N	\N	credito	\N	0.00	19495.20	\N	\N	1	VENCIDA	19	f	f	0.00	19495.20	f
+28	44	\N	30	2026-01-25 18:49:42.885682	2601.40	Parcialmente Surtido	0.00	t	2026-02-09 23:59:59	f	\N	\N	credito	\N	0.00	1459.40	\N	\N	1	VENCIDA	15	f	f	0.00	1459.40	f
+25	41	\N	27	2026-01-25 05:21:01.074982	4060.80	Parcialmente Surtido	0.00	t	2026-02-09 05:21:01.074982	f	\N	\N	credito	\N	0.00	4060.80	\N	\N	1	VENCIDA	15	f	f	0.00	4060.80	f
+26	42	\N	28	2026-01-25 16:01:57.26449	15869.40	Parcialmente Surtido	0.00	t	2026-02-09 23:59:59	f	\N	\N	credito	\N	0.00	15869.40	\N	\N	1	VENCIDA	15	f	f	0.00	15869.40	f
 43	1	\N	12	2026-02-16 19:42:16.764387	633.00	Cancelado	0.00	f	\N	t	\N	https://res.cloudinary.com/daylne1ml/image/upload/v1771270935/razoconnect_comprobantes/pr0vjxenwgrs3t2ilass.jpg	transferencia	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	0.00	f
+45	38	3	26	2026-02-20 21:18:28.931357	1898.00	Parcialmente Surtido	0.00	f	\N	f	\N	\N	contra_entrega	\N	0.00	0.00	\N	\N	1	PENDIENTE	0	f	f	0.00	1898.00	f
 \.
 
 
 --
--- TOC entry 5473 (class 0 OID 25263)
+-- TOC entry 5498 (class 0 OID 25263)
 -- Dependencies: 287
 -- Data for Name: producto_imagenes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -10127,7 +10561,7 @@ COPY public.producto_imagenes (imagenid, url_imagen, textoalternativo, orden, pr
 
 
 --
--- TOC entry 5495 (class 0 OID 25877)
+-- TOC entry 5520 (class 0 OID 25877)
 -- Dependencies: 309
 -- Data for Name: producto_imagenes_color; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -10137,7 +10571,7 @@ COPY public.producto_imagenes_color (imagencolorid, productoid, color_nombre, ur
 
 
 --
--- TOC entry 5475 (class 0 OID 25270)
+-- TOC entry 5500 (class 0 OID 25270)
 -- Dependencies: 289
 -- Data for Name: producto_tamanosdisponibles; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -10362,7 +10796,7 @@ COPY public.producto_tamanosdisponibles (productoid, tamanoid, tenant_id) FROM s
 
 
 --
--- TOC entry 5476 (class 0 OID 25273)
+-- TOC entry 5501 (class 0 OID 25273)
 -- Dependencies: 290
 -- Data for Name: producto_variante_imagenes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -10526,30 +10960,34 @@ COPY public.producto_variante_imagenes (imagenid, url_imagen, textoalternativo, 
 
 
 --
--- TOC entry 5478 (class 0 OID 25280)
+-- TOC entry 5503 (class 0 OID 25280)
 -- Dependencies: 292
 -- Data for Name: producto_variantes; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, stock, tipoproductoid, medidaid, productoid, preciounitario, precioofertaunitario, activo, piezasporpaquete, stock_minimo, color_nombre, color_hex, tenant_id) FROM stdin;
 220	COD-00003-00220	20x20	27.93	24	\N	\N	3	42.90	\N	t	1	0	Azul Oscuro	\N	1
-175	COD-00034-00175	Mediano	27.93	0	\N	\N	34	44.90	\N	t	1	0	\N	\N	1
-78	COD-00022-00078	Gigante	48.93	0	\N	\N	22	77.90	\N	t	1	0	\N	\N	1
 240	COD-00014-00240	30x30	41.93	9	\N	\N	14	64.90	\N	t	1	0	Plata	\N	1
 258	BOL-002-00258	Mini	0.00	0	\N	\N	72	23.00	\N	t	1	0	\N	\N	1
 291	CUB-002-00291	20x20	27.93	30	\N	\N	91	42.90	\N	t	1	0	\N	\N	1
 264	TAG-001-00264	Mini	0.00	0	\N	\N	75	3.50	\N	t	1	0	\N	\N	1
+78	COD-00022-00078	Gigante	48.93	24	\N	\N	22	77.90	\N	t	1	0	\N	\N	1
 235	CUB-001-0235	20x20	27.93	0	\N	\N	69	42.90	\N	t	1	0	\N	\N	1
 271	TAG-001-00271	Mini	0.00	0	\N	\N	75	8.50	\N	t	1	0	\N	\N	1
+175	COD-00034-00175	Mediano	27.93	24	\N	\N	34	44.90	\N	t	1	0	\N	\N	1
 245	CAM-001-00245	Grande	34.93	0	\N	\N	70	52.90	\N	t	1	0	Magenta	\N	1
 275	BOL-004-00275	Grande	0.00	0	\N	\N	82	62.00	\N	t	1	0	\N	\N	1
+120	COD-00003-00120	30x30	41.93	39	\N	\N	3	64.90	\N	t	1	0	Rojo	\N	1
 255	BOL-001-00255	Chica	8.40	0	\N	\N	71	14.00	\N	t	1	0	\N	\N	1
 276	BOL-004-00276	Mediana	0.00	0	\N	\N	82	42.00	\N	t	1	0	\N	\N	1
+44	COD-00003-00044	25x25	34.93	36	\N	\N	3	52.90	\N	t	1	0	Negro	\N	1
 280	CAJ-005-00280	Grande	0.00	0	\N	\N	86	38.00	\N	t	1	0	\N	\N	1
+119	COD-00003-00119	30x30	41.93	54	\N	\N	3	64.90	\N	t	1	0	Negro	\N	1
+52	COD-00005-00052	30x30	41.93	24	\N	\N	5	64.90	\N	t	1	0	\N	\N	1
 289	TAR-002-00289	Mediana	0.00	0	\N	\N	89	39.50	\N	t	1	0	\N	\N	1
+51	COD-00005-00051	25x25	34.93	24	\N	\N	5	52.90	\N	t	1	0	\N	\N	1
 293	COJ-003-00293	Mediano	0.00	0	\N	\N	92	169.00	\N	t	1	0	\N	\N	1
 250	CAM-001-00250	Gigante	48.93	0	\N	\N	70	77.90	\N	t	1	0	Lila	\N	1
-44	COD-00003-00044	25x25	34.93	18	\N	\N	3	52.90	\N	t	1	0	Negro	\N	1
 31	COD-00011-00031	30x30	41.93	48	\N	\N	11	64.90	\N	t	1	0	\N	\N	1
 103	COD-00031-00103	25x25	34.93	48	\N	\N	31	52.90	\N	t	1	0	\N	\N	1
 104	COD-00031-00104	30x30	41.93	48	\N	\N	31	64.90	\N	t	1	0	\N	\N	1
@@ -10561,17 +10999,21 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 230	COD-00003-00230	25x25	34.93	18	\N	\N	3	52.90	\N	t	1	0	Rosa	\N	1
 224	COD-00003-00224	25x25	34.93	24	\N	\N	3	52.90	\N	t	1	0	Azul Cielo	\N	1
 238	COD-00014-00238	30x30	41.93	18	\N	\N	14	64.90	\N	t	1	0	Oro	\N	1
-119	COD-00003-00119	30x30	41.93	18	\N	\N	3	64.90	\N	t	1	0	Negro	\N	1
-120	COD-00003-00120	30x30	41.93	21	\N	\N	3	64.90	\N	t	1	0	Rojo	\N	1
 222	COD-00003-00222	30x30	41.93	30	\N	\N	3	64.90	\N	t	1	0	Azul Oscuro	\N	1
 225	COD-00003-00225	30x30	41.93	30	\N	\N	3	64.90	\N	t	1	0	Azul Cielo	\N	1
 234	COD-00003-00234	30x30	41.93	12	\N	\N	3	64.90	\N	t	1	0	Lila	\N	1
 88	COD-00025-00088	30x30	41.93	12	\N	\N	25	64.90	\N	t	1	0	\N	\N	1
 166	COD-00054-00166	30x60	69.93	16	\N	\N	54	107.90	\N	t	1	0	\N	\N	1
 284	COD-00048-00284	25x25x13	24.43	48	\N	\N	48	39.90	\N	t	1	0	\N	\N	1
+56	COD-00002-00056	30x30	41.93	48	\N	\N	2	64.90	\N	t	1	0	\N	\N	1
+3	COD-00002-00003	15x15	20.93	12	\N	\N	2	30.90	\N	t	1	0	\N	\N	1
+57	COD-00002-00057	40x40	76.93	12	\N	\N	2	117.90	\N	t	1	0	\N	\N	1
+64	COD-00016-00064	30x30	41.93	24	\N	\N	16	64.90	\N	t	1	0	\N	\N	1
+63	COD-00016-00063	20x20	27.93	12	\N	\N	16	42.90	\N	t	1	0	\N	\N	1
+15	COD-00007-00015	25x25	34.93	24	\N	\N	7	52.90	\N	t	1	0	\N	\N	1
+58	COD-00007-00058	30x30	41.93	24	\N	\N	7	64.90	\N	t	1	0	\N	\N	1
 129	COD-00040-00129	21x15x23	27.93	0	\N	\N	40	42.90	\N	t	1	0	Mediana	\N	1
 130	COD-00040-00130	23x17x32	32.13	0	\N	\N	40	48.90	\N	t	1	0	Grande	\N	1
-143	COD-00044-00143	25x25	20.93	0	\N	\N	44	33.90	\N	t	1	0	Natural	\N	1
 145	COD-00044-00145	40x40	48.93	0	\N	\N	44	79.90	\N	t	1	0	Natural	\N	1
 147	COD-00044-00147	65x65	104.93	0	\N	\N	44	159.90	\N	t	1	0	Natural	\N	1
 151	COD-00046-00151	25x35	32.13	0	\N	\N	46	52.90	\N	t	1	0	\N	\N	1
@@ -10579,7 +11021,6 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 160	COD-00049-00160	30x60	48.93	0	\N	\N	49	79.90	\N	t	1	0	Natural	\N	1
 161	COD-00049-00161	40x80	104.93	0	\N	\N	49	159.90	\N	t	1	0	Natural	\N	1
 171	COD-00060-00171	Mediana	13.93	0	\N	\N	60	22.90	\N	t	1	0	\N	\N	1
-176	COD-00034-00176	Grande	41.93	0	\N	\N	34	67.90	\N	t	1	0	\N	\N	1
 187	COD-00064-00187	6 Rosas	27.90	0	\N	\N	64	44.90	\N	t	1	0	Magenta	\N	1
 192	COD-00064-00192	12 Rosas	41.93	0	\N	\N	64	67.90	\N	t	1	0	Lila	\N	1
 135	COD-00042-00135	Gigante	48.93	12	\N	\N	42	77.90	\N	t	1	0	\N	\N	1
@@ -10592,17 +11033,24 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 266	CON-001-00266	Grande	0.00	0	\N	\N	76	37.00	\N	t	1	0	\N	\N	1
 231	COD-00003-00231	30x30	41.93	30	\N	\N	3	64.90	\N	t	1	0	Rosa	\N	1
 236	CUB-001-0236	30x30	41.93	0	\N	\N	69	64.90	\N	t	1	0	\N	\N	1
-251	CAM-001-00251	Grande	34.93	0	\N	\N	70	52.90	\N	t	1	0	Roja	\N	1
+251	CAM-001-00251	Grande	34.93	24	\N	\N	70	52.90	\N	t	1	0	Roja	\N	1
 272	CAJ-003-00272	Mediana	0.00	0	\N	\N	79	28.00	\N	t	1	0	\N	\N	1
+176	COD-00034-00176	Grande	41.93	24	\N	\N	34	67.90	\N	t	1	0	\N	\N	1
 277	CAJ-004-00277	Grande	0.00	0	\N	\N	83	38.00	\N	t	1	0	\N	\N	1
 157	COD-00049-00157	15x30	27.93	0	\N	\N	49	43.90	\N	t	1	0	Natural	\N	1
+12	COD-00006-00012	20x20	27.93	24	\N	\N	6	42.90	\N	t	1	0	\N	\N	1
 281	PAP-001-00281	Grande	0.00	0	\N	\N	87	18.16	\N	t	1	0	\N	\N	1
+13	COD-00006-00013	25x25	34.93	24	\N	\N	6	52.90	\N	t	1	0	\N	\N	1
 285	CAJ-006-00285	Chica	0.00	0	\N	\N	88	20.50	\N	t	1	0	\N	\N	1
 256	BOL-001-00256	Mediana	10.80	0	\N	\N	71	18.00	\N	t	1	0	\N	\N	1
+16	COD-00008-00016	20x20	27.93	24	\N	\N	8	42.90	\N	t	1	0	\N	\N	1
 286	CAJ-006-00286	Mediana	0.00	0	\N	\N	88	25.50	\N	t	1	0	\N	\N	1
+9	COD-00004-00009	20x20	27.93	48	\N	\N	4	42.90	\N	t	1	0	\N	\N	1
 290	SOB-001-00290	Chica	0.00	0	\N	\N	90	23.50	\N	t	1	0	\N	\N	1
 246	CAM-001-00246	Gigante	48.93	0	\N	\N	70	77.90	\N	t	1	0	Magenta	\N	1
+11	COD-00005-00011	20x20	27.93	24	\N	\N	5	42.90	\N	t	1	0	\N	\N	1
 294	COD-00063-00294	Mediano	27.93	0	\N	\N	63	44.90	\N	t	1	0	Rosa	\N	1
+5	COD-00002-00005	25x25	34.93	48	\N	\N	2	52.90	\N	t	1	0	\N	\N	1
 140	COD-00044-00140	10x10	10.43	36	\N	\N	44	16.90	\N	t	1	0	Natural	\N	1
 10	COD-00005-00010	10x10	13.23	20	\N	\N	5	19.90	\N	t	1	0	\N	\N	1
 159	COD-00049-00159	20x40	34.93	8	\N	\N	49	56.90	\N	t	1	0	Natural	\N	1
@@ -10613,19 +11061,11 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 155	COD-00048-00155	20x20x13	20.93	36	\N	\N	48	34.90	\N	t	1	0	Natural	\N	1
 156	COD-00048-00156	30x30x13	27.93	36	\N	\N	48	46.90	\N	t	1	0	Natural	\N	1
 146	COD-00044-00146	50x50	76.93	12	\N	\N	44	119.90	\N	t	1	0	Natural	\N	1
-144	COD-00044-00144	30x30	27.93	12	\N	\N	44	46.90	\N	t	1	0	Natural	\N	1
 221	COD-00003-00221	25x25	34.93	24	\N	\N	3	52.90	\N	t	1	0	Azul Oscuro	\N	1
-142	COD-00044-00142	20x20	17.43	36	\N	\N	44	28.90	\N	t	1	0	Natural	\N	1
-5	COD-00002-00005	25x25	34.93	0	\N	\N	2	52.90	\N	t	1	0	\N	\N	1
-9	COD-00004-00009	20x20	27.93	0	\N	\N	4	42.90	\N	t	1	0	\N	\N	1
-11	COD-00005-00011	20x20	27.93	0	\N	\N	5	42.90	\N	t	1	0	\N	\N	1
-12	COD-00006-00012	20x20	27.93	0	\N	\N	6	42.90	\N	t	1	0	\N	\N	1
-13	COD-00006-00013	25x25	34.93	0	\N	\N	6	52.90	\N	t	1	0	\N	\N	1
+144	COD-00044-00144	30x30	27.93	72	\N	\N	44	46.90	\N	t	1	0	Natural	\N	1
+142	COD-00044-00142	20x20	17.43	96	\N	\N	44	28.90	\N	t	1	0	Natural	\N	1
+143	COD-00044-00143	25x25	20.93	60	\N	\N	44	33.90	\N	t	1	0	Natural	\N	1
 28	COD-00010-00028	17x22	69.93	0	\N	\N	10	102.90	\N	t	1	0	\N	\N	1
-16	COD-00008-00016	20x20	27.93	0	\N	\N	8	42.90	\N	t	1	0	\N	\N	1
-1	COD-00001-00001	20x20	27.93	0	\N	\N	1	42.90	\N	t	1	0	\N	\N	1
-2	COD-00001-00002	25x25	34.93	0	\N	\N	1	52.90	\N	t	1	0	\N	\N	1
-3	COD-00002-00003	15x15	20.93	0	\N	\N	2	30.90	\N	t	1	0	\N	\N	1
 177	COD-00062-00177	20X20X13	27.90	0	\N	\N	62	42.90	\N	t	1	0	\N	\N	1
 183	COD-00063-00183	Grande	41.93	0	\N	\N	63	67.90	\N	t	1	0	Lila	\N	1
 193	COD-00064-00193	6 Rosas	27.93	0	\N	\N	64	44.90	\N	t	1	0	Rojo	\N	1
@@ -10641,52 +11081,46 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 262	CAJ-001-00262	Mediana	0.00	0	\N	\N	73	28.00	\N	t	1	0	\N	\N	1
 45	COD-00014-00045	20x20	27.93	6	\N	\N	14	42.90	\N	t	1	0	Oro	\N	1
 267	CAJ-002-00267	15x15	0.00	0	\N	\N	77	32.00	\N	t	1	0	\N	\N	1
+77	COD-00022-00077	Grande	34.93	48	\N	\N	22	52.90	\N	t	1	0	\N	\N	1
+41	COD-00013-00041	Grande	20.93	60	\N	\N	13	34.90	\N	t	1	0	\N	\N	1
+59	COD-00006-00059	30x30	41.93	24	\N	\N	6	64.90	\N	t	1	0	\N	\N	1
+54	COD-00001-00054	40x40	76.93	12	\N	\N	1	117.90	\N	t	1	0	\N	\N	1
 268	CAJ-002-00268	20x20	0.00	0	\N	\N	77	39.50	\N	t	1	0	\N	\N	1
+14	COD-00007-00014	20x20	27.93	24	\N	\N	7	42.90	\N	t	1	0	\N	\N	1
 269	CAJ-002-00269	30x30	0.00	0	\N	\N	77	69.50	\N	t	1	0	\N	\N	1
+53	COD-00001-00053	30x30	41.93	48	\N	\N	1	64.90	\N	t	1	0	\N	\N	1
+2	COD-00001-00002	25x25	34.93	48	\N	\N	1	52.90	\N	t	1	0	\N	\N	1
 273	PIN-001-00273	Grande	0.00	0	\N	\N	80	10.00	\N	t	1	0	\N	\N	1
+1	COD-00001-00001	20x20	27.93	48	\N	\N	1	42.90	\N	t	1	0	\N	\N	1
+62	COD-00015-00062	30x30	41.93	24	\N	\N	15	64.90	\N	t	1	0	\N	\N	1
 278	COJ-001-00278	Mediano	0.00	0	\N	\N	84	129.00	\N	t	1	0	\N	\N	1
+61	COD-00015-00061	25x25	34.93	24	\N	\N	15	52.90	\N	t	1	0	\N	\N	1
 257	BOL-001-00257	Grande	15.60	0	\N	\N	71	26.00	\N	t	1	0	\N	\N	1
-77	COD-00022-00077	Grande	34.93	0	\N	\N	22	52.90	\N	t	1	0	\N	\N	1
 282	PAP-001-00282	Grande	0.00	0	\N	\N	87	18.17	\N	t	1	0	\N	\N	1
+60	COD-00015-00060	20x20	27.93	24	\N	\N	15	42.90	\N	t	1	0	\N	\N	1
 287	CAJ-006-00287	Grande	0.00	0	\N	\N	88	30.50	\N	t	1	0	\N	\N	1
-17	COD-00008-00017	25x25	34.93	0	\N	\N	8	52.90	\N	t	1	0	\N	\N	1
-8	COD-00004-00008	15x15	20.93	0	\N	\N	4	30.90	\N	t	1	0	\N	\N	1
-41	COD-00013-00041	Grande	20.93	0	\N	\N	13	34.90	\N	t	1	0	\N	\N	1
-15	COD-00007-00015	25x25	34.93	0	\N	\N	7	52.90	\N	t	1	0	\N	\N	1
-14	COD-00007-00014	20x20	27.93	0	\N	\N	7	42.90	\N	t	1	0	\N	\N	1
-47	COD-00004-00047	25x25	34.93	0	\N	\N	4	52.90	\N	t	1	0	\N	\N	1
-48	COD-00004-00048	30x30	41.93	0	\N	\N	4	64.90	\N	t	1	0	\N	\N	1
-49	COD-00004-00049	40x40	76.93	0	\N	\N	4	117.90	\N	t	1	0	\N	\N	1
-50	COD-00008-00050	30x30	41.93	0	\N	\N	8	64.90	\N	t	1	0	\N	\N	1
-51	COD-00005-00051	25x25	34.93	0	\N	\N	5	52.90	\N	t	1	0	\N	\N	1
-52	COD-00005-00052	30x30	41.93	0	\N	\N	5	64.90	\N	t	1	0	\N	\N	1
-53	COD-00001-00053	30x30	41.93	0	\N	\N	1	64.90	\N	t	1	0	\N	\N	1
-54	COD-00001-00054	40x40	76.93	0	\N	\N	1	117.90	\N	t	1	0	\N	\N	1
+17	COD-00008-00017	25x25	34.93	24	\N	\N	8	52.90	\N	t	1	0	\N	\N	1
+50	COD-00008-00050	30x30	41.93	24	\N	\N	8	64.90	\N	t	1	0	\N	\N	1
 55	COD-00001-00055	50x50	97.93	0	\N	\N	1	147.90	\N	t	1	0	\N	\N	1
-56	COD-00002-00056	30x30	41.93	0	\N	\N	2	64.90	\N	t	1	0	\N	\N	1
-57	COD-00002-00057	40x40	76.93	0	\N	\N	2	117.90	\N	t	1	0	\N	\N	1
-58	COD-00007-00058	30x30	41.93	0	\N	\N	7	64.90	\N	t	1	0	\N	\N	1
-59	COD-00006-00059	30x30	41.93	0	\N	\N	6	64.90	\N	t	1	0	\N	\N	1
-60	COD-00015-00060	20x20	27.93	0	\N	\N	15	42.90	\N	t	1	0	\N	\N	1
-61	COD-00015-00061	25x25	34.93	0	\N	\N	15	52.90	\N	t	1	0	\N	\N	1
-62	COD-00015-00062	30x30	41.93	0	\N	\N	15	64.90	\N	t	1	0	\N	\N	1
-63	COD-00016-00063	20x20	27.93	0	\N	\N	16	42.90	\N	t	1	0	\N	\N	1
-64	COD-00016-00064	30x30	41.93	0	\N	\N	16	64.90	\N	t	1	0	\N	\N	1
+8	COD-00004-00008	15x15	20.93	12	\N	\N	4	30.90	\N	t	1	0	\N	\N	1
+49	COD-00004-00049	40x40	76.93	12	\N	\N	4	117.90	\N	t	1	0	\N	\N	1
 67	COD-00017-00067	30x30	41.93	0	\N	\N	17	64.90	\N	t	1	0	\N	\N	1
 68	COD-00018-00068	20x20	27.93	0	\N	\N	18	42.90	\N	t	1	0	\N	\N	1
+48	COD-00004-00048	30x30	41.93	48	\N	\N	4	64.90	\N	t	1	0	\N	\N	1
 70	COD-00019-00070	15x15	20.93	0	\N	\N	19	30.90	\N	t	1	0	\N	\N	1
 71	COD-00019-00071	50x50	97.93	0	\N	\N	19	147.90	\N	t	1	0	\N	\N	1
 72	COD-00018-00072	30x30	41.93	0	\N	\N	18	64.90	\N	t	1	0	\N	\N	1
+47	COD-00004-00047	25x25	34.93	48	\N	\N	4	52.90	\N	t	1	0	\N	\N	1
 74	COD-00021-00074	20x20	27.93	0	\N	\N	21	42.90	\N	t	1	0	\N	\N	1
 75	COD-00021-00075	25x25	34.93	0	\N	\N	21	52.90	\N	t	1	0	\N	\N	1
 76	COD-00021-00076	30x30	41.93	0	\N	\N	21	64.90	\N	t	1	0	\N	\N	1
 79	COD-00023-00079	20x20	27.93	0	\N	\N	23	42.90	\N	t	1	0	\N	\N	1
 81	COD-00023-00081	30x30	41.93	0	\N	\N	23	64.90	\N	t	1	0	\N	\N	1
+82	COD-00024-00082	10x10	13.23	12	\N	\N	24	19.90	\N	t	1	0	\N	\N	1
 83	COD-00024-00083	20x20	27.93	0	\N	\N	24	42.90	\N	t	1	0	\N	\N	1
 84	COD-00024-00084	25x25	34.93	0	\N	\N	24	52.90	\N	t	1	0	\N	\N	1
 242	CAM-001-00242	Gigante	48.93	0	\N	\N	70	77.90	\N	t	1	0	Azul Oscuro	\N	1
 252	CAM-001-00252	Gigante	48.93	0	\N	\N	70	77.90	\N	t	1	0	Roja	\N	1
-82	COD-00024-00082	10x10	13.23	12	\N	\N	24	19.90	\N	t	1	0	\N	\N	1
 173	COD-00060-00173	Jumbo	27.93	0	\N	\N	60	42.90	\N	t	1	0	\N	\N	1
 228	COD-00003-00228	30x30	41.93	24	\N	\N	3	64.90	\N	t	1	0	Magenta	\N	1
 207	COD-00011-00207	10x10	13.23	24	\N	\N	11	19.90	\N	t	1	0	\N	\N	1
@@ -10708,9 +11142,9 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 186	COD-00063-00186	Mediano	27.93	0	\N	\N	63	44.90	\N	t	1	0	Negro	\N	1
 191	COD-00064-00191	6 Rosas	27.93	0	\N	\N	64	44.90	\N	t	1	0	Lila	\N	1
 201	COD-00067-00201	Grande	13.93	0	\N	\N	67	22.90	\N	t	1	0	\N	\N	1
-206	COD-00039-00206	30x45	69.93	0	\N	\N	39	107.90	\N	t	1	0	\N	\N	1
 7	COD-00003-00007	10x10	13.23	0	\N	\N	3	19.90	\N	t	1	0	Negro	\N	1
 29	COD-00011-00029	20x20	27.93	0	\N	\N	11	42.90	\N	t	1	0	\N	\N	1
+206	COD-00039-00206	30x45	69.93	12	\N	\N	39	107.90	\N	t	1	0	\N	\N	1
 215	COD-00068-00215	30x30	41.93	0	\N	\N	68	64.90	\N	t	1	0	\N	\N	1
 6	COD-00003-00006	10x10	13.23	0	\N	\N	3	19.90	\N	t	1	0	Rojo	\N	1
 18	COD-00009-00018	20x20	41.93	0	\N	\N	9	62.90	\N	t	1	0	Diseño	\N	1
@@ -10747,10 +11181,17 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 174	COD-00060-00174	Gigante	34.93	0	\N	\N	60	52.90	\N	t	1	0	\N	\N	1
 190	COD-00064-00190	12 Rosas	41.93	0	\N	\N	64	67.90	\N	t	1	0	Rosa	\N	1
 263	TAR-001-00263	Mini	0.00	0	\N	\N	74	18.00	\N	t	1	0	\N	\N	1
+42	COD-00013-00042	Jumbo	32.13	54	\N	\N	13	52.90	\N	t	1	0	\N	\N	1
 270	TAG-002-00270	Mini	0.00	0	\N	\N	78	3.50	\N	t	1	0	\N	\N	1
 274	BOL-003-00274	Grande	0.00	0	\N	\N	81	42.00	\N	t	1	0	\N	\N	1
+205	COD-00039-00205	25x35	45.43	36	\N	\N	39	69.90	\N	t	1	0	\N	\N	1
+40	COD-00013-00040	Mediana	13.93	48	\N	\N	13	24.90	\N	t	1	0	\N	\N	1
+43	COD-00003-00043	20x20	27.93	42	\N	\N	3	42.90	\N	t	1	0	Negro	\N	1
+116	COD-00003-00116	20x20	27.93	30	\N	\N	3	42.90	\N	t	1	0	Rojo	\N	1
 279	COJ-002-00279	Grande	0.00	0	\N	\N	85	129.00	\N	t	1	0	\N	\N	1
+118	COD-00003-00118	25x25	34.93	36	\N	\N	3	52.90	\N	t	1	0	Rojo	\N	1
 283	PAP-001-00283	Grande	0.00	0	\N	\N	87	18.20	\N	t	1	0	\N	\N	1
+4	COD-00002-00004	20x20	27.93	48	\N	\N	2	42.90	\N	t	1	0	\N	\N	1
 288	CAJ-004-00288	Grande	0.00	0	\N	\N	83	38.00	\N	t	1	0	\N	\N	1
 239	COD-00014-00239	25x25	34.93	12	\N	\N	14	52.90	\N	t	1	0	Plata	\N	1
 292	TAG-001-00292	Chica	0.00	0	\N	\N	75	23.50	\N	f	1	0	\N	\N	1
@@ -10762,7 +11203,6 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 26	COD-00009-00026	30x30	55.93	0	\N	\N	9	84.90	\N	t	1	0	Liso	\N	1
 27	COD-00009-00027	50x50	111.93	0	\N	\N	9	167.90	\N	t	1	0	Liso	\N	1
 217	COD-00051-00217	6	13.93	0	\N	\N	51	22.90	\N	t	1	0	Natural	\N	1
-4	COD-00002-00004	20x20	27.93	0	\N	\N	2	42.90	\N	t	1	0	\N	\N	1
 184	COD-00063-00184	Mediano	27.93	0	\N	\N	63	44.90	\N	t	1	0	Rojo	\N	1
 189	COD-00064-00189	6 Rosas	27.93	0	\N	\N	64	44.90	\N	t	1	0	Rosa	\N	1
 197	COD-00065-00197	Grande	32.13	0	\N	\N	65	48.90	\N	t	1	0	\N	\N	1
@@ -10776,13 +11216,11 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 198	COD-00066-00198	Mediana	20.93	0	\N	\N	66	32.90	\N	t	1	0	\N	\N	1
 199	COD-00066-00199	Grande	27.93	0	\N	\N	66	42.90	\N	t	1	0	\N	\N	1
 200	COD-00066-00200	Gigante	34.93	0	\N	\N	66	52.90	\N	t	1	0	\N	\N	1
-205	COD-00039-00205	25x35	45.43	0	\N	\N	39	69.90	\N	t	1	0	\N	\N	1
 214	COD-00068-00214	25x25	34.93	0	\N	\N	68	52.90	\N	t	1	0	\N	\N	1
 219	COD-00061-00219	30	6.93	0	\N	\N	61	12.90	\N	t	1	0	\N	\N	1
 254	CAM-001-00254	Gigante	48.93	0	\N	\N	70	77.90	\N	t	1	0	Negra	\N	1
 208	COD-00011-00208	15x15	20.93	72	\N	\N	11	30.90	\N	t	1	0	\N	\N	1
 73	COD-00020-00073	10x10	13.23	8	\N	\N	20	19.90	\N	t	1	0	\N	\N	1
-42	COD-00013-00042	Jumbo	32.13	42	\N	\N	13	52.90	\N	t	1	0	\N	\N	1
 218	COD-00058-00218	6	20.93	18	\N	\N	58	32.90	\N	t	1	0	\N	\N	1
 178	COD-00062-00178	25X25X14	32.13	12	\N	\N	62	48.90	\N	t	1	0	\N	\N	1
 102	COD-00031-00102	20x20	27.93	48	\N	\N	31	42.90	\N	t	1	0	\N	\N	1
@@ -10793,16 +11231,12 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 232	COD-00003-00232	20x20	27.93	18	\N	\N	3	42.90	\N	t	1	0	Lila	\N	1
 223	COD-00003-00223	20x20	27.93	24	\N	\N	3	42.90	\N	t	1	0	Azul Cielo	\N	1
 46	COD-00014-00046	20x20	27.93	30	\N	\N	14	42.90	\N	t	1	0	Plata	\N	1
-118	COD-00003-00118	25x25	34.93	18	\N	\N	3	52.90	\N	t	1	0	Rojo	\N	1
-116	COD-00003-00116	20x20	27.93	12	\N	\N	3	42.90	\N	t	1	0	Rojo	\N	1
-43	COD-00003-00043	20x20	27.93	24	\N	\N	3	42.90	\N	t	1	0	Negro	\N	1
 237	COD-00014-00237	25x25	34.93	18	\N	\N	14	52.90	\N	t	1	0	Oro	\N	1
 229	COD-00003-00229	20x20	27.93	24	\N	\N	3	42.90	\N	t	1	0	Rosa	\N	1
 243	CAM-001-00243	Grande	34.93	12	\N	\N	70	52.90	\N	t	1	0	Azul Cielo	\N	1
 247	CAM-001-00247	Grande	34.93	12	\N	\N	70	52.90	\N	t	1	0	Rosa	\N	1
 249	CAM-001-00249	Grande	34.93	12	\N	\N	70	52.90	\N	t	1	0	Lila	\N	1
 253	CAM-001-00253	Grande	34.93	30	\N	\N	70	52.90	\N	t	1	0	Negra	\N	1
-40	COD-00013-00040	Mediana	13.93	12	\N	\N	13	24.90	\N	t	1	0	\N	\N	1
 210	COD-00011-00210	50x50	97.93	6	\N	\N	11	147.90	\N	t	1	0	\N	\N	1
 165	COD-00054-00165	20x40	48.93	24	\N	\N	54	74.90	\N	t	1	0	\N	\N	1
 125	COD-00037-00125	15x30	32.13	20	\N	\N	37	48.90	\N	t	1	0	\N	\N	1
@@ -10814,7 +11248,7 @@ COPY public.producto_variantes (varianteid, sku, dimensiones, costounitario, sto
 
 
 --
--- TOC entry 5480 (class 0 OID 25293)
+-- TOC entry 5505 (class 0 OID 25293)
 -- Dependencies: 294
 -- Data for Name: productos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -10913,7 +11347,7 @@ COPY public.productos (productoid, categoriaid, nombreproducto, descripcion, act
 
 
 --
--- TOC entry 5482 (class 0 OID 25300)
+-- TOC entry 5507 (class 0 OID 25300)
 -- Dependencies: 296
 -- Data for Name: proveedor_reglas_empaque; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -10932,7 +11366,7 @@ COPY public.proveedor_reglas_empaque (reglaid, proveedorid, tipoproductoid, cant
 
 
 --
--- TOC entry 5484 (class 0 OID 25305)
+-- TOC entry 5509 (class 0 OID 25305)
 -- Dependencies: 298
 -- Data for Name: proveedores; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -10945,7 +11379,7 @@ COPY public.proveedores (proveedorid, nombreempresa, contactonombre, email, tele
 
 
 --
--- TOC entry 5506 (class 0 OID 26936)
+-- TOC entry 5531 (class 0 OID 26936)
 -- Dependencies: 320
 -- Data for Name: remisiones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -10955,7 +11389,7 @@ COPY public.remisiones (remision_id, pedido_id, cliente_id, agente_id, folio, fe
 
 
 --
--- TOC entry 5522 (class 0 OID 27756)
+-- TOC entry 5547 (class 0 OID 27756)
 -- Dependencies: 338
 -- Data for Name: sesiones_inventario; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -10966,20 +11400,17 @@ COPY public.sesiones_inventario (sesion_id, nombre, descripcion, fecha_inicio, f
 
 
 --
--- TOC entry 5504 (class 0 OID 26350)
+-- TOC entry 5529 (class 0 OID 26350)
 -- Dependencies: 318
 -- Data for Name: session; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
 COPY public.session (sid, sess, expire) FROM stdin;
 MSBYnCVL7fUsiJUrL5xrWrpr4xI_PAh0	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-27T07:29:47.794Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 07:29:48
-3Q_vfC_cwo_GF-R1GRLV71J5aRzOpcHm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:19:25.354Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:19:26
--f7zK-kUNaQxHR_okU9hoelBghs3MzEr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T16:14:41.388Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 16:14:42
-gy2B9wO70Q4kujpadI4emHoe6XXl-CbC	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-23T09:16:25.270Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 09:16:26
-pAypzyGDbQFC4U2uKbm6Ej3WmwZVj-WU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:19:39.496Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:19:40
-qVvkjJm5Ya26VBla2oM4n0StHwPmd6Ai	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:19:40.432Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:19:41
-VJ2QLUzcReSiZ5LigG0eFenhujnoItbm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:19:41.272Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:19:42
-C-KT9mw-WOa6v3wNoWqkoW9TIRiMe3od	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:19:41.996Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:19:42
+ggwjieKJj58-T4NhB6N7iPFDDXba8XVb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:53:43.403Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:53:44
+mAmbWjMwWsedK3MV1Q-jNGC5YJ6DXrCB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T23:51:18.672Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 23:51:19
+lqj85CCAoHFAokVo2x0KdzE3geRwJQn1	{"cookie":{"originalMaxAge":604799999,"expires":"2026-03-02T10:16:56.224Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:16:57
+sWDd27WPzkEJHvYW_Nzwa8ziP9x1tRpE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:36:47.068Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:36:48
 T7tw_Brhtlvzdvw_GEPkN4wZdEbV4pom	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:46.974Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:47
 yzbEmUntr4BcQ30dnM-E_uW7WZAovG5r	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:47.414Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:48
 Xc_LsAywVOu5mhbTQEBL8QJnRLCeH7iC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:47.688Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:48
@@ -10989,8 +11420,6 @@ BbdqEAK4OnW35wJRvrZrta0LJTIf6rV-	{"cookie":{"originalMaxAge":604800000,"expires"
 paw6ICyYvxfoDFmAFCFX3A-3AV80CLBr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:48.610Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:49
 UCY3gtuInYjV31EZdWXrzMrS-twEvNdK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:48.825Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:49
 vNHwO1wjdkHAYaOZogxTJT6wbuaYncIN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:49.034Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:50
-UckxJPqbs82H3vtFzQQ7zjoenDMIU9-k	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:19:42.662Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:19:43
-zdSnaf6LzvMP87F_29IsfPr3hU--Snpi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:19:43.248Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:19:44
 Nle-i4RVjjO771T-A-OTqoSt1Eipk_MP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:49.247Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:50
 qciOK2Rspy_KVux-8KxbjuaP5UlUiX1C	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:49.472Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:50
 4V0W8InQsbPfAiWlSIIP_J73BBirm4xS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T21:37:36.696Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 21:37:39
@@ -11004,19 +11433,17 @@ GfVd1TFAuOltj4Hfz4E3tY3VLb5BHpr3	{"cookie":{"originalMaxAge":604800000,"expires"
 EESulP1PO964FQfDgeEKJ5JytzzI3wxu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T15:00:47.852Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 15:00:48
 TyQPMpMUxVUYgByAauh5Uxsrs5HbB5Hw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T15:01:00.804Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 15:01:01
 AoxOxM3CRSCXJEJ-k16umvKopchqQsGq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:16:37.676Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando García","apellido":"","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-02-26 00:34:46
-meIO9BWs_c668woY2pprQOvc2o6pzWqF	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-21T16:14:41.397Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 16:14:42
-Om6oad_EVaAs1ArTkuTsz6lD73qYw9z7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:19:43.466Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:19:44
-q58oxKKDT1vHIHPnkZeKmQy1-9Uwzpka	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:19:43.549Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:19:44
-LEbf5PuYIGnpUVBFcYSQASY4Ttby7rfI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:19:43.834Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:19:44
-YGDLBLB9h9Urm-OfD-EiAR05kCc81F_H	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:19:53.150Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:19:54
+oJircZN-L32Vn6HM2Ml8mndpWvzeihSW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T00:03:25.453Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 00:03:26
+GQkelZZNbxReCpiNRtS3NI5jE596I5m6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:53:43.408Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:53:44
+w4nbIFqg7X6PymPkgezh9ukHn8gzT8qZ	{"cookie":{"originalMaxAge":604799969,"expires":"2026-03-02T20:53:52.958Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:53:53
+klAzYnxRLcjWb70BOwRQkEJzMCRjVyO_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:38:31.497Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:38:32
+8U0hMTFdGyXNYTeRvmwte4eY8DgRDE1e	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:38:31.664Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:38:32
 jtD7b-0LeUTRsF340aHmNrAwZRBy6Mkk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:41:16.263Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:41:17
-OaVW7JETe8zYQyYnrhpV0SGz2w5TrigO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:19:53.466Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:19:54
 YzobkaVt6JjucScHPUKUaEmxR-IcV8AA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:41:21.848Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:41:22
 9fSmkLx9MqwELkY16vR_2Wi4WxwVw8mr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:41:27.409Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:41:28
 U9C6vVgVSgEmxvaGnQApqzQ-6oUaneJI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:41:32.986Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:41:33
 jhcnbzJmQDb2-mftkI-MS4vBgQgeWQ5H	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:41:38.511Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:41:39
 ExXVFDXrbbv6ncSKtMj__PBe_nt_VQcM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T07:31:04.282Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 07:31:05
-T3LGFRgiTgOQqE9ZbnS2DWJTbzC8ezRU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:19:53.773Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:19:54
 654V9X4pC0vr1yAT2nZHaPI79GScVG_o	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:51.259Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:52
 XGsmAQfMXBGjsgpvdThESCnwXvoaT3Wp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:51.467Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:52
 cWdmjK1aYy2AS1mW9FwpzNb8cIzUy-PA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:51.674Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:52
@@ -11034,16 +11461,15 @@ Z4QpRGE8ZKj-ue6rXF0h_Oya2gxH5pEf	{"cookie":{"originalMaxAge":604800000,"expires"
 KvyJfdrdsDqXQAXqOH3RldzWJv39xGWm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:54.324Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:55
 VnKlpuGUzYukPsbm_vqJ7dyCkfIWmBZI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:54.526Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:55
 m0rk5t3lYXzmqzgjNbJ99nAwRp0BnT9T	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:54.749Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:05:55
-kDWY1LeHkSlr2zcMOOgiWLqup3n0Tp55	{"cookie":{"originalMaxAge":604799997,"expires":"2026-02-23T10:16:50.107Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 10:16:51
 kadCv6CgzSrVGTSDo4B34WsYJm3pFmMd	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-25T15:32:57.570Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 15:32:58
 kkjoRmzcuHmSqvdGKMD6CyXRnjjRBITs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T15:33:06.460Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 15:33:07
 ThA62H4qjo0K5_6FWRZSnl8sOPtvfhcF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T15:33:06.816Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 15:33:07
 dpr-rOLsgoAbibcdHX5yVT9FhDdVf8AN	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-26T21:46:59.269Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 21:47:21
-DhOcw1-7Zwi5VwW8d2E_kKky5v-PosaY	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-23T20:35:33.339Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:35:34
-YVgwtTc6zOYtrby6DKtHa5N80jlq9ODm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:35:33.876Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:35:34
-arFdoAp8tgxYd9Gw7Th3TwSIFzuUVJmb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:35:34.019Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:35:35
-_RxZOUy9BBdkQCeNDV-zxIWj-Z8zFxKi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:35:34.586Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:35:35
-QkTs23MZ7ywVIz_LE-vu_g6UwTsgpWXF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:35:34.611Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:35:35
+VwgK_b_5S0QcsgPZy2GyIf_HkRxKWjst	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:51:58.169Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:51:59
+VB8pWrsF1WaaGNiIpdjWVbbGdF-IbdgP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:51:58.892Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:51:59
+j1iUMjLIzwg-prJA0dgoO2nJqlMbzM28	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:51:59.311Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:00
+s48zPzcl1RL48VquC91xGwo90nQZqO2o	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:51:59.847Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:00
+mcJtOeBN9pv3cRuTgdPHQa-aZagrP6KT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:00.355Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:01
 0ZK21yGgVU239sW2jBBNnpzQJooDgKar	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:41:43.966Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:41:44
 PlMGqDVA3FJEiu7O3_gggDjoxCKB7Y1B	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T15:57:31.754Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 15:57:32
 J7iYMPDJQj5_8Jwv9GgxJ1RiScoU74_a	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:41:49.521Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:41:50
@@ -11074,8 +11500,8 @@ IhGPsqsJkad-XtC6TUHK0RfPoYIk_qj-	{"cookie":{"originalMaxAge":604800000,"expires"
 Rq-69JQJRyUZ4ejl1vd7ddI4Kq-H0_J1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:59.194Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:06:00
 6z4cGNmyZJ86QTOnqWqJu25Rl_AD7V0D	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:59.416Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:06:00
 4w0XSqyfTrzBtg3QABdwchstyHhizdvY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:05:59.641Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:06:00
-GU0TLTiGfy7qRpsbji-aUEG5u0xMOat1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T20:48:31.390Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 20:48:32
-d8piUmGGGpehhhZuY_I9fJPVtjie4fJ-	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-23T12:39:09.293Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 12:39:10
+820shSEWZxBy4kI48-U_Ad2bfO_m2Skr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:00.584Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:01
+0iqluNDhL1g4pXpnf321xScQyrolHe-S	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:54:52.688Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:54:53
 tsycL1a4Svr4imx5LiYzTLB1xQMEki7e	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:42:12.444Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:42:13
 mnJbAQHl_togZbECDyJDjmKYffmRIZv7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T16:04:12.190Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 16:04:13
 kdupPQcjKaRRPqwIW_lC2cA4iD77pzev	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:42:18.397Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:42:19
@@ -11089,10 +11515,27 @@ OcnxbUdrIHCOvI8ygivUYZbvhmSDGrdF	{"cookie":{"originalMaxAge":604800000,"expires"
 s2cVR_0QAXFoFjDx42kTvmTBEedyTXCW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:06:01.326Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:06:02
 ias6Cj-SsLyt2SoYJwf5GzgKuv4gUUJq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:06:01.600Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:06:02
 Mi5HD6xkw_x0mqXa2G7Y4GS-JSxDluGR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T13:06:01.861Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 13:06:02
-bpzdgeAAa0sQm3bd_7dvY154NrX-NX-U	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T16:50:45.491Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 16:50:46
-5WZVkNnGhers5I5H4PDFsD1V15oawRQ3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T12:39:13.284Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 12:39:16
+xSRSJkmo33fIkwaEFw8bmlwmEFT58Urh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T21:50:45.596Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 21:50:46
+FwrRDfGGbaYBM6pda4ymXnSDsgp5fysJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T12:49:17.471Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 12:49:18
+kt0AdFujlDE3j4BPYm0TdfaQ8hdhk6Oc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T19:41:04.853Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 19:41:09
+5dlVz8T-4lLLRzrfnZ-CnrohwEBZVUcK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T00:44:06.239Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 00:44:07
+Bs8jE_GBicOtueg1XT_qFF18rk2zUIQM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T23:42:51.365Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 23:42:53
+quK5umCRN8kWfoAR_5xu-fTuGHqLwIAa	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T00:19:04.950Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 00:19:06
+rvn4-ClW5-hHQ_CJ-g1Tn8AjbEJdFd8k	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:34:30.828Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:34:31
+1jGUyS3xn02RHYCVhMUpk0VFCTPvSvJR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:34:36.186Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:34:37
+Vh3NdrekylXaAdi_tGgXS_sCym10338T	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:34:41.642Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:34:42
+WcYtCD96AAq3Ng_FDwycZuLkWTDqG9sj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T03:11:59.734Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 03:12:05
+yw1xEKyCcH5hZkGA9nJ3jheobT5qN1hh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:34:47.069Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:34:48
+lLhS59Noewa9KIztoo9ZarVfTm7bG4tV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:34:52.536Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:34:53
+v2j0Hpp2TgKL5YBAnEH8Jbf07o4GBqpv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:34:57.791Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:34:58
+lW57sQVmqCO-eoFs3aRX0lzwKBqLHXOa	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:35:03.232Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:35:04
+KjMq6LVP59YN0eUG4wtHU4_L94NMK8SF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:35:08.709Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:35:09
+oASJ0_duLCkpEmAhDIJByT8aXR2kd0-H	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:35:14.458Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:35:15
+5p5DEAfwAsc_kJNdbEw9NpOA1pR4IMrF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:35:19.748Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:35:20
+-3-2_Ul6pj74dmrwq8XadREf82b1Ym_b	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T11:09:24.245Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 11:09:25
+db2yVFhKtiObl-xcQswZaBApANqS-1Pu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:00.818Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:01
 sg14VzIrohZ62807CXhaKwB3IlPbhbVb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T16:04:12.723Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 16:04:50
-E2IzSxyjwCyOEa5Be1huZsh6lMOhKXx6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T21:10:25.179Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 21:10:26
+_lZdz2yvhZo36jC22iTRHLklphQ0DalH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:01.741Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:02
 pwMTWnM7O-4W6pKXibP6nQlgtZU9zQIj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:45:24.980Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:45:25
 qSyAcd6j2JjF_ADy_VBEgBQrW81U5eKT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:45:38.241Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:45:39
 6u-UfxyWuiI9rlQUJDOeAnAoeccc0mNf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T09:11:17.026Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 09:11:18
@@ -11110,12 +11553,23 @@ UbrqpZ5vToexMFe5PxfPyuXf6GgTcogL	{"cookie":{"originalMaxAge":604800000,"expires"
 HqeNw0tovInJmubVxLgXCcX89KOiiRTc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T18:15:04.148Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:15:05
 isMeAzzqdiIl1Ry33EiOE6naQtd8MmG2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T18:15:09.378Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:15:10
 Ow33dZGAUhCb9SYQ1BP4MDsXxEyfTTL2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T18:15:14.563Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:15:15
-rbOX418yL_AEgOfmumNAiEoGH5Lk084Z	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T17:08:30.682Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 17:08:31
+N6KvaA41iBOTkgbjMptH8JtF1tmVcUJ5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T22:16:26.871Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 22:16:27
+0F1VDRJWg9nxvjgEUd9VOZDHWKYKSsQu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T22:16:28.067Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 22:16:29
+pvvmUsPCL1FdZ5ytO1zWsLKGsmYZitVu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T01:03:08.066Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 01:03:09
+2-kII9-jqVf5gtaspTS9V69Zz-nkUT7U	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T03:32:54.348Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 03:32:55
+vZxHAS89P9ZGGUaGEYHA8U7HMz5jlK5I	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:35:25.351Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:35:26
 yL9QlT5PuvHhF9hIXTOnvmrzk1x6a_db	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T23:21:35.226Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 23:21:45
-PjUmWEpnLXa6jlIpEv8Z9MKCrfX2BZap	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T13:23:44.481Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 13:23:49
-csEN77cvZzCKssN6hh-8BohqyTYxwVZm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T16:46:14.649Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando García","apellido":"","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-02-27 18:43:11
+0A1JGohWGyVsDdN3rZMf-urw2lS9nEQM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T18:34:13.559Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:34:14
+UnEcpThGyjS59BVJEOosESNwzGCGNjM4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:54:52.747Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:54:53
+uXpdTU93mxzogo4cSvCCFsUQOyefXhue	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T20:24:41.286Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 20:24:42
+h0qlY4UYzPYCO6eHGOBSp81A5OXXKQYp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T16:07:34.302Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 16:07:36
+E3h20OrQuBTikCx4s_D3DiqZzBH8NuY7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T20:24:42.195Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 20:24:43
+cUFQTPqnaQXXn4SWvWYB1mw94Jo3zBiL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T01:48:57.891Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 01:48:58
+jkzTO2G9lnNLFQ18ax4QjhbPBNuCSNU7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T18:34:14.017Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:34:20
+xbm6HE3H7KnGswkWZO1z0nsUrumbqFw9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T11:57:44.943Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 11:57:50
+zCTNP72yFaaanExR594Vqi5q888zgby2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T01:03:08.501Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 01:03:39
 LTrNN_xkxf9rGuueQKcozZGp_pPtsXE0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T16:52:58.169Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 16:52:59
-Qx07Mq7xEsFNQ36PpE5oG09JnEaZxp4L	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T21:12:20.578Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 21:12:21
+t4BYe-Qi1j-xObX4gzxvDpU0lCTaKY0g	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:02.147Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:03
 DwGkhR1UIgXRQ50UCKUpCF0ndy_z4ukv	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-25T23:47:38.320Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:47:39
 vZUMQcckvJjUk0HbJMzy56UQ7nKcNBlW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:47:43.874Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:47:44
 bVsydKvuItBZ480J-bvmqnXc-MYAwKBv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:47:49.999Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:47:50
@@ -11124,11 +11578,31 @@ ZXBN4K4Kd0MGZpbC2D_NoYQAgTouNPUL	{"cookie":{"originalMaxAge":604799999,"expires"
 -0bnS7BSLgC2rinXejDYKD599r2Pyata	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T14:24:39.818Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 14:24:40
 XkiDwTh95hKHrGhUV3rv1-jJEYsEKBID	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T18:17:24.607Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:17:25
 7IeZg9U7TBjTSw7dSj91_o9lH9kZsq-P	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T18:17:45.142Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:17:46
-XMsgL__1frytls4npYS8DBO7i0mY8cCs	{"cookie":{"originalMaxAge":604799998,"expires":"2026-02-21T17:34:24.439Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 17:34:25
-c3Nwdu6X1pxpX6pRS-ESIc_1dHZTM7vf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T14:56:08.396Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 14:56:09
+_tJCeLPNdduGaAEsXYMpFkozk2-OO6av	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T16:18:51.828Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 16:18:52
+dou66UDgLgDt_E3CrsuznsmZ-RexChHA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T16:18:51.845Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 16:18:52
+cDPG5F5p_E3RK9MzfwWLE38aaS3Eod6s	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T12:47:05.756Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 12:47:06
+bc7Z9yPFniOi1CMb6ERqSKhFnbk7rnNI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T20:33:58.925Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 20:33:59
+OM_pyMoH9HIvhQpD9m8rDcCoMVSanZkI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T02:34:29.360Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 02:34:30
+F8e79Qv8nAtkp1smBcOETAKcD7FhmiQm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:56.683Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:16:57
+AueM4SZ_MkwRmnzMUWJyY44fRG5pArjG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:56.909Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:16:57
+UEuji-D9EnmpwvvI-zFoFpI-ERKetQBh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T02:34:29.737Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 02:34:45
+37Td2h-gy4YLD83cDYQH8Wvc69yMDBnS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:57.153Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:16:58
+ss-7ipd3yqwvnEWO6KfABJira1Jppcce	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:57.398Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:16:58
+zBKamN2pgL_U_--6Fl5Rsw-_-QCFpQl5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:57.623Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:16:58
+DmfNZ-G-auvGtKjjyK_CuERvS5Lwk_tk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:57.877Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:16:58
+PaHyUz6v0cjEcVvgJFNDaj6SZAN8CFJc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T01:05:52.894Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 01:05:53
+QZoB6uaGtgKbSe7fl_cdqE_L4ArmOvCK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:58.111Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:16:59
+8kofZr-oUOgqmDLEpZmqRj_DLiKm_j3_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T21:11:43.105Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 21:11:44
 svT01FSR47_AzdfhwnGm7EMRl2uVfiJe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:48:01.306Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:48:02
+DA-MgO2lwsulOPEwaiWTU94K-1BU1RLv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:58.356Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:16:59
+VDpdu2QLy3WI1Z3eMR7SwYXDzoYSPT50	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:58.602Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:16:59
+utk6_Kp3SzajRTtPzoXOQn5zi0Q8yaNL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:35:30.592Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:35:31
 dVpYZOmxE7o6bhixawH8uu7Rq7Ch4KSl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T17:52:44.251Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 17:52:47
 D5KH18if0X_B7ily4okjShKALvNN6pKk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T11:08:22.378Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 11:09:01
+cc87xdCAt0MNxI5NByuPqEx---IIoj4x	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T06:36:56.242Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 06:37:49
+1b0Udsacy0EdMs0T2F5BjAxIz6WZdsf3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T12:47:06.711Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 12:48:07
+XZ-XDPRNjJoStYVtk3SzV_S6jfvdkjqg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T03:33:30.347Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 03:34:42
+M6AU3JwjGYPmWCHLUX84SLhi7OR43EZg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T18:40:01.497Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:41:21
 bW51_RwB4MH5LPa7l8lueuKagux0Xi-l	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:48:07.182Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:48:08
 K7k79K56eKK4xSgrP3Jcy9q1-uVknt1m	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:48:13.282Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:48:14
 yf2eD-fcGlGIaHp6ZrU3cgTuPajTi59w	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:48:19.483Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:48:20
@@ -11140,9 +11614,26 @@ HHUQ8GDFiSxQn-_SPczHkBXj2amIlWRr	{"cookie":{"originalMaxAge":604800000,"expires"
 pOcQTWu9xlMevxUe9jbz0ODajT0UXrPl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:48:41.560Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:48:42
 OVAGIsQv1CscxHUi1AXnjDPJGIMWulN8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T14:34:41.519Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 14:34:43
 1E4bnHtyA-YQVYwAnxcp21pukLTr5ySI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T18:27:33.963Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:27:34
-thdM5mDPvPIAsN9DZMxWbglMJUwCp4g7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T17:36:10.066Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 17:36:11
-W2rfbVrYtxgpkscsFA2Vx4Q9KWifaA20	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-23T15:24:50.362Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 15:24:54
-kst69I-EououKDb10B4ZjKkRvbp76OSs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T21:21:13.879Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 21:21:16
+B0XjkQnfVZ629TUcmVNmH72F4-r5vzDd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T19:59:32.771Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 19:59:33
+MHtlf_OB2VFo0-uwDF9ljSRA6V-CaOzB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T02:14:32.607Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 02:14:33
+TQRe_qn1rTe_0aacZq9VMfdS3sCDFbsi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:00:05.204Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:00:06
+JSIT6QKzWyr2qpusijYBXFuI6V6DCqLS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:00:10.461Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:00:11
+9c6oRNSd-4n7mNgW2fxHHnPvk0AO9xru	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:00:21.271Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:00:22
+EMEJbun3PhB1T9sUMPiOPkUT9_qB32eu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:00:26.514Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:00:27
+sdvFJ460S-BnCCfhfzEM0aFo7LaGkzCX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:00:31.743Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:00:32
+9wz2CEXyLTLscB5iuXCfYWuyNCsW8iml	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:00:37.039Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:00:38
+9qOqUvcPB613kkIbTrbmHhSEur-mxfu7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T03:50:59.901Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 03:51:00
+LXruM3bTeKyuZtbFVjC6eeIYeZQI7-E8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:06:49.559Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:06:50
+_1U_Wvjad6KNAzB4Kx28r-SVGq79WR2x	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T02:14:37.169Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 02:14:38
+EVCGqfVtHZFS1_AX2pqG7xL03YmTq7HB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T03:30:44.942Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 03:30:45
+NBX-Wt1y4EXItdzhJ8vRUYbuEjdeoBgR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T06:36:57.288Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 06:36:58
+qiFQ-FgOmM5pzU5szuf-lNtBE1upGoP7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:58.826Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:16:59
+CagSCMO_u1QTI1c1tBo7-c_fuSIMIsBW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:02.910Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:03
+zLcR2WpIt28R726Suv9VYKNfiMqM4-i9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T02:14:36.275Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 02:14:39
+gvwaCHvI4dNHfJsFQOm_0gpx3sFcprpS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:03.000Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:03
+GG_tvnJbJVo0i1FvWaPwfdrTzoWdBzgv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T17:22:50.331Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 17:22:59
+ECGnY7f5sTqo6cYtgAgSx_1mz-RuOp1-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T13:32:35.734Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 13:33:21
+askPo0GLeO7iLuP4yazWsBdQV-t5fVF2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T18:43:51.687Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:45:09
 s2byfKlL2t7uPtEyHmRjf3BzoCapBj8A	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T18:06:23.476Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 18:06:24
 D8IqP5qmT0-L95FzRqz-MhkVKRmtPYbO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T18:06:23.999Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 18:06:31
 dpEGSSe2jaC2rol-K9A_nferBkIxP8Vn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:50:48.170Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:50:49
@@ -11156,10 +11647,27 @@ _55_j_qIj1bcQgssPp5URUPWT_XeLTPl	{"cookie":{"originalMaxAge":604800000,"expires"
 lM9cTl1Fmf8VeJg7ynatXpGjan8l3X5o	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T18:32:48.570Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:32:49
 J2RVLbkXUNhloycVu9AvmeaSu-35a3Yi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T18:32:53.757Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:32:54
 01RbQC0KRhwv5xEcNLuBdhIF4m9HIRnG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T18:32:59.046Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:33:00
-EQuAtSrPQdUwKfC56p4UZitMlaY6Tw7E	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T19:34:04.244Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 19:34:05
-Y2Rekm-WexNK5AKuRdjuhr-SYrtF2LBZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T19:34:08.582Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 19:34:09
-h19dI877CsV5RI1i9d4koIUWz5H1lDcR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T21:22:40.236Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 21:22:42
+GfPmEWosO_UFQnZ8_N5F_pY1DSVZpjnL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T19:59:38.147Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 19:59:39
+8VA4o04LvflET1u-38NcZ8UPpzUUKg8v	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-28T03:50:59.908Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 03:51:00
+BYJzsvhuI65cdzGIUzk-vNhel3A79ddb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T17:30:07.274Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 17:30:08
+lkjeDyw1Hvvk7psQr8qu56awSvJg8hQK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T13:33:49.659Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 13:33:50
+YQFh5wQeAfVAWrYX9kIWatLE1C5cIjO3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T19:12:06.820Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 19:12:07
+QkoEGKbi5O5SSAMfnUfx1a805Rpf6u4f	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T19:12:07.247Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 19:12:08
+p-mpRmYvdaItw1FNDoF7tFsvXi3HS2Yd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T02:36:31.100Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 02:36:33
+0XBZQAVsE_34hXXA57b36m-QDiVqS4DU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:59.051Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:00
+Uwg_8VlhXRXAVXYV-84WcdHmStABYxTR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:59.283Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:00
+_rzozGetzcaswhL38ed9gu_o2EWxHcTb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:59.518Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:00
+Y7XUCbFkL0dQZe5FQf-9IVcF-t2uYXCR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:03.315Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:04
+tODt-kC8AgyDj_VnI_n5mNpIEIlvMscR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T01:48:24.749Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":8,"user":{"id":8,"email":"dferram8@gmail.com","nombre":"Fernando Ramírez","apellido":"","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-03-01 05:33:24
 bkxqr1RIp_TsNG5xL_MxbEaMpBln5B1I	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T17:57:30.406Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 17:58:19
+RbzNRw8qrSngel6pG5_-fZCa8Uib1yvO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T06:36:57.818Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 06:37:30
+l3d8WUi6lpkw9VK2aJBQkT3Ug-0e4YKh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:00.927Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:01
+BAOMZIJtwsaGUMWZZdLUmNTeQgnKBuIf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:01.331Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:02
+nPhYcQlrPjf8-0nAr9BCjRUlMtlP1uz_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:01.532Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:02
+TjIQ0HozcULz7mAIvhZsmxT93RnabpZX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:01.750Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:02
+lnBPN4vV2LKtfTv6C52rP81h5p_KjMjb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:01.984Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:02
+1UrNgiGun0yTfgf-a9nxGzrkryXGzmI-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:02.179Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:03
+9iEq3lSmvuyR3JPCEUdakLErYO5rBH7q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:02.383Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:03
 fnVu1zt2iPmX69Cwp26jj9X7aBY23yNS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T17:58:22.341Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 17:58:23
 sNyGa2fMW7YFG-wb0ASsOhSp543cykVk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T17:58:22.968Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 17:58:23
 VH7s9qem_2ZNoLHiKAfLZCyGVGTUcBCG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:54:28.681Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:54:29
@@ -11170,8 +11678,17 @@ gca2UNZsCvVJRcDN1cWLjTa9Iil8hg-K	{"cookie":{"originalMaxAge":604800000,"expires"
 YALOZ0aQiez_5jWPhD7rcsWG30uasmSi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T18:33:20.038Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:33:21
 sN4cC0QuqNS4UDLH0A3LzneSloj2fzrR	{"cookie":{"originalMaxAge":604799993,"expires":"2026-02-27T18:33:25.293Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:33:26
 fd8wAutFSwhbdMP7EDoisItieNU-pQKr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T18:33:30.526Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:33:31
+6QljoROSb1Tgb01lO5ZV1-Hxfi4nRDTT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T19:59:43.357Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 19:59:44
+VHFssn6hQp8V39L_NsEZJkjltqSf5DSC	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-27T19:59:48.626Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 19:59:49
+6pbSd9lbND29_UmxdhCbdpBtlParZz5s	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T19:59:53.874Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 19:59:54
 Ddte2_6j2JH1wyPV53OICc3C76jTd5kZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T18:36:22.352Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 18:36:23
 pxvYtJHt9D1MwkGhl8gUBFj3v-oPfb2c	{"cookie":{"originalMaxAge":604799990,"expires":"2026-02-25T23:54:34.351Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:54:35
+730KX93gXkpyTXqtl2CgnHaYyigQE-83	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T19:59:59.165Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:00:00
+PqHBobyVpTvfHp-VAmrqY2u9R9lSKSHQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:05:51.372Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:05:52
+shB2u6qB5TzYr5M1Au1U58oTBUZ8h_Jo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T22:45:37.582Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 22:45:39
+Sw4t8M5gkMjJVxMhMJS5-tL-JOikdnCP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T19:23:46.113Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 19:23:47
+5ujWaLlmS7gKAnx7lFLAbgKJiOqyS-dr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T19:23:47.599Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 19:23:48
+MsyyKZfYMkWfctxN9_WnHBK7J3zAc9IG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T19:23:47.761Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 19:23:48
 UN1GUb3aTQpWUJ8FD0sY9pJlyWn97syN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:54:40.026Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:54:41
 JjiFpVRMbE-oXfFPYaTBmgubk2az6i1T	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:54:45.544Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:54:46
 R38RwUPCS1ZbCEybKKNOVyEaUSpKj4pq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:54:51.333Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:54:52
@@ -11181,7 +11698,10 @@ flwh0NK6IGIr9ACj-kCO7NjnAuTfFSp1	{"cookie":{"originalMaxAge":604800000,"expires"
 2KWw7SCuUcWlFWee_YrtY_gdcSvff7eB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:55:14.461Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:55:15
 EF_Bh5N9d5c8949FylPBPXdColNxTnxR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:55:19.901Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:55:20
 pakx_eKBFaE1nzs2dU5rHpNnvaKw3wMX	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-25T23:55:25.433Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:55:26
+HEPsoEd31QOFhyJgk3ebp0PWKzYxLon6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:26:48.675Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:26:49
 o5ENrlsNN8T6dDVcSeE0UNGtWxje_q4_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:55:30.990Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:55:31
+fZLYeVV8zoPjrBU4EYF7KTkFyNYC3d7h	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:38:30.943Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:38:31
+em-0xKpG_w1gXzzDSJ_e7oCbqVZpZobV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:38:44.752Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:38:45
 G3MsyT4RYz1ZDVQxQwpsE0OAMs1MJvgO	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-27T11:31:14.333Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 11:31:46
 ENLqDhpO_GcuBXlNW1EEuyCUhIj0wRYT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:01:13.577Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:01:14
 9O8avbXJgyNmgWTnLdP79LjZsOQ1pSGA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:01:19.129Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:01:20
@@ -11198,45 +11718,131 @@ wjh8UfQyDmOBUj2pXRp0rBbLtXSLCHoa	{"cookie":{"originalMaxAge":604800000,"expires"
 FNt07cVFeiYRzhiET-_CrmxuNqmAWb9A	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:02:08.345Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:02:09
 3GZJ4xiOgMDz3pye09Rzp_qvz0UOcvB_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T18:35:44.593Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:35:45
 e8WItXpdIfUyU2wc9O7bMlIwTx0JkyOf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T18:35:58.514Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 18:35:59
+XrX0Qhu8fvDCRQQymtAodFUHySY9J-b5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:00:16.022Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:00:17
 jZ27jvyMw1cxRwpMBFBJsK24CtkQTWZ0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T23:58:29.285Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 23:58:30
+hf-6Ah9sOb0-cvbS3l-Emsf-aLkn40Se	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:19:45.948Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:19:46
 aXSaAO5n8KFq-1B3vznXzODmDL500hAE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:02:14.026Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:02:15
 Cu8qD6LF_BW82Av4Xe9XQKV2JZWN9rBd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:02:19.666Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:02:20
+RQTC6IjJtV626EP_tUe_SKANWzijobJY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T20:34:25.411Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 20:34:26
+IQbzlRTwwcz4kT8ZUHFpQ9gotWdsN4LS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:28:07.837Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:28:08
+lB6Mu5cZS-TlzWoEMH_6FmCujt_Ix27p	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:28:08.401Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:28:09
+PeCabhE3Xxvo5j-zBcFjztbgq5qgLBXI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:41:44.471Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:41:45
 G_RDWcdo_CM8Xpi8R1Ck7Gwvs0unyNch	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:02:25.247Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:02:26
 PkNmVOUVrFtsZBotT_JJNqqzcG0q_OmX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:02:31.327Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:02:32
 126YPOKmcqrvMvYuSmF5wULWQPySmHUy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:02:36.951Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:02:37
-92sceHHZzNvhlbfFbvvBmJ2wNx0U6loq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T19:34:07.895Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 19:34:12
-w7ChBqZadivxo7QJUGRpkM5FS_E88oI7	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-23T15:33:46.030Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 15:33:47
-iB-BoTfmvGW10DwWZLToyAFITBGnuZlP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T15:33:46.812Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 15:33:47
+uBo6cwuZPdXfsTYDvNGnqdOpTIE65IgJ	{"cookie":{"originalMaxAge":604799999,"expires":"2026-03-01T13:41:31.570Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 13:41:32
+dgYv2Jp2dv7iL0JJ4pkamg_fSeYH5llj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:13.442Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:14
+ED-WGdzqX6K_A_amg3zXV075G-xWI6fE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:13.954Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:14
+da4ZnCKJCGa6lVKurfWsxFXRSwVBNar9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:14.234Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:15
+dgYojunVUQMhdITyPL736Z9CEX7GMI6H	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T05:51:17.662Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 05:51:21
+vJXaEOULPLaU7-_qXTSLhUjJpQtsNTN2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:03.908Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:04
+pwM15xrNys9_34EOThRnja4IAY_1Y8a4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:04.262Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:05
 Rf9bC20i7cHFF71RT8NED1GEYXKKKnAo	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-25T18:49:02.058Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 18:49:03
 NzQbcB2yHasMj02QNp3dm41J0ZBesO1C	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:04:29.186Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:04:30
 58sW9JBxvbsOAMHvDiwq73g1G-0Ho8jh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:04:42.932Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:04:43
 GX0SmZWL0MxFWnSPdwYnlY6-vhORmEpo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T00:54:09.185Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 00:54:10
 NNq_rOrBphQEBLyzb4pnQmpMlQC9oF0W	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-25T18:59:26.901Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 18:59:27
 3_Uwm-cVC64SWnP3LTYY74zZqawBInaO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T16:26:09.893Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 16:26:10
-CWflx6X2sm9CcudYK94VMfgiLnBKlwhc	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-23T21:36:20.947Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 21:36:23
+8b5UrC6i_FbqPTnEQeXxcwUB0uLjDDxF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:04.421Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:05
 NyHVk9MXVC3zkeEsnWM02s5qjkxP5lvN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T18:59:30.630Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 18:59:31
 ORiU9JtYkUEQqOWMdlSacMVLt907gbFn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T18:59:34.772Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 18:59:35
 w1ZQS96LYn5w_j9xYwJL4YqaudxlWegm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T16:26:11.071Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 16:26:12
-h0wKiCXiN8miWoNAhg-oqt0q0BJXMbuh	{"cookie":{"originalMaxAge":604799994,"expires":"2026-02-21T20:19:37.660Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 20:19:38
-NdZ2LncS6gvVlrOpfIJ94_4wLh6-MUiv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T20:19:39.120Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 20:19:40
-E0kvNAQOay4dgrmY7Bae-itEVXkqrDzO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T16:00:47.711Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 16:00:48
+RhJ64YNNrqN03IhVwZcRbDm9A0sTAbkY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:00:53.097Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:00:54
+oEYl4zDmIyYvKdq1v9d18YR86V7fDN5U	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T22:52:04.092Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 22:52:05
+LUXQKTMxlDG7oWcqFo28-DonWWMauyv4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:30:07.007Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:30:08
+KDoX3ZVApwug_68T3uX1ILyQszovgW7b	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T20:42:47.261Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 20:42:48
+JD-C2r8pgBIZLw7dRE4Lc-VRz3Vy-2yi	{"cookie":{"originalMaxAge":604799999,"expires":"2026-03-01T03:35:44.177Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:35:45
+t-Z1tuFgVSZRLeg7l9_AV_3mJU0oC1CA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:35:49.366Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:35:50
+-Kop-phMh830X3HQhbJwaVGe-T_ZlVyS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:35:54.610Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:35:55
+g4fV4emKMDGlTPfg5UfYRo_DLIuIFjU1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:35:59.828Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:36:00
+qD_mrDgl3WIvx27Cubfys8tePdVhkUN1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:36:05.747Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:36:06
+TGj-mLGAjqdNkw2DjsRPvhgxgbBaVKs-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:36:11.072Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:36:12
+ChffUy4I6NGdbVcYz7X7AmX4s4BA6qbg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:36:16.332Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:36:17
+c5ey3TEEl-nDKLIFOL-B8g3_OMe3joFG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:36:21.618Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:36:22
+cUV5ktatANbYJ4SFnAW_sQFWiN-ZcBRy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:36:26.866Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:36:27
+IhRXQv9OxwuJKBBKX7KFFQx5uER7l8yI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:36:32.184Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:36:33
+aoduQI9FmHhZjIA_SD8y2_-GqDFGdvvM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:36:37.412Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:36:38
+ut_sHvCOSImUSayWX6lBP6CB7sWMWgIO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:36:42.633Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:36:43
+YuhoK-UwGadeuLmFwV9bbZrQHBgbFjug	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:36:47.951Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:36:48
+qK3pELCZtfVv5iZ0ddwQhJCS7G7TFboe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:47:28.175Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:47:29
+a8JHL59HfxBVTTq-xcHZnRFjeACDyvhe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:47:33.540Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:47:34
+Gll_FEAJmiddq9x1cOHfyYT47645bM9y	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:04.724Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:05
+ieQOdF-CluACqpot5882s33rNp4F6RcO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:47:38.846Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:47:39
+8QHzk6X-rouhLrZ8gXndd1L2S5K3OO4d	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T06:09:08.823Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 06:09:09
+cf57yib7Uz0IDDtwFYKs8B0jBVsB9Lsv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T14:44:58.702Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 14:44:59
+f6uLwT_eCB1xdxQxUudldKbYLHjk5K5O	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:14.528Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:15
+vxUJTSRU6hfkuD1WCLo5tVRVP3ne8iSq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:14.823Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:15
 9GoQCBYN5LGviTGJTLB-XZKwegG5IIdT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T18:59:59.205Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 19:00:00
-joAKGL-EYy5GrsZIjunZ9rYR4gNUBpd1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T22:34:30.205Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 22:34:31
-_H9ciMSD5On9MV8TbmyUYcPI4IfHX4Ce	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T22:34:33.990Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 22:34:34
+5UWsp3xtnAn06c4CKjMK6FtWvEX2IMVW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:05.349Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:06
+XyffG_wzcTw4GCIGhM1K2XIW2AD-Y75c	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:05.600Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:06
 X4EgyF1w43Mhw1hEGhOEMShdiD2ZCsKF	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T18:17:32.699Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:17:33
 muzVU5KrvM2yyh_xen7kynR03F34UzAg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T18:59:59.389Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 19:00:00
 5IH92LY8iKpeazK5EmbzXG1XuM2wMA7_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T00:57:20.569Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 00:57:21
-eCS4UOQqMZ7KnkhG6ycSfUR48XtuDokU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T21:13:34.199Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 21:13:35
-ErY135mhfxLtcX-pt91hr1BeBS8xgy6g	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T17:01:14.993Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 17:01:15
-R_QD75ACkbJ6vTZvH4zk7D2CURJHE0Pr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T17:01:17.661Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 17:02:24
-Ab580jPh3Xp20nxZAAeiSbrRR-VrnORn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T22:40:26.747Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 22:40:27
+1XiRBoDM-JfON-7Ah8cRlyQSdoIDHoll	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:01:08.296Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:01:09
+xo06ZAUrWdMusdu26KdUC93YGKgoRAKf	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-27T22:52:04.112Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 22:52:05
+ov5vh9ruwMwMRQIMEao4NDh0MM0WmlFs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:40:55.349Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:40:56
+1SD0_bCE_pctBxHvt6pSosjg9Dy1zFey	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T22:04:09.743Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 22:04:10
+PEFomaR28g94AceIj-O-BIWyCmJJsqFu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:39:14.517Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:39:15
+z4FI61WRBmAel4ZslSVTRqVZLjF1Y8Yw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:39:27.671Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:39:28
+z9q2Kzxek5zjtPLgQdaLI4_PjrHe6M8A	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:47:44.164Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:47:45
+hQLzYRKrb_5c5TCR5oocpfK1jkYEaav7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:47:49.743Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:47:50
+WL_uRTqt9Qw00OH6QfdR8kSKCQ7dJSHG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:05.870Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:06
+MAIqGm-1leEP4kmEaaLD2ja-aTIaI46k	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:47:55.155Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:47:56
+4KCe19tKSYDWEyMD4OCHLQ5DCF4U7Ban	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:48:00.378Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:48:01
+HOsZoDrI0w5PHTAIIyDDD7yVx2WeaNfp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:48:05.947Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:48:06
+Y1crFZk2UhzRY8XmygEqFXcJXcxI_4y8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:48:11.357Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:48:12
+gcP8rGiPOUmWEaIJt2WOCUzWAE-HuzsN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:48:16.603Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:48:17
+P7ivOCmEr_aeQvCdKtqNxxPJ9JSAeRjn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:48:21.901Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:48:22
+EmRUWWr-B_dzEoHFp6kzvr6fQtKEBVyu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:48:27.296Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:48:28
+JVzpprf3YKcBkQNyoZiVKXeZzYP6rj-N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:48:32.656Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:48:33
+mwrQ6NDQTriCMMrckSTq3Bait6PBbm8w	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T06:17:56.758Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 06:17:57
+IqTESjQF1CYnAbtcafUyUFcuuVPb8Y_4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:40:59.455Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:00
+MHHybgCKntBYBTtfhFiKkl7F8_S9o5oe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:40:59.962Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:00
+hJu5t-y2IozSksl0CaY85N6j_04ZEX4p	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:00.198Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:01
+oqhKivBuQF9nV9jaRW_G4jvomiVmFZ98	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:00.433Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:01
+u7HBY4ZoQho0PE2U5I-i-InK1twwGRxC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:00.673Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:01
+odD7gNdDxyvxz33amhfWs7PvIJGm6fjp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:00.913Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:01
+6vJYlVDW5uC45op4_gLtOgyQYiv-WB8v	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:01.201Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:02
+AV0ZvY5GV5w-3X5SMxS86OG3D0EeBMHk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:01.454Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:02
+YQGcYBOGqiXYvb1SEBjQR6ee9VSUl_34	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:01.693Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:02
+JHsxG82UJxJ8e7ojqcTB6oK6FZ4DBDyD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:01.926Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:02
+aog5_8Qj0WjgivdrT5DKPzKoFvxbudOm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:05.910Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:06
+qwIhU-b8wPaq4rzIMhRf8XCDQaosLyod	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T21:11:43.581Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 21:12:59
+1qjXTvncBApP7LqW8sTflqlX6yHWvDSN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:06.229Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:07
 bQVnnXoD5ye5Al9LCB-WA4eIdZylVMn0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:17:32.719Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:17:33
 YX3DUxR15Ibv0tHn5G22h6WPuxPArMrc	{"cookie":{"originalMaxAge":604799990,"expires":"2026-02-25T19:12:16.101Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 19:12:17
 PtlXWizx8oVpDYp2QcSSAAs-QhTzzrKK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T00:58:10.081Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 00:58:11
+xCDPWQWxZIenQSgPMko9YOgn-5t3oEAb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:24:40.216Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:24:41
+qfF--zq_rzSMfPyVGAFUChbp8CnwVBWP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:02.171Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:03
+DigMZ-5JDedwV8B6P28G35onk45kpE3p	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T22:11:41.607Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 22:11:43
+JqCffFnnLuPip_4Frco4_aPXtLHcrNa5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:02.409Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:03
+8Yx1bRWyEiqGm1HgkEfSVr-fPuKERr-A	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:02.644Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:03
+a3XX-rruGVKQbQtMZ7PbiyI-Sp8AQrzU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:02.888Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:03
+prw0XrCgVuH2FszWLtGgxUHUVMQEb61N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:03.125Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:04
 92nF81mrAhwmDGhA5yghCITmd4HAK5Ay	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T17:44:34.548Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 17:44:37
-QSBApGxywcyebCqicdCLRRygihe6ag3f	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T21:57:02.542Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 21:57:03
-hd-F55leXqR3KuB_Q4jqR7B2lkxWIcyh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T17:03:25.257Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 17:03:26
-RI1EXfkUvbmDiBLZaxZQPBssFyxpslct	{"cookie":{"originalMaxAge":604799988,"expires":"2026-02-23T23:11:42.544Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 23:11:43
+ROVB6qGdZFIeUTnquyNpw81sEcjTU4t-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:03.381Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:04
+Uxb3rhk8PzAgXu9Zhe6H10hXYFN0010D	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:03.636Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:04
+6GiaGb1r9-mswqqVNzWms7lBFeSDZRgn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:49:55.512Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:49:56
+18FbaBpYjCm38z1Ae4DcGqybImCcsYxJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:03.873Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:04
+Zj5MSzur83C_Y14I6-xmYjr5vcPym-Pf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:04.116Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:05
+0YEfe2ZarFlSKKviLlmp67cOSXazd0jK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:04.362Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:05
+vhAtt22sqH7733H1MHstlR5bEIiGNG2x	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:04.607Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:05
+1Rhj0vG-h9hwTZqARRdEznj9uv3D-Xw4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:04.843Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:05
+fDv3nE1YFy9qtipglX5T3pMD1o99t2hY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:05.091Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:06
+ao9P6C03EWdHqSAl3byG_u4NADpbeemj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:05.328Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:06
+pFgbk4xaYt2dzvzcFLvek3dF6VJ8avUY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:24:40.768Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:24:47
+6N2ljApt2t3SUHKRPjK3h3v-S_LuNuIf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:05.575Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:06
+lINGssFXGep1eH_qyqUcRtZU55pBF0vZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:05.817Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:06
+Hp_cWyXg2juskZSHFF1DPj_1IvQ5SBhh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:06.696Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:07
+OYvfOHR85qds6ISmx6y_Tt-URdR6aJ_N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:50:35.678Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:50:36
+7KzYYnqWyFgh5ywMXU4HnKvpC1Tm_z1Z	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:50:41.018Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:50:42
+kAFeUgRgbJ828DxmxjyyjD20xO-qQn-F	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:50:46.275Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:50:47
+ksozqLQeDHgJH3-ThE3mpUCCNcUHtj4K	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:50:51.542Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:50:52
+pO-BsJfmChQd4vpnRr7nFbg4AXNFMKEx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:50:56.907Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:50:57
+bGiK1o3N0t7WtfG1557iefDq76bDvluI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T06:45:14.776Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 06:45:19
+LA_wt35uDE_ZRumAbfS8y2eD9MPbGd2S	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:51:14.849Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:51:15
+zWlxDceaBue-ldsYlP7sdpitSz8hE01i	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:51:33.317Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:51:34
+SeMqis1MeZ9se4vy-_MgYvCiONM0xiAH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:06.808Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:07
 _NkIobcJTUlIQP7w-uUi8h2zHY9zjo81	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:18:51.994Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:18:52
 Xc13wkuHkT5cD0Vd4BQNuEIDlbycgjpv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:18:52.226Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:18:53
 M3RlQOpvXzIVT-ewX_fDGaPLRJsjZNj7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:18:52.389Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:18:53
@@ -11244,20 +11850,45 @@ UNXNOLm07iNtFuwh3ABkjPRkrTJrped5	{"cookie":{"originalMaxAge":604800000,"expires"
 mXN6nMO8gkVeRUgYuvfe8p2oyqKS-HmL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:18:52.762Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:18:53
 D6bwPyiP1oFatTWTITfLtxgg1auqAohc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:03:54.900Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:03:55
 SZtVyAE1aFDcooaD8DTBY1_SBdNL2GCe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T23:46:54.707Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 23:46:55
-kiliqYy1RvEfsamShm97OstlSNR8rsjp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T21:57:02.550Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 21:57:03
-hQ5Ffkeet0QnX_gTru3vmnTOtcvL2Oeo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T17:24:11.100Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 17:24:12
+Acpn1xlXen8NXVK-SPTsdXaEMajTRPF5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:32:44.878Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:32:45
+qaaNrtUSy7Jf0uUz04LHbKNtf1-4JUrX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:07.005Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:08
+xa4f0z_DFFjU-0od9VXVJ0sKb2-ZaPJf	{"cookie":{"originalMaxAge":604799992,"expires":"2026-02-28T00:11:09.686Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:11:10
+sMUdgxG22WuyqcASO9HdU54NKjdshHN3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:11:14.963Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:11:15
+-Gh2GIEzTwGzWstDfEyvUjORgHDLPBzs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:51:02.424Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:51:03
+hJITnWI2LtK9lAUV6klNCGK8gwOxkfM_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:07.341Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:08
 GFVTgpqPmY0HD5eQDDXcppBgoDebiMcO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:18:52.926Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:18:53
 CdtOuTXNUoK0LZ4iqSSNL3iE4RBcxapk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:18:53.088Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:18:54
 ILSUAl1o3FJPIadxQ-qWZ4NxQ9t9_eRG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:18:53.261Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:18:54
 RKz9aF0NgMMSCEnt6qpunotJ2xY3-p2C	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T20:14:07.667Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 20:14:08
-FbiIJacyF2XIU83sP3XHvQoCXtBw8Q0G	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T17:45:42.188Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 17:45:45
+eP83uyMGjaa0hUGlk22_IcjU78uvsGVZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:11:20.209Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:11:21
+Q58PXFz4ffHwE7cyq7gLh6lDQpfa7-nt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:11:25.440Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:11:26
+ncIHFDDOTEFkgghKVOwUpwhK56cdftV2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:11:30.617Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:11:31
+SIlkYFPkpxaDcZyEw5CpjH8UbKhE3XOP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:11:35.925Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:11:36
+aMT1cgIpr35wfZBrSdGz4XtNVhh_33qj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:11:43.256Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:11:44
+7rwDAljYtmi7GzPeSdcgE4Gq5hk4lEMD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:11:48.484Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:11:49
+pY3JlYW5FzedgrfdwZnnQbS03MGUrh2z	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:11:53.672Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:11:54
+mbKzc0csSiSbZkoCZ5cT1-SHwtBZdnPA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:11:58.871Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:11:59
+1yYKXy_QGx1_4lMZXbmgTCKFZQa1VGqK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:12:04.192Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:12:05
+xVoPPsA2iDY3W9VaOMgCWkA18TvdBg-u	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:54:11.460Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:54:12
+bL0TqBWin_Yu5rdI8pEAhvPHA3s-5hef	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:54:16.762Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:54:17
+6GKMieJv1zjYjmYApkiw2gsSMXTdA7s8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:54:22.145Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:54:23
+gBuUch439Hxmeqd2F7-uPgvhdNe6Queb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:54:27.535Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:54:28
+bsAvEnQifRyo0GutCLfuYGyiBrGwz2TP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:32:45.271Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:32:59
+KaicC_hSxCY25ncIdkUKnQrQ4GCqx2Sf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:54:32.866Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:54:33
+PJMhYsD68QtJR72FzB9VViDWRmuerDuU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:54:38.156Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:54:39
 J5t66bkQTVpFylVwLx5pk4YKR9hBWy-N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T20:14:08.284Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 20:14:29
-W5jMd0Jn6UXWfw8CKCUxDbysxNz5-b3o	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T23:11:42.562Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 23:11:43
+n6XjYwk6E_YrXQyskIjWT7W6i9Icp1zM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:07.402Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:08
 J3vOKrPqo9jalD1AKIFBbTpq7z34X6Co	{"cookie":{"originalMaxAge":604799992,"expires":"2026-02-24T18:43:46.741Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:43:47
 AqyX_fburFa6h4T0bY7ic2Ais6OZupuE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:43:54.577Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:43:55
 KuzZOhKJBH3vOyggpwR0byOwOz9y_lzt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:44:02.926Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:44:03
+1YfVJ0lTvpRQXqxQ3vM-uS5D_s4plIav	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:45:50.156Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 20:45:51
+7-hNhUX36dLCr7n-a7kCBGnXJKY4MXGR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:12:09.463Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:12:10
 dIBIY5hT90uv2VGmmgdouwYcvUVACEYP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:44:10.019Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:44:11
-K3ZDTloFsTE87lcrihRiHcRT__W4HSZw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T22:37:20.681Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 22:37:21
+YX1A7ao4XI64Qwk85EkLX64vvjB-_7il	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:12:14.738Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:12:15
+HS6ovUAfX5a0ir3o5fk013tYv3FK9d6v	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:12:19.955Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:12:20
+kzI97hDNqsYV9PxoUYkCpIWKCoqDhpF7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:12:25.283Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:12:26
+A_BZAu2l3Ce8LtXdB6R__GUqZsD0UbYD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:51:07.810Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:51:08
+zRw-zKfi__aB-WF2VmtDFsYuqjZFotqx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:12:30.493Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:12:31
 qyxc8Zw712WGbEw7EjG55bX8PfHkANn6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:44:16.576Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:44:17
 2kVz50I-gSKtqPIDKz_4GxHsQ0nNTCet	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:44:22.759Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:44:23
 anYszo85O_HtXCbzrnG1uw8tkgjZhK8j	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:44:30.237Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:44:31
@@ -11265,54 +11896,253 @@ RTbmwOyMoMLaVKCTWF-OYpzITz_R7JP5	{"cookie":{"originalMaxAge":604800000,"expires"
 z0LCov1-jYuMWRYUOSpgYCV2QDH3fz_h	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:44:43.045Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:44:44
 YFZRYyk8V8SPXS9NauAiXyg4EuTAJsQh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:44:48.613Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:44:49
 PFcjdKv_0wFQy311zN4SeRMYRWrD2wH9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T21:18:32.132Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 21:18:33
-wgiw3u-3jfSnaTjfNg74qqlBsiorGxOT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T18:33:25.863Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 18:34:00
-OvtQ5ZfShgctFgkwuiKyPQicSZGhCy0k	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T23:13:00.095Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 23:13:01
+DhsMT_dlGN-UWHtvZ0GpaJ2nuqha1XM3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:12:35.741Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:12:36
+0ckVW-udlZyXDJ07ThgJ358By1yN6wN5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:12:40.939Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:12:41
+Nz7_8a5fmN7nbl6a8h1WLpd--fG0tjjd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:12:46.217Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:12:47
+5NvFt4Glbi6GL_Az0eDxxg4lynVsh_BP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:54:43.569Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:54:44
+vfzvOrgkWUTTWg5LeytjnhnJB7mdY7x2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:54:48.855Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:54:49
+FZIllPw3D6AOGLrEKq9LxbCr069TbEua	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:54:54.218Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:54:55
+PFhYeJimZBbwWp0qxpSypA4mTT170TpX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:54:59.777Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:55:00
+QHOALcHbUbpHrd82V7NIDNPtpqSn_1Jd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:55:05.167Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:55:06
+NcPTqS6iBURxBPtkMVGLEd8X6lPbyVwW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:55:10.543Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:55:11
+XfiGxd1BnB4t9jOj63ntKLgQP1VX_ynx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T22:30:02.583Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 22:30:03
+KrwWaiu6S9tmRWCGli0BDSuG09noJo1q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:51:13.061Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:51:14
+UIuA_XB0xGvsrYSOdRHPLi2Ym2qEIaom	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:51:18.282Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:51:19
+jFKs0ZZXAqj0Civnvw_l0xLd7VcmKUu5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:51:23.502Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:51:24
+BvUR8okq42UsNHMHJ4d14Jd9ZGzqVHNz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:51:28.752Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:51:29
+Z3QCSVUgoEndiVN5vZIsX-cqiJ89MVNK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T21:18:31.074Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 21:18:32
+vDuMH7QJUJ_8GCZNxVbAWhHgCRiMjOuB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T22:30:03.237Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 22:30:10
+rsg4WTCOZtK5_v3ZP2p6rYv_dEXdwpdi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:07.694Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:08
 LMssTgyhBBrKJSSmXoT6bkJ9JH5MGcWm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:46:31.988Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:46:32
+d0KOas1URNd1l8csF0e1NadLrb9k_KNA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:14:35.016Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:14:36
+fjpY1OD88l7_mXDKvMeOoraVPZvZcN0j	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:14:47.050Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:14:48
+z4agtrAXeUoh0WiemZILK30BzVnj6RUw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:58:06.186Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:58:07
+goeyagZPK0auvQVivY2YZlbcbJt0sSkg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T20:52:38.699Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 21:18:45
+KBfSCtYgETd7kCISIU5IGPKC6I4LiC3u	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:58:19.928Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:58:20
 ixhEDwH2Rr7qbqwk6nHJ_ZlFYDYDFJfG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T18:46:48.056Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 18:46:49
+bh4Fg-Kyo0wwOUmfE_1NhWNUFZz2u-Lf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T22:35:09.917Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 22:35:10
+omJYHtQg2v2rsA7meeyIuznYX_BB1J1k	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:51:34.008Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:51:35
+6X704zlnGD9eDsNtoQc8eprEWR2WjaTX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:51:39.780Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:51:40
+NDIAtCYXSqeTNJDzoGkvsqPROiStKUjp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:53:52.361Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:53:53
+d7hCUOI4pmE6yEnxpcJd9tcKKy3EWeFE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:06.067Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:07
+eEM8iPNGjHoYrlRiYxoaHmeQ2lCwPvmB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T06:59:45.066Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 06:59:46
+pHcWXHM6Jfu9Z0c3Rjrf6BwzX65duZTz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:06.318Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:07
+41g4WOu2Z_6oY4JPyGEgs6W9PqlmUwSG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:06.592Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:07
+RndJef0u0WXqoMNz3KCv340DgPXB2Pnn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:06.831Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:07
+EyX_rC9ZfDIWYvVXJahGZOJESrqGZ8mX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:07.072Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:08
+V3cn_GBwAGDauArWMqhXPBKnPu2qbVvH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:07.302Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:08
+nMB481SA8MUdpBV9n6jkc5m7RYoR6Vhv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:07.537Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:08
+fmSDULUMwmSd8H_Ti2YSJb6kaSoq7tf4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:07.779Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:08
+UNELrijzdSrAwRC8AYWgzXJ-WITrYQ03	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T15:41:08.029Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 15:41:09
+mGerMinYox0vf-5yOBcmOM5i9r2apwLm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:15.098Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:16
+7sBYZs3O4LzC5cxi65xw8iooe7vwzfZH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:15.365Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:16
+MmrreXil96tRJmmTNgFm4EXyiUId6yTr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:15.649Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:16
+znyT3cZnvq_Vw8A67CVfQSMYqsVhSP1z	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:02.584Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:03
+e6PiERQsbO1aqzA-AxfBXKye_iD2dbHx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:02.782Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:03
+w21PLiuGgZUtfGILxm2fluHn32GaFr_L	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:02.997Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:03
+vHvwGyROzdFZqSp9KVZIgZs1roBFQpBH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:03.189Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:04
+V8lWRZ8I8fBnC0Ue3y9IMVNmPBnvCctT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:03.384Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:04
+F5VIvZcs67QQlr-xa71OryMGS5_oGqHW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:03.590Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:04
+q9PF8uMol_K-If41inZZoqhCFvybIOUy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:03.790Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:04
+OSnR_x514_KzgfVWaCdK7u7NIYeZryLP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:04.001Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:05
+jLzzyz8M_OuIVWGSI5U5HvvDPmsIK07c	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:04.199Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:05
+_RXuQPsuIJpbRannZfpA042_08pwNt12	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:04.400Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:05
 h8er3kv2JxdzkLC5RVysvQ7wlOnSyf2s	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T19:21:55.483Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 19:21:56
 v7b2JI7LQjwS_GLebex38PBbqKyQK7HP	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T19:21:55.725Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 19:21:56
-OsJ5TtSGnxV36nVAwQr52rkhsYnpzCvW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T23:24:23.330Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 23:24:24
-EtA-H2C1XUypEiVySUl05ZGxVV51_hl0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T23:48:16.302Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 23:48:17
+0Bz4BaUrn-XQRdQrDAhfdjDr3VuEYppf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:36:39.385Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:36:40
+kuoCWw1dkHksr88KmBhnPXlMKRgadumv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T00:36:49.587Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 00:36:50
+4EBesPxLDVUsXU1d1HumdiIIK9zXNkkO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T04:59:25.277Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 04:59:26
+u2Kxdn_HhCvTppWs9PhHBbjwYYm-I6Cm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T22:42:37.850Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 22:42:38
+FyIRK0mhQ0sXHjGZ6jFttIPZiY5EHRnU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:53:28.013Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:53:29
+PCAWza5drHAmIjC1-0y2WRKqUdSlCWZk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:53:57.660Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:53:58
+FehkqCT91E_SV_F2m_qPUpHiuFETT9By	{"cookie":{"originalMaxAge":604799960,"expires":"2026-03-01T04:54:03.128Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:54:04
+5cNlnP66SG5o8a7XRE3C43CdgfV5AhDF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:54:09.095Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:54:10
+D7500J65QulujcZRb5koGoCGJuSYTdpZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:54:14.406Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:54:15
+bKHcfVrJ-1VrSzI8uuwddcZmnLeDDuSQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:54:19.893Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:54:20
+_ggRywU4I5P-iG9fc88Dp-lDmKMHGnEX	{"cookie":{"originalMaxAge":604799999,"expires":"2026-03-01T04:54:25.414Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:54:26
+BKvZ5FUYobpH19en4GPp1snEsymCRMxe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:54:30.772Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:54:31
+WtM8e1G2l2fo2L7cJpb_eL7jUfwLufOi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:54:36.237Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:54:37
+WaHITzzRAZA1LEtFKKtH3DkC-0E3ARtK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:54:41.620Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:54:42
+eyz-_BXnTAulc6_ZULF2sPTkD9h9HKGX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T07:24:05.536Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 07:24:06
+FcZhizULUMS_150l-j6VIkkCNu57fvfV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T16:34:31.016Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 16:34:32
+A6StBf-No83Kdx-CBwRwAj4I5R9B8OEr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:15.985Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:16
+mSaNRbjh-GEocMB7gCqEubPmMMrh7mvj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:16.261Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:17
+bVGsIoFjYm2yGFWUuJp4dFVpABa2k143	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:16.538Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:17
+saalJmXA4M3UUrwtPUB5SZZHGfdJKgtP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:16.841Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:17
+E_c8uoK0gfkDYcjM1nlUR1azc3zDnJch	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:17.118Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:18
+lzpwjSTPzbmQfEFV1GBOoJ1He9V_KUll	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:17.385Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:18
+HQoXuR7QiNhb1F2M3WaMe6qh5FGCITK7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:17.650Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:18
+W45Wv68zgeg6zMcubfgT_8JPoSuq0fhe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:17.918Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:18
+pEYU5SCuyFlqs9VfqN4rDXPFo-ab_a9R	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:18.186Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:19
+96SGiFN96xpc5aOi3zSwqWlGnv1gFeab	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:18.457Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:19
+3dGppkf_45uYW0AEirQz1WnGDnjlWG4u	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:18.725Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:19
+3osxMwla3aryi3oyKGSiC9LQhMdZcjnS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:07.922Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:08
+Gq30a-S0-FxnknRjm45bS7ydMy7Y7uye	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:19.001Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:20
+wLUCk9G9sTy6DXH1mhkVu6aa0pU5qRDU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:19.263Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:20
+VpQwX2dCsxpkHnDnxQ2ZAtBbw2Tj-_S2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:19.530Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:20
+k3-mUpnbY3SRYOVTCgm7I5n9qpBUIAXC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T07:24:06.100Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 07:25:57
+gXbX_hu5djlapasZ6_QHPu8feZCpOG4G	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:08.073Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:09
 dLTtDxVREsphhxqUDplS6I88DknXYvry	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T19:41:18.471Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 19:41:19
-Dynii2Tz7aXI1iumPisYjcWMrJhKEmlV	{"cookie":{"originalMaxAge":604799992,"expires":"2026-02-21T22:37:20.682Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 22:37:21
-x2b3Al5DSY0YqElazpUOWw2ubk9Zi1Oz	{"cookie":{"originalMaxAge":604799992,"expires":"2026-02-23T23:48:16.316Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 23:48:17
+xaw96wGI-5NAhAGt_SufEmrwkRa2l7Zg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T01:06:48.856Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 01:06:49
+8i42lIh96rZDhravPASgFHAKE8IAW07X	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T05:09:10.187Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 05:09:11
+iHMKjIDUOXLtRFf3AYKyyYw3LXhPZUEW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T22:48:54.331Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 22:48:55
+P-mqE1Poimbm6hH-r5kY880Q9UA4g_x9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:54:28.835Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:54:29
+9eug_aYjOqtBGtvGsZW541joimpfcIE9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T03:54:57.279Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 03:54:58
+9X8g8KI32MZlG28d1huaLzhLlK7a2AeY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:54:53.302Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:54:54
+jihxeUJsUH_058UfuP-vJJDFsSE2eNTw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T16:41:05.942Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 16:41:06
+YnA2luf3x3NT8tnehQ1pWPPdzO2U3IG7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:19.811Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:20
+iE4j5aeCRa8a7YJJNjHHubUjN0yM7BwL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:20.078Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:21
+EqMjrlXZWWOwnlNWGyyuYwZ40dz9Z0BH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:20.344Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:21
+qpc8wyWWvKFkekeMO6hP6a19enZR2sCN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:20.636Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:21
+ex6AIo4C_3tpHYqELi6VJJYeBE7wb7E8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:20.911Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:21
+yWQMdNq7Dpl-6tpav_gYPvXq7uxZTrxo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:21.190Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:22
+qcVspCFQB4mX2QGiQbA-mlX0nSWIrXCo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:21.451Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:22
+PJ7o01ikor2VpAV3Q5xYNzaGWReR9yvt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:21.718Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:22
+BFRzB-1GL4hgibYDZ1l_uJ-wLZCXpJhO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:21.981Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:22
+PVIk9X792dFVcxn1NqmX6g5edCNv8TCL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:22.247Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:23
+c75cUozErtCr8WwQHPnMSbGWMjOhUMGR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:22.507Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:23
+3iDxrPARAXRNGcJM-lB-Zzs1L27sZqvO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:22.778Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:23
+eYpaf8UprQ_fjyCyrCEzTdI61U_qvYkW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T21:26:23.057Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 21:26:24
+jZMXNS2u5ydUnBQjBx2gh-Irlrxmp5aT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:04.603Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:05
+hPn8e8cTtCgFKPN9CwUbdmfhyHJ1dcwf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:04.820Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:05
+jJ0HcRr0brpyIzVDvV9Wi7aTyQBUiq5s	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:05.042Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:06
+_yvYhSQGMJfpvhkaM39hDDsQTy1TH2AV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:05.307Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:06
+PZIHFsMEtagudIHhnQNuHFL8nW6L-x-B	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:05.501Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:06
+gOMyxOn4ZN5Jbv2FFx2azxrL2s5guKQi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:05.705Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:06
+oy81QGoTFYn62IRoOfSfmMtqynBoqsQr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:05.916Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:06
+QC_BNfmmhbke8o-xqccNtjf3U17EoihT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:06.008Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:07
+7ccAhfXNfXxoJ0uYJWfsU62dIdy65Ou1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:08.165Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:09
+eJ10pmR9s4S9KD0kL7IcZIYbLXtPyVfM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:06.116Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:07
+UvE-ni1nCbXFhQyUyTc95d3sW3GvKMx-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:06.307Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:07
 QIumKrCU1Q8dSnRMEIf_vxwc-SuYW3Za	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T19:41:18.961Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 19:41:41
 1Hes3uCns6ws1u6SEbbDVcT35wHvy6jC	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-25T21:34:55.086Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 21:38:36
-7ac44iq_luT2WMlBWoyBtj5fvVQRLXvi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T23:48:16.332Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 23:48:17
+UMYIqlvqI18A3_iEHrT-R2Vv2l9ihrsW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:08.584Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:09
 dfztxp64RnlXkQiJmicodqvgRHt3Y5M3	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T19:47:23.748Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 19:47:24
+jbjVwB9J2rz4S_Hlc_vjfVNOvZNnow8k	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T02:21:22.775Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 02:21:23
+itF29e-5spEYosEJJusJiyGLjmJpyJEf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T05:18:14.083Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 05:18:15
 AHGta2FKo_1t6R070ePA5hNQURGdwB_A	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T19:47:24.210Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 19:47:35
-L9jI20IseCnX4aYoGB4gtLcWFOygj50U	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T22:37:20.699Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 22:37:21
-MU5dOWvsGeRJ5Cf5FEqhIyo8rf3o1cGL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T23:50:47.042Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 23:50:48
+bsZJcrGwLIkaVpjWZjWYlgFPwXgvbNx4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T22:57:11.635Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 22:57:12
+fCM1EBjryijKb3ot3A8Pa8AdhUsP3WtW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:08:23.612Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:08:24
+jqyodqdHz5sgnDIEhkj6tRG3nkRgz8ia	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:08:29.731Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:08:30
+g7gpif9qHvbtGljKqA5ZgQWvvUTlhC7u	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:08:36.101Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:08:37
+MCA-rPgFbrl7cVIm5B2VGxm_n2vtqKrC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:08:41.505Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:08:42
+NiDbwbdcFYDOkpWxuoSEXGvNeyYvD236	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:08:46.826Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:08:47
+Ahqyg4fckWlygA-6S8fm8uVLeuJOhac9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:08:52.099Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:08:53
+eJzja_hiD8UpdeKB1Mgdsez6yGYJME0P	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:08:57.467Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:08:58
+qSxiZSPHtVHLqPokL6Cl57gjZu2UaQ_2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:09:02.882Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:09:03
+_l8eXjg4W2mS5UNBVPI6iy5oFJwsPpVL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:09:08.413Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:09:09
+AT8R5HxoMxgz3V0Rb5eq3rRTS6Z9frdg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:09:15.030Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:09:16
+cAPfxtsQp_LjqbWbXlq6t-JahxdoS2FT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:09:22.642Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:09:23
+X4Tswp6ZcmZp85VrXLLcAMnOUfdc1Utq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:58:47.996Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:58:48
+8OSyg1mc_37L55dSjAhsS8_GJp1SpGsy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:59:05.104Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:59:06
+yxcrZCWpMVk4-RVMNxYQwR86Mwgmbg-H	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T22:01:16.515Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 22:01:17
+Z4AK2lWnAnCsHeWzq4L9sTjbeJcNu2gl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T22:01:20.202Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 22:01:21
+1y8FJDoFEat0bsIc1kA3XaoWfY8GIpDw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:06.518Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:07
+a5AMA2oRBWZKam4LlKr_0XWwV-6OH2V2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T16:59:59.451Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:00:01
+6k3CQgeq_4gM1q_vI7V5Ksz_mleQDFqn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:06.754Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:07
+rswac32OeWKWP2rzQwoCHsj8_e3dqcIf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:06.949Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:07
+kEtlUkoC56HA7NVQ_q89CKoLeg6G1k2o	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:07.168Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:08
+HzCSj5-XuxswiztTz40EnUX7S4Lg7tXz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:07.393Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:08
+7QuRXyT24jPS6fR_gAEqHMbPMJLUBkzz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:07.589Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:08
+npaxt08kxAPgHPHnPyOHdX121ICDeuDp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:07.783Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:08
+4tTNnWhvXwnyyJYCaiYI8pADV5-ucvOh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:08.014Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:09
+FX9T7AQsS8UOjV2WWBPF2fryhK-gcpYH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:08.212Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:09
+T81wlqopLmBPd9sRxnVPdVSps_3eb-UL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:11:08.402Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:11:09
+JZvkGSe8tBUv4rl29XPxVOzuUhltrCrE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T07:43:13.939Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 07:43:14
+UeyhBD5Vwm4BphcUSm5sitk1EM_6JR5T	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:16:59.763Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:00
+qh4L8Oir1h7l1D8yF-I0itYKLIBMhX7d	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T22:57:12.078Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 22:58:15
+UTuClDJJHqmBfFutxTNkN2RIjug5wQnL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:09.073Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:10
+S5qtqF9UM0x6iIeyryeaUmHtfgsISFa5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:09.449Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:10
 tnP13tQA5fHtE7_XBxMC192c5RI2RmFG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T20:09:29.598Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 20:09:30
 QPA_o-37o6Y7SzsEsCiuW2EoSbFOaGcM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T22:33:31.182Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 22:33:32
+gSATTys4IF7vGFiqrxZdFTlPQ_sZdaNz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T05:29:03.591Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 05:29:04
+U8DZaB3SrfXREPXXVgY3syUSHDggVo0-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:11:35.446Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:11:36
+WoDPHKwpB4mjDLNCPnStH91MM11P5ww3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T04:11:49.092Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 04:11:50
 j83zuEsZvPX90FQ3fJzYDaPT6Dg0eykb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T23:52:28.517Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 23:52:29
 HTeOlqz_18kIgK6799-zEAK-43XN3zAc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T23:52:28.529Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 23:52:29
 oq6tVWxg-nk-zW6sEWEgpCDwkF8836oC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T23:52:28.568Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 23:52:29
-H-1v-E6QTHSMAHUlfYl3KIeVauF5uToJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T23:50:54.731Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 23:50:55
-_X1FrDao4nfnwmYbzdHXscBj5xk_zMog	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T23:50:55.141Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 23:50:56
-anaBpIpraT6CmOWMFmdZF_sy5U59AvTi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T23:50:55.280Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 23:50:56
-kRacc4K-4oAQ9CiIXP4Cu6lfNlSyAaCg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T23:51:11.415Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 23:51:19
+6f_or0G0IRLGvy8sYD1bPka08MDG3Fd3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T05:04:19.395Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 05:04:20
+0tJ36ZXnH3SexpMS0EVPSZBZvr0ALZsY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:14:43.416Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:14:44
+U7QGWF2bwAekS1ETNuD968BaX_K_qAK0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T22:02:51.603Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 22:02:52
+ccTpQ4d2WenUBNbD60tXpD7zzbg8Qzpf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:00.037Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:01
+4rWCh7P-DuCzDMmBeehXuGo_24Z-TEJJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:00.272Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:01
+Lib8v76AV_zzvmAjTjmo_DCYHfBQyA03	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:00.501Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:01
+Ma7sgXCUZ21Txcexj_Pmw3H1qqapaJ4-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:00.734Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:01
+srFJuIFLeT5g2ne3aUuiFDiqo9qO_LuN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:00.986Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:01
+gZIMmAJyYJ9O_OFZ5FULZOVGV-e_xcoR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:01.220Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:02
+gvnxX18tRIKTd10yzoO7HY1wf1fs72os	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:01.456Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:02
+IS1CK-OYFzqyIM2WTd6jfGQ9Sdg1GUlG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:01.690Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:02
+ooRlCcN6nFM8ln21Pf3vBZ5gJhFJSYzV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:01.942Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:02
+-EQsS-21G97Kw3wrrEzvxxtP-7NJg6qC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:02.245Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:03
+tO5TA329yI4Jv7HhgnHImT7e8_82GCXq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:02.546Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:03
+mJ_K4DSYW7eNLCIytw3PLKIc3PwKL7qD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:09.743Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:10
+GuUvmKQhrk55naJecIky05FpO-LMvLde	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:02.799Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:03
+PwMhp7InNHqAEAnoQOwAbFbT2eRGw3Hc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:03.071Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:04
+oSQT9HSSTK3eAVezWsD6Jwpp2iy5ivGe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:03.363Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:04
+4disZ_efa1WtUxloWcIGzcZaKZCE7YtO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:03.624Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:04
+0pXyYshq-RA4tOperxiMk_UWNksfIeRu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:03.868Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:04
+VMb-RwznGQaQfq1YuD0gNhGeghIUqf39	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:10.031Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:11
+XCyojxF74FJqbioqHMTscBYWfMv8yF-a	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T07:52:33.297Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 07:52:34
+LdHlGtwoGGe_E6Hp0ArxCVissokSXPiu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T07:52:36.862Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 07:52:37
 2iyOTkMDjD90T2A2kOioO0grw1drH3wD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T20:32:50.523Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 20:32:51
 P6pIcRvHPAcMVerizzTCoe0xfVkWb-0X	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-27T00:16:54.950Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:16:55
+-KmyucuADupRjcIx2DWo102ELK8wIvVJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T07:08:04.026Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 07:08:05
+IehI8-N83To2_O195cCnhv26hMt3-UWU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:38:27.197Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:38:28
+araKA3i9IR-Sfy57XHqrlMIOmgKg0l0W	{"cookie":{"originalMaxAge":604799999,"expires":"2026-03-01T22:23:04.958Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 22:23:05
+Q5DyRBMvMp8nQsYVJcM7MU3Igr0IEqwr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T04:21:32.087Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 04:21:33
+RXUPxcRLSLL31YTrlFIW3lMCY5-KA08s	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:04.105Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:05
+nKPQneA82cfmLHrXTjYVXyM0HQGx8QaL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:04.339Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:05
+i0ppwV98oefVhKhtoyJpwqOTsI6Y5a9X	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:04.568Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:05
+znIpBBYueTZ6IteBwc9UIlj0VM53fQ-T	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T10:17:04.821Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 10:17:05
+yztd_bHfE4wyPP2bCbm6DqmqytJhF4wA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:10.319Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:52:11
 s9LSlfaZq_o4xa-JVmFZFNZqFYmRE9Zs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T20:32:51.832Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 20:32:52
+HhCdy9c0BucYdEXWO9cFrwuBy4qfutBF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T21:19:01.563Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 21:19:50
 ZSlSJIncz81PtlYZO1r9DN1MLMqnsBtM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T20:32:52.587Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 20:32:53
 JL_RbNQzD4ubREwlh9IBKNRkxUQkl-Qi	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-26T01:54:35.152Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:54:36
 9xRmoSFiOCw18Srbh8tnEy3sYnTE06Pf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:54:40.743Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:54:41
 e3hQPFHFGwGSf0aWO1vbfSFE9IafcUBk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T20:32:53.057Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 20:33:02
-QSNRL_KzaLNHGOxZgIhd6_0My6UQLtoY	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T00:26:50.692Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 00:26:51
+wyPDqkFBiRLkdDyTb7UN2QozLP2QSb5s	{"cookie":{"originalMaxAge":604799999,"expires":"2026-03-02T07:54:43.359Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 07:55:08
+D0Z5oqGsmJkYiCX_6fVgY7oSaYTfih2Q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T23:50:20.756Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":8,"user":{"id":8,"email":"dferram8@gmail.com","nombre":"Fernando Ramírez","apellido":"","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-03-01 04:03:23
+WwzEoAX97P4lr_XMKWjDvdSSan8UnpS1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T03:52:59.260Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 03:53:00
 GhkducjdVV_y5ZCazPaFti4-jbfK4Dab	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T21:37:40.924Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 21:37:41
 SJe4415V_iAnCy5pr4ChnqcMtf3z6Z9c	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:54:46.396Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:54:47
 KUOC5h6s6BUHkC4ZGZ24-_ZWBkXd7Egk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:54:51.992Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:54:52
 wc98qaVLLJTxrxX6HZxfftH_IQPG_55Q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:54:57.517Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:54:58
-GMQoplz3MwrOWLeh84hMJamz0AiVh-ov	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T23:50:55.413Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 23:50:56
+JuA46VfB01nKzpzOwUjo0xElutt72QKS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T10:47:07.177Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 10:47:08
+abXYOfquOkl6uGGsr9g3C4MDl9jMgLwx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:38:27.226Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:38:28
+re9NouSq1xT1tcwsPf3ucokRFmva0t8f	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T00:23:10.224Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 00:23:11
+VJpHB2WqoGAVIwrqd29bKTAs40EareZ6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T08:11:41.197Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 08:11:42
+mcTcGEI39pAMPhiebSc6rN_pZxaXyiXv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T11:15:24.764Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 11:15:25
+IBBBx1dQdYT5BzYkep3itMF0kvovFUxZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T08:11:41.433Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 08:11:45
+i8rJcJfAiTKF4JModl5lEfkZ4LI6WMTf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T21:19:32.526Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 21:19:33
+NHlREe4hhnCuNy0fz_7ZBk95pFEtz7nv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T10:47:07.421Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 10:47:23
 MWAyoPQMVp23KYSCv2tL0RFB0sLbtOTZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:55:03.125Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:55:04
 M9ozt4a6FVy4rfupjnNHS0MyHoeK5RrZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:55:08.614Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:55:09
 ybcVFMWlGSdc82qUfxvg7-YHOw9cIdXp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:55:14.368Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:55:15
-8cfEU_m-QkSkiM6ZrZ1my5AiD7-HaIWv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T23:50:55.521Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 23:50:56
 fRcXcWssVkZDV8thLiTZ7RuFrZM5Odkk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T21:55:26.086Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 21:55:27
 byEtH0P23YAtbXSefN7q05ESyuFpRO6F	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:55:19.859Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:55:20
--EhYPNu4mHYbwox_4pyFyQwjS-ajpA_m	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T23:50:55.600Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 23:50:56
-q3YYofyB5TauM-ju657lHZGje0JwBAmA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T23:50:55.700Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 23:50:56
+KU6F-AMzqDf9aQcTJziNoluT8LUWGqkU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:27.800Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:28
+PeM4F6ocoa2KNqrOFI-NhgqmsB_BUZjI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:28.329Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:29
+skXZL3N89vB41dV38oXzSPajI1HgODcp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:28.614Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:29
+gtVw9gqQNkE75bKqJXWu42hmInqYaAQd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:28.900Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:29
+babC0QlUox-hloh4wY8N_C3E9KsM67eB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:29.194Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:30
+GJQ2M1R5M7k1oWRS8bXBzxwaukbXg_1N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:29.467Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:30
+N-DtcalQ_lCu2jKL73EsQSTMsQX1QuSI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:29.747Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:30
+OF1s1plarVeyYD_LwpNo_3XSfQkEXo9G	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:30.028Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:31
+F2GBNpzJCpc_fM2WrFpNtVlSMCqSASlE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:30.313Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:31
+cpshHq7UGwkmm6HBVpazhYbEp0ouc46Y	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:30.580Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:31
+VOhtWIt0vvUGdKDOo1QIlnHIAWIxASdJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:30.865Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:31
+LQx32rfa-1I7SXZ9WKMclA7mVe51uj85	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:31.141Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:32
+WVKuqt087xbCIH5OEkO0f0G1q44jIWGJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T11:34:58.249Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 11:35:03
+9IS_NVTd9EahH8aCiwsyxBc_HvZsNl2N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:31.425Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:32
+v2NjcaFFbgif5YJr3e2z90uwiZHJxrRg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:31.712Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:32
+Xgser0YxbkZkM-sdMcVbqXOoKQqycVPN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:31.989Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:32
+bpUJ8szWdKqkbjBTeN64ApWdcCpMcduP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:32.274Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:33
+zK1w0T1Nyk_EzzO8-WCpf9ux59rWrW98	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:32.556Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:33
+UA0_O8Q_qDk6JgYlIediKuL5hMHCy4wz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:32.833Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:33
+d81HZbKk2i0179m42xbzkuru7DEHLRQ6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:33.109Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:34
+Tyc7UHv0VdBG0ebt9wXSuAAkP-hE7RNI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:33.393Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:34
+oJEABEuVBU-PC9zavTQqPQd5nrhOv4s1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:33.670Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:34
 qQ7fLGsVvaOe-ARCSNSK8EB8fS-F6uDp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:55:25.307Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:55:26
 sXr0E0AB7qHejF9WQw2lsP4F3NSutWhL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:55:30.768Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:55:31
 ig8LuxODUp3d7Y3tVbj9cgwYdTMTWz4e	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:55:36.240Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:55:37
@@ -11320,15 +12150,64 @@ y5ChHhd3lZA_YInhbXBMVDZPtB3H8yEw	{"cookie":{"originalMaxAge":604800000,"expires"
 L4M6Ff-DtZNLZ_IeKZprg8tsMhi7HB2q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:05.964Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:06
 cEhDeC0asSCE8pN590beRHwHgIFr10Tq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:11.782Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:12
 MAKUuGZ_CUW4wD7f8hRcNx70gzUnqQO_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:17.318Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:18
+_N8ckf1Gle39mA1GgyPrzpQuzVaugeOV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:33.944Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:34
+_e7pP1HY-74mi9Y2KHU8K5bloHcCPau6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:18:12.894Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:18:13
+yhrk9SscUbylyveaiHWi4rcvYo-48xY9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:18:13.945Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:18:14
 FKDLTiViGXPG5uPad9ea3Qsqkqh3kDHv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T21:55:26.782Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 21:55:37
-A-K1o7S5Nzi15G_YSUjsgrfrQzIYXtX8	{"cookie":{"originalMaxAge":604799998,"expires":"2026-02-17T16:37:21.655Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 21:19:06
-HAXreY3lHUDUW-wF4KUcHYDtLJvjI3W-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T00:36:06.448Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 00:36:09
 122875ZjDMzEsftluthZKPRUVsdpbloF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:23.223Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:24
+5gGnaWImcHrzDSEnSqa3qC5U493PIdrB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T12:11:48.711Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 12:11:49
+PiwUiXdCUvLOS6oYA4qTuO5MQxmGT740	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:34.220Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:35
+41GA2v6kIcgwpBn7f69hvkND028vzXHe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:34.494Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:35
+j7RAuKVkw-HXNmCkAUXWdi4cMCyV5-PA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:34.758Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:35
+NABBK7CMFBdvVkiDyE3f99EAlaAlcbT0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:35.034Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:36
+APql9CN07yBRfE2wD-Nfv6VFPi_zitzh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:35.323Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:36
+Yk2KEeaBTt71BZvwmsj_c93ekk68sxkd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:35.610Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:36
+4y01BpnhS8pD5A9M40jq95wN_BC-IgzO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:35.899Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:36
+zpcBTQ8hNTpJ6GYfnmezA1mT1J2CIn0l	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:36.176Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:37
+13af2PvytLMtPaZeLeO6AyQbab-nnWS9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:36.451Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:37
+w7pcI_rzKZ7NW19Eml-aXAbzTQeEeMGR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:36.726Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:37
+BPEYiH3QBSJk9l0uE6VBdJo7cO78QBkr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:37.063Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:38
+kOubAUgDGrUYRtIVXVJNzcZ3eVRXQB8C	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:37.340Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:38
+8P_8iR9XMHuoibV0idEbliv93xqMBByK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:37.624Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:38
+egl6rbT2b0DPYpvBLkBhOdfIkl7BGCH_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:37.913Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:38
+_YFyi0nIkVIqjW5zaBHScxNG8KxfZokF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:39:38.188Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:39:39
+9cpZyOSP0YF1MX8Bhfvg6EnKCP9K60hD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T01:04:05.553Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 01:04:06
+wAY6AjQTpF1zqk6wU3OLi-G-57M1sOgZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T21:52:21.169Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 21:52:22
+Mg0m6H9fWg3-Rqrp5ZRsdQTwvux3rs7n	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:18:15.088Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:18:16
+UAICXprbKPtgJhY9v1C_4VlcpFGnpwPl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T09:35:54.752Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 09:35:58
+OLrv2WurPxzFEXGzEf0BKYrHMi8-Wt9x	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T13:02:38.372Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 13:02:49
 5yHZuTAzWOIl5YcK3IFQtx0XsxtHDEMr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:29.269Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:30
+mZYTUKSocpsyMsHtTVDTlBlCG-ARZ-xd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T01:10:22.450Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 01:10:23
+y6YtkKQbHktttg55vZnbBILgHYHb4mr7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T13:54:31.694Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 13:54:32
+edmUnCONGS_MAQ_qUYVBapkRY5SthD3g	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T21:55:07.526Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 21:55:08
+aGitE-QVS0BQyYGvS6C9MXf_baSg9xmV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:48:16.379Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:48:17
+NLw1JiHWmu2Uh8D_nBoDMeBzX5ose07c	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T12:46:56.350Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 12:46:57
+M4GeJR76CQ6icedVd-bsAV9xMYlh9z7J	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T13:54:32.215Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 13:55:47
+CVFwmHnVznuVoBcFzdLVsO7nBMv4RcOC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-28T12:46:49.102Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-28 12:47:09
+I5-Za0dB9uPvb4SbLrk10N8R-YCB4S3e	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:48:36.079Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:49:34
 UQnQIJyRRVt448g82kcgUbQfYREPTnl1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:29.972Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:30
+wvmVnO3ESr2EI-M3_lLFQbPkiRC0PQXT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T17:59:31.992Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 17:59:32
+d1H1xvES6QQHCMiykW-IWanhgQerBsaO	{"cookie":{"originalMaxAge":604799999,"expires":"2026-03-02T01:12:41.231Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 01:12:42
+E9VxHZdN-0hDjxGwXPsyG29PgKmWn1h0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T01:12:42.249Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 01:12:43
+7d1NTPjYdhdzBmOCGKDYVH3BvUl8Gp5v	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T01:12:43.373Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 01:12:44
+Hby_qH1Vpn4HdnH1zrjg_KLAUv0YBXGM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T14:05:34.039Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 14:05:35
+4xw5YpvcZBJzL-ukbVH6e8RXR2cZazDn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T23:01:50.237Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 23:01:51
+eyN8dN6UaS_mFm6DETdPZ5NRc6Ir8Q0h	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:55:23.334Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:55:24
+0wWn9L4AsNQWBKp3jPYZnyZMieuYiAjk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:55:34.490Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:55:35
+BKB39dgyn8JV0OJ2FpBo-Dk6F2N2jC4q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:55:34.569Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:55:35
+LBsERH6CEp8LBwU94jm-rG_359bziRvN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:55:34.742Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:55:35
+46b2zHtIFMRkgLMzFXBnaCx7WU_qMA_V	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:55:34.896Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:55:35
 aTm5KEq6cyFMZrHtG3amFA-qZcxagf1a	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:30.942Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:31
-QfAWXH_JeoUwv5pjQ7M1KwkjEmfkLwUO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T23:50:55.855Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 23:50:56
-yBbqxEYlqb2nSYP4GLykah57SFuED-Y9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T00:36:15.313Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 00:36:16
+FUPj0SOgLV0QOvro3Jnf1YBp6syzJNkA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T14:28:17.471Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 14:28:18
+0ZkJG7Z6qBkP5sZvU_N48028KjjUszc1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T23:05:36.117Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 23:05:37
+E4yDD7zjKU_94sDS0zrsOUpEyxOxEYIb	{"cookie":{"originalMaxAge":604799999,"expires":"2026-03-01T18:20:11.062Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:20:17
+soJfvsOz-4B0B2fwgVyjTXIOlkTrzb3M	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:55:34.856Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:55:35
+m5FLjzXoMTmdzHeCWp1Wqz0Shv1pIIF8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:55:34.946Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:55:35
+nmaxZIAAvB-GBztXk41FxjBl_SDdP9SM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:55:34.987Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:55:35
+WYVte3YP1qftKMgSXoPgmXDqp1WelRwt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:55:35.048Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:55:36
+1iJiiKBfc_SfojOCA-GnqlW2XMeBsAao	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:55:35.394Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:55:36
+Rjsudrw8tl1awnqSHEZ49vOIAoSZjtyw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T04:55:35.500Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:55:36
+VNBZlxcYag7sNOAbC6a9GrSplPkDckpt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T01:24:49.107Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 01:25:16
 PO4UgVYx90i9uDg9Ku5XFe7K8qQOGgx9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T23:30:28.710Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 23:30:29
 1FzR19ZsyUgx24F4KBNVGfj5Dyr5zcHL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:31.344Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:32
 9SxqSxpwuMRI1UWy78bWoys4YHdbeLFQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:31.788Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:32
@@ -11341,10 +12220,17 @@ oIJiX0b1BRAqAGdXieMF8hBIintMrttQ	{"cookie":{"originalMaxAge":604800000,"expires"
 BqiYZlVtqmyN0Xffy7texvWVX7qO1JCz	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-27T00:17:34.632Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:35
 yhjcMEUw1kuRkVxj0bL2CB-9m7rwhdKu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:34.934Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:35
 r9-wx5BmC_WQ4pqMsa3VpYn4-8FjZwmv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:40.345Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:41
-lZGyolp4evFGQK3liPKvEPm5Tp5zrt5V	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-23T19:22:01.479Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 19:58:23
 rd_2L6tlWiEfe77dMVug-izz6nC8fEzC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:57:53.586Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:57:54
+qQwgvyI-A1P9YLFegcP7vNu3xLX_h5IS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T18:21:07.525Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:21:08
+n3f8X5vpNW-L-Gnw6VQi62XtOyxz0Mc3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T18:21:08.010Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:21:09
 is35cWDRN49KbBk1dDse78hesJDvHghl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T01:58:09.511Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 01:58:10
+I2oo1Qxoi7whfSn44mqTmTNypma43KvT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T18:21:08.345Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:21:09
+CLRscpZvsX_1t8AdaP-7Y6fnId5SYbza	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T14:47:14.351Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 14:47:15
 ORLHX54GEnaLDakPtcxOb_SrA2C8bbKY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:36.122Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:37
+EfhE_vGWKK80EkLwHfcLw8q1fP7AXIhQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T14:47:20.989Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 14:47:21
+bYL0KnBfLGSePlrewt-v57FLQmOvcMx7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T23:07:00.627Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 23:07:01
+14_jHdQt9QK2B5v3K2H2ZyS3AGSq4jV3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T23:07:25.948Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 23:07:27
+B6I0BfGI6UHG6V7hk_dxFTZGd0xjy0YQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T05:30:06.073Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 05:30:07
 kio1E2io002FTtmd8x_r00HitHGIeVdq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T00:07:31.713Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 00:07:32
 vlGDECT_Oiskw39t2mCnPCj9JUfmPe2V	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:36.481Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:37
 uVo5AaonQm-WfChld0N4S0SyCq_4T1lz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:36.784Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:37
@@ -11358,11 +12244,29 @@ jQMGeF85r-3ZkBPo74Q2QyvHyTnGgmpY	{"cookie":{"originalMaxAge":604800000,"expires"
 BL1Mix9YK7jkYtsmCtkDXGLCNrQtTZ4L	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:39.329Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:40
 hjkg_8KagVF8Pdy4cQkWo7vIp_-W3-lH	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-27T00:17:39.669Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:40
 gz5eUDCHiTpHPsm-fmqZpb4j6XDAviCY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:40.022Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:41
-6D99mz48TdYZUr7ccJ0Iw89_Ve5luEMh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T19:44:19.566Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 19:44:20
-q87JQoSHm_hQhPgt5Sm-aBAJOqSN050D	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-22T00:24:35.502Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 00:24:41
-Tkszf20AfE91ShHsRCQxMKtTS2JMwTtB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T19:44:19.939Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 19:44:20
-fwJbsREGo5rJ5K8QKcuetaoFWWEEW24c	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T01:05:24.989Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 01:05:25
-a49dpVjvAtxWr7nAptSCfC3JYA01ky2Q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T00:49:29.196Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 00:49:30
+_M0kEClbyFYofMJoZMbtJ6aTwAQsmWbU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T18:22:33.820Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:22:34
+FmRnAXnh5D-8Nlcb9m_3Za_7-woAJX9t	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:04.653Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:05
+qiwCrRqHA2XBbcTKXCw1THE2WNTLzVWB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:05.079Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:06
+hH4R5U4BtGeYspDnnRn0jyZJogsU42kv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:05.316Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:06
+ImVIO6OIiGFgOyCWzUzwGJXUgDWqNKAE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:05.549Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:06
+yCOlSmuojtWivL_dJcFjCbsZa5uMHeLa	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:05.756Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:06
+nDMNFR3YbEykhWuMx166EEZKzJlMxVtQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:05.962Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:06
+AlX8YDo1Tt4I3Uofc2P6i7IZR4HZiXfZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:06.155Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:07
+Io9d0RsCjLlkXJdbMHS8bsu8Oo_1m23a	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:06.357Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:07
+5r2BOKUk8-3eSO0l2zzXpYQteFNykpBr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:06.557Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:07
+YTAGS9qI9KBDkc3bBK22ctFWsoQsmDwm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:06.892Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:07
+S-kppIbM8Q1v_LAT7mmae-6EsZxkLEoe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:07.174Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:08
+0-G7fMtijRsujff-xd206AShqU0Hkvp_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:07.436Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:08
+MBdVYW8DTaFo7Z8EP-ZXcVeP3axIy4h3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:07.693Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:08
+KidFJ0dd2LQMh3LIgEMlw0dOzrLDwxD0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:07.922Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:08
+dF1Utpkf2XIvgW0Gsnjs82FhTmB6qY4K	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:08.176Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:09
+RE_ziN0fVIBa4RpUeeUy83qJHocfOuJ6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:08.395Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:09
+e1P9yCac5clW18-RmAuk6dyVMczKmqns	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:08.610Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:09
+Q76uu8TNq1BGiJdNKC4dWqlujea9AdMb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:08.827Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:09
+LZWtRr1s0ZGrJY6kaG9ZlQIZiFVpslrj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:09.030Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:10
+RfgeKeHSDCLwzEGS3tsfJBxTgf7FcS_c	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:09.237Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:10
+AbgQ7yRXtZexfKDlB6tn6btwjU0HZnQ5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:09.443Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:10
+h9eOubiHGeGC87UkcML7TjxQVED9OKgd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T05:32:06.742Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 05:32:07
 FZD8mfWNJU3HSICWaB3YyqQBZaOpPZhh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T00:28:42.566Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 00:28:43
 ZoyI5WIaA7rcjZMSfvf5kFYiqzijAl3J	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T03:05:19.830Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 03:05:20
 76a4aIaFdAvp8NI73zSsMj19LijfOD2u	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T00:28:42.880Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 00:28:43
@@ -11374,8 +12278,19 @@ nPA0S46b4fz82xALthIHrzpAQ8gES1rA	{"cookie":{"originalMaxAge":604800000,"expires"
 RvPsUGJQ9urQfvWPrmo5c39JDTZqcRO2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T00:28:48.051Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 00:28:49
 0vt0rlT3V2jf1tI-cQ_oSTCfYDPMZzly	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T00:28:52.304Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 00:28:53
 WepoKJDIesAG3hTVtEDMC2DFpKDrTZJx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:40.356Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:41
+TFOfSmskF0higwwKCeCoEdkw-LHi1PL5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T18:22:34.336Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:23:33
 ADCj_zz0XpDld5v8mXL7bi4SCCN2glcL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T03:16:00.639Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 03:16:01
-FxQSWqR1UIhf0bcTfJE1kPCH1TcaEu7L	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T01:47:06.866Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 01:47:07
+iF0P0YuQoQo5HqjHaRwM6dGIt3rlK6vh	{"cookie":{"originalMaxAge":604799999,"expires":"2026-03-01T18:26:16.155Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:26:17
+_4yHiEf5pFWVOU-YgYT6GHdKfax1FR2i	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:09.646Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:10
+eaR6IIxRx1ahu6yvTJwxfXh5T7T9TdTW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:09.843Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:10
+4rVm9bwHCyFIEUV7p9kvMy3K8UvEaN1d	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:10.045Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:11
+WnH_6QUqiandhg0n9uhmKXldnYXly4tI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:10.259Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:11
+Wqdjp5SMs7u4Pb-om7GzAyhVneaYyAEW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:10.482Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:11
+trUwazX6vW59ILWiQJx57joZXX07ADx2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:10.699Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:11
+8e4MKukkSZcxnPj1n4HTt-IJ-UquQxZM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:10.899Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:11
+fTrXS9fLKYNMTngxixUG4tmyV2mOTLRh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:11.102Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:12
+Lo4up5lrBGFLbT6qsp0pVvYAGkCilswp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:11.305Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:12
+6dCLH1ssuowlxI1IFZF5pc5gBm2a-Q1F	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:11.502Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:12
 Ytepw84Br5lpwv6olpw7gZfznxzFkYGd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T00:44:39.782Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 00:44:40
 mf2ppbdpgOb8c2v7t4o_l80PEraS_UxN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T03:16:02.277Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 03:16:03
 Y5wFyDf8KjIKRcbtlrJNj1ubmGk-mAyX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:40.696Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:41
@@ -11388,22 +12303,37 @@ G0eYc7uBgHS0p9B8tDYCHekre6GSL3Hy	{"cookie":{"originalMaxAge":604800000,"expires"
 IYfg4Qia9LmPw3633os_Q7nt7TB3bKBp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:43.122Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:44
 Wf9AwCWDABIfsNoD2mtYSNi22s2WVybg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:43.513Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:44
 4pCed4JQf0CxTz_sPS0t8wyVAVAzLY5a	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:43.876Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:44
+paG38XKXQrOIZgBiVCoSzIyo-RslkiAM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:11.697Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:12
+ruPQ4tWcEQ8QJCIVfyzKfMcqp7Z9lLR8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:11.911Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:12
+er6tI9MK5waXLc8CyQ7i9uNQbbIrFlfl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:12.147Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:13
+27IaNodbds_wBG5GAV5eIaCiyQYzhBus	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:12.349Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:13
+0Xm1eaZ9chVTmroRczqt7ILBeVueowie	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:48:12.553Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:48:13
 qNxXdoE5VCwt-KLpFgxZojrpOU4pSinp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:45.836Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:46
 GlaEwW_r_poteAHU24v1j49BpvcjBYRb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:51.720Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:52
+OPTtn9reAdDsyCdvmN5TUxLdQeP8sazY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T18:26:31.852Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:26:32
+yISysLTiKgaMeFWNteTdJJNa9hRcvBrg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T18:26:16.959Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:27:47
+T2c8WmVHPw3qxlJ2bgqOvnTBKXGMHavn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-01T18:26:32.601Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-01 18:28:04
 DZlP84gGY-xxQ3jF4hWBFg3-qsTOVPih	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T04:26:28.091Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 04:26:29
-vcuBlsjsEKNvrJrhPAxhQbyinmCPTe37	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T01:48:41.783Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 01:48:42
-EW77sobm4c8_ZIGzD7VvZhp6AJWpRchw	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T01:04:17.904Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 01:04:18
+ihw6K94WCVIe3xSKTUBtSOX_zZmdX8A6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T15:50:26.645Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 15:50:27
+1F_if4D9Hj4z2Tnq0qSTbPVA5xAPOHf8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T23:24:06.280Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 23:24:07
+EqdnzkljhoGOQ4IHQf-PEeWklJP4FWiZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T05:32:06.975Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 05:32:07
+UlvGVA-9emxTEhPpS98lYdmpZ4TvWofi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T05:32:07.066Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 05:32:08
+rddrVi41uRa_F8hgf-1Kv5TkJ1_hAHML	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T05:32:07.230Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 05:32:08
+EhpwVmlRFHrAuPM-1oLDI9aynBlMuq1B	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T05:32:07.400Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 05:32:08
+NzlfQv_mcuVw7rOpallMA2C81rToE47x	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T05:32:07.685Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 05:32:08
 BjwWJ_YLSfYz22ghgi405sbyA_oD2M0T	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-25T00:44:39.783Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 00:44:40
 QVPGIQRJejCnBM9EBSImmgoQ4ft0Gh3K	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T00:44:40.087Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 00:44:41
 nWQ92MPsJO2SDo1nrWa01W6RmxTxT5T7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:17:57.350Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:17:58
 _OTTW1Ihm5iARuMtqIfquuGEd0wZNVjn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T04:27:24.435Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 04:27:25
-upBf4efI1Uqa5De7VVbcWfsXwWUaJvxV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T01:57:39.358Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 01:57:40
-g86NFLmtTxJTYyBF4sFtIfviL2zw6VGC	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T01:33:19.308Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 01:33:20
+C_gcJOhSB4nr4gzlyC06Fzm208wl8bVI	{"cookie":{"originalMaxAge":604799999,"expires":"2026-03-02T16:41:16.715Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 16:41:17
+1SvZeZ90Hc3gh-0MWzuyvnHBNUQfGnxS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T23:38:24.259Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 23:38:25
 Jqc_U2kkXo2urcTuYVbzXlDB2sDN3Ijf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T01:03:59.275Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 01:04:00
 PTPun_RFJq_qa3LogdBEit4iuMtOI1mD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:21:02.327Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:21:03
 3td0Djhke3fBP4ENm4rnYQjF4eA_WcZF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:21:16.385Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:21:17
+H92iOvru4iBvzMzEj62T1lNg9IUg2rRX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T16:41:16.894Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 16:41:36
 jZ_9BWjWOfIesGm3U8W3n2xAuFMfttwR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T00:51:18.020Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 00:51:19
-9z7vTjqb8NwTSbRBgktP9M9_xSegC5J0	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-22T03:37:37.418Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 03:37:38
+fb1smUcBFD41nOheL11CLLYlMEZaQ7e-	{"cookie":{"originalMaxAge":604799999,"expires":"2026-03-02T17:19:42.705Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 17:19:43
+xRnU8FHWPBVEXNzuj8fpf87uvtGXFjQ-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T23:57:52.301Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 23:57:53
 Go5dOfjcBeHfFP8q4dZVmgBgJ7WPvhEP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T01:31:32.767Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 01:31:33
 hszjShQrPORvKcgVWaEVWynyfkNMKEnA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T04:52:59.524Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 04:53:00
 emPk2-xtfJYnJka7bg26F9_skBqZetDb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T01:31:33.912Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 01:31:34
@@ -11413,31 +12343,63 @@ v2QNugD98x2Wdc-ZhQ0FZPrBQU9cJn93	{"cookie":{"originalMaxAge":604800000,"expires"
 57AqhBBYSUivZsv9F3lHGeEWveWYfi4q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T01:31:53.890Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 01:31:54
 p6hFqPH9vgBXO5m9XsS0UfqvIP7bbVBO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T01:31:58.883Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 01:31:59
 OndGpK-p5xVLc4tcELuSD51Cp9mKUGty	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T05:02:30.420Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 05:02:31
-EGXQQ35u5lfYQYcnYzjtClEPECC24T7S	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T03:43:48.849Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 03:43:49
-XZNXEAy1g08l16h0sO_WgvPOVm4kw9kj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:13:53.124Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:13:54
-3sHkSEY_1vnwo8wI2MYw3UWoElGGEYER	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:13:59.132Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:14:00
-Sf65jy0q5uYzL-HpLJop7kEZ3cqvkHoY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:14:05.064Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:14:06
-vuqfl7LDLtaUDvEKjfAj00YodU3oTxWQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:14:11.090Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:14:12
-cGu68sDDuRUJgX2noNiJR_U4d1EvHfFH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:14:17.125Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:14:18
-SXFNIywS9AnMIx8USRV3VcIKmUwj_Wbo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:14:23.099Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:14:24
-qcgTMiZagu7Pp8U59M_kYih_1Goqy2gO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:14:29.568Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:14:30
-0NjigoIIV7kjNoQSrYxfGDzyd8EnPt2g	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:14:35.622Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:14:36
-efeau4z29ZCARhStyoUglK5t1JvFU8Rh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:14:42.051Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:14:43
-f1G3zCdsomFTj4XDNAd4J1Isx0AaAcQ3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:14:48.139Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:14:49
-6XpYS8rjb0WcdJjfBmJVPK1DJk3RnQAh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:14:54.178Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:14:55
+cVEWJj5E3eG8v8KvaDwS6ezYT46JUxSr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T18:03:36.901Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 18:03:37
+Z1f7ypiPeKQKJ4ZS4exxM0lKxA4VDm_i	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:02:58.818Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:02:59
+ak0GTv9pBaH6Daq-YhaHi78IxDoiO4pl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:02:59.382Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:00
+BG-VG68kYhk7WiEvUqSiW_ZkXUoAjo_u	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:02:59.658Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:00
+yx6_QZFQUz07Ttly7c2zK2YaZ2HifrGL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:02:59.926Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:00
+tp0ylmxmO7nyiZ8seACCi--yrOETT5kH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:00.219Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:01
+40RFaM-8rgeFvADsIqF-mDprJrVyjXJZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:00.522Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:01
+bFVOqAipDqV3warFS36G2ORd9JIeACu0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:00.831Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:01
+f-cupYtMNDLdEZyvFE_P_SRhp-1cl7hf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:01.115Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:02
+Rgpc3kOJwVST76H8jBRhq_tiqic_xGHQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:01.389Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:02
+n7J64xJUzH3xj9XS6z4tHh-ydbhNVNqI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:01.668Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:02
+sMxiZEYz2HdYn4KtB5TRdZ-YMD_3pobX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:01.970Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:02
+mkwGMGtPGOJBbICenz7KiFBMblCDgdvP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:02.275Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:03
+AHjVLVNfrqWysuw3AgzgDFRGIajnSru_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:02.570Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:03
+JgOPUilclfH1dwiCgwiGVR9WSYF2ChsW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:02.847Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:03
+H_qVX1ZlBJ1cXerGCu9iSUHFOZ0_h1tr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:03.119Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:04
+e65bm4oqTE7bo9X8RVKBcftPw_PVn2-8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:03.416Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:04
+EYpXpDT_wi49Vm5yzp8sIR41KQF5Okdb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:03.706Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:04
 82aeKv30fB2_6lLGoe-38fUBU0HSnYOs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T01:03:59.722Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 01:04:00
+tY174TPyBs9gLQL3wiwqWnW2TTKbvRxe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:03.990Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:04
+iZGY7reMtvO3lAZpZXv48r8A3LDJCXmo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:04.265Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:05
+DrKSpb3lQrNHtuxwUGdRhfA_C7q0pUmN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:04.544Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:05
+CFwP4BkvTnL8qpH9IZdZI197adFM3TCl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:04.828Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:05
 AaONItVU7XZyvjcdb1yUuOHLW8nbqvVm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T01:20:25.110Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 01:20:26
-JGwpHfDDSEDl6Qsr1DDgf2B_GbQx8xXy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:05:12.367Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":5}	2026-02-22 04:05:13
-UVlNeq7WQHgjDju7RpCVHe6LZjBPSJ8c	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:16:25.272Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:16:26
-PiHrQKYjPofp_mQW633fcxzsdm7kiKKR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:16:31.415Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:16:32
-G6kBOgZpGMProPMfwzhNoAhi09Ci0cVo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:16:37.455Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:16:38
-eqpQFchYQppdlZBrry_LjrpaXz5zDcrb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:16:43.318Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:16:44
-fvEFRrm1eynbOOe6RPR3kVCKcJI1-sNR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:16:49.690Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:16:50
+CO7_Yr98jugXbyCD5fx4DHrKQXlClCzF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:05.106Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:06
+w_f_PrNwmgRUuhoy0yMrdhsM_x8q57G9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:05.409Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:06
+7CmlRLNkutnbwZUpjE9P8JTjuZmHOVTL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:05.764Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:06
+9jZxjrvv0Wk97yLeTb5pYXXzN1ab6wtn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:06.044Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:07
+EneYDBZOjSLDmcf_jfPpWY3_nDJCKz-m	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:06.385Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:07
+EFGNyGn8EXy3I1IyKlaO09JPh-x9SVlY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:06.658Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:07
+oJz3auEmDs_s8V4pX5vBGcvvBj_-6Sm7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:06.960Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:07
+S4AVh54JcFaIbh7ohSZG10KterplKNu3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:07.235Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:08
+KuT-ghcHi7v0Ef8l2eYLmyNrHytwAKoh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:07.531Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:08
+gUiC4DPt70USOAAXtXn5Bx-e-yecM5PH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:07.828Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:08
+_t7vP7M8WN4CUVTQvHEqdB5ZlzqdVXdG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:08.101Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:09
+vR-deBiS5bg7yuh1Zv6K95T5rZ5B_mfs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:08.389Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:09
+lALib4BcOFydezirHnik1p57NKNMm-x9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:08.691Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:09
+EzTnIQUCVkxhWOjtqQ9TYkeBBVryPOia	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:09.052Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:10
+uSXDUWJLGO5It3r2JfN4fZrKUJJL-_cW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:09.380Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:10
+10VMKCwa2Kh8JFLmtckb-90__0shIVNp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:09.685Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:10
+oFm0mArh5vD3Ru2NZIIDWuiGKN2JfpEp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:09.962Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:10
+7wNC0a9vA3azYY4sdBKIaGMLHpraCahA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:10.238Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:11
+cOGk9pDMH81wOgSpqDq5TrhOnRds0hHp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:10.537Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:11
+B5CHwzq6N4TTjMBe4Zar1bcTNvPvUkiD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:10.843Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:11
+2sV8pigB8rcG7vW3dDgpjnTe4NXZFTAg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:11.110Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:12
+x7tA46TBXEyqelAXwHhiJpm6uPzdCVlI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:11.385Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:12
+qhW2vwvOLjC9AcWgWg1X8XgUUnc0f_VF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:11.651Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:12
+mAzTa8v5EXjfRrtGK_GRP2PkudFEPLFN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:11.937Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:12
+Gz7B5e8UcpHfxHan7m8JyI4Vi6Oq_Tec	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:12.211Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:13
+K6yaEz--G00WdzxdW4OZCX63OoMKA2JJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:12.494Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:13
+VI15wOtGkKdCKljMABRbX1mAA2LqnrE0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:12.771Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:13
 YRy_7QZKpHaqn7to2JOeEa6-6F7iqmu_	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-26T06:15:12.895Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 06:15:44
+dKbFtz-JILfbCkaidX7kCZLmKiX5vdxq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T18:25:26.999Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 18:25:59
 DzKokrxhIuGz1uQpGIo0tiEraTX_SMO2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T06:45:30.535Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 06:45:31
-XG5Lve9CEdru07v_Vt7KfohXpAEXzNwO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:14:43.752Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:14:44
-YPy4NtpJZd-GFh2ktn3TNkFifhLHVZdv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:15:12.559Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:15:13
-JTs1AwXz_zpdt57xBK53th5CE8H1DMAw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:16:55.761Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:16:56
+Jus7zW_WNR_f0ywqZ_aCfK37wHwFF8RY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T18:57:04.396Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 18:57:05
+-szvJERycO8gW8AjP91729EayNewTb_9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:13.036Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:14
+flZpfLsTjHgbo8fbaRu8BmYwGTMQqlmb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:03:13.309Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:03:14
 n5-HnRDbLbvCG8BIkYLp105aizJeCwmB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T06:45:31.563Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 06:45:32
 EkKgkzgVL6YwinV8NHxlrkDfsJLOdXwj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T06:45:32.269Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 06:45:33
 ze6KyVsvmTA1k6nk3voWIABebvblxfyy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T06:45:33.009Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 06:45:34
@@ -11448,29 +12410,27 @@ g1LCNj108vlUyXo7FSR1xVhUEoWUbA_4	{"cookie":{"originalMaxAge":604800000,"expires"
 0gPvSbVjUlERJ08Bs2GFmgKowDJTA8f-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T06:45:36.977Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 06:45:37
 eR3-ijhSCJ7WvYu63vjU5FWlRjxXOb6x	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T02:39:01.151Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 02:39:02
 nXUREaqacrbQcCxrBGQlAAHOPA-z_bVz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T02:39:04.924Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 02:39:11
-XWIAhSf7rfgD5-lnqlwp1J7D2Ow498sX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:31.945Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:32
+nEwbSQXPiUtM1ELWlfPGhzfjNVCamH5N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:08:46.344Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:08:47
+Zl8obHQZIkra6oPuYw80_Yd464MCx6Dy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:08:46.739Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:08:47
+LVcsQtNNhJKAy-BuDuJro5T1KXKHxkY4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:17:49.773Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:17:50
+z8O50eLJ9gemLWKjRPqKk4nTtS0DwRzr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:17:50.135Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:17:51
+Yy6A5CKGZy4Xvdvi-wHrYtSHRNB0qgoe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:17:50.277Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:17:51
+bxZtgvRdeNTSnWyztY69f0G3GbMuchCL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:17:50.562Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:17:51
 SfAFAN19whkl_z6v_j7XN64yoE2r4MCr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T02:39:09.487Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 02:39:10
-XPzfDTb966HYGMVirtPRoR3GuWC0L-1Z	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:32.396Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:33
-2XwiQBIRTActAiBcowW_hP_5w8lXTZqE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:33.308Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:34
-axCTi4CUiQSehE5TIc9_XkPjsChUQygN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:33.502Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:34
-6sw9m0SbGuhCxKoxHXi1nAIIsvxeaya3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:33.734Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:34
-RkZOnBVFuLKn7mKI0Cj1xlnmlkkBH1Bs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:34.047Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:35
-GEXkcuQ8q3xM1x9SrIj9L_EOhoGlqOfB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:17:01.869Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:17:02
-laO0kNDp7_aAv0kylMTMa0gMpjCR43Z-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:17:10.510Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:17:11
-zSKYuImCwYrSCJcIxwQ_DWj8ESBw6zXi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:17:16.562Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:17:17
-bKC3BJgg2FYVmTzCM43ZRerRxcORL4df	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:17:22.747Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:17:23
-AzUOJQafy7uSHvVWtM6s-nyj64LyFhJH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:17:29.448Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:17:30
+4zY0huyQu-n0XwrCyWp-7oPPt9Br1IlO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:17:51.026Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:17:52
 9UH0INbVktRPLxpVz1P_VKd7Qd1zEp-4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T07:22:29.369Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 07:22:30
 paxo9YRbqJuiCXDAzJrgSlB2Lm15lb1s	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T07:22:51.066Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 07:22:52
 H-DsWc1WTx4qzkaHM97sSLEj5dm-R4Ti	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T07:22:54.072Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 07:22:55
 lTiZ52reT1d9mqg3EM2jH26_DZ1ULY4U	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T07:22:54.247Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 07:22:55
-FkodVuFPv7VgRtCoG1mqW_2Eg6JBaDnn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:34.494Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:35
-o55kB3m8wPPWRa9CR5Dq5oEuX_GKbV6O	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:34.832Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:35
-O-IE8_yjYrAF1D1wPQQ6PcIzI-5C-Bi5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:35.141Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:36
-TBlcwDmpiIFsdKOj8g_IyiWUrMUIg9eR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:35.414Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:36
-qSiPOApoyW8pf1DypsEC1EZl5rnFoLhA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:35.707Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:36
--f8ceSBDfdKKmGNrzOTjdGywsA1oFevf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:35.912Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:36
-ksYPpB2-b1DOLvUgU5I2a8eockIplXzR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:18:39.337Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:18:40
+a_76271wEguQH6_Z292PMygVl0x9wJBd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:11.230Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:12
+46ta4jcpkQddbgvwydM0NF0RhnLhAqqP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:12.077Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:13
+cfcbp0bO3WicJD17T1wjse50qhqvYLvJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:12.360Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:13
+qvP5DCVbARzpjJTiPgvvKEmdVzplP9Ly	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:12.648Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:13
+undrglOJz_j3m7fLhD-LeQC-9zRczdsh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:12.928Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:13
+JGXSIZf0dEXXTkwC9PjcQZNB_bmouJr7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:13.211Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:14
+DwoUHJsW2Eas4wZSdIUjXvi08YenBZWj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:13.496Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:14
+adA5zo84IMcEwuiYrNBUHXdcpBatliR2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:13.783Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:14
+gR1tdvr-7Jp7o1neazxNnxTX1WWgtMdx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:14.090Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:15
 JPr5FMSUMKv9vp61a445ECflLH_0mAw7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T02:35:22.219Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 02:35:23
 hGswLNan-OWXDKxYVFbE0S06Zd57WTMn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T02:35:27.816Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 02:35:28
 DF0uTy2ErMko-AA4J8oNapkW7-UrVC3l	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T02:35:33.377Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 02:35:34
@@ -11480,11 +12440,26 @@ YjOlf3TfvkVGFtHXhF0MWbAmzb_pr2QJ	{"cookie":{"originalMaxAge":604800000,"expires"
 uWB4lNVMLAqlWXR0arNM28vP0BJn32oX	{"cookie":{"originalMaxAge":604799993,"expires":"2026-02-26T07:37:11.622Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 07:37:12
 yw4l5BCp-0pwawkWpnZTn3wadDb-_p7Z	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T02:35:55.550Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 02:35:56
 8CVXM1twOXdM89whxA_QbvTvNt709x_0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T07:37:11.683Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 07:37:12
-D0Z5oqGsmJkYiCX_6fVgY7oSaYTfih2Q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T17:52:41.267Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":8,"user":{"id":8,"email":"dferram8@gmail.com","nombre":"Fernando Ramírez","apellido":"","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-02-27 18:31:46
-kew3ClwO_GVUun3zwX13RetvqrnXJG-b	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:36.331Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:37
-JozlRfEipVn9p4YHa9bz8Vm_6t7R2ZUq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:36.525Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:37
-yda4P6hRHh1ma6OdykBRzWoktXuHt0X5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:36.752Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:37
-Qv5NxTPVSZr6sahB-ELeRH-DbAjqSPTs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:19:32.691Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:19:33
+FZI6QOWhCGbll5OtYrj3bY0FPsYwc4Xp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:14.376Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:15
+kTTMpcL4geN2eV1sd77rcYuc0dV15927	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:14.657Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:15
+t0JkEjuFFDzYO1-Tt0e1C0VsCj9fJhQd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:14.942Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:15
+mogVFekP0HTwhIgCPv2xHHTN6yqHEvkT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:15.226Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:16
+zL0hlTkhL8WpmxCyN0AmbSAchfqBnOAI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:15.500Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:16
+y7Utf8tTo4JksgzjRjBUC5vKQ7Rv-oM_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:15.794Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:16
+R6xcO4cnKM2z8Nr-tzkDF4yPo6CEzYI2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:16.079Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:17
+bHsOOCWlW6HAT5RjhENehSpba14nSiav	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:16.364Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:17
+ztQ4pp09NR-hALnvJ7qDyo2wg_tZlvyw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:16.648Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:17
+EIPTWDLk7i7jPFfVbfDRSFZJgRZwXiTI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:16.935Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:17
+A79mw8s8qEHg5Y-LWPvzYiGospCZ2f9M	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:17.238Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:18
+4cKc4ve9XzPzlBFWHrl4lHbb-hKO4cVO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:17.533Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:18
+eZxNfHcVvY2re6CnnJn43Yxpo9Bx5udP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:17.819Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:18
+mXKVTZsiXzhHktGnPzp-lzjbXEcqEF7n	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:18.105Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:19
+MqZhXWo0QBnnqqNPG4xk_nwBK7m3QL3T	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:18.402Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:19
+wLsHp2RPp3LPK2Sy5p92yxrEsvNhDLEm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:18.684Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:19
+lJfxc88k-e7O2A47Ju5nqRzHzkeMsZC-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:18.970Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:19
+RLyo4ABc6D2p03fSlBmd48I6dUncqGFO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:19.258Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:20
+ZWgTHi_NkwQcq2HKTM07C8eZujkHHSmr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:19.542Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:20
+41focA0W6UHOb6U3TRkqV_quW6z6k_yc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:19.828Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:20
 sR9zhADZql3Xa0rthRqM8Wh4yO0aQF_G	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T02:36:01.106Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 02:36:02
 3eNCPyM116RcH9_VsbqcEaxsfi1P03kY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T02:36:06.874Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 02:36:07
 wRYgapQwZAoPJ_lrIgTYoPi1xlz0A9vK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T02:36:12.564Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 02:36:13
@@ -11496,153 +12471,191 @@ r3Bq7L9agaixjOQiE4fhSVqEbHyUB6uP	{"cookie":{"originalMaxAge":604800000,"expires"
 RY5POt5mqRf2JenHuSZ26UGJKI7RTRLm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T03:43:37.904Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 03:43:38
 2Om8TnvxH2-3NUDxOSnEeplKCuc5vOJf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T03:43:43.153Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 03:43:44
 rcGAZze2yRh_eSXr9_6Rmh0c6bgXl19A	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T03:43:48.518Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 03:43:49
+_F9TpL6klmSfIY5dncNNUkfyzGkGwFZp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:20.116Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:21
 _TBNRL0bAuCpjhO3V0HLiXprRVfucoYW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T03:43:53.704Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 03:43:54
 Kwx35M6tvImtrctnXsaRTO1DSo5ZHwn0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T03:43:58.951Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 03:43:59
 V4zQxO1YHFMFN-96DY0UhbUOiPlzo8Vg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T03:44:04.191Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 03:44:05
+NXrGQ97AulokuwUklzAcrThz7gC45ZXy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:20.417Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:21
+R8SaXcpKm94e3927IJ_yMnKzcgYMAyfs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:20.720Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:21
+jIf5ppxipqM8XstdqYE8IeFBByu5IhR9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:21.018Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:22
+97kD-AatYHmhGBmn9oLEAWuOegU7G1tD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:21.302Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:22
+hyz72hvYp3-WsKCB3KYmCBzSF-Gw61Rn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:36:21.580Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:36:22
+N4KbpV9a3_RFOszk5Ub1-rZxjzavSsIJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:36:18.079Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:36:19
 e7owDdsdovQHfAV8ogVJ05JLdJbL6u6d	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T03:44:09.468Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 03:44:10
 aMCJDFKXVMJvmsn-Q56kAixQzdDlkWpb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T03:44:14.689Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 03:44:15
 BIxDCQ9KxopDzBfNjLBgljEN-n4ok3xU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T03:44:19.973Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 03:44:20
+TCHbWvQevSPZ3Yb2_6J88YN17JrGWOxZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:42:11.498Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:42:12
+COYF9puqq8ccfPHpq1IDM56LoVTIPUj7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T00:56:43.736Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:56:44
 a68Zof5aCjELiyAhPcrtmlK2wLZhpFeX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T02:36:17.990Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 02:36:18
-X6C72q9y5UUOGfe_INGqBK48sb3O4xgs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:36.979Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:37
-K34-W8qYLEvQmmOkczXNmF9AeZMOIXg7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:37.158Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:38
-np7jQeKl4f0QZek1CRJeuoTANEOFQFk-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:38.108Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:39
-hiu3OpoTRzF7V7nJ5tN2Y9At2sWf6BAQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:38.323Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:39
-pp7QsdlynxK-Edmg88qR9r3JF0LrN0FZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:38.525Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:39
-bWwLfT3k-bHytuI-2J18ZhGKXw-h0pRI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:38.722Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:39
-Oplz2SrBoHyu2dPeMbnRBjUtaLfhsIJ-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:21:21.546Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:21:22
-oFzpWKVVwdm_qfY5ikmwfQnsIHZOXnE7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:21:37.304Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:21:38
 T7Zxi3GSaqEhXdzv49DOY0oYNQPyBzrd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T09:10:42.972Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 09:10:43
 uV2AvmtUgo_MxldRq9DxE_lCzlJZm13o	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T09:10:51.369Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 09:10:52
 OzwlOU2Hj1XwhuGo2WxG8Me2lY5w3jPo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T09:11:05.098Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 09:11:06
 VVn78Nt__Fd7EM2rh4Ku0UB_z5WdGczT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T03:46:31.284Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 03:46:32
 6H0rKCDMqFtQyPx4HugLp-lEjb7rl3sf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T03:46:45.924Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 03:46:46
-zsqqxMHBy6uI_44Nj3Sm7agfqEgc8CWV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:38.917Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:39
-u4XqTjSOnN5ZwRNF95dUIp-Tapi8CKAD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:39.254Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:40
-1bs6m_vsN7gbQvhwbshbR1v2vv3uTiX1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:40.015Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:41
-IEXCu5KTFRBmGZdaluMroyV8Edmk-a6F	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:41.227Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:42
-MivDLSeHGYSvH0Sxe9hVIdpbU7bVjcSD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:41.460Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:42
-qTB-lZSR8yxJfKhSLw2l8A4TvIe0Re2B	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:41.652Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:42
-1-aIqOYC5t8i9HZHtY8I-LzfVuIme33e	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:27.329Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:28
-v8MmlKET6-Njw1CBXu6FyTLXsnZzA2uN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:27.795Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:28
-uGaj3f6DMToFb6yio-oZ0a7BSmgU0Nal	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:28.063Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:29
-jSAiBsV5_950Un9MWaKhUsx5tCmq5t-I	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:28.327Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:29
-3t9dlxSneOYdrMhXuJ67aXrEhiFQG2-S	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:41.856Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:42
+cAUSjHlNSuYFNZTiQ1LSWchRd17Xdpsi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:44:15.925Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:44:16
+EqMszo3W2KRv57-Y0bMGR8excPsEfKDD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:02:59.667Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:03:00
 y_EFNxr59g103A6dvxvlJL_hMDL_rI0H	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T02:36:23.474Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 02:36:24
 Q5GIH6wjV8y9O0HptB4cOmAJ0wMedFev	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T10:03:18.376Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 10:03:19
 lzKhcQoorv_Uu_LcxTXkzR6hY6g25QTs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T10:03:30.004Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 10:03:31
 aAKOfehBqbUqwYvUO-sfEZBWp4RhTSFA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T10:03:31.802Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 10:03:32
-f4ZQiSOCbGAuJK33iPV1Va6rzJO0ap-R	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:28.598Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:29
-eKpK7RgHRvQDZiA3Y-5IptrfmVlJquFm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:28.864Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:29
-JDlW06r1a_cF2dk2CdvZQW4xZQ8IYcBz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:29.146Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:30
-O7xV9E3BN-5OAICj0eF8hcv834Loi-pe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:42.071Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:43
-LuabBf8OmsQ3R7TAtKV2Rpg6fuE0-wCW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:29.413Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:30
-BIu4gSeXoUJlcDvvn2pOZ_sNarynGFH8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:29.728Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:30
+ZkEtUKRRNOw2FCmSIknTGm6GO7O2iQs9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:07.265Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:08
+jgOcyU9SgdLfNvELBOuqZ1p7VH0_Uya6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:07.752Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:08
+-E8GsmGwI1hUj2HEreiAOPeYodw2VypZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:08.007Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:09
+Nghf32i6Fcr9_9YyBvQj76jYjmy29vJ7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:08.251Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:09
+wggFoEvELneKQ7wah7YI0KIuJs0CYqx2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:08.516Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:09
+hA4RbW4KU6wwVu_216RXbh4UsI5nntXN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:08.764Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:09
 FUkobLP7kdZ5SaNDqVHcymrnKGduWau3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T02:38:30.907Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 02:38:31
 FoigX4uTUjTpbfxPcTc8b8P2LaDAoJYG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T02:38:42.342Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 02:38:43
 Xwy_QzqECgnPemt8Z-aHdIaipK65TvC5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T10:03:31.874Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 10:03:32
 7gps3yhUtyvwV0qo3KMaFXoBBBgSMQiR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T03:48:54.448Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 03:48:55
-hm4mcJQg_1Xxy7Vqj6wlhTpM1oXaBr5n	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:42.285Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:43
-ScswZKoaaso0XVXBYrZX0iYj325fJbnW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:42.937Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:43
-oCkBvy_37BZ4mXD_pxu9nJMP6rOwJACQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:44.073Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:45
-4VOvBOFziRZfWN83WeNUDkuafeLilxIi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:44.268Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:45
-ePek_zbXCcS_zLi3QASkZmSc_-qTChUZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:44.482Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:45
-64c34Inj12ZCm6-X0m-Edd5HM1BMdYL5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:30.090Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:31
-HTMn_3f_ZiyaQm8jEyCmr7PTJ7WTRrfO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:30.415Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:31
-uVy5-Ln2KNso4NPS2uG09WOhEgI_wbAz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T04:46:44.678Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 04:46:45
-yPLTXRn3AUzkeiw3EeRwp5JSW__t6A7A	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:30.688Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:31
+gc5UIiGO9wbVGX6ysYgLAZc0e2KFke-b	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:09.016Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:10
+eJR3BBm_7focDsXtL3v5IFFMBI4ezWJi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:09.254Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:10
+go5md7wTSfsQUPm74K3ODn8GbAQY-Xta	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:09.486Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:10
+qV8Sj4UHZNpKucC8yTIjN4Q2EawOpECh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:09.721Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:10
+av8lThuP41uBsnvX0XUTFihrQOjRrx4W	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:09.950Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:10
+5GzNqyxlY13Ins_qcbAu5IV2Ow19pgHi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:10.194Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:11
+VnPTo6G9FiAT7RfjJIsfzHo1k2izVJPH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:10.432Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:11
+NiYR1n-7y8hWVhgsqoChKZKIb_UHfiId	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:10.662Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:11
+Iq8h5XXuI9RuLg5wS8hmMrFXnF78Sq8v	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:10.894Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:11
+HS9bmLpcDQFgVvr6P0PgrL5l2I1a5jTQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:11.124Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:12
+OBtU-pdrT8233k7o__-akkzLrtVDC_0u	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:11.366Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:12
+P6NQUGe9YaQ6fNQXFqS0_gz0e8og_PA2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:11.596Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:12
+OFf5R5D2Jd_-PWWr8xQYzQ8kXmWT-mOe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:11.826Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:12
+--VlK-syFzIXQtRWhA3Y_L9Ul_qUUNE8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:12.060Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:13
+ExvrCC8d5OoP_BxE-KVRSueDyBF1b6J9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:12.299Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:13
+NQeHEto8FtCEzQwaQ5n-hweJcqh_c5nQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:12.543Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:13
+lMAsQArnP-LiTPEYT1tuE0dIOwrYcyKn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:12.806Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:13
+UfKQIz-H2e7jk7eW9N39Q6hTUSrUs0S0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:13.043Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:14
+csEN77cvZzCKssN6hh-8BohqyTYxwVZm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T16:46:14.649Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando García","apellido":"","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-03-02 19:57:20
+u-dLD84aAZOhZxIsRp1J9bMVw-4czE0K	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:23.657Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:24
+C1UPlJzzwSmjrV-zU_6eNa5z_0GXMlUS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:24.632Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:25
+K87BBTNh8Lhj5AQZTVTsI7d2cmpPXIzG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:25.641Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:26
+U9vegR0-JFC6BRjOBHasvx9vPKL6S7OT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:27.654Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:28
+jjEjV8WoEFUUVVpdmiHBd2_BlnBOwSOK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:28.022Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:29
+HCvfBoFdTxFYzaQYjcNlTP1x0dq8X4vj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:29.031Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:30
+eGNzsoh8ZtUBh_v2b9cHvO_m5zXwix0L	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:30.038Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:31
 tVXn8OEkoysJa1iulU_O2CNvdDod38Q1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:03:02.346Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:03:03
-2LC1W0Bxuo2tSbTgtPkF-Oh3DXoKZZx7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:30.981Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:31
-co-ln_AlKU8fVyg97FGbLXEpivKLZE1v	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T02:36:31.294Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:32
-m0v6Y17EcMmB16QSWeIpmy2Smjjq815Y	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:31.570Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:32
-t7HDeIWtS38-V4KgKRrexcSAf90iZk-k	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-16T16:51:05.662Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 16:10:23
-eGhUuWA-58tDWgOkOY2M8PwHEz4ZS--d	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T06:27:16.980Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 06:27:17
-wM5cl4h2yFblG1YJnSWLm6K8eWZog7AK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:31.864Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:32
-TzYpyR3JvxpepIpfut4etCFt6HGprMQs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:32.149Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:33
-NISoAxZV91-l_EeXltK06U5cg7ykFQki	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:32.416Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:33
-CYrQn6RX-4gp0Xo8R6sJ1rbQ3fCSTrwQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:32.680Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:33
-y3cWe_eIN98Fssf1N9k4TkiBDI4dXJjm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:32.945Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:33
-1RkTiCk48R71LEWjb98M18484Vk4YNLS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:33.239Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:34
-fY2Byd-yDfqe3gjZNnlAz7k3ACCE0DTf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:33.563Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:34
-spIQU9eOFlC4uVSLL5KLsnz4m3yVvbcr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:33.870Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:34
-nYztfa5sp5nS5ZTvZPJLMMYq2T1Cj4Py	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:34.144Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:35
+WkwIgew5xhVvJnhOI3-gS5XFcV8b42d7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:31.030Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:32
+QM5zPVI0A9SM-evIQ4T704xCMcGgc2nB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:33.028Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:34
+bEMMPCRP7fR4XDxXoqIGHwr77Iq63tsj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:33.779Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:34
+zXS1kjfX_uFaUiCOnkzyFcAXpS0nozOW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:35.023Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:36
+x45m9R-vhsK9A3fLlqoyFWML7lSXh-qS	{"cookie":{"originalMaxAge":604799999,"expires":"2026-03-02T19:50:36.047Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:37
+SFwpAx2OtUamWpLfKXdhgLOP-CuQeDHH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:36.373Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:37
+UP1RsfDNaL8J8KzHZ2Ko4LbvPFzS-bP1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:36.679Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:37
+hV1l8yIGVnE_MreFxHZxuZLx2VdF_2Sc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:36.982Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:37
+CrGmyEkAB7hDFl3I8DvEJXBruah0nXtT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:37.280Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:38
+z6uD8hXqe84Og1hiPNhX0PTGk6k-ZywT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:37.568Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:38
+2FZhCM48XMdHxQ2ML2hSJLE16n5Hjsqn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:38.583Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:39
+y74ulCDhgeTPg2KiXvzebLUa5c5cI14h	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:39.578Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:40
+nFWlNsaHijfeV6ksPQaMpkLuwkxJG3JV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:40.580Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:41
+8GgTM2fC5qvlFozwscTp59QEntSEl_yn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:41.576Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:42
+vfz3ZJu9a03OOgqNkjafMB7KaxspuNJf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:42.584Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:43
+cPdMN0PQS01HnbZbXr_TkAGNPSlhV7s-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:43.177Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:44
+gAMCm8Nigh7nN17_Z-ZVjJhpffHu0r6r	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:44.578Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:45
+YDQmK4YLLLAxcrdLbgzm1De2rUD8242V	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:45.588Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:46
+XO98dAwLIXk3k7_CpkoYwgHnj1dzDhXK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:46.593Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:47
+jkA2qk8K6GnGt_ToXrvYRGFFTwlxOGuI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:47.581Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:48
+bHItOuN55ePhZUyUrPqoq6q4bzxUrZ66	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:48.599Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:49
+x8wMzhgrMzmSE68ORrHw6deEqtchSW0X	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:49.587Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:50
+dyGBk1VElZ3e3CgpSbJj41W5XgPqVIgS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:13.278Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:14
 r0cXd64vDHqZHxthzZ4TxhYdGSaSPmYg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:08.026Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:09
-44GDBpjSUa3XgRnQFkwsRXLTJ5GEacZ7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:34.481Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:35
-VQ_MzD9X1p33luCIvA9sZjsVNRX_vGQI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:34.772Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:35
-HYQStzEigY8AJFj_Zc38U-oQXjkvAuCq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T06:27:17.020Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 06:27:18
-rW5fIc04pMSCSvZgXFaoSpyMBxe9z7ML	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:35.063Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:36
--Hf2viU9WHG1IMmQe2tuIrfeAZ8S4IHK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:35.383Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:36
-aU7z4MR4ppt79YwiikLUb1ja1rKop0LJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:35.659Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:36
-jrbsaYCuk8uEQGhJpE-qglnHicqVNxkj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:35.934Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:36
-HMfFvyQ68hWsadpP8DKouvXWzgMbiIq4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:36.228Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:37
-INgCdt_Xsqe4OAy7Jpo_Nqtga_kBaPRM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:36.491Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:37
-uiAnLZcnUD71N_1vEhLjXRUSpnivGvGW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:36.759Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:37
-HFwBb97jyI-Gs3DX9A4km3aWrQUORo8r	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:37.030Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:38
-SErIZDmedn91wfPhbAwStRvG3z7qIrku	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:37.296Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:38
-5ETap7ri_ourhnvPj4ZfHTf9wSc8GFyE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:37.601Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:38
-Bx-RIb07d2E1-V_VoSKBzGcOj12zIXGn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:37.941Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:38
-mC2x8iexnn4NjfGGLuV8RkxIls6rHSa5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:38.235Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:39
-LJ9wImtHoUymv2nNM9MTmwRzrGmgq_0G	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:38.498Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:39
-xqe2TnXPcBVB-1zkfQHMAib0Y3MyMQ2X	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:38.763Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:39
-QE4O_XYVwtuoayW1MbasJzgpm9YKlvB0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:39.066Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:40
-MSzA1OLEwmwG61rXxGnbWxiHyuFGSRlA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:39.331Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:40
-532xHJ3EYRobFZy5VYYyBxDpRS1x1dU5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:39.587Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:40
-lrDVRjdIaHhObm4xZbk6JvG1_-QB0Iza	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:39.847Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:40
-S8sqLb5ZnMCo9HaMOnAUL0NDcQYE9dg5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:40.145Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:41
-4k6TVPyuO8HKUsN0rA01LF6Eq_Oey5xf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:40.420Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:41
-G0O1Plb1eO8yZ5U7k9PqmPRyqGMSbl3L	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:40.717Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:41
-FhVqSnGGxpir8xbWdzQE9K00LxK4XIMM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:36:40.983Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:36:41
+xSys2l5S-zFRWTC7UCDdqFi51RdLPmAU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:50.576Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:51
+uKG23oi5d1TpmyJRVyQgcrBura_okmeY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:51.647Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:52
+7izotS5dhXzNLAj6dgmTbDBcnGhht9P3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:52.605Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:53
+lwKXrV7aJPGj5rITu-dvDacG__7LYU7T	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:53.683Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:54
+hVStuaIwvo_cVMnVaELwWpXgvUi9EgxC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:54.654Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:55
+A5corzIpjYSdroEKcunyChIUz-54MwnE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:55.599Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:56
+Y8EF5zCEt4ejAXCq9_0CNZFvl9s5753f	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:55.657Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:56
+LTkahHeWQNKw7Y7i9g9fbx0lOVfILEHi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:58.621Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:50:59
+CR8H6CzKS8xAKysdzAP8CVF5QWhKzGMF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:13.515Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:14
+At-9JV42V-RMb047Hcw9tiGDlJsb-E9e	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:51:12.467Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:51:16
+Ob6xU7OXLP3xLCJV2Lq8UFv6xNDr2XCd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:13.749Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:14
+HHlgw8Iz8v59w-VcXowc-HFR2NP70Fii	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:13.985Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:14
+jnusTEkLrWMRQmYOMKUoXVKmCxe4YE8V	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:50:49.618Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:51:15
+iOsAgKe9Ca9Aca44vPDBBOW_TXsVAFNI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:14.213Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:15
+x-wwAtdKY658eUtoS9tvZH3BmL6Bhjv4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:14.454Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:15
+6brGcOTeDUSgL6zQtvHDS33FWPpXGTbZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:14.698Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:15
+C9odpLUfAFArqwvOW-leWvG7v3yVO__G	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:14.978Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:15
+waQsb36g0F1-1PQDwX735QmczFxC927_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:15.222Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:16
+upDmgltrdkJ_mC6ikMJfXx3wFWwT_HDR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:15.454Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:16
+-QE2obnGARHg2Os2UvCaOs6df5QEiTIb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:15.709Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:16
+eftH85-vuLDjTmHbdix0wzt7OV-10m-N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:15.954Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:16
+jyCjUIEvsuBNFOvy_2XnsDO1dypvkpoq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:16.236Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:17
+zcIMGXnDNJY122XdkTMZ2SpRfi6Iz9Vf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:51:17.914Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:51:19
 3kWaiB1KihnOXBC-gJNtq2zc95O4V8DU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:08.599Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:09
 CS7PyR90sZrhocn6VJvw5McwSlh3Z60D	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:08.929Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:09
 yGy6Lxjjrm3Ez6i9dL-g81Ac64Zgt0NL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:09.092Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:10
 9-V0EapisqMXzbZ7zZmado2CkGA5ISLO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:09.433Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:10
 YCdmj-8-pA75SHQ5Zm6RML9SSE29yrKC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:09.465Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:10
 SagawRPiIbdsUbhL8NZXlkl1w8tD4fIs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T10:22:24.867Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 10:22:25
-bcKWB12WLXyhbU6Tn9jVRjTddV8CI-EZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T06:38:08.349Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 06:38:09
-g1ZNNLMfAd9zqJ196teD9zR5Ao4MQRvk	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T02:50:31.777Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:50:32
+k6uTQFsTzCWYNANP72KdQETC0hxZ5mTB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:16.502Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:17
+ZGIuM6TFU2cCx81UxzFQx-W9RcnUg_Zt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:16.735Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:17
+NgnByIfLwrvLOnSRjvMzBR-Q3cV70h6k	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:51:18.715Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:51:19
+knHvhPqNnZEV-UqJcAi45ZbJo5PzhA72	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:16.971Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:17
+sbxvB7TyYj5_zY9JFK0WSM089O-OIYSH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:17.216Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:18
 4JUGHdLnwZOeB7Z9je4SrIpjfWFWeapV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:09.809Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:10
 9ljlKD_y9x5Fun3872RM5bnDsbXq1jkP	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-26T11:08:41.486Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 11:08:42
+tIp2yEQ8M0aAVyfSMdCtkdfw5eDloXML	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:17.443Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:18
 MUPrcaOSNWvpP1Vy7wIyIW3mZHnTWyxd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:01:25.030Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:01:26
-pxd6rhbKhPF9HhhP8yEWHbHJqWlLemGX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T07:08:25.673Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 07:08:26
-WrKL3DtxbJmNhTle1fSjjCBKoVp40WmP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T02:50:31.779Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 02:50:32
+_uAFQS-SA8coK4ya_pZxLZkgKduV-6iY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:17.679Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:18
+uWWZfWtdh_kmY3DDj7IWFIQmlaOVRE8Q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:51:18.726Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:51:19
+20yUbc0WzSZwUMylBKyOoHeF-Yd-05HV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:17.908Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:18
+L9S0MQauZAiC8sHgRS1QXudgkjdezo3X	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:18.141Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:19
+3Bfeu-p6XGbCP5SnkOez6JY1Eu4acoMZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:18.387Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:19
+lNKwdmgPs3zLvxkCqPkMeGNH5_vnfAnf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:18.635Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:19
+5JzbYGh3eRSIt1U840ZJPSoM56ldVqyQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:18.897Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:19
+btgwu28uxlQE5F5UKILbhs_gV61BnmOi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:19.162Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:20
+ZoVlOLawqIpodG2aasvZb1dOMeCxJfv0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:19.429Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:20
+BWabX9gjIt0d4Xedtq98GMU6ZUkDBXdx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:19.670Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:20
+3NImCBMKya3MDoZRtpjLo_O37K_zEFHb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:06:19.901Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:06:20
+nLLdqR710vXEWghbnFMaeHL50qV-EsQ_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:19:07.895Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:19:08
 Haz5FYD_w9QuBkwxQLW5FSYsd-m5CE-U	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:09.403Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:10
 -aRV_xOOgeV5zpWNvRnmkLa-2U90gg0Q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:10.061Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:11
-nB32hX6bDTs5AzIkwwcSmqlYWn3G1J_a	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T07:08:29.544Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 07:08:32
+75FOsbfSvxsqrJNd650LsWf_1D_ihPkl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:51:18.814Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:51:19
 zTU_UmW1xbg6eZUZSN_g7eghxKQFtEu-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:10.301Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:11
 wJz2eOrP6TokqkZHH6hcB3z5Idp_hWr6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T11:20:32.090Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 11:20:33
 DGQSDkzO_npqrk61oRvndaqe8zeHL4RP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:02:07.823Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:02:09
 X9kQK_W8I1Dd5ZciyFLC8CbV8xjRWX6T	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T11:20:32.619Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 11:20:34
-OUOgCpuglB0k6zqHbe2yJt6ii8ljBq0J	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T07:11:43.160Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 07:11:44
-bvIJZEiFQgN7I3-kfD_uFiFQbpKC_kWt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T07:11:43.181Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 07:11:44
-9h73-0uVfkyX8W58K16nEdXQLW5yEgzW	{"cookie":{"originalMaxAge":604799990,"expires":"2026-02-24T04:42:21.635Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 04:42:22
+htjcErrbJhtwS0WCNtYgTpxwgw0OWcNJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:51:18.765Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:51:20
+d_HBqOijI0pJwZ7aV8Thd3S8loqz-ayw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:28:06.430Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:28:07
 AoNMkr7BIxT2cLDeCHhRvzj1DV14Q8JZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:10.010Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:11
 pT10m2o6VyRfP4Ycs7aFVNDwpIchZeu8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:10.102Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:11
 VjWo0me6xsmOKzJGauTeDBh7477_rXvE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:10.151Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:11
 pk8YjzRhntiUM3xQCsEPaqdvSZJIEvZe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:10.239Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:11
 zRnLkbndOjPGFcOmn-TnnmSf47tW60tn	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-26T11:36:00.872Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 11:36:01
 ewt0FLwZDnnrdj2_C5K7IPB-4jiTOTaA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T11:36:01.098Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 11:36:02
+D0qz1vF0DBuz2EjXlUVukjaJiJEpmKhB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:51:21.239Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:51:25
 PIfVUnCo4pEoOp_2Ft8WCMPJQtyY0t4w	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T11:36:01.439Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 11:36:02
 rNBIYI_t2QBJBZ9r1hEdEyP-JfiYJiQ-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T11:36:01.638Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 11:36:02
 QwiEO0eXaLkJp4mJmTsecDYUS9tnUQnJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T11:36:01.830Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 11:36:02
-L2gQxeniU4NrkXsO_lhTRaWb5U3t44Ik	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T04:42:22.326Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 04:42:30
-2i1QmO2oK877hyOYnR2jEq73pFTkWhl6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T08:00:22.444Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 08:00:23
-1Jp0ocdAna5dElc1cWqpgLrS_4Fof6qg	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T05:18:52.767Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 05:18:53
+QclkBzdJrPbEMNzK7m19ZVswhlBm4h0O	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:54:42.915Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:54:43
 QIRi0xfljtYsQAa33qpYvqAmHRWa_vJ8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:10.011Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:11
 aGAdWPOUxTy00J5GI-I5L_BLPIxGwBK4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T11:36:02.072Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 11:36:03
 A_0h_LCXU9No-JVpCXSo0lIR1OMRIJ7h	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T11:36:02.513Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 11:36:03
 8gRCDoT0zYpv4FYLopQ2ZHQVA8kZSbaf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T11:36:03.128Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 11:36:04
 cdgHkAWHmOL6xeqC1WwYENldESPD5jaD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T11:36:03.399Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 11:36:04
 EZM4G2UUo_R6qiDaT3eifpEjL4mRteyM	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-27T04:11:18.404Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:11:19
-fdMnFQECZ1CBS1kSYaJM53oILdf5Cqz8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T08:57:16.003Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 08:57:17
+pocOpPr3CBJHuGbwam0GSCeoSWx_YJZa	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:54:43.750Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:54:44
+NUSFQm49FPwutSuSoRMgtJwogyxF10t9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:54:44.547Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:54:45
+Z17nwWNDmY1DPudALThXN8csLleUlZss	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:28.084Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:29
+8Qgkj2n3pzs2ejPIlmEXLF4j_ghT0elz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:28.424Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:29
+EsyuJThZWCcc2WzGqIv0DOdaCadUnig1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:28.566Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:29
+tLS_6TNuSLnPq5NJt1wdCPy3G6NIx5DN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:28.720Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:29
+CHYJgJBDwfoVz6uOkpGGkUtErA5sbiLc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:28.881Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:29
+o_JZ3Tch4MjAwWohSpJQeAjSBrv_Tsqn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:28.934Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:29
+SUXls1D08eZQu3cSV8cCJWOFSUvK4xCY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:29.475Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:30
+GkZdY5XBn7ucZl27B66DODATMqhPunqq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:29.556Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:30
+3FhVaa7INYdH4S6fDjp_smGKkUWpEGW4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:56:11.066Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 19:56:12
 CsgBvf8DPA0Zs_PMOIeqIVAR0caaXbnO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:10.048Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:11
+iVXm-lLU3eA4aVVdGQPVzlBCXkqfJFER	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:29.022Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:30
 9MTgJyaCjdyKAHVm842dF6DWQxa5qmXZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:12:50.152Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:12:51
 Ex5l3T2Z4nB4KF2wRo0V-wRX1AL51zPN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T12:58:56.746Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 12:58:58
 eC5_nNxXxkO-eZVJBJXar_TI0Wk8bK8l	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T05:33:33.279Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 05:33:47
 WdiuWZEepARnhx7YC-JY8FJOZTmUg6Wt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T06:22:20.530Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 06:22:21
--aHPk-IrwV51agPyLAO9sUXkU813tIo1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T09:04:07.503Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 09:04:08
+6ftXL2oe1xgUPhSe9Ijl-WWnh0GYhkKt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:29.122Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:30
 QbDWQOpwMRfICaq9HE5cujBY_rK3IvGN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T06:22:20.599Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 06:22:21
-Vhf3y7opiysVM9QCd17lXYwLhgptV80j	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T09:04:08.366Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 09:04:09
-Kv7T3_kK9JLZTwBHB2Q7j0MZaNY1rpnV	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-22T09:04:08.978Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 09:04:09
-ZwRSmOguik3_iSA5wDjxFZuPDCTUSg8O	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-22T09:40:16.466Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 09:40:17
+5hdavVJrYjtzz4C01Tt1eZ9Fdd2VnNgd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T19:59:25.580Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:00:18
+PpD9bXkAtZCqnVvetltffiMCxh-5nqnY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:14:26.418Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:14:27
 gPmavTNRkPhGwzg4YyxUQdWhpYmV692M	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T07:26:03.145Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 07:26:04
 H6eIjCNzU8UMX3Imotuk5YW8-N_eZfvB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:10.260Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:11
 -l-YUZRqmNJMGhMCmF6AwoNwKwa4uCGT	{"cookie":{"originalMaxAge":604799998,"expires":"2026-02-26T13:10:39.458Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 13:10:40
@@ -11652,6 +12665,11 @@ u9B7CyyYnLAk2GnXsLRPkHl00B2oV13L	{"cookie":{"originalMaxAge":604800000,"expires"
 Y_Fw8MzEDOVsriT86NIMZOVLAQtAwWDb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:16:21.557Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:16:22
 _eBF_sswoy3Zc5sROiADWnMTysooSsuE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:16:26.987Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:16:27
 ID6IRpG9iPVRgVCHNjdNXSDAcNHcd567	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:16:32.383Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:16:33
+N95SF6ZMZSG0qFWjuSERLgxJm6KcflCJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:14:26.724Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:14:27
+5Hs4dJ4T5XTCYnnA7mboIE_wkNf3CQUp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:29.857Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:30
+aO1kHGBuN-JqOVMHHd3Ww6auVhinQRqI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:29.907Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:30
+daNuy1LcRFBnhVax3-ain8JXzNhUg3-G	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:29.937Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:30
+q8Tjkl_NVNZi9MZEHDGhXPj_CTQkm0kQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:29.968Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:30
 YLpE7PvjWcRNXZXOnanG11auT72pdEaW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:16:37.620Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:16:38
 b5AzYSBXe2dXmbcBoQA53rryQ3mwgVJG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:16:42.888Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:16:43
 FxaqmP1Qz83Q45J_x88TSBo4tGxhYr2S	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:16:48.247Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:16:49
@@ -11659,7 +12677,7 @@ ueei6cNHUlJ9C76myBAovipchPtDMtXs	{"cookie":{"originalMaxAge":604800000,"expires"
 kQbR5vMKOZ0GeUeMnj8-HmxTkkD3ygMD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:16:58.954Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:16:59
 DlhJY137uiN9NnS234QpXDqp_-yaL3sI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:17:04.842Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:17:05
 Si95jlTmA_KPt5Dwd211iteYqE1C5JIf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:17:10.222Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:17:11
-LfzCv1NVTskTlmbL9cj0rZduIJFWfCVK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T10:51:49.429Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 10:51:50
+e96D7X761YTlHd6EefHb6xVLc7NiMPFQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:29.175Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:30
 X-D-e_l-z8IANi23NwcRaB3blYUbs4_C	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T07:48:40.857Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 07:48:41
 9pANWFqz2IUK9zxVHegD4qLf3ajV1Ry3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:10.270Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:11
 dKTA0ZtF6g6PkD8_3HUdfMhe0XRc0Fhg	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:10.319Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:11
@@ -11670,12 +12688,45 @@ GSubFa4pJpYCEc5pIuPIXYaREJRHzHo7	{"cookie":{"originalMaxAge":604800000,"expires"
 cQeyIOKavQeBl6DKrxBOXp8WTIsiRsV-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:11.999Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:12
 LVteTCjXh_-uPLvul9RdtacvXDD2TlX0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:12.461Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:13
 CTdeh1fqqmwSDBLCs00ma1T3xvVCBH7s	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:12.776Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:13
+jRNuanuq_gXndTrU5QWKJO9tUUsnNn0Y	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:15:23.744Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:15:26
 POaBdDjY-ooSBs9pEhNR6SPBfLzWh-pC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:13.083Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:14
-lhgua5up3UCcbaOY250WW59qcP36edU6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T10:53:33.332Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 10:53:34
+6mTjCcHPHGHD2FTH77ZZFolYpAug_RNR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:09.172Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:10
 9GkQxnljAs9su7L5VuBFUIv-Ppp_hCa_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T07:53:36.564Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 07:53:37
 ra58MjNnMs-QZdxPyTr9-s2NgSV7AFYb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:13.387Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:14
+pUeVSYLGN7eZichaMs25di2h9WOVS5oF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:09.594Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:10
+dGvrdHxd8NTvOMt6IEFj297mXaKPNBfH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:10.358Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:11
+z4zj_i78ml1Ce_CWE-4gi9Os5z2rb-fy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:11.754Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:12
+HiO5w8U7yRGVkqELF8gRruPH3srB3scL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:12.748Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:13
+1fqT096_NIL4X2Aedg289D6dLUcdAcKX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:13.138Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:14
+iAAPyvevzAv0TQRJt3Q35YcAv1Hg2kHw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:13.468Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:14
+W3Mm0syOZkdjzxUNI6CI4m8tRsBcrY8q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:13.743Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:14
+APinUjSCPLxZxD264rz-vv64BpcPBbVK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:14.174Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:15
+EXiWl-U4cFuIu9FPbyvo0RbGFvtpOSOQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:14.694Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:15
+Xg3bQM0MpWZ-pfzMs_sFbNVkMChdXSL9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:15.040Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:16
+Gnw7SzXyaQ9JvQ3ew4ZyzXDZSQkGJQ7v	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:15.279Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:16
+VpqRcsFNwscEb4Nu2EzYXT31ZC0TYe_8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:20.348Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:21
+4HlfRuNbSBpSx53MsUdkmu6vMBy7J3kk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:33.056Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:34
+lm8J0SZvrzdIGD1O-w5MMoF7RR2oG7hk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:33.390Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:34
+T0EunP3jM7MNJ3j_SU0sMHnDNw4e9W2K	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:33.622Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:34
+LFtHbSBe_fuRRfCfoLBJ8226e7y-W8oW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:33.886Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:34
+g9Brd5iC7YCFA-Zk6z5r7VOetw7-SZcf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:33.987Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:34
+v25ov1AT2UL_sFi4a2M9LGziCtKZqjQ_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:34.100Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:35
+yzE4ziDhP_uUcrNMgnaVsUrzas7WErO8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:34.173Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:35
+Qp8CnSu0C8ROD2vuNxbgX-Llf2MQNuxZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:34.246Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:35
+funi4z5XfIqhkXbpO16WeB70o0Tv97U8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:34.268Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:35
+BvcxFKXD3sYgyX1DqGamIihJu8dBxA1t	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:34.288Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:35
+mW5ALykZ3cIXD4QGJBm5r30YXO2dEk-b	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:34.315Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:35
+hDVZmn3axaLCtdcp-KLnwYE7hhtWmkJS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:34.554Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:35
+86TG1p-UZbzoR07uolliM9UISJdHSB3N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:34.632Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:35
 c_5y4l-OPWoqIrQXe7Sc0pcrl1B6ijCL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:13.696Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:14
-qptZwv-TKUINa2Njdl-QmthuYJfFykud	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T11:10:11.499Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 11:10:12
+GhD889IIkJLUtSkuTCA7sXXZ6BMmm6wW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:34.674Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:35
+WdZM-2eOBr5EbajmmxOKjaqQm_4cxnVu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:34.803Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:35
+O5m7PWpv94G9tYOKgXMTfwL0ynY9zakG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:34.947Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:35
+XJmDPrwFe3rysdLNN5hXnb6plR064VPI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:35.091Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:36
+BR8Aq1LRwexqrBY1UTk-LryIqF9rgo33	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:35.151Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:36
+QDqo6sZ3DMEOXyK7WxM_PHLGCspvzf0s	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:45.276Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:46
+3qzIJUXZBFj9ZoyXRpiCwn5YKFxYw1uL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:45.656Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:46
+nhEBMLZj-9qYCFi-Rdb86LyicTjGnYuP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:46.189Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:47
 Qr_RbLNxDeW67rjOqhvKotGK2ure-Qrb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:14.009Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:15
 3RDe23lu90gvLcRn3CZpbanwG6GJIE9D	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:14.326Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:15
 kKxzZvI1sSLjIVZThVSMcXcAeIk8KrvS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:08:14.669Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:08:15
@@ -11689,7 +12740,27 @@ fLluldHJUenshYyinHJwUaPYxw7gp7nd	{"cookie":{"originalMaxAge":604800000,"expires"
 PdF-hwlafaSuRbIB1D0u8DkGmTvAL4sN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T09:22:29.768Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 09:22:38
 Jn3yelYhyXFczf322NCs7R818h8jSJOH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:19:45.849Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:19:46
 44pCuYjUYJgUk4CbXJhnERwinvJZocbB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:19:59.433Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:20:00
-CJIrr5lcwxYI7q5n9ffaqOICnkshy1k4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T11:36:47.783Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 11:36:48
+232n-luF2ZUd2_bcXQz-GMz_i4Cbn_fD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:46.521Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:47
+9xdrnS7zWhLHFpnUQNMs95bbX9Xrogh9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:46.758Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:47
+PM4gpPnljWvnEp5G84emTFPMEeb3OI3i	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:47.081Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:48
+X7T3RL_z5jENDWDcreXd9i4jInt6BWNo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:47.380Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:48
+p3fM9CPr93E5HNa-2eFrMQYrTGugG3jm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:47.619Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:48
+-8ELMydWjJrA5-V6okW_Ilm2yZ9P5yPy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:47.893Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:48
+EjDQaBF7M-761_2KTYoErut_FO8_6QcZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:48.189Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:49
+vF0dy5jx6Nn1PSzPQuV6QcIKQIMC08Pb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:48.607Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:49
+xrjB1T6-dmg8r7gBaowl5vYvNCDvw95n	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:55.908Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:56
+1pjCSQEevAzv4VoaYOLLYWPFR9HJW2w_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:56.058Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:57
+A0CIALbRb5mxC59mRHlSllrXPZE1OKE8	{"cookie":{"originalMaxAge":604799999,"expires":"2026-03-02T20:18:56.235Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:57
+z-uGGDl45sCN6Gx7r_d6Bz-gFPOeMA_s	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:56.410Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:57
+yBOz5gE5AZb0kTFCUX25vtVTC4IQ8gyJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:56.570Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:57
+XaT5s10CnnWY4rhLF4w4k2ZuZ01Ur8JM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:56.722Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:57
+R8YwC2k-ri-QaHVszCkFDr5pVWrDRxy7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:56.930Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:57
+Ey2sL-UUb3DBfUA4z7lEEj9nPuCVWo34	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:57.173Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:58
+FSk26NhY19hhY9HqlFVVKpkERvUjn-oR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:57.620Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:58
+HbRuUlL0oxbD5Y8GXMrYHi0jVYHeidhf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:57.876Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:58
+L3tosbVLHcXbeOcUsqKhniLMamoo5SEu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:18:58.368Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:18:59
+W_kBSpd61Sft8qj2v582ijkuCW7OdRf1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:19:26.186Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:19:27
+8KfSjRYcGEW06VvTGDQdA1qCUdQsSO8T	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:29.285Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:30
 qWtz0rJvcJ0q3eke3I5IN1kTEZmT5X4U	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T09:37:16.732Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 09:37:17
 tszxdpSEQ0aGxopWcJBa6scaVcHYZUKA	{"cookie":{"originalMaxAge":604799998,"expires":"2026-02-25T05:37:12.361Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:37:13
 hqYrOT0lEdSc0gZBzG0V_e1dlADoVHqu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T09:37:21.642Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 09:37:22
@@ -11709,75 +12780,85 @@ OKmhhXf4V4S-zR8vCe2Qd1m9H7QR1ZzD	{"cookie":{"originalMaxAge":604800000,"expires"
 zQJqV0CJxzZ9Ubg38vPmtqp5VhI88G5r	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:23:03.917Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:23:04
 YNwrB7mVSW0PNaj7P4NljYLVHm1MsFDH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:23:09.426Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:23:10
 4d5Dr9cf5rCcGISbqmdpcYlKpOj9o8Pe	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T09:37:20.886Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 09:37:24
-TZu1ZaUeCWKlzxHv-pDZRiDGwSEgKEPn	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-22T13:17:28.961Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:17:29
-8jTzZw1yFVzD78izKFMjqOalRmQONLL8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:17:33.775Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:17:34
-VDb3upXX4L6gPlsyR3xFLyZjHdmyBrGl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:17:39.386Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:17:40
-LgGJzPVKfwKGLfH2W-0dSbR0SkPdBKFw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:17:43.091Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:17:44
-d7CLhg1X1YDfDlVt3NI6Khr2X6CaRJHc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:17:44.541Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:17:45
-qnJUDe_VIBX06_WI5I22EORpLqNTotCa	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:17:50.569Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:17:51
-1cBwkpz3IEOEWM1ng6kiitaFLnsxLMkA	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:17:52.942Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:17:53
-dFtGEsjXhFLF1IkivbIBLfIWLV1hKVNr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:18:00.627Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:18:01
-2dvbq17frmDFUbFRWJC3U9m0vu2sr4eV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:18:11.855Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:18:12
-d_j-Gg21AuNM5XA3vmcA6KP_IgfAKX1B	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:18:15.760Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:18:16
-3xpQ2jt0eC0RLE4XNkPIvVS23G1SgRVs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:18:24.284Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:18:25
+XOpsslL_uwUM0qUGKGBEuCJ6NjJjM1s7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:27:23.615Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:27:27
+Qs88fsx3YaaYuvlBvUh7n516VG5yIAwr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:42:39.286Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:42:40
+I1PZpIgwDqMoyTpcQY_KVx9im6UrWz0z	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:29.395Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:30
+ISTkgzStQigwbNAf0YR_IYxoq6lVEQyW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:30.009Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:31
+sLY3RfMY_jX1MQMG2K3RpEbRClw8pNWi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:30.162Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:31
+g8ZB9bfcHDK3D0vzcWv-6TuxYBmNMCnb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:30.348Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:31
+U5Y_xPw8QZNuKqIEwG-Z_1GrkWEpe2iN	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:30.508Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:31
+ZZkwu9xVht8ZDIMhaW1bKX85lsxkgaOu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:30.653Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:31
+ylg7deNtmFapgxxFZrMwOnoh0HRAEsv2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:30.815Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:31
+OtvNdzib3rN7rZ4Z357OhUhBPThst2Y1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:30.970Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:31
+RB3EREW3GywHzGEI8-FyHOC1IQfFOKsZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:31.124Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:32
+1qf6axzsw5LkPc2gKaaifhTZL4TH91E_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:31.279Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:32
+nFe-vIQEDHkIIGoEhW7OSvV90DUANtNl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:31.430Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:32
+7o4LrWoxsDn6bNfxPcH0k4kP3pkaTv-X	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:31.591Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:32
+wJAyUCDYMXGPiKisPkq1ymvZiyQWdeIG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:31.738Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:32
 flCFTrTbTbsvKjZzf4Rj6eb1jHo790bo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T09:39:27.654Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 09:39:28
 YN5vGcGnHICvzMHz65on6QI21qVzHmzp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T09:39:28.866Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 09:39:29
 qEjHEmeZtYnY8yQ9heQWlO-2A3Hv-9Im	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T09:39:30.091Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 09:39:31
 gMWc3VGI7UX6_23YoiC8R96OtW8jU1nx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T09:39:31.439Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 09:39:32
-swta83Wl827f8dewMcypIx88lfsSI0dJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:18:34.831Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:18:35
-sBedyLM9QmoLj5Vam8Qau1ARt7LaI71G	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:18:38.781Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:18:39
-W-F0gxGs2wQe3m7YtGIWlz5bQFN1RoZu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:18:45.329Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:18:46
+z0gg6Sooa5jd9Tj5cgkY93UJF5W3mtMk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:31.903Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:32
+hv_ouIo3bDx2wXmihJyVzwTLeBroe8OD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:32.054Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:33
+c3iYUUqvFJ4koN9bMPX94Dcx8MQ8Lej4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:32.207Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:33
+C2Pqsdc9DCInLvdbfcxMbEzZbJEGaQOW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:46:06.390Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:46:07
+jtTm5SUtqISpXVNM36-2BvSt0IinC7Om	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:29.997Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:30
 vadUWhxTimbLq3tFpOXP719JkVtHYrxZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T09:39:32.551Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 09:39:33
 -1sUMzQ4337pVhCbyho6ICJvN6meOGQX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T05:38:37.961Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 05:38:38
 mHv5M2dJTLGyXlyd_RoH5mthWso547Lo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T14:11:37.497Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 14:11:38
 xlxDQ7xq0BqLWmWwW4WjKDhZe7hKNtLv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:26:25.638Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:26:26
 ZXYHAulncaFPp9rtEyE-IhqiwUdc_q1X	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T04:26:39.424Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 04:26:40
-WgYDJHhbRrO2RDvKje8XM7SNTYmtMDcG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T13:34:11.633Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 13:34:12
+tVtZfvux-1Yg9ZyWxrwOcZzFfOEegArE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:46:16.218Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:46:26
+I3UG8gu894RPeJWgcG_imyp_vYevP4Bk	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-02T20:46:07.182Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-02 20:46:39
+ZBw_Wfbap-OU9eRvyDP3jDU2iJnpp78C	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:33:30.007Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:33:31
 7QVmgLR3MYCz7rJ4SsbEBCQ2kEy5F6vc	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T09:46:28.952Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 09:46:29
 TYXggd65OzM5AaY7djiL-uP_VsGvRN07	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T06:13:39.488Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 06:13:40
-Y8V9iuM9Oyp8whuYTIfaohWnr7tSoD4I	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-15T01:21:49.934Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 12:35:20
 evMHYjEeJ_hEXKwjSsxLcnxmT14Arsdo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T14:22:47.202Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 14:23:36
-un925oIDTS8a3Za2U35Zd0PmCMkmugdB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T15:38:32.444Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 15:38:33
+S7QZRI5ibXT8u8AKGA0EBowxF05kgaAt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:51:17.009Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:51:18
+9vmQyRey1CXLKGufAU6d3lmS1GJKGYen	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:51:17.263Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:51:18
 bfZTq2Shln4asnltd6sFAEvdRcm4fLEn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T10:08:29.006Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 10:08:30
 rgcX4VOi7T0hPFyql1ZHKB9WDV65ADks	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T06:26:32.665Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 06:26:33
 WKHnklWhmFYSj694PZWcX83pBOg50Z8M	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-26T15:54:14.028Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 15:54:15
+lLBKN1vHEguChFgaQp3dappF7KDL_wdU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:51:17.398Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:51:18
+j-gwUwieibCHPByhaczh83_C018cnk65	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:51:17.544Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:51:18
+JaHtMIX1Z3WZLegtD8-au5OAMkaCe2Ny	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:51:17.677Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:51:18
+bsPHSTCedFqjvVXAzB9mB7kH4GS9K4sf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:51:17.838Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:51:18
+Q52BqG6Q1YYhNDRfSiAWL4FFYkBIqUtd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:51:17.993Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:51:18
+tm2sl7f7JeJLX5Ow2VIWtAvKafnNkSjj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:51:18.126Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:51:19
+pjJc3Qx4IWhGKb-cYvHJ_VFs_9bNy5Q5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T01:51:18.262Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 01:51:19
 3adtc3zGMsTrMewyOsVQxCC0Ha8tJnPR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T10:08:29.448Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 10:08:36
 wC3YJfaf-4zgpVub_LR8bGH9NMYGtM4J	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T12:01:34.498Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 12:01:35
 coWZOtbgn5Sq-1wg3TjtO_7T5JuriwbM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T06:59:21.637Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 06:59:22
 MUF0XvWWlQnyENTh7gjF1yd_Y-jwdtjq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T15:54:14.181Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 15:54:15
-GF851TkJja4bOg3-LRBMn8LRv-TkZucP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T16:08:02.847Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 16:09:24
-yaWCtnSAxWHc9NZL-kQpCSupv-HHMLdh	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T18:54:37.424Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 18:54:38
-9hEtqF94Tq-jsmthkvL02WWytxHZ3rzS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T18:54:37.777Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 18:54:38
-9CdnElvrm7e8awtoFuiN1CFZO4qvgtWU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T18:54:37.930Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 18:54:38
+FbiIJacyF2XIU83sP3XHvQoCXtBw8Q0G	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T02:30:08.199Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":8,"user":{"id":8,"email":"dferram8@gmail.com","nombre":"Fernando Ramírez","apellido":"","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-03-03 02:31:14
 VsZj6obSo_30n8USWOBJfR0wplKCM1na	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T12:12:32.871Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 12:12:33
 hqztkttyaGr_IoZq4btvDyIDgXXUkT1h	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T07:00:40.856Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 07:00:41
 prpzfMu-nS-6Rx5ky5avlbRwu6H8Va5Y	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T16:26:58.243Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 16:26:59
-VKbVdaqk1bOH2X1aPxBUc2Qztys3OyWY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T18:55:37.088Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 18:55:38
+nZbc8Nv6br6k6KUmBVWRB2ceXTrcUapK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T02:02:16.981Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 04:35:33
+o4G9AtSGQHSCWuGa20l10XBxe58-6q4V	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T02:02:31.457Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 02:02:32
 OBmbUfKeDAS6X3Nvlfwok_uVNeTtJASL	{"cookie":{"originalMaxAge":604799991,"expires":"2026-02-24T12:59:12.886Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 12:59:13
 y7yKJgnx9LhVtL8ZWvz_e6WpVHdhyvuF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T07:32:16.187Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 07:32:17
 aNeJpX3ztTnTGs5SlkuAlUXA7qo4rNNd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T07:32:16.889Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 07:32:17
 gLmGo4hdigrfBf3LvzwwoDdC_7ggwLx-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T16:43:42.592Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 16:43:43
 n07DwgUQYfEFf2dZqfe4JsTIMWJCyl1p	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T07:33:01.542Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 07:33:04
+n8ei0WdBvlahnxcyx4eY9wEMc4mHaF65	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T02:14:19.225Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 02:14:20
+ea2oYLJTJMDjsQcH4gFoE3YtWb5T8Ag-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T02:14:22.876Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 02:14:23
 OtAdSoBLhXH0NxEMBQ70ND_7fawg9lvZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:00:10.385Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:00:11
-mqLWKd1d_RREcB9bbBThw-UeHyZGMSpy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T19:00:53.014Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 19:00:56
-LLlACoi0L1ZhSCf50UDfi6nvoAhI0wGL	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-22T19:15:21.299Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 19:15:22
+OlLeMEro5-sX74zvZ0kO3zn36Z2z2Zn8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T02:18:51.413Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 02:18:52
 q3ietiNiHqa46YbFRJ7D1Sve4_4SlHsi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:00:15.902Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:00:16
 CACV8RqavXidhHCbOcKfDpX6WZcjBTDa	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:00:21.346Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:00:22
-5oM1sZSLHAE30KP5RfJiWZw83TIsP_OX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T19:15:23.150Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 19:15:24
-djc1wNepuayCDV8rAoRlZ56kvcTPzngm	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T19:15:24.937Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 19:15:25
-DL7kAgnmHI9DmQsi7xxLnc-Lje2eWqhw	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-22T19:42:49.428Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 19:42:50
+9mpQF0gsa2D3eU9Q9SqTmuU6Pwge5RQ5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T02:21:36.414Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 02:21:37
 y1TtLJx1qB_yejTTLD4PyY5ZIqWcrQr-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:00:26.786Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:00:27
-FVh6UZ4imHSoJQyJ96STIZpJznmkrZV_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T19:42:53.788Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 19:42:54
 vTiVVse7jumASvxEDjrqxBnj7TKVtU4d	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:00:32.004Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:00:33
 AFh_e6clmOCougu8aQwqYy9nV79YK3L4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:00:37.269Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:00:38
+exjHkv3-CeiDTNqwxvwg4x4lBguKeHMY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T02:36:51.438Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 02:36:52
+fNH3q82kfMkSXOo1-APbgyxrjUJi0o_o	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T02:36:51.456Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 02:36:52
 ujr88pSibhsmp1n6p7YWMMVMxVnvxU7x	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:00:42.847Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:00:43
 LNITh6AtFQVohhnxZsT77-3u2mkPWB2N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:00:48.379Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:00:49
-BAG4BI2iyLTvJ83te6AUdst8KccGLmtO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T19:42:53.122Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 19:42:56
+NmRYX0EL-S4Zwbv2VFt92ulLjhoOv8Uj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-03-03T02:36:51.475Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 02:36:52
 eh1Cllmd__8P4vulyZhV6t7MEGl-enY6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:00:54.000Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:00:54
 -cWH22uI9XnQkyMujhJokx9llyH_HSHl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:00:59.269Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:01:00
-5rylRArnJ3N5IFzo9EjpZWhTfcgOIFnF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T19:46:20.371Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 19:46:21
-xNWrpF8Ay5m9ikkj5So0SIl5WUmKp3oX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T19:46:20.818Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 19:46:21
-8-zteg_nbkq5l9m_f-rLZkKZ_qjt6B6J	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T19:46:36.953Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 19:46:37
 yyuHMqajCFanttzvewU255oY9NgDVCE9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:01:04.569Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:01:05
 GA3nYvvPFuZwEjc7prWJeHVWgTQmUK5-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:01:09.807Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:01:10
 vg-rQVgoQlIYSKEvUmdyY_76le8SHAS-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:01:15.157Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:01:16
@@ -11785,88 +12866,22 @@ vg-rQVgoQlIYSKEvUmdyY_76le8SHAS-	{"cookie":{"originalMaxAge":604800000,"expires"
 wBkMYlp7AExK1bpb_lkYnV_zLWvVYaAa	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:03:22.473Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:03:23
 CK7L66snUOUUpzgJlIEZ_rjsk-QhrGyL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T14:03:35.068Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:03:36
 zvpQlsOovvC-xbORqhS1e7SO3ZQdq_Ci	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T07:41:21.469Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 07:41:22
-PVbFt4qRM-8jDcHauYQ5-adfXsTlMgwK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T19:47:04.896Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 19:47:08
-8U4M3fQiMofzA3mAY8x-VtYuIjG6_uEB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T20:12:26.440Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 20:12:27
-w4pXHUuPI3mOVVL0huc_WqSnIF6IdO5F	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-22T20:12:26.813Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 20:12:27
 mkA7tAxJ2wci1dtwo8uuAKx6oYxLYeNa	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T14:14:44.357Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 14:14:45
 -RJYJ5-5h1qr7hkHsb3Wkpt6Ph0xWJJ5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T07:47:05.720Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 07:47:06
 89tlpyRFdaR8gPbWbYwKFN-avIlIByNr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T15:18:24.851Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 15:18:25
 8HrynIUYGxvY7vVGfs7AOwT-hr-_bJBK	{"cookie":{"originalMaxAge":604799972,"expires":"2026-02-25T08:17:59.763Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 08:18:00
-4dEMnLa-SgDMYv-FGDOaqxQ-whkpSc7c	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-22T21:29:47.918Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 21:30:13
 0A6QX9fpa9I3r4ETWKAYztavGW7csrwB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T08:18:03.612Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 08:18:04
 uqvUM_gaNDK-idwAZ-L8OKkUaCIDbwgH	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T15:18:24.852Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 15:18:41
 5FD2Xvt6ok4FV6M-usic4mfRpSmCjZw-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T08:19:52.621Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 08:19:53
-mpCOkd2YDsozX6UvT-50iG88j_6BC13j	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-22T22:05:36.070Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-22 22:05:38
-DGJXhp-xLiMavpT2ODiP8luJ-dlIUxnf	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-23T01:02:41.310Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:02:42
 B4ZbssX3N_aYAChejBV9crla49TATWLQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T08:37:50.485Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 08:37:51
-u8uuImCnGFvbQjbfW_pbVBm3MIb4Ee3q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:22:01.650Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:22:02
 UtjfpXBRpJ-SxGAm0jV3-2p0UUmrH90a	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-25T10:08:41.997Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:08:42
 hQTu6xdBeNiKePLJ3edcaa6sg1oUDMA0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:08:42.765Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:08:43
 EHqz_rKE0TNNUMAVN7-2_soDY6lUdQla	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T17:12:14.804Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 17:12:15
 AW7gLnEvYoCvYt0_6xoeJAmj5YvTvzOV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T05:01:23.833Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 05:01:24
-yhCPr7hAH9nIG11WOP7pMLXI34xfGolR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:22:02.155Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:22:27
-U9yqLecnXCKILrNVoW5_Q-hAzqMXqCGq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:42:41.195Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:42:42
-fGNM6TtvKlhromk1O9MjOtsdvYWUfM0d	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:42:46.460Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:42:47
-16AljZW_8N17Ta6BHwRGCxvF5h61Xyt3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:42:51.814Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:42:52
-BTJ_mXmTLIrgao8v8ehVhGLpvMd46hN-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:42:57.183Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:42:58
 dHsrmExvfRhTCZG9iH0u_c2J0-C1uRPx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:11:59.049Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:12:00
-EuZaiMEwQHe0XWQV38SqopMuAmJCksZj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:43:02.743Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:43:03
--gD82vc6wUfbouc62RFDd0vQnPPkcbwt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:43:08.074Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:43:09
-fe8puzxTiLuOB5bwCvModZvBx0RLs1mq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:43:13.599Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:43:14
-E2H2qcKDRI8gdXN-KbskiddjbnUMtXpI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:43:19.069Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:43:20
-7Xcyk8BbsX81QZT11eqqBm-bYNs5TkZz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:43:24.973Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:43:25
-fG7lKQ4WqyHr0MgPyblfkqWLS_4jaP44	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:43:30.302Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:43:31
-y_qC2vsg0u1w9XdJuMW96nrklvBnzYql	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:43:35.619Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:43:36
-lCTu7knSxGyphlmMhfhX0CwrW0t3Ys6A	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:43:40.920Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:43:41
-dWCZ1GFjVSpx9x8Il7xBtesR5MKdm3WJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:48:17.164Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":5}	2026-02-23 01:48:18
-1ZmAAGeP592G4DZpa9ob1p1tJbn06VsH	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-20T23:51:37.179Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-20 23:51:38
-XvJNJbDjfFxaTJOI_smtSfSZUW35jrWU	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:18.292Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:19
-uaNFYCEQHTldAzC92JJud7XdCHqi4NYx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:06:08.751Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:06:09
-8Oh9DRp63IHjuqeHNdB7SrXp43gAS7d8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:06:10.708Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:06:11
-sa4a3DfvZIVVX2LrWF9o9n667RXnpz_8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:52:20.323Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:52:21
-L3OjfVR0z90KMQJN5Y5sy1VvPbUF1YAj	{"cookie":{"originalMaxAge":604799996,"expires":"2026-02-21T00:01:38.953Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 00:01:39
-UceoGl5EU2lSQbCOMowyUKyJWLa_uwjw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T00:16:32.694Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 00:16:33
-xpzKSQoj-bbD31QxLaYbyGTwC0mOfrOy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:18.141Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:19
-JLWOByCEhKba7eabY8boAynpANxpFVvL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:06:12.465Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:06:13
-tmxosaiNQr7gGlGGJ8yHyDfRSALOxSMu	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:06:14.264Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:06:15
-Nvl9aXmahnIeeOcj0QuFbvxGasHi4VJ4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:06:16.463Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:06:17
-WR8L9EfaGP7bvMfTDqN-EScbyVDu-5c-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:06:17.011Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:06:18
-mPP04eCm1dFKzTlSMPBIyCNC1SZ3Avde	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:52:26.001Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:52:27
-IafgT8l8W9IhS4V2tJapDkYOnUdqrNyo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:52:31.580Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:52:32
-IwYkmXKcTjZYT9snQVC2JANScBvRa3dK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:52:36.989Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:52:37
-44qnXITxjO5uItGkncTX8nqZFtnBSrYv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T00:22:56.538Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 00:22:57
-CCxtGQEzmi-5J4lJSXL1A0f3MHnVtsqT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:18.402Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:19
-C8PJqeAMMOG1AqE3Mw_n98WayEj94RjM	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:06:53.758Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:06:54
-sU_mOdLJQ96-8HMu_IWYAJkBRBWE3kTj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:06:57.580Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:06:58
-m-kLXXignmZv9FodnEJGk5dqlWvaOEhq	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T00:32:23.231Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 00:32:24
-czNYsuvb8ON3MEgFVLDn3kKWUPlx0YrV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:18.662Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:19
-1aFA6zxFUqlAXpuwYFvW0JLcdixHaNTQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:07:00.238Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:07:01
-i-uegQ7mhtUK_s4gJcj1QqFYxDzq_dFQ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:52:42.469Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:52:43
-HhJYiHx3Br9wrzwkREt_g7KkwP5U1jjd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:52:47.988Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:52:48
-_hiNibi3x-e4cZxAa32kxnOXLAXu8q_-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:52:53.411Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:52:54
-W6ijIrVWp8VJP2rVdLHamRZvLTg7-CqZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:52:58.901Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:52:59
-nAWObhrct3aARec5xzvQQg6GyPFs86iR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:53:04.340Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:53:05
-PU2479V0Ckwn-Z5d0PMQoY2e-_EezcO4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:53:09.677Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:53:10
-qWIOl4xznGKJXYTOSu3dDHK2_Q838TYy	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:53:14.981Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:53:15
-I_7HX2WG13vtb5xX_lHBmKZvPemcP9Iw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:53:20.427Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 01:53:21
 Ib_nQSwiR3WFEdiz4ky4QLcTF8THZAvL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:41:10.058Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:41:11
-PJwo8vRNJSS3WlwgqJdu7OZWoDSFUWN9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T00:40:21.698Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 00:40:22
-shu7j-ldHMylyyD1xoyNmjgNjElB-j9v	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:18.902Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:19
-8oQkxjtYOtTV5y2vc9-bkbXuRNE-j4-_	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:07:03.171Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:07:04
-_sK_y3dRDU1cu1mgPoQYplfV6GVMQCx1	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:07:05.359Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:07:06
 fItnERp8w6sePnyBQM-_3W3VJqTKX_8g	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T05:05:01.235Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 05:05:02
 haPVzvjOb9PXATYSKwJ90M4ZjAorltaX	{"cookie":{"originalMaxAge":604799991,"expires":"2026-02-26T17:53:05.921Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 17:53:07
-nEYEajBdXdf38zY4_Uhfr6jCU3Jle0fK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T00:52:49.015Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 00:52:50
-0RdarUGkWhx00b6YrXa0jcecx60j18xt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:19.043Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:20
-ZBjU-iavpe14THMC-n07oiq_jSVqRdVS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:19.966Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:20
-zE_CJO2T7zEaMsZmt0z2osiOoN2jyB4m	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:19.995Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:20
-kXK7GSWLzca4iIm_hDGvv-3CeXxouvxO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:20.046Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:21
-ZPvO22IXJoKZ59fV60w45qNs3fOkiCCo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:20.055Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:21
-3KUl3p6Q9b-CMcYzOi0DdRSyhJWKIT4Z	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:20.147Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:21
-5KNIcV-4QKoL-MiwS48MhPKPWmt9h06Q	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:20.351Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:21
-zaK9SbEj-xuwAFC0qAVHclIkREcUUB0p	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:20.518Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:21
-4OJP4ON1VIMrpzK1AkN4IW4abz9-11r8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:20.681Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:21
-DWNEiAjE3YwSw3GIaGGtTgYwW4dE8fCE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T01:55:47.036Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":5}	2026-02-23 01:55:48
 ieXNx_yRrt3eaUa6ZC_s3Y07T1kwlKLW	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-25T10:59:54.335Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:59:55
 7e2ms93ozeLh-jo9Lc7U75H-73S6Bfzl	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:59:55.125Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:59:56
 gHZiYrcXJAnX6yRNkgNfSM2j6fa16ufJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:59:55.461Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:59:56
@@ -11876,28 +12891,6 @@ w0VaXU_NOXh-wyxZIZILrfK9aNKOd8LC	{"cookie":{"originalMaxAge":604800000,"expires"
 ytTWUgqtDawIkk5TLwjJDvYWSSD3oxhT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:59:56.225Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:59:57
 GjO-SCir8SLr16utvYBe4aS95rmXbgC0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:59:56.422Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:59:57
 --qCtI45TBi-hOMDTBO0lBjI8e6NIp4N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:59:56.657Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:59:57
-9nDoF53nUwyJFOLFtGlRUvPM2IJ_IR-A	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:00:28.438Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:00:29
-Vf9-S32W6z1829arnsC1WSh-8Ijvg1PC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:20.869Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:21
-sfNl9mW_B--UIcDsFD1MEcYT80-Z1kB2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:21.060Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:22
-45sQUc9M6_2dpJJJNFwQTWN277UPUK1n	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T03:14:49.616Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 03:14:50
-FBipiofOubUtP0C8Bp_FYrmWGmZsJVl5	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:05:25.303Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:05:26
-DAaFsM123T8Nq2HRvRpFo7z-rXSehPCd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:21.238Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:22
-x6b2P-pgUWb8ZFKvrAqhubaYG2Ekkrsr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:21.420Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:22
-8cuyNinkAn6Olp0sAflWUtGknLfLuVTK	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:21.592Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:22
-qqktabBpUbb8EPH_80HYZh5goIVTqLPc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:21.758Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:22
-evktvYXBtzK3rbMU6kIvt2OIXpgAt-CZ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:21.940Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:22
-qBAHONvW6cHYCems6cXc1cJUict9SPwF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:22.116Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:23
-0eG32ra-wpUbpMlymaA6pfnkHViSCrAc	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:22.291Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:23
-gXupz2tW6BG7tc4ue1zrUD6asMRfn-RX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:22.464Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:23
-XRUhsEUPpHRKHqtuJdE7rxxJAw0jl9XD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:22.672Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:23
-gS30ua_vdAtdkug1RDtN5hIUXmudSc96	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:22.894Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:23
-7zYRoAajT68S2LvVBR008e03fWWYPknX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:23.067Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:24
-LSM2_ns350TyTuNTsA7nznl64nBMVy9K	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-21T01:26:23.245Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:24
-cTTF3zVBuw0txPR6_MMZWD_8Z8wKNVoF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:23.422Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:24
-MlhiC-prIQgKnoXEIuFzMdIZQarmkGVz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:23.611Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:24
-xHs4xZZ0D0v1Mm_D5nNSSFbECtE1qwzC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:23.776Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:24
-dswXF3dBYu-7SEgUVGvqUtNfU5wB1t9U	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:52:44.751Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:52:45
-Y_2FhejqNGTHbYK6zadPAk6z36Tcj7Wi	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-21T05:37:28.110Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:37:29
 dmr_JHhpRayYTDyjOW-LlxRAeBdf3SCs	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:59:56.849Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:59:57
 fRQgUCpnG6UMEbVxoGheimVyLYWXhWyJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:59:57.054Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:59:58
 a_IIG7HcClfM7MHplYeheCpqNBNaFSur	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:59:57.266Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:59:58
@@ -11905,74 +12898,21 @@ a_IIG7HcClfM7MHplYeheCpqNBNaFSur	{"cookie":{"originalMaxAge":604800000,"expires"
 v0WGl40pxbYAAfl3vCoGTskZAcWZq3So	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T15:57:28.178Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 15:57:29
 v8z-o1QTiqGMl5BVwWZUcw7guzrjZpC0	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T15:57:36.911Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 15:57:37
 WWsIumRWxwkRV0_axOFZYYV4kmlp3CRS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:59:57.671Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:59:58
-6Ln0yiORtbnAC9C8Yh_2u0CmTFLMUhW3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T03:40:08.032Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 03:40:12
 SYDiiXyajy33gSgwjVgHCu5oBv3SR99o	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:59:58.354Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:59:59
 JpDtazAcY54s6n1ftd4I26Pb-RgRMIRv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:59:58.554Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:59:59
 6BH7lzfQVfG7M47sj7f4CGBLJTnW3OKi	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T10:59:58.754Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 10:59:59
 XXIiuHG3sqx1bK5fxvN0CeBy-qmpmg8N	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T18:30:08.125Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 18:30:09
 egkXjME2u84_yq6ChjiypKRV4QWl_icb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T18:30:08.539Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 18:30:09
-2Asv8Jx5jNqslAhq4SYDvB1s5oHQ81I2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:11:26.393Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:11:27
-Gz0Mrue2YmuQOb5rkPsI5oP2DkfTpjZn	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T02:30:10.008Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 02:30:11
-jFrCE164yqG_qUGsPhSNl_p9KwydjOoG	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-21T01:26:17.063Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:18
-fOJe25JXoNPeG6WJrA9JYG7nTgqj4bUS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:17.407Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:18
 YD0dve2TcM9t-dWKxCH_u_bFTkOgNZe6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T16:11:33.339Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 16:11:34
 rpj5hn3k2-_9EW0jJO-iR3yHdr9NzTlr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T11:15:58.055Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 11:15:59
 GYhQO_XWj96gd5KBVXM99G6cPp62vEQS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T18:30:09.088Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 18:30:10
-d1WRLTxnzNVrH1MWjUikiobVJTXNd7gC	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-20T19:54:06.677Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-20 19:55:40
-9bcjM8CAS5Tc0OzgYbdym4_AOU4jFlye	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:17.585Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:18
-v2wF-UfjpJRxl_UsCI0sghq0InPABFGv	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:19.595Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:20
-s_HMoNj9pF5fUvHcxMTJSdKd7C902Gl8	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:19.785Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:20
-9K743CHnBXNSSC4ikKV9wNAnlI1HCy9-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:19.835Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:20
-h0p6L2YlLqJT9hUdm_wuVtM9W9eAK3br	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T02:30:10.617Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 02:30:11
-dgANS0Kpc3iZRY6oE0BE391g3JG420w3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:52:45.006Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:52:46
-sEHGxOqvyJJC6n8b9dAWfXNVlQDdO_ZR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:39:09.817Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:39:10
-Nxzhg030lHWbhjz_yBSBEQqf_gCxNR9B	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:39:13.453Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:39:16
-KhMjym-AAf0VxdtpMxotQ-jkZPH-YsY4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:42:40.275Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:42:41
-rNvfNcAms9Ta5rQa_lXRQAFruZ1kNJbJ	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:42:45.537Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:42:46
-xFMsInZkoG_gEDsBU5G6IupPeJhalcWo	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:42:50.837Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:42:51
-UleU_BZGj6ap5aEvzgRPEpLFvCGomWDx	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:42:56.383Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:42:57
-aLDjA50B3HpiVl3E1mDdKId7lHxWZbrf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:43:03.088Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:43:04
-pjNyhlhFRvuQfDChPE38EOQ1Q_-4NG45	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:43:08.785Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:43:09
-5OFqlRbpI4__zTMjXcGjhiTpDU0dV4yO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:43:14.284Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:43:15
-Um0-ABrVZbMj1uz85h-L4nkfJdYJtuvd	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:43:20.012Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:43:21
-nvmP8bHKZJR-5Tf-_j9L2aCpCHNDBUpF	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:43:25.581Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:43:26
-tWoFnz_8wLBRuhNczngcPhLt1gI8h6QY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:43:30.926Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:43:31
-MFlQ-e-2phrl7be7kp0dtSN0KY5h-8dr	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:43:36.281Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:43:37
-X9wNrWv_hTQVa1CcbRSB4AqzmC8rbqDY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T03:56:08.568Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 03:56:09
-m_mmUKcJYoIoE3j9D5sk9_t-aKF5lEnj	{"cookie":{"originalMaxAge":604799996,"expires":"2026-02-20T20:26:39.572Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-20 20:26:40
-zLwSwBCvC6e0T9i2bBhCCT8P9kjZ0adj	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-20T20:26:39.936Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-20 20:26:40
-jH6fxh3WU5WPuOSSJHAFTpGkiUVcxmuL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:17.892Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:18
-ZmBnSPHJmwRq2t3BFF7zpY9IWnqwMzqb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:03:12.282Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:03:13
 og8_RlYVFhh27fYuyYuRBwIVYbK3aIzg	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T16:13:10.666Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-24 16:13:11
 bJZX8KR6yC4hGJrJUhk56b0pr1iA89pp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T11:59:33.882Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 11:59:34
-01zakrDDOnOZAIjAAZigup3UC2PHtisT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T03:33:14.665Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 03:33:19
-Lk3DKh59MFNqDhCw6k4AExbl_l0AQlrz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T05:10:41.270Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:11:31
-2FVGBvoWaw--80XuhdPmRyNuRfN2kKy5	{"cookie":{"originalMaxAge":604799997,"expires":"2026-02-20T22:01:59.351Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-20 22:02:00
-wlYRv7gHSafbCnj0jigaU2CNWobyNtuP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:07:13.723Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:07:14
 GEeVcrZeZcihNlL991CGy64JdOJpWfd7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T12:01:11.782Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 12:01:12
 2ANyvuOlCHF7SdaiEBBGxO4Q9FYMI64C	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T12:01:11.801Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 12:01:12
-g-2XNBFEjNvv-tH4V0tkZiqrXEPI_zD1	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T01:45:22.729Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 18:35:56
-62i1EYxBXrb0z0nAnWrHEX0dYDMLOgNT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-20T22:01:59.884Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-20 22:02:52
-D3__N2l4s-56gDlKmVhIEeStQXPg_2sS	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:18.031Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:19
-5tEktVTjf5vVil_dLRL9XG12ZAH4eVn6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T04:05:31.931Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 04:05:32
-GGizs6lHKoIH6VGYtMgKk2dkF8PHQDIu	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-21T05:15:34.445Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:15:35
-A8zaWYUtKIYkF4iHvdUoZdJ_3DpAoMcE	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:07:52.732Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:07:53
-LLOC4kebUXsq8jaUerKWMVobjn86FLYV	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:07:55.542Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:07:56
-5w7yxV1qGO8mLkvhwe68Wn4nQam718MX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:07:57.358Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:07:58
-CgdyiV2UfF5O-RicXBiLfY96J3fTZea2	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:07:59.781Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:08:00
-NpcGv3zPMQbe1k2gmxWrppFdFsAx2pAg	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-20T23:37:58.634Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-20 23:37:59
-D6Gx01LRJemSb-Qxl1R4j7JhxVm2gCJW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T01:26:18.002Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 01:26:19
-6-nHrkAJ0Gs86ekjKA0yTlbjf6H0t5kp	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-21T05:43:41.683Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 05:43:42
-BcagCIdBlUDJAiZTTC3tJPko_L4RDphL	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:08:03.964Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:08:04
+g-2XNBFEjNvv-tH4V0tkZiqrXEPI_zD1	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-24T01:45:22.729Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-03-03 00:57:35
 gNyLCFJfVJ0_oVHSBdc6QA18vc5lDOrO	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T12:55:27.911Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 12:55:28
 MG5l8JeByh2UiJkLhcwDo7iwW2hyvYfR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T20:08:39.159Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 20:08:40
-tODt-kC8AgyDj_VnI_n5mNpIEIlvMscR	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-24T01:48:24.749Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":8,"user":{"id":8,"email":"dferram8@gmail.com","nombre":"Fernando Ramírez","apellido":"","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-02-27 18:34:22
-uoMVJhPVWBbjCAV-H7avK4GLoFeRUhc3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:11:25.122Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:11:26
-9Id9LYzGkm2zai6h0ixoP_b7W1J3SCW3	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:11:36.339Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:11:37
-ADj5aN0KRHfeLS6jiXcAbX7is00uVb41	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:11:38.680Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:11:39
-ufLrhdhagtHpUjb3SzI4EmrmD1z7FcZW	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:11:41.203Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:11:42
-cICV6TkXDHGWkZdkN0UAYjL5TiSneq9F	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:11:43.303Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:11:44
-HBLj8gsoqibqZjues3j7gFPbO_vwFjy4	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:11:45.393Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:11:46
 SEtI9YpQPTQVWYT5EyJ9TTrj9eCeqNH-	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T13:54:30.246Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 13:54:31
 JmtolTxZldRncCTs5kJSbZmI8svj0Tkt	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T20:10:29.195Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 20:10:30
 X7LoJwZRYx_UqZl-Bs19yOIdwQHBXohY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T20:10:30.593Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 20:10:31
@@ -11982,49 +12922,21 @@ OoWd_NCRqruhQO7UiGiQ2qKcFWSOVo9q	{"cookie":{"originalMaxAge":604800000,"expires"
 NedIKJgpbvSwJBjVX9MsjquKsahf93M9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T20:10:35.847Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 20:10:36
 tEvbbUV0Du0bmvLHR3plmsPjULsg2YIT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T05:15:57.823Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 05:15:58
 QSslQVgESBw9o5rZtAd6-yJyUVLU6yV9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T05:15:58.197Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 05:16:11
-sxBHnRhrQLu8CjjY_Ek4ppX0803e3anw	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T04:22:54.551Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 04:22:55
 -NPP3SgW0_LbBhMzWahvbtRUstGvufrz	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T20:23:56.778Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 20:23:57
 YxigiVMbGQLQOUsXSoGzzleb3WeIig25	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T14:47:59.955Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 14:48:00
 QW8Wc4felNlxsZ4OdPH1kuE75nzZE538	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T05:29:06.424Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 05:29:07
 Cor1EV_BP7nMmaXkkHkVRZFd5VxtTpLo	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-25T14:47:59.184Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 14:48:03
-ZurdRIMPNjNoc3DCp0Ouhnq9TI2dz5Cg	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-23T08:35:37.417Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 08:35:38
 r7k2R-Ln90vhWavi1O4mecznCVc30oQ_	{"cookie":{"originalMaxAge":604799992,"expires":"2026-02-25T14:49:57.581Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 14:49:58
 4VJgJaclH5QYsLjpmi7O64Bk25e2uPaD	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T20:54:11.103Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 20:54:12
 BD24f03B6Sz1DhtLKTafSiFSC_nZ_L70	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-27T05:34:23.935Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-27 05:34:24
-jC7o1vWPf3eqo4bvIQHqJQlUxeNTb4q7	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T06:10:59.517Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 06:11:00
-fthsRFMf96ru0LxtpugEgaS9TIfT7zEX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T06:11:28.882Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 06:11:29
-0aoACeXUZ5pvYtmzRlxkxj7V07GRklqQ	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-21T06:13:54.817Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":5}	2026-02-21 06:13:55
-e2Qlb1qBeEpVn44OOs2sVbIIFc3ZIHnf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T07:38:50.287Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 07:38:51
-ek6VF-7U1N3YjkoMa6kamNj7VxAhfcCY	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T07:38:51.905Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 07:38:52
-hH8HJklwIZ6PYiN4SS2WTvhBDwTK4psu	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-21T07:45:20.949Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 07:45:22
-lkTOjmwGJXQTnagb5fRjoLKPNubY-dDG	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T08:11:11.451Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 08:11:12
-Icq11OrOXmCWg-sBPN5sd_DnB5y1Vw1w	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-21T08:46:17.078Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 08:46:18
-c0vjqUESeuKCeJSihn7jb_V0zUbFWUWf	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T09:48:25.804Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 09:48:26
-dtJnL-udgttBXu1GAz34aAOTcC615iPI	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T09:49:31.272Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 09:49:32
-kCf2E4YB5CxK46RS2_2cjH2GQY1n_aqZ	{"cookie":{"originalMaxAge":604799992,"expires":"2026-02-21T10:21:08.884Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 10:21:09
-qcpHFOnHPcgTfhiHgf93I9M_zrJQnNUT	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T10:23:29.512Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 10:23:30
-MSbo3tVeDYKAMKOfk6oH4pVhwFoWbgn6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-16T23:04:16.658Z","secure":false,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 21:52:02
-EDPBj8sA1pGkN9P8qe5x6Ns8JzVcIEn9	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T12:25:36.435Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 12:25:37
-Stsyf8l0ibSii0Gdb_zkafCyerFg2x7d	{"cookie":{"originalMaxAge":604799985,"expires":"2026-02-21T12:25:36.438Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 12:25:37
-CQhQlx0oTn09SPzM58XtBJsUiepAAjI7	{"cookie":{"originalMaxAge":604799993,"expires":"2026-02-23T09:12:41.108Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 09:12:42
-72L4sBBCiWn4laUbxvD_U00mns9s8au6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-23T09:12:51.641Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-23 09:12:52
 LgdiBX2sljGZHVj3YzyxAVJ0HWkJy43W	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-25T14:58:01.097Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-25 14:58:02
 iU1QRtkSk6uyIoGvTiOv0eLKuDwMuAZX	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-26T23:17:25.518Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1,"userId":2,"user":{"id":2,"email":"fegarcia@hotmail.com","nombre":"Fernando García","apellido":"","rol":"superadmin","tipo":"admin","adminSource":"admin","tenant_id":1}}	2026-02-27 05:41:42
 y5s6_tdCiPpRkelIjuNKoPe5Hhbww355	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-26T21:01:52.463Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-26 21:02:46
-2wcm3absOztzmhbw1zNqb2FG7tWtnVCF	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-21T13:08:27.700Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 13:09:13
-uZoag2LLiyIY-3rWpJp6F5lkfWZmxa8z	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T14:07:00.810Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 14:07:01
-2fUAbTGwnYogkSUa_AraxCp7XiEM_vqP	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T14:34:30.332Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 14:34:31
-YjKUVAk3dMrWlHhMNcLtu6j35c3dG6c6	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T15:03:34.584Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 15:03:35
-MacHBdQci2NeuILfEW-AbxzgM8MvK-Kp	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T15:30:18.612Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 15:30:19
-0fetkQWgm1l2O49fyjuzX3kwXBWZ0dTH	{"cookie":{"originalMaxAge":604799999,"expires":"2026-02-21T15:47:25.474Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 15:47:26
-c2rzcW_tU34ubGngf10rX4IcLwqxHfXB	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T16:01:14.077Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 16:01:15
-gM2QKynlVGUAa3dqZaX3DXzjqRNJHkWb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T16:01:14.588Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 16:01:15
-9gKo5D44dYqpzLDX2ywo209oN25nKhgb	{"cookie":{"originalMaxAge":604800000,"expires":"2026-02-21T16:01:14.898Z","secure":true,"httpOnly":true,"path":"/","sameSite":"lax"},"tenant_id":1}	2026-02-21 16:01:15
 \.
 
 
 --
--- TOC entry 5486 (class 0 OID 25311)
+-- TOC entry 5511 (class 0 OID 25311)
 -- Dependencies: 300
 -- Data for Name: solicitudes_credito; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -12055,85 +12967,125 @@ COPY public.solicitudes_credito (solicitud_id, cliente_id, monto_solicitado, mot
 
 
 --
--- TOC entry 5524 (class 0 OID 27952)
+-- TOC entry 5549 (class 0 OID 27952)
 -- Dependencies: 340
 -- Data for Name: stock_admin; Type: TABLE DATA; Schema: public; Owner: ferram
 --
 
-COPY public.stock_admin (stockadminid, admin_id, variante_id, tenant_id, cantidad, updated_at, created_at) FROM stdin;
-19	2	291	1	6	2026-02-18 21:38:20.088491	2026-02-04 18:23:08.950871
-1	2	44	1	18	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-2	2	31	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-3	2	103	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-4	2	104	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-5	2	66	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-6	2	113	1	36	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-7	2	114	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-8	2	69	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-9	2	154	1	36	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-10	2	230	1	18	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-11	2	224	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-12	2	238	1	18	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-13	2	119	1	18	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-14	2	120	1	21	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-15	2	222	1	30	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-16	2	225	1	30	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-17	2	234	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-18	2	88	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-20	2	166	1	16	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-21	2	284	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-22	2	231	1	30	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-23	2	140	1	36	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-24	2	10	1	20	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-25	2	159	1	8	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-26	2	141	1	54	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-27	2	226	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-28	2	152	1	6	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-29	2	241	1	6	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-30	2	155	1	36	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-31	2	156	1	36	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-32	2	146	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-33	2	144	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-34	2	221	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-35	2	142	1	36	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-36	2	82	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-37	2	207	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-38	2	239	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-39	2	208	1	72	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-40	2	73	1	8	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-41	2	42	1	42	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-42	2	218	1	18	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-43	2	178	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-44	2	102	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-45	2	65	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-46	2	112	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-47	2	209	1	32	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-48	2	233	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-49	2	232	1	18	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-50	2	223	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-51	2	46	1	30	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-52	2	118	1	18	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-53	2	116	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-54	2	43	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-55	2	237	1	18	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-56	2	229	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-57	2	243	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-58	2	247	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-59	2	249	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-60	2	253	1	30	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-61	2	40	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-62	2	210	1	6	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-63	2	165	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-64	2	125	1	20	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-65	2	158	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-66	2	87	1	36	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-67	2	80	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
-68	2	30	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871
+COPY public.stock_admin (stockadminid, admin_id, variante_id, tenant_id, cantidad, updated_at, created_at, cantidad_reservada) FROM stdin;
+19	2	291	1	6	2026-02-18 21:38:20.088491	2026-02-04 18:23:08.950871	0
+41	2	42	1	54	2026-02-20 22:55:04.67738	2026-02-04 18:23:08.950871	0
+81	2	78	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+82	2	77	1	48	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+85	2	175	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+86	2	176	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+87	2	59	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+88	2	12	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+89	2	13	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+90	2	54	1	12	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+91	2	53	1	48	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+92	2	2	1	48	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+93	2	1	1	48	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+94	2	62	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+95	2	61	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+96	2	60	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+97	2	17	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+98	2	16	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+99	2	50	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+14	2	120	1	39	2026-02-22 00:01:43.377424	2026-02-04 18:23:08.950871	0
+1	2	44	1	36	2026-02-22 00:01:43.377424	2026-02-04 18:23:08.950871	0
+13	2	119	1	54	2026-02-22 00:01:43.377424	2026-02-04 18:23:08.950871	0
+52	2	118	1	36	2026-02-22 00:01:43.377424	2026-02-04 18:23:08.950871	0
+106	2	8	1	12	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+107	2	49	1	12	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+108	2	48	1	48	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+109	2	47	1	48	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+110	2	9	1	48	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+111	2	52	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+112	2	51	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+113	2	11	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+114	2	56	1	48	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+115	2	4	1	48	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+116	2	5	1	48	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+117	2	3	1	12	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+118	2	57	1	12	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+33	2	144	1	72	2026-02-22 00:01:43.377424	2026-02-04 18:23:08.950871	0
+35	2	142	1	96	2026-02-22 00:01:43.377424	2026-02-04 18:23:08.950871	0
+121	2	143	1	60	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+122	2	64	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+123	2	63	1	12	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+124	2	15	1	24	2026-02-22 00:01:43.377424	2026-02-22 00:01:43.377424	0
+2	2	31	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+3	2	103	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+4	2	104	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+5	2	66	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+6	2	113	1	36	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+7	2	114	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+8	2	69	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+9	2	154	1	36	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+10	2	230	1	18	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+11	2	224	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+12	2	238	1	18	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+15	2	222	1	30	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+16	2	225	1	30	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+17	2	234	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+18	2	88	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+20	2	166	1	16	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+21	2	284	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+22	2	231	1	30	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+23	2	140	1	36	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+24	2	10	1	20	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+25	2	159	1	8	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+26	2	141	1	54	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+27	2	226	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+28	2	152	1	6	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+29	2	241	1	6	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+30	2	155	1	36	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+31	2	156	1	36	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+32	2	146	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+34	2	221	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+36	2	82	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+37	2	207	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+38	2	239	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+39	2	208	1	72	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+40	2	73	1	8	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+42	2	218	1	18	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+43	2	178	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+44	2	102	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+45	2	65	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+46	2	112	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+47	2	209	1	32	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+48	2	233	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+49	2	232	1	18	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+50	2	223	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+51	2	46	1	30	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+55	2	237	1	18	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+56	2	229	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+57	2	243	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+58	2	247	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+59	2	249	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+60	2	253	1	30	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+62	2	210	1	6	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+63	2	165	1	24	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+64	2	125	1	20	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+65	2	158	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+66	2	87	1	36	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+67	2	80	1	12	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+68	2	30	1	48	2026-02-04 18:25:04.036782	2026-02-04 18:23:08.950871	0
+70	2	14	1	24	2026-02-20 22:55:04.67738	2026-02-20 22:55:04.67738	0
+75	2	206	1	12	2026-02-22 00:01:43.377424	2026-02-20 22:55:04.67738	0
+76	2	205	1	36	2026-02-22 00:01:43.377424	2026-02-20 22:55:04.67738	0
+77	2	251	1	24	2026-02-22 00:01:43.377424	2026-02-20 22:55:04.67738	0
+61	2	40	1	42	2026-02-22 00:01:43.377424	2026-02-04 18:23:08.950871	0
+74	2	41	1	60	2026-02-22 00:01:43.377424	2026-02-20 22:55:04.67738	0
+54	2	43	1	42	2026-02-22 00:01:43.377424	2026-02-04 18:23:08.950871	0
+53	2	116	1	30	2026-02-22 00:01:43.377424	2026-02-04 18:23:08.950871	0
+71	2	58	1	24	2026-02-22 00:01:43.377424	2026-02-20 22:55:04.67738	0
 \.
 
 
 --
--- TOC entry 5501 (class 0 OID 26144)
+-- TOC entry 5526 (class 0 OID 26144)
 -- Dependencies: 315
 -- Data for Name: tenants; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -12147,7 +13099,7 @@ COPY public.tenants (tenant_id, nombre_cliente, dominio, is_active, created_at, 
 
 
 --
--- TOC entry 5488 (class 0 OID 25319)
+-- TOC entry 5513 (class 0 OID 25319)
 -- Dependencies: 302
 -- Data for Name: tipoproducto; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -12163,7 +13115,7 @@ COPY public.tipoproducto (tipoproductoid, nombre, descripcion, activo, fechacrea
 
 
 --
--- TOC entry 5490 (class 0 OID 25327)
+-- TOC entry 5515 (class 0 OID 25327)
 -- Dependencies: 304
 -- Data for Name: toma_inventario_conteos; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -12264,7 +13216,7 @@ COPY public.toma_inventario_conteos (conteoid, sesionid, varianteid, conteo_a, u
 
 
 --
--- TOC entry 5492 (class 0 OID 25334)
+-- TOC entry 5517 (class 0 OID 25334)
 -- Dependencies: 306
 -- Data for Name: toma_inventario_sesiones; Type: TABLE DATA; Schema: public; Owner: ferram
 --
@@ -12279,7 +13231,7 @@ COPY public.toma_inventario_sesiones (sesionid, nombre, fechainicio, fechacierre
 
 
 --
--- TOC entry 5862 (class 0 OID 0)
+-- TOC entry 5896 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: jobid_seq; Type: SEQUENCE SET; Schema: cron; Owner: azuresu
 --
@@ -12288,16 +13240,16 @@ SELECT pg_catalog.setval('cron.jobid_seq', 1, true);
 
 
 --
--- TOC entry 5863 (class 0 OID 0)
+-- TOC entry 5897 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: runid_seq; Type: SEQUENCE SET; Schema: cron; Owner: azuresu
 --
 
-SELECT pg_catalog.setval('cron.runid_seq', 41, true);
+SELECT pg_catalog.setval('cron.runid_seq', 45, true);
 
 
 --
--- TOC entry 5864 (class 0 OID 0)
+-- TOC entry 5898 (class 0 OID 0)
 -- Dependencies: 226
 -- Name: administradores_adminid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12306,7 +13258,7 @@ SELECT pg_catalog.setval('public.administradores_adminid_seq', 8, true);
 
 
 --
--- TOC entry 5865 (class 0 OID 0)
+-- TOC entry 5899 (class 0 OID 0)
 -- Dependencies: 228
 -- Name: agentesdeventas_agenteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12315,7 +13267,7 @@ SELECT pg_catalog.setval('public.agentesdeventas_agenteid_seq', 6, true);
 
 
 --
--- TOC entry 5866 (class 0 OID 0)
+-- TOC entry 5900 (class 0 OID 0)
 -- Dependencies: 331
 -- Name: ajustes_inventario_ajuste_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12324,7 +13276,7 @@ SELECT pg_catalog.setval('public.ajustes_inventario_ajuste_id_seq', 1, false);
 
 
 --
--- TOC entry 5867 (class 0 OID 0)
+-- TOC entry 5901 (class 0 OID 0)
 -- Dependencies: 329
 -- Name: auditoria_comentarios_comentario_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12333,7 +13285,7 @@ SELECT pg_catalog.setval('public.auditoria_comentarios_comentario_id_seq', 1, fa
 
 
 --
--- TOC entry 5868 (class 0 OID 0)
+-- TOC entry 5902 (class 0 OID 0)
 -- Dependencies: 230
 -- Name: carritodecompra_carritoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12342,7 +13294,7 @@ SELECT pg_catalog.setval('public.carritodecompra_carritoid_seq', 40, true);
 
 
 --
--- TOC entry 5869 (class 0 OID 0)
+-- TOC entry 5903 (class 0 OID 0)
 -- Dependencies: 232
 -- Name: cat_cxp_etiquetas_etiqueta_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12351,7 +13303,7 @@ SELECT pg_catalog.setval('public.cat_cxp_etiquetas_etiqueta_id_seq', 1, false);
 
 
 --
--- TOC entry 5870 (class 0 OID 0)
+-- TOC entry 5904 (class 0 OID 0)
 -- Dependencies: 326
 -- Name: cat_motivos_ajuste_motivo_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12360,7 +13312,7 @@ SELECT pg_catalog.setval('public.cat_motivos_ajuste_motivo_id_seq', 14, true);
 
 
 --
--- TOC entry 5871 (class 0 OID 0)
+-- TOC entry 5905 (class 0 OID 0)
 -- Dependencies: 234
 -- Name: cat_tamanopaquetes_tamanoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12369,7 +13321,7 @@ SELECT pg_catalog.setval('public.cat_tamanopaquetes_tamanoid_seq', 11, true);
 
 
 --
--- TOC entry 5872 (class 0 OID 0)
+-- TOC entry 5906 (class 0 OID 0)
 -- Dependencies: 236
 -- Name: categorias_categoriaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12378,7 +13330,7 @@ SELECT pg_catalog.setval('public.categorias_categoriaid_seq', 4, true);
 
 
 --
--- TOC entry 5873 (class 0 OID 0)
+-- TOC entry 5907 (class 0 OID 0)
 -- Dependencies: 238
 -- Name: cliente_creditos_credito_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12387,7 +13339,7 @@ SELECT pg_catalog.setval('public.cliente_creditos_credito_id_seq', 19, true);
 
 
 --
--- TOC entry 5874 (class 0 OID 0)
+-- TOC entry 5908 (class 0 OID 0)
 -- Dependencies: 240
 -- Name: cliente_direcciones_direccionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12396,7 +13348,7 @@ SELECT pg_catalog.setval('public.cliente_direcciones_direccionid_seq', 36, true)
 
 
 --
--- TOC entry 5875 (class 0 OID 0)
+-- TOC entry 5909 (class 0 OID 0)
 -- Dependencies: 353
 -- Name: cliente_saldo_favor_movimientos_movimiento_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12405,7 +13357,7 @@ SELECT pg_catalog.setval('public.cliente_saldo_favor_movimientos_movimiento_id_s
 
 
 --
--- TOC entry 5876 (class 0 OID 0)
+-- TOC entry 5910 (class 0 OID 0)
 -- Dependencies: 351
 -- Name: cliente_saldo_favor_saldo_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12414,7 +13366,7 @@ SELECT pg_catalog.setval('public.cliente_saldo_favor_saldo_id_seq', 1, false);
 
 
 --
--- TOC entry 5877 (class 0 OID 0)
+-- TOC entry 5911 (class 0 OID 0)
 -- Dependencies: 242
 -- Name: clientes_clienteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12423,34 +13375,34 @@ SELECT pg_catalog.setval('public.clientes_clienteid_seq', 51, true);
 
 
 --
--- TOC entry 5878 (class 0 OID 0)
+-- TOC entry 5912 (class 0 OID 0)
 -- Dependencies: 360
 -- Name: clientes_favoritos_favorito_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.clientes_favoritos_favorito_id_seq', 1, false);
+SELECT pg_catalog.setval('public.clientes_favoritos_favorito_id_seq', 8, true);
 
 
 --
--- TOC entry 5879 (class 0 OID 0)
+-- TOC entry 5913 (class 0 OID 0)
 -- Dependencies: 244
 -- Name: comisiones_comisionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.comisiones_comisionid_seq', 22, true);
+SELECT pg_catalog.setval('public.comisiones_comisionid_seq', 23, true);
 
 
 --
--- TOC entry 5880 (class 0 OID 0)
+-- TOC entry 5914 (class 0 OID 0)
 -- Dependencies: 246
 -- Name: communicationlogs_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 119, true);
+SELECT pg_catalog.setval('public.communicationlogs_logid_seq', 121, true);
 
 
 --
--- TOC entry 5881 (class 0 OID 0)
+-- TOC entry 5915 (class 0 OID 0)
 -- Dependencies: 248
 -- Name: control_cambios_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12459,7 +13411,7 @@ SELECT pg_catalog.setval('public.control_cambios_id_seq', 272, true);
 
 
 --
--- TOC entry 5882 (class 0 OID 0)
+-- TOC entry 5916 (class 0 OID 0)
 -- Dependencies: 250
 -- Name: credito_movimientos_movimiento_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12468,7 +13420,7 @@ SELECT pg_catalog.setval('public.credito_movimientos_movimiento_id_seq', 4, true
 
 
 --
--- TOC entry 5883 (class 0 OID 0)
+-- TOC entry 5917 (class 0 OID 0)
 -- Dependencies: 252
 -- Name: cuentas_por_cobrar_cxcid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12477,16 +13429,16 @@ SELECT pg_catalog.setval('public.cuentas_por_cobrar_cxcid_seq', 1, false);
 
 
 --
--- TOC entry 5884 (class 0 OID 0)
+-- TOC entry 5918 (class 0 OID 0)
 -- Dependencies: 254
 -- Name: cuentas_por_pagar_cxp_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.cuentas_por_pagar_cxp_id_seq', 1, false);
+SELECT pg_catalog.setval('public.cuentas_por_pagar_cxp_id_seq', 2, true);
 
 
 --
--- TOC entry 5885 (class 0 OID 0)
+-- TOC entry 5919 (class 0 OID 0)
 -- Dependencies: 310
 -- Name: cupones_cuponid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12495,7 +13447,7 @@ SELECT pg_catalog.setval('public.cupones_cuponid_seq', 1, false);
 
 
 --
--- TOC entry 5886 (class 0 OID 0)
+-- TOC entry 5920 (class 0 OID 0)
 -- Dependencies: 256
 -- Name: cxp_etiquetas_asignadas_asignacion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12504,7 +13456,7 @@ SELECT pg_catalog.setval('public.cxp_etiquetas_asignadas_asignacion_id_seq', 1, 
 
 
 --
--- TOC entry 5887 (class 0 OID 0)
+-- TOC entry 5921 (class 0 OID 0)
 -- Dependencies: 258
 -- Name: datos_bancarios_empresa_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12513,7 +13465,7 @@ SELECT pg_catalog.setval('public.datos_bancarios_empresa_id_seq', 3, true);
 
 
 --
--- TOC entry 5888 (class 0 OID 0)
+-- TOC entry 5922 (class 0 OID 0)
 -- Dependencies: 321
 -- Name: detalles_remision_detalle_remision_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12522,25 +13474,25 @@ SELECT pg_catalog.setval('public.detalles_remision_detalle_remision_id_seq', 1, 
 
 
 --
--- TOC entry 5889 (class 0 OID 0)
+-- TOC entry 5923 (class 0 OID 0)
 -- Dependencies: 260
 -- Name: detallesdelpedido_detalleid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 516, true);
+SELECT pg_catalog.setval('public.detallesdelpedido_detalleid_seq', 532, true);
 
 
 --
--- TOC entry 5890 (class 0 OID 0)
+-- TOC entry 5924 (class 0 OID 0)
 -- Dependencies: 262
 -- Name: detallesordencompra_detalleoc_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.detallesordencompra_detalleoc_id_seq', 683, true);
+SELECT pg_catalog.setval('public.detallesordencompra_detalleoc_id_seq', 690, true);
 
 
 --
--- TOC entry 5891 (class 0 OID 0)
+-- TOC entry 5925 (class 0 OID 0)
 -- Dependencies: 316
 -- Name: developers_dev_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12549,7 +13501,7 @@ SELECT pg_catalog.setval('public.developers_dev_id_seq', 2, true);
 
 
 --
--- TOC entry 5892 (class 0 OID 0)
+-- TOC entry 5926 (class 0 OID 0)
 -- Dependencies: 345
 -- Name: devoluciones_detalles_detalle_devolucion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12558,7 +13510,7 @@ SELECT pg_catalog.setval('public.devoluciones_detalles_detalle_devolucion_id_seq
 
 
 --
--- TOC entry 5893 (class 0 OID 0)
+-- TOC entry 5927 (class 0 OID 0)
 -- Dependencies: 343
 -- Name: devoluciones_devolucion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12567,16 +13519,16 @@ SELECT pg_catalog.setval('public.devoluciones_devolucion_id_seq', 1, false);
 
 
 --
--- TOC entry 5894 (class 0 OID 0)
+-- TOC entry 5928 (class 0 OID 0)
 -- Dependencies: 335
 -- Name: errores_sincronizacion_error_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.errores_sincronizacion_error_id_seq', 185, true);
+SELECT pg_catalog.setval('public.errores_sincronizacion_error_id_seq', 226, true);
 
 
 --
--- TOC entry 5895 (class 0 OID 0)
+-- TOC entry 5929 (class 0 OID 0)
 -- Dependencies: 265
 -- Name: estados_estadoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12585,7 +13537,7 @@ SELECT pg_catalog.setval('public.estados_estadoid_seq', 32, true);
 
 
 --
--- TOC entry 5896 (class 0 OID 0)
+-- TOC entry 5930 (class 0 OID 0)
 -- Dependencies: 347
 -- Name: evidencias_devolucion_evidencia_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12594,16 +13546,16 @@ SELECT pg_catalog.setval('public.evidencias_devolucion_evidencia_id_seq', 1, fal
 
 
 --
--- TOC entry 5897 (class 0 OID 0)
+-- TOC entry 5931 (class 0 OID 0)
 -- Dependencies: 333
 -- Name: historial_pedidos_historial_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.historial_pedidos_historial_id_seq', 9, true);
+SELECT pg_catalog.setval('public.historial_pedidos_historial_id_seq', 34, true);
 
 
 --
--- TOC entry 5898 (class 0 OID 0)
+-- TOC entry 5932 (class 0 OID 0)
 -- Dependencies: 349
 -- Name: inventario_mermas_merma_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12612,16 +13564,25 @@ SELECT pg_catalog.setval('public.inventario_mermas_merma_id_seq', 1, false);
 
 
 --
--- TOC entry 5899 (class 0 OID 0)
+-- TOC entry 5933 (class 0 OID 0)
+-- Dependencies: 362
+-- Name: inventario_reservas_log_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
+--
+
+SELECT pg_catalog.setval('public.inventario_reservas_log_log_id_seq', 1, true);
+
+
+--
+-- TOC entry 5934 (class 0 OID 0)
 -- Dependencies: 267
 -- Name: itemsdelcarrito_itemid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.itemsdelcarrito_itemid_seq', 709, true);
+SELECT pg_catalog.setval('public.itemsdelcarrito_itemid_seq', 717, true);
 
 
 --
--- TOC entry 5900 (class 0 OID 0)
+-- TOC entry 5935 (class 0 OID 0)
 -- Dependencies: 312
 -- Name: landing_page_config_config_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12630,7 +13591,7 @@ SELECT pg_catalog.setval('public.landing_page_config_config_id_seq', 62, true);
 
 
 --
--- TOC entry 5901 (class 0 OID 0)
+-- TOC entry 5936 (class 0 OID 0)
 -- Dependencies: 269
 -- Name: log_eventosusuario_eventoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12639,25 +13600,25 @@ SELECT pg_catalog.setval('public.log_eventosusuario_eventoid_seq', 1, false);
 
 
 --
--- TOC entry 5902 (class 0 OID 0)
+-- TOC entry 5937 (class 0 OID 0)
 -- Dependencies: 271
 -- Name: log_inventario_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.log_inventario_logid_seq', 82, true);
+SELECT pg_catalog.setval('public.log_inventario_logid_seq', 140, true);
 
 
 --
--- TOC entry 5903 (class 0 OID 0)
+-- TOC entry 5938 (class 0 OID 0)
 -- Dependencies: 273
 -- Name: log_movimientos_logid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 564, true);
+SELECT pg_catalog.setval('public.log_movimientos_logid_seq', 574, true);
 
 
 --
--- TOC entry 5904 (class 0 OID 0)
+-- TOC entry 5939 (class 0 OID 0)
 -- Dependencies: 275
 -- Name: medidas_medidaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12666,25 +13627,25 @@ SELECT pg_catalog.setval('public.medidas_medidaid_seq', 1, false);
 
 
 --
--- TOC entry 5905 (class 0 OID 0)
+-- TOC entry 5940 (class 0 OID 0)
 -- Dependencies: 324
 -- Name: movimientos_inventario_movimiento_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.movimientos_inventario_movimiento_id_seq', 1, false);
+SELECT pg_catalog.setval('public.movimientos_inventario_movimiento_id_seq', 57, true);
 
 
 --
--- TOC entry 5906 (class 0 OID 0)
+-- TOC entry 5941 (class 0 OID 0)
 -- Dependencies: 276
 -- Name: notificaciones_notificacionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 246, true);
+SELECT pg_catalog.setval('public.notificaciones_notificacionid_seq', 281, true);
 
 
 --
--- TOC entry 5907 (class 0 OID 0)
+-- TOC entry 5942 (class 0 OID 0)
 -- Dependencies: 355
 -- Name: ordenes_grupos_grupoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12693,7 +13654,7 @@ SELECT pg_catalog.setval('public.ordenes_grupos_grupoid_seq', 1, true);
 
 
 --
--- TOC entry 5908 (class 0 OID 0)
+-- TOC entry 5943 (class 0 OID 0)
 -- Dependencies: 278
 -- Name: ordenesdecompra_ordencompraid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12702,7 +13663,7 @@ SELECT pg_catalog.setval('public.ordenesdecompra_ordencompraid_seq', 48, true);
 
 
 --
--- TOC entry 5909 (class 0 OID 0)
+-- TOC entry 5944 (class 0 OID 0)
 -- Dependencies: 280
 -- Name: pagos_clientes_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12711,7 +13672,7 @@ SELECT pg_catalog.setval('public.pagos_clientes_pago_id_seq', 1, true);
 
 
 --
--- TOC entry 5910 (class 0 OID 0)
+-- TOC entry 5945 (class 0 OID 0)
 -- Dependencies: 282
 -- Name: pagos_cxp_pago_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12720,7 +13681,7 @@ SELECT pg_catalog.setval('public.pagos_cxp_pago_id_seq', 1, false);
 
 
 --
--- TOC entry 5911 (class 0 OID 0)
+-- TOC entry 5946 (class 0 OID 0)
 -- Dependencies: 284
 -- Name: passwordresettokens_tokenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12729,25 +13690,25 @@ SELECT pg_catalog.setval('public.passwordresettokens_tokenid_seq', 7, true);
 
 
 --
--- TOC entry 5912 (class 0 OID 0)
+-- TOC entry 5947 (class 0 OID 0)
 -- Dependencies: 341
 -- Name: pedido_surtido_detalle_surtido_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.pedido_surtido_detalle_surtido_id_seq', 1, true);
+SELECT pg_catalog.setval('public.pedido_surtido_detalle_surtido_id_seq', 2, true);
 
 
 --
--- TOC entry 5913 (class 0 OID 0)
+-- TOC entry 5948 (class 0 OID 0)
 -- Dependencies: 286
 -- Name: pedidos_pedidoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.pedidos_pedidoid_seq', 44, true);
+SELECT pg_catalog.setval('public.pedidos_pedidoid_seq', 45, true);
 
 
 --
--- TOC entry 5914 (class 0 OID 0)
+-- TOC entry 5949 (class 0 OID 0)
 -- Dependencies: 308
 -- Name: producto_imagenes_color_imagencolorid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12756,7 +13717,7 @@ SELECT pg_catalog.setval('public.producto_imagenes_color_imagencolorid_seq', 1, 
 
 
 --
--- TOC entry 5915 (class 0 OID 0)
+-- TOC entry 5950 (class 0 OID 0)
 -- Dependencies: 288
 -- Name: producto_imagenes_imagenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12765,7 +13726,7 @@ SELECT pg_catalog.setval('public.producto_imagenes_imagenid_seq', 414, true);
 
 
 --
--- TOC entry 5916 (class 0 OID 0)
+-- TOC entry 5951 (class 0 OID 0)
 -- Dependencies: 291
 -- Name: producto_variante_imagenes_imagenid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12774,7 +13735,7 @@ SELECT pg_catalog.setval('public.producto_variante_imagenes_imagenid_seq', 190, 
 
 
 --
--- TOC entry 5917 (class 0 OID 0)
+-- TOC entry 5952 (class 0 OID 0)
 -- Dependencies: 293
 -- Name: producto_variantes_varianteid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12783,7 +13744,7 @@ SELECT pg_catalog.setval('public.producto_variantes_varianteid_seq', 294, true);
 
 
 --
--- TOC entry 5918 (class 0 OID 0)
+-- TOC entry 5953 (class 0 OID 0)
 -- Dependencies: 295
 -- Name: productos_productoid_seq1; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12792,7 +13753,7 @@ SELECT pg_catalog.setval('public.productos_productoid_seq1', 92, true);
 
 
 --
--- TOC entry 5919 (class 0 OID 0)
+-- TOC entry 5954 (class 0 OID 0)
 -- Dependencies: 297
 -- Name: proveedor_reglas_empaque_reglaid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12801,7 +13762,7 @@ SELECT pg_catalog.setval('public.proveedor_reglas_empaque_reglaid_seq', 10, true
 
 
 --
--- TOC entry 5920 (class 0 OID 0)
+-- TOC entry 5955 (class 0 OID 0)
 -- Dependencies: 299
 -- Name: proveedores_proveedorid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12810,7 +13771,7 @@ SELECT pg_catalog.setval('public.proveedores_proveedorid_seq', 4, true);
 
 
 --
--- TOC entry 5921 (class 0 OID 0)
+-- TOC entry 5956 (class 0 OID 0)
 -- Dependencies: 319
 -- Name: remisiones_remision_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12819,7 +13780,7 @@ SELECT pg_catalog.setval('public.remisiones_remision_id_seq', 1, false);
 
 
 --
--- TOC entry 5922 (class 0 OID 0)
+-- TOC entry 5957 (class 0 OID 0)
 -- Dependencies: 337
 -- Name: sesiones_inventario_sesion_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12828,7 +13789,7 @@ SELECT pg_catalog.setval('public.sesiones_inventario_sesion_id_seq', 1, true);
 
 
 --
--- TOC entry 5923 (class 0 OID 0)
+-- TOC entry 5958 (class 0 OID 0)
 -- Dependencies: 301
 -- Name: solicitudes_credito_solicitud_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12837,16 +13798,16 @@ SELECT pg_catalog.setval('public.solicitudes_credito_solicitud_id_seq', 21, true
 
 
 --
--- TOC entry 5924 (class 0 OID 0)
+-- TOC entry 5959 (class 0 OID 0)
 -- Dependencies: 339
 -- Name: stock_admin_stockadminid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
 
-SELECT pg_catalog.setval('public.stock_admin_stockadminid_seq', 68, true);
+SELECT pg_catalog.setval('public.stock_admin_stockadminid_seq', 125, true);
 
 
 --
--- TOC entry 5925 (class 0 OID 0)
+-- TOC entry 5960 (class 0 OID 0)
 -- Dependencies: 314
 -- Name: tenants_tenant_id_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12855,7 +13816,7 @@ SELECT pg_catalog.setval('public.tenants_tenant_id_seq', 5, true);
 
 
 --
--- TOC entry 5926 (class 0 OID 0)
+-- TOC entry 5961 (class 0 OID 0)
 -- Dependencies: 303
 -- Name: tipoproducto_tipoproductoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12864,7 +13825,7 @@ SELECT pg_catalog.setval('public.tipoproducto_tipoproductoid_seq', 8, true);
 
 
 --
--- TOC entry 5927 (class 0 OID 0)
+-- TOC entry 5962 (class 0 OID 0)
 -- Dependencies: 305
 -- Name: toma_inventario_conteos_conteoid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12873,7 +13834,7 @@ SELECT pg_catalog.setval('public.toma_inventario_conteos_conteoid_seq', 91, true
 
 
 --
--- TOC entry 5928 (class 0 OID 0)
+-- TOC entry 5963 (class 0 OID 0)
 -- Dependencies: 307
 -- Name: toma_inventario_sesiones_sesionid_seq; Type: SEQUENCE SET; Schema: public; Owner: ferram
 --
@@ -12882,7 +13843,7 @@ SELECT pg_catalog.setval('public.toma_inventario_sesiones_sesionid_seq', 5, true
 
 
 --
--- TOC entry 4700 (class 2606 OID 25389)
+-- TOC entry 4716 (class 2606 OID 25389)
 -- Name: administradores administradores_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -12891,7 +13852,7 @@ ALTER TABLE ONLY public.administradores
 
 
 --
--- TOC entry 4705 (class 2606 OID 25395)
+-- TOC entry 4721 (class 2606 OID 25395)
 -- Name: agentesdeventas agentesdeventas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -12900,7 +13861,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 4707 (class 2606 OID 26523)
+-- TOC entry 4723 (class 2606 OID 26523)
 -- Name: agentesdeventas agentesdeventas_telefono_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -12909,7 +13870,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 4988 (class 2606 OID 27463)
+-- TOC entry 5004 (class 2606 OID 27463)
 -- Name: ajustes_inventario ajustes_inventario_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -12918,7 +13879,7 @@ ALTER TABLE ONLY public.ajustes_inventario
 
 
 --
--- TOC entry 4982 (class 2606 OID 27438)
+-- TOC entry 4998 (class 2606 OID 27438)
 -- Name: auditoria_comentarios auditoria_comentarios_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -12927,7 +13888,7 @@ ALTER TABLE ONLY public.auditoria_comentarios
 
 
 --
--- TOC entry 4715 (class 2606 OID 25397)
+-- TOC entry 4731 (class 2606 OID 25397)
 -- Name: carritodecompra carritodecompra_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -12936,7 +13897,7 @@ ALTER TABLE ONLY public.carritodecompra
 
 
 --
--- TOC entry 4718 (class 2606 OID 25399)
+-- TOC entry 4734 (class 2606 OID 25399)
 -- Name: cat_cxp_etiquetas cat_cxp_etiquetas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -12945,7 +13906,7 @@ ALTER TABLE ONLY public.cat_cxp_etiquetas
 
 
 --
--- TOC entry 4978 (class 2606 OID 27420)
+-- TOC entry 4994 (class 2606 OID 27420)
 -- Name: cat_motivos_ajuste cat_motivos_ajuste_codigo_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -12954,7 +13915,7 @@ ALTER TABLE ONLY public.cat_motivos_ajuste
 
 
 --
--- TOC entry 4980 (class 2606 OID 27418)
+-- TOC entry 4996 (class 2606 OID 27418)
 -- Name: cat_motivos_ajuste cat_motivos_ajuste_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -12963,7 +13924,7 @@ ALTER TABLE ONLY public.cat_motivos_ajuste
 
 
 --
--- TOC entry 4721 (class 2606 OID 25403)
+-- TOC entry 4737 (class 2606 OID 25403)
 -- Name: cat_tamanopaquetes cat_tamanopaquetes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -12972,7 +13933,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes
 
 
 --
--- TOC entry 4726 (class 2606 OID 25405)
+-- TOC entry 4742 (class 2606 OID 25405)
 -- Name: categorias categorias_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -12981,7 +13942,7 @@ ALTER TABLE ONLY public.categorias
 
 
 --
--- TOC entry 4731 (class 2606 OID 25407)
+-- TOC entry 4747 (class 2606 OID 25407)
 -- Name: cliente_creditos cliente_creditos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -12990,7 +13951,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 4736 (class 2606 OID 25409)
+-- TOC entry 4752 (class 2606 OID 25409)
 -- Name: cliente_direcciones cliente_direcciones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -12999,7 +13960,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 5046 (class 2606 OID 28180)
+-- TOC entry 5064 (class 2606 OID 28180)
 -- Name: cliente_saldo_favor cliente_saldo_favor_cliente_id_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13008,7 +13969,7 @@ ALTER TABLE ONLY public.cliente_saldo_favor
 
 
 --
--- TOC entry 5052 (class 2606 OID 28198)
+-- TOC entry 5070 (class 2606 OID 28198)
 -- Name: cliente_saldo_favor_movimientos cliente_saldo_favor_movimientos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13017,7 +13978,7 @@ ALTER TABLE ONLY public.cliente_saldo_favor_movimientos
 
 
 --
--- TOC entry 5048 (class 2606 OID 28178)
+-- TOC entry 5066 (class 2606 OID 28178)
 -- Name: cliente_saldo_favor cliente_saldo_favor_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13026,7 +13987,7 @@ ALTER TABLE ONLY public.cliente_saldo_favor
 
 
 --
--- TOC entry 5062 (class 2606 OID 28551)
+-- TOC entry 5080 (class 2606 OID 28551)
 -- Name: clientes_favoritos clientes_favoritos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13035,7 +13996,7 @@ ALTER TABLE ONLY public.clientes_favoritos
 
 
 --
--- TOC entry 4739 (class 2606 OID 25415)
+-- TOC entry 4755 (class 2606 OID 25415)
 -- Name: clientes clientes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13044,7 +14005,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4741 (class 2606 OID 25920)
+-- TOC entry 4757 (class 2606 OID 25920)
 -- Name: clientes clientes_telefono_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13053,7 +14014,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 4750 (class 2606 OID 25417)
+-- TOC entry 4766 (class 2606 OID 25417)
 -- Name: comisiones comisiones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13062,7 +14023,7 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 4753 (class 2606 OID 25419)
+-- TOC entry 4769 (class 2606 OID 25419)
 -- Name: communicationlogs communicationlogs_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13071,7 +14032,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 4756 (class 2606 OID 25421)
+-- TOC entry 4772 (class 2606 OID 25421)
 -- Name: control_cambios control_cambios_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13080,7 +14041,7 @@ ALTER TABLE ONLY public.control_cambios
 
 
 --
--- TOC entry 4761 (class 2606 OID 25423)
+-- TOC entry 4777 (class 2606 OID 25423)
 -- Name: credito_movimientos credito_movimientos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13089,7 +14050,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 4764 (class 2606 OID 25425)
+-- TOC entry 4780 (class 2606 OID 25425)
 -- Name: cuentas_por_cobrar cuentas_por_cobrar_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13098,7 +14059,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar
 
 
 --
--- TOC entry 4768 (class 2606 OID 25427)
+-- TOC entry 4784 (class 2606 OID 25427)
 -- Name: cuentas_por_pagar cuentas_por_pagar_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13107,7 +14068,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 4932 (class 2606 OID 25905)
+-- TOC entry 4948 (class 2606 OID 25905)
 -- Name: cupones cupones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13116,7 +14077,7 @@ ALTER TABLE ONLY public.cupones
 
 
 --
--- TOC entry 4778 (class 2606 OID 25429)
+-- TOC entry 4794 (class 2606 OID 25429)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_cxp_id_etiqueta_id_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13125,7 +14086,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 4780 (class 2606 OID 25431)
+-- TOC entry 4796 (class 2606 OID 25431)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13134,7 +14095,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 4783 (class 2606 OID 25433)
+-- TOC entry 4799 (class 2606 OID 25433)
 -- Name: datos_bancarios_empresa datos_bancarios_empresa_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13143,7 +14104,7 @@ ALTER TABLE ONLY public.datos_bancarios_empresa
 
 
 --
--- TOC entry 4964 (class 2606 OID 26978)
+-- TOC entry 4980 (class 2606 OID 26978)
 -- Name: detalles_remision detalles_remision_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13152,7 +14113,7 @@ ALTER TABLE ONLY public.detalles_remision
 
 
 --
--- TOC entry 4787 (class 2606 OID 25435)
+-- TOC entry 4803 (class 2606 OID 25435)
 -- Name: detallesdelpedido detallesdelpedido_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13161,7 +14122,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 4790 (class 2606 OID 25437)
+-- TOC entry 4806 (class 2606 OID 25437)
 -- Name: detallesordencompra detallesordencompra_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13170,7 +14131,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 4948 (class 2606 OID 26161)
+-- TOC entry 4964 (class 2606 OID 26161)
 -- Name: developers developers_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13179,7 +14140,7 @@ ALTER TABLE ONLY public.developers
 
 
 --
--- TOC entry 4950 (class 2606 OID 26163)
+-- TOC entry 4966 (class 2606 OID 26163)
 -- Name: developers developers_username_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13188,7 +14149,7 @@ ALTER TABLE ONLY public.developers
 
 
 --
--- TOC entry 5032 (class 2606 OID 28100)
+-- TOC entry 5050 (class 2606 OID 28100)
 -- Name: devoluciones_detalles devoluciones_detalles_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13197,7 +14158,7 @@ ALTER TABLE ONLY public.devoluciones_detalles
 
 
 --
--- TOC entry 5025 (class 2606 OID 28072)
+-- TOC entry 5043 (class 2606 OID 28072)
 -- Name: devoluciones devoluciones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13206,7 +14167,7 @@ ALTER TABLE ONLY public.devoluciones
 
 
 --
--- TOC entry 4743 (class 2606 OID 26362)
+-- TOC entry 4759 (class 2606 OID 26362)
 -- Name: clientes email_tenant_unique; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13215,7 +14176,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 5000 (class 2606 OID 27612)
+-- TOC entry 5016 (class 2606 OID 27612)
 -- Name: errores_sincronizacion errores_sincronizacion_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13224,7 +14185,7 @@ ALTER TABLE ONLY public.errores_sincronizacion
 
 
 --
--- TOC entry 4802 (class 2606 OID 25439)
+-- TOC entry 4818 (class 2606 OID 25439)
 -- Name: estados estados_abreviatura_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13233,7 +14194,7 @@ ALTER TABLE ONLY public.estados
 
 
 --
--- TOC entry 4804 (class 2606 OID 25441)
+-- TOC entry 4820 (class 2606 OID 25441)
 -- Name: estados estados_nombre_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13242,7 +14203,7 @@ ALTER TABLE ONLY public.estados
 
 
 --
--- TOC entry 4806 (class 2606 OID 25443)
+-- TOC entry 4822 (class 2606 OID 25443)
 -- Name: estados estados_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13251,7 +14212,7 @@ ALTER TABLE ONLY public.estados
 
 
 --
--- TOC entry 5037 (class 2606 OID 28133)
+-- TOC entry 5055 (class 2606 OID 28133)
 -- Name: evidencias_devolucion evidencias_devolucion_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13260,7 +14221,7 @@ ALTER TABLE ONLY public.evidencias_devolucion
 
 
 --
--- TOC entry 4995 (class 2606 OID 27544)
+-- TOC entry 5011 (class 2606 OID 27544)
 -- Name: historial_pedidos historial_pedidos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13269,7 +14230,7 @@ ALTER TABLE ONLY public.historial_pedidos
 
 
 --
--- TOC entry 5044 (class 2606 OID 28152)
+-- TOC entry 5062 (class 2606 OID 28152)
 -- Name: inventario_mermas inventario_mermas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13278,7 +14239,16 @@ ALTER TABLE ONLY public.inventario_mermas
 
 
 --
--- TOC entry 4809 (class 2606 OID 25445)
+-- TOC entry 5091 (class 2606 OID 28684)
+-- Name: inventario_reservas_log inventario_reservas_log_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.inventario_reservas_log
+    ADD CONSTRAINT inventario_reservas_log_pkey PRIMARY KEY (log_id);
+
+
+--
+-- TOC entry 4825 (class 2606 OID 25445)
 -- Name: itemsdelcarrito itemsdelcarrito_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13287,7 +14257,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 4940 (class 2606 OID 26125)
+-- TOC entry 4956 (class 2606 OID 26125)
 -- Name: landing_page_config landing_page_config_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13296,7 +14266,7 @@ ALTER TABLE ONLY public.landing_page_config
 
 
 --
--- TOC entry 4816 (class 2606 OID 25447)
+-- TOC entry 4832 (class 2606 OID 25447)
 -- Name: log_eventosusuario log_eventosusuario_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13305,7 +14275,7 @@ ALTER TABLE ONLY public.log_eventosusuario
 
 
 --
--- TOC entry 4825 (class 2606 OID 25449)
+-- TOC entry 4841 (class 2606 OID 25449)
 -- Name: log_inventario log_inventario_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13314,7 +14284,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 4831 (class 2606 OID 25451)
+-- TOC entry 4847 (class 2606 OID 25451)
 -- Name: log_movimientos log_movimientos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13323,7 +14293,7 @@ ALTER TABLE ONLY public.log_movimientos
 
 
 --
--- TOC entry 4835 (class 2606 OID 25453)
+-- TOC entry 4851 (class 2606 OID 25453)
 -- Name: medidas medidas_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13332,7 +14302,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 4976 (class 2606 OID 27386)
+-- TOC entry 4992 (class 2606 OID 27386)
 -- Name: movimientos_inventario movimientos_inventario_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13341,7 +14311,7 @@ ALTER TABLE ONLY public.movimientos_inventario
 
 
 --
--- TOC entry 4800 (class 2606 OID 25457)
+-- TOC entry 4816 (class 2606 OID 25457)
 -- Name: notificaciones notificaciones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13350,7 +14320,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 5060 (class 2606 OID 28285)
+-- TOC entry 5078 (class 2606 OID 28285)
 -- Name: ordenes_grupos ordenes_grupos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13359,7 +14329,7 @@ ALTER TABLE ONLY public.ordenes_grupos
 
 
 --
--- TOC entry 4847 (class 2606 OID 25459)
+-- TOC entry 4863 (class 2606 OID 25459)
 -- Name: ordenesdecompra ordenesdecompra_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13368,7 +14338,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 4854 (class 2606 OID 25461)
+-- TOC entry 4870 (class 2606 OID 25461)
 -- Name: pagos_clientes pagos_clientes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13377,7 +14347,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 4858 (class 2606 OID 25463)
+-- TOC entry 4874 (class 2606 OID 25463)
 -- Name: pagos_cxp pagos_cxp_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13386,7 +14356,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 4861 (class 2606 OID 25465)
+-- TOC entry 4877 (class 2606 OID 25465)
 -- Name: passwordresettokens passwordresettokens_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13395,7 +14365,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 4863 (class 2606 OID 25467)
+-- TOC entry 4879 (class 2606 OID 25467)
 -- Name: passwordresettokens passwordresettokens_token_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13404,7 +14374,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 5023 (class 2606 OID 28031)
+-- TOC entry 5041 (class 2606 OID 28031)
 -- Name: pedido_surtido_detalle pedido_surtido_detalle_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13413,7 +14383,7 @@ ALTER TABLE ONLY public.pedido_surtido_detalle
 
 
 --
--- TOC entry 4870 (class 2606 OID 25469)
+-- TOC entry 4886 (class 2606 OID 25469)
 -- Name: pedidos pedidos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13422,7 +14392,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 4930 (class 2606 OID 25885)
+-- TOC entry 4946 (class 2606 OID 25885)
 -- Name: producto_imagenes_color producto_imagenes_color_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13431,7 +14401,7 @@ ALTER TABLE ONLY public.producto_imagenes_color
 
 
 --
--- TOC entry 4873 (class 2606 OID 25471)
+-- TOC entry 4889 (class 2606 OID 25471)
 -- Name: producto_imagenes producto_imagenes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13440,7 +14410,7 @@ ALTER TABLE ONLY public.producto_imagenes
 
 
 --
--- TOC entry 4876 (class 2606 OID 25473)
+-- TOC entry 4892 (class 2606 OID 25473)
 -- Name: producto_tamanosdisponibles producto_tamanosdisponibles_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13449,7 +14419,7 @@ ALTER TABLE ONLY public.producto_tamanosdisponibles
 
 
 --
--- TOC entry 4881 (class 2606 OID 25475)
+-- TOC entry 4897 (class 2606 OID 25475)
 -- Name: producto_variante_imagenes producto_variante_imagenes_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13458,7 +14428,7 @@ ALTER TABLE ONLY public.producto_variante_imagenes
 
 
 --
--- TOC entry 4888 (class 2606 OID 25477)
+-- TOC entry 4904 (class 2606 OID 25477)
 -- Name: producto_variantes productos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13467,7 +14437,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4896 (class 2606 OID 25479)
+-- TOC entry 4912 (class 2606 OID 25479)
 -- Name: productos productos_pkey1; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13476,7 +14446,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4901 (class 2606 OID 25485)
+-- TOC entry 4917 (class 2606 OID 25485)
 -- Name: proveedor_reglas_empaque proveedor_reglas_empaque_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13485,7 +14455,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque
 
 
 --
--- TOC entry 4905 (class 2606 OID 25487)
+-- TOC entry 4921 (class 2606 OID 25487)
 -- Name: proveedores proveedores_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13494,7 +14464,7 @@ ALTER TABLE ONLY public.proveedores
 
 
 --
--- TOC entry 4960 (class 2606 OID 26952)
+-- TOC entry 4976 (class 2606 OID 26952)
 -- Name: remisiones remisiones_folio_key; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13503,7 +14473,7 @@ ALTER TABLE ONLY public.remisiones
 
 
 --
--- TOC entry 4962 (class 2606 OID 26950)
+-- TOC entry 4978 (class 2606 OID 26950)
 -- Name: remisiones remisiones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13512,7 +14482,7 @@ ALTER TABLE ONLY public.remisiones
 
 
 --
--- TOC entry 5008 (class 2606 OID 27768)
+-- TOC entry 5024 (class 2606 OID 27768)
 -- Name: sesiones_inventario sesiones_inventario_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13521,7 +14491,7 @@ ALTER TABLE ONLY public.sesiones_inventario
 
 
 --
--- TOC entry 5010 (class 2606 OID 27770)
+-- TOC entry 5026 (class 2606 OID 27770)
 -- Name: sesiones_inventario sesiones_inventario_tenant_nombre_unique; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13530,7 +14500,7 @@ ALTER TABLE ONLY public.sesiones_inventario
 
 
 --
--- TOC entry 4953 (class 2606 OID 26356)
+-- TOC entry 4969 (class 2606 OID 26356)
 -- Name: session session_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13539,7 +14509,7 @@ ALTER TABLE ONLY public.session
 
 
 --
--- TOC entry 4907 (class 2606 OID 25489)
+-- TOC entry 4923 (class 2606 OID 25489)
 -- Name: solicitudes_credito solicitudes_credito_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13548,7 +14518,7 @@ ALTER TABLE ONLY public.solicitudes_credito
 
 
 --
--- TOC entry 5017 (class 2606 OID 27961)
+-- TOC entry 5035 (class 2606 OID 27961)
 -- Name: stock_admin stock_admin_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13557,7 +14527,7 @@ ALTER TABLE ONLY public.stock_admin
 
 
 --
--- TOC entry 4945 (class 2606 OID 26151)
+-- TOC entry 4961 (class 2606 OID 26151)
 -- Name: tenants tenants_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13566,7 +14536,7 @@ ALTER TABLE ONLY public.tenants
 
 
 --
--- TOC entry 4910 (class 2606 OID 25493)
+-- TOC entry 4926 (class 2606 OID 25493)
 -- Name: tipoproducto tipoproducto_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13575,7 +14545,7 @@ ALTER TABLE ONLY public.tipoproducto
 
 
 --
--- TOC entry 4920 (class 2606 OID 25495)
+-- TOC entry 4936 (class 2606 OID 25495)
 -- Name: toma_inventario_conteos toma_inventario_conteos_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13584,7 +14554,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 4926 (class 2606 OID 25497)
+-- TOC entry 4942 (class 2606 OID 25497)
 -- Name: toma_inventario_sesiones toma_inventario_sesiones_pkey; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13593,7 +14563,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones
 
 
 --
--- TOC entry 4986 (class 2606 OID 27440)
+-- TOC entry 5002 (class 2606 OID 27440)
 -- Name: auditoria_comentarios uk_comentario_conteo; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13602,7 +14572,7 @@ ALTER TABLE ONLY public.auditoria_comentarios
 
 
 --
--- TOC entry 4703 (class 2606 OID 26172)
+-- TOC entry 4719 (class 2606 OID 26172)
 -- Name: administradores unique_admin_email_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13611,7 +14581,7 @@ ALTER TABLE ONLY public.administradores
 
 
 --
--- TOC entry 4711 (class 2606 OID 26183)
+-- TOC entry 4727 (class 2606 OID 26183)
 -- Name: agentesdeventas unique_agente_codigo_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13620,7 +14590,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 4713 (class 2606 OID 26181)
+-- TOC entry 4729 (class 2606 OID 26181)
 -- Name: agentesdeventas unique_agente_email_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13629,7 +14599,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 4734 (class 2606 OID 25499)
+-- TOC entry 4750 (class 2606 OID 25499)
 -- Name: cliente_creditos unique_cliente_credito; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13638,7 +14608,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 4748 (class 2606 OID 26192)
+-- TOC entry 4764 (class 2606 OID 26192)
 -- Name: clientes unique_cliente_email_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13647,7 +14617,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 5068 (class 2606 OID 28553)
+-- TOC entry 5086 (class 2606 OID 28553)
 -- Name: clientes_favoritos unique_cliente_variante; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13656,7 +14626,7 @@ ALTER TABLE ONLY public.clientes_favoritos
 
 
 --
--- TOC entry 4935 (class 2606 OID 26260)
+-- TOC entry 4951 (class 2606 OID 26260)
 -- Name: cupones unique_cupon_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13665,7 +14635,7 @@ ALTER TABLE ONLY public.cupones
 
 
 --
--- TOC entry 4942 (class 2606 OID 26330)
+-- TOC entry 4958 (class 2606 OID 26330)
 -- Name: landing_page_config unique_landing_section_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13674,7 +14644,7 @@ ALTER TABLE ONLY public.landing_page_config
 
 
 --
--- TOC entry 4837 (class 2606 OID 26233)
+-- TOC entry 4853 (class 2606 OID 26233)
 -- Name: medidas unique_medida_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13683,7 +14653,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 4898 (class 2606 OID 26242)
+-- TOC entry 4914 (class 2606 OID 26242)
 -- Name: productos unique_sku_maestro_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13692,7 +14662,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 4890 (class 2606 OID 26251)
+-- TOC entry 4906 (class 2606 OID 26251)
 -- Name: producto_variantes unique_sku_variante_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13701,7 +14671,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 4724 (class 2606 OID 26224)
+-- TOC entry 4740 (class 2606 OID 26224)
 -- Name: cat_tamanopaquetes unique_tamano_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13710,7 +14680,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes
 
 
 --
--- TOC entry 4912 (class 2606 OID 26215)
+-- TOC entry 4928 (class 2606 OID 26215)
 -- Name: tipoproducto unique_tipoproducto_per_tenant; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13719,7 +14689,7 @@ ALTER TABLE ONLY public.tipoproducto
 
 
 --
--- TOC entry 4776 (class 2606 OID 25501)
+-- TOC entry 4792 (class 2606 OID 25501)
 -- Name: cuentas_por_pagar unq_orden_referencia; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13728,7 +14698,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 4922 (class 2606 OID 25503)
+-- TOC entry 4938 (class 2606 OID 25503)
 -- Name: toma_inventario_conteos unq_sesion_variante; Type: CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -13737,7 +14707,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 4951 (class 1259 OID 26357)
+-- TOC entry 4967 (class 1259 OID 26357)
 -- Name: IDX_session_expire; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13745,7 +14715,7 @@ CREATE INDEX "IDX_session_expire" ON public.session USING btree (expire);
 
 
 --
--- TOC entry 4701 (class 1259 OID 26173)
+-- TOC entry 4717 (class 1259 OID 26173)
 -- Name: idx_administradores_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13753,7 +14723,7 @@ CREATE INDEX idx_administradores_tenant ON public.administradores USING btree (t
 
 
 --
--- TOC entry 4708 (class 1259 OID 26524)
+-- TOC entry 4724 (class 1259 OID 26524)
 -- Name: idx_agentes_telefono; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13761,7 +14731,7 @@ CREATE INDEX idx_agentes_telefono ON public.agentesdeventas USING btree (telefon
 
 
 --
--- TOC entry 4709 (class 1259 OID 26184)
+-- TOC entry 4725 (class 1259 OID 26184)
 -- Name: idx_agentes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13769,7 +14739,7 @@ CREATE INDEX idx_agentes_tenant ON public.agentesdeventas USING btree (tenant_id
 
 
 --
--- TOC entry 4989 (class 1259 OID 27487)
+-- TOC entry 5005 (class 1259 OID 27487)
 -- Name: idx_ajustes_inventario_admin; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13777,7 +14747,7 @@ CREATE INDEX idx_ajustes_inventario_admin ON public.ajustes_inventario USING btr
 
 
 --
--- TOC entry 4990 (class 1259 OID 27489)
+-- TOC entry 5006 (class 1259 OID 27489)
 -- Name: idx_ajustes_inventario_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13785,7 +14755,7 @@ CREATE INDEX idx_ajustes_inventario_fecha ON public.ajustes_inventario USING btr
 
 
 --
--- TOC entry 4991 (class 1259 OID 27490)
+-- TOC entry 5007 (class 1259 OID 27490)
 -- Name: idx_ajustes_inventario_sesion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13793,7 +14763,7 @@ CREATE INDEX idx_ajustes_inventario_sesion ON public.ajustes_inventario USING bt
 
 
 --
--- TOC entry 4992 (class 1259 OID 27488)
+-- TOC entry 5008 (class 1259 OID 27488)
 -- Name: idx_ajustes_inventario_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13801,7 +14771,7 @@ CREATE INDEX idx_ajustes_inventario_tenant ON public.ajustes_inventario USING bt
 
 
 --
--- TOC entry 4993 (class 1259 OID 27486)
+-- TOC entry 5009 (class 1259 OID 27486)
 -- Name: idx_ajustes_inventario_variante; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13809,7 +14779,7 @@ CREATE INDEX idx_ajustes_inventario_variante ON public.ajustes_inventario USING 
 
 
 --
--- TOC entry 4983 (class 1259 OID 27484)
+-- TOC entry 4999 (class 1259 OID 27484)
 -- Name: idx_auditoria_comentarios_conteo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13817,7 +14787,7 @@ CREATE INDEX idx_auditoria_comentarios_conteo ON public.auditoria_comentarios US
 
 
 --
--- TOC entry 4984 (class 1259 OID 27485)
+-- TOC entry 5000 (class 1259 OID 27485)
 -- Name: idx_auditoria_comentarios_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13825,7 +14795,7 @@ CREATE INDEX idx_auditoria_comentarios_tenant ON public.auditoria_comentarios US
 
 
 --
--- TOC entry 4716 (class 1259 OID 26702)
+-- TOC entry 4732 (class 1259 OID 26702)
 -- Name: idx_carrito_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13833,7 +14803,7 @@ CREATE INDEX idx_carrito_tenant ON public.carritodecompra USING btree (tenant_id
 
 
 --
--- TOC entry 4719 (class 1259 OID 26691)
+-- TOC entry 4735 (class 1259 OID 26691)
 -- Name: idx_cat_cxp_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13841,7 +14811,7 @@ CREATE INDEX idx_cat_cxp_tenant ON public.cat_cxp_etiquetas USING btree (tenant_
 
 
 --
--- TOC entry 4727 (class 1259 OID 25504)
+-- TOC entry 4743 (class 1259 OID 25504)
 -- Name: idx_categoria_activo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13849,7 +14819,7 @@ CREATE INDEX idx_categoria_activo ON public.categorias USING btree (activo);
 
 
 --
--- TOC entry 4728 (class 1259 OID 27704)
+-- TOC entry 4744 (class 1259 OID 27704)
 -- Name: idx_categorias_imagen_landing; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13857,7 +14827,7 @@ CREATE INDEX idx_categorias_imagen_landing ON public.categorias USING btree (ima
 
 
 --
--- TOC entry 4729 (class 1259 OID 26207)
+-- TOC entry 4745 (class 1259 OID 26207)
 -- Name: idx_categorias_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13865,7 +14835,7 @@ CREATE INDEX idx_categorias_tenant ON public.categorias USING btree (tenant_id);
 
 
 --
--- TOC entry 4744 (class 1259 OID 25505)
+-- TOC entry 4760 (class 1259 OID 25505)
 -- Name: idx_cliente_agente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13873,7 +14843,7 @@ CREATE INDEX idx_cliente_agente ON public.clientes USING btree (agenteid);
 
 
 --
--- TOC entry 4732 (class 1259 OID 25506)
+-- TOC entry 4748 (class 1259 OID 25506)
 -- Name: idx_cliente_creditos_exportacion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13881,7 +14851,7 @@ CREATE INDEX idx_cliente_creditos_exportacion ON public.cliente_creditos USING b
 
 
 --
--- TOC entry 4745 (class 1259 OID 26193)
+-- TOC entry 4761 (class 1259 OID 26193)
 -- Name: idx_clientes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13889,7 +14859,7 @@ CREATE INDEX idx_clientes_tenant ON public.clientes USING btree (tenant_id);
 
 
 --
--- TOC entry 4751 (class 1259 OID 26656)
+-- TOC entry 4767 (class 1259 OID 26656)
 -- Name: idx_comisiones_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13897,7 +14867,7 @@ CREATE INDEX idx_comisiones_tenant ON public.comisiones USING btree (tenant_id);
 
 
 --
--- TOC entry 4754 (class 1259 OID 26760)
+-- TOC entry 4770 (class 1259 OID 26760)
 -- Name: idx_commlog_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13905,7 +14875,7 @@ CREATE INDEX idx_commlog_tenant ON public.communicationlogs USING btree (tenant_
 
 
 --
--- TOC entry 4913 (class 1259 OID 25507)
+-- TOC entry 4929 (class 1259 OID 25507)
 -- Name: idx_conteos_estatus; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13913,7 +14883,7 @@ CREATE INDEX idx_conteos_estatus ON public.toma_inventario_conteos USING btree (
 
 
 --
--- TOC entry 4914 (class 1259 OID 25508)
+-- TOC entry 4930 (class 1259 OID 25508)
 -- Name: idx_conteos_estatus_aplicacion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13921,7 +14891,7 @@ CREATE INDEX idx_conteos_estatus_aplicacion ON public.toma_inventario_conteos US
 
 
 --
--- TOC entry 4915 (class 1259 OID 25509)
+-- TOC entry 4931 (class 1259 OID 25509)
 -- Name: idx_conteos_sesion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13929,7 +14899,7 @@ CREATE INDEX idx_conteos_sesion ON public.toma_inventario_conteos USING btree (s
 
 
 --
--- TOC entry 4757 (class 1259 OID 25510)
+-- TOC entry 4773 (class 1259 OID 25510)
 -- Name: idx_control_cambios_entidad; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13937,7 +14907,7 @@ CREATE INDEX idx_control_cambios_entidad ON public.control_cambios USING btree (
 
 
 --
--- TOC entry 4758 (class 1259 OID 25511)
+-- TOC entry 4774 (class 1259 OID 25511)
 -- Name: idx_control_cambios_estado; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13945,7 +14915,7 @@ CREATE INDEX idx_control_cambios_estado ON public.control_cambios USING btree (e
 
 
 --
--- TOC entry 4762 (class 1259 OID 26725)
+-- TOC entry 4778 (class 1259 OID 26725)
 -- Name: idx_credmov_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13953,7 +14923,7 @@ CREATE INDEX idx_credmov_tenant ON public.credito_movimientos USING btree (tenan
 
 
 --
--- TOC entry 4759 (class 1259 OID 26767)
+-- TOC entry 4775 (class 1259 OID 26767)
 -- Name: idx_ctrlcambios_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13961,7 +14931,7 @@ CREATE INDEX idx_ctrlcambios_tenant ON public.control_cambios USING btree (tenan
 
 
 --
--- TOC entry 4933 (class 1259 OID 26261)
+-- TOC entry 4949 (class 1259 OID 26261)
 -- Name: idx_cupones_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13969,7 +14939,7 @@ CREATE INDEX idx_cupones_tenant ON public.cupones USING btree (tenant_id);
 
 
 --
--- TOC entry 4765 (class 1259 OID 27029)
+-- TOC entry 4781 (class 1259 OID 27029)
 -- Name: idx_cxc_remision; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13977,7 +14947,7 @@ CREATE INDEX idx_cxc_remision ON public.cuentas_por_cobrar USING btree (remision
 
 
 --
--- TOC entry 4766 (class 1259 OID 26296)
+-- TOC entry 4782 (class 1259 OID 26296)
 -- Name: idx_cxc_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13985,7 +14955,7 @@ CREATE INDEX idx_cxc_tenant ON public.cuentas_por_cobrar USING btree (tenant_id)
 
 
 --
--- TOC entry 4769 (class 1259 OID 25512)
+-- TOC entry 4785 (class 1259 OID 25512)
 -- Name: idx_cxp_estatus; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -13993,7 +14963,7 @@ CREATE INDEX idx_cxp_estatus ON public.cuentas_por_pagar USING btree (estatus);
 
 
 --
--- TOC entry 4770 (class 1259 OID 25513)
+-- TOC entry 4786 (class 1259 OID 25513)
 -- Name: idx_cxp_exportacion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14001,7 +14971,7 @@ CREATE INDEX idx_cxp_exportacion ON public.cuentas_por_pagar USING btree (export
 
 
 --
--- TOC entry 4771 (class 1259 OID 25514)
+-- TOC entry 4787 (class 1259 OID 25514)
 -- Name: idx_cxp_fecha_cierre; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14009,7 +14979,7 @@ CREATE INDEX idx_cxp_fecha_cierre ON public.cuentas_por_pagar USING btree (fecha
 
 
 --
--- TOC entry 4772 (class 1259 OID 25515)
+-- TOC entry 4788 (class 1259 OID 25515)
 -- Name: idx_cxp_proveedor; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14017,7 +14987,7 @@ CREATE INDEX idx_cxp_proveedor ON public.cuentas_por_pagar USING btree (proveedo
 
 
 --
--- TOC entry 4773 (class 1259 OID 26289)
+-- TOC entry 4789 (class 1259 OID 26289)
 -- Name: idx_cxp_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14025,7 +14995,7 @@ CREATE INDEX idx_cxp_tenant ON public.cuentas_por_pagar USING btree (tenant_id);
 
 
 --
--- TOC entry 4774 (class 1259 OID 25516)
+-- TOC entry 4790 (class 1259 OID 25516)
 -- Name: idx_cxp_vencimiento; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14033,7 +15003,7 @@ CREATE INDEX idx_cxp_vencimiento ON public.cuentas_por_pagar USING btree (fecha_
 
 
 --
--- TOC entry 4781 (class 1259 OID 26781)
+-- TOC entry 4797 (class 1259 OID 26781)
 -- Name: idx_cxpetiqasig_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14041,7 +15011,7 @@ CREATE INDEX idx_cxpetiqasig_tenant ON public.cxp_etiquetas_asignadas USING btre
 
 
 --
--- TOC entry 4784 (class 1259 OID 25517)
+-- TOC entry 4800 (class 1259 OID 25517)
 -- Name: idx_datos_bancarios_principal; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14049,7 +15019,7 @@ CREATE INDEX idx_datos_bancarios_principal ON public.datos_bancarios_empresa USI
 
 
 --
--- TOC entry 4785 (class 1259 OID 26732)
+-- TOC entry 4801 (class 1259 OID 26732)
 -- Name: idx_datosbanco_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14057,7 +15027,7 @@ CREATE INDEX idx_datosbanco_tenant ON public.datos_bancarios_empresa USING btree
 
 
 --
--- TOC entry 4965 (class 1259 OID 27005)
+-- TOC entry 4981 (class 1259 OID 27005)
 -- Name: idx_detalles_remision_detalle_pedido; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14065,7 +15035,7 @@ CREATE INDEX idx_detalles_remision_detalle_pedido ON public.detalles_remision US
 
 
 --
--- TOC entry 4966 (class 1259 OID 27004)
+-- TOC entry 4982 (class 1259 OID 27004)
 -- Name: idx_detalles_remision_remision; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14073,7 +15043,7 @@ CREATE INDEX idx_detalles_remision_remision ON public.detalles_remision USING bt
 
 
 --
--- TOC entry 4967 (class 1259 OID 27006)
+-- TOC entry 4983 (class 1259 OID 27006)
 -- Name: idx_detalles_remision_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14081,7 +15051,7 @@ CREATE INDEX idx_detalles_remision_tenant ON public.detalles_remision USING btre
 
 
 --
--- TOC entry 4791 (class 1259 OID 27732)
+-- TOC entry 4807 (class 1259 OID 27732)
 -- Name: idx_detallesoc_pedido_original; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14089,7 +15059,7 @@ CREATE INDEX idx_detallesoc_pedido_original ON public.detallesordencompra USING 
 
 
 --
--- TOC entry 4792 (class 1259 OID 26677)
+-- TOC entry 4808 (class 1259 OID 26677)
 -- Name: idx_detallesoc_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14097,7 +15067,7 @@ CREATE INDEX idx_detallesoc_tenant ON public.detallesordencompra USING btree (te
 
 
 --
--- TOC entry 4793 (class 1259 OID 27739)
+-- TOC entry 4809 (class 1259 OID 27739)
 -- Name: idx_detallesordencompra_discrepancia; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14105,7 +15075,7 @@ CREATE INDEX idx_detallesordencompra_discrepancia ON public.detallesordencompra 
 
 
 --
--- TOC entry 4788 (class 1259 OID 26670)
+-- TOC entry 4804 (class 1259 OID 26670)
 -- Name: idx_detallespedido_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14113,7 +15083,7 @@ CREATE INDEX idx_detallespedido_tenant ON public.detallesdelpedido USING btree (
 
 
 --
--- TOC entry 5026 (class 1259 OID 28215)
+-- TOC entry 5044 (class 1259 OID 28215)
 -- Name: idx_devoluciones_cliente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14121,7 +15091,7 @@ CREATE INDEX idx_devoluciones_cliente ON public.devoluciones USING btree (client
 
 
 --
--- TOC entry 5033 (class 1259 OID 28219)
+-- TOC entry 5051 (class 1259 OID 28219)
 -- Name: idx_devoluciones_detalles_devolucion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14129,7 +15099,7 @@ CREATE INDEX idx_devoluciones_detalles_devolucion ON public.devoluciones_detalle
 
 
 --
--- TOC entry 5034 (class 1259 OID 28221)
+-- TOC entry 5052 (class 1259 OID 28221)
 -- Name: idx_devoluciones_detalles_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14137,7 +15107,7 @@ CREATE INDEX idx_devoluciones_detalles_tenant ON public.devoluciones_detalles US
 
 
 --
--- TOC entry 5035 (class 1259 OID 28220)
+-- TOC entry 5053 (class 1259 OID 28220)
 -- Name: idx_devoluciones_detalles_variante; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14145,7 +15115,7 @@ CREATE INDEX idx_devoluciones_detalles_variante ON public.devoluciones_detalles 
 
 
 --
--- TOC entry 5027 (class 1259 OID 28216)
+-- TOC entry 5045 (class 1259 OID 28216)
 -- Name: idx_devoluciones_estado; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14153,7 +15123,7 @@ CREATE INDEX idx_devoluciones_estado ON public.devoluciones USING btree (estado)
 
 
 --
--- TOC entry 5028 (class 1259 OID 28218)
+-- TOC entry 5046 (class 1259 OID 28218)
 -- Name: idx_devoluciones_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14161,7 +15131,7 @@ CREATE INDEX idx_devoluciones_fecha ON public.devoluciones USING btree (fecha_so
 
 
 --
--- TOC entry 5029 (class 1259 OID 28214)
+-- TOC entry 5047 (class 1259 OID 28214)
 -- Name: idx_devoluciones_pedido; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14169,7 +15139,7 @@ CREATE INDEX idx_devoluciones_pedido ON public.devoluciones USING btree (pedido_
 
 
 --
--- TOC entry 5030 (class 1259 OID 28217)
+-- TOC entry 5048 (class 1259 OID 28217)
 -- Name: idx_devoluciones_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14177,7 +15147,7 @@ CREATE INDEX idx_devoluciones_tenant ON public.devoluciones USING btree (tenant_
 
 
 --
--- TOC entry 4737 (class 1259 OID 26663)
+-- TOC entry 4753 (class 1259 OID 26663)
 -- Name: idx_direcciones_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14185,7 +15155,7 @@ CREATE INDEX idx_direcciones_tenant ON public.cliente_direcciones USING btree (t
 
 
 --
--- TOC entry 5001 (class 1259 OID 27619)
+-- TOC entry 5017 (class 1259 OID 27619)
 -- Name: idx_errores_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14193,7 +15163,7 @@ CREATE INDEX idx_errores_fecha ON public.errores_sincronizacion USING btree (fec
 
 
 --
--- TOC entry 5002 (class 1259 OID 27620)
+-- TOC entry 5018 (class 1259 OID 27620)
 -- Name: idx_errores_no_corregidos; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14201,7 +15171,7 @@ CREATE INDEX idx_errores_no_corregidos ON public.errores_sincronizacion USING bt
 
 
 --
--- TOC entry 5003 (class 1259 OID 27618)
+-- TOC entry 5019 (class 1259 OID 27618)
 -- Name: idx_errores_pedido; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14209,7 +15179,7 @@ CREATE INDEX idx_errores_pedido ON public.errores_sincronizacion USING btree (pe
 
 
 --
--- TOC entry 5038 (class 1259 OID 28222)
+-- TOC entry 5056 (class 1259 OID 28222)
 -- Name: idx_evidencias_devolucion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14217,7 +15187,7 @@ CREATE INDEX idx_evidencias_devolucion ON public.evidencias_devolucion USING btr
 
 
 --
--- TOC entry 5063 (class 1259 OID 28566)
+-- TOC entry 5081 (class 1259 OID 28566)
 -- Name: idx_favoritos_alerta_activa; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14225,7 +15195,7 @@ CREATE INDEX idx_favoritos_alerta_activa ON public.clientes_favoritos USING btre
 
 
 --
--- TOC entry 5064 (class 1259 OID 28564)
+-- TOC entry 5082 (class 1259 OID 28564)
 -- Name: idx_favoritos_cliente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14233,7 +15203,7 @@ CREATE INDEX idx_favoritos_cliente ON public.clientes_favoritos USING btree (cli
 
 
 --
--- TOC entry 5065 (class 1259 OID 28567)
+-- TOC entry 5083 (class 1259 OID 28567)
 -- Name: idx_favoritos_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14241,7 +15211,7 @@ CREATE INDEX idx_favoritos_tenant ON public.clientes_favoritos USING btree (tena
 
 
 --
--- TOC entry 5066 (class 1259 OID 28565)
+-- TOC entry 5084 (class 1259 OID 28565)
 -- Name: idx_favoritos_variante; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14249,7 +15219,7 @@ CREATE INDEX idx_favoritos_variante ON public.clientes_favoritos USING btree (va
 
 
 --
--- TOC entry 4996 (class 1259 OID 27556)
+-- TOC entry 5012 (class 1259 OID 27556)
 -- Name: idx_historial_pedidos_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14257,7 +15227,7 @@ CREATE INDEX idx_historial_pedidos_fecha ON public.historial_pedidos USING btree
 
 
 --
--- TOC entry 4997 (class 1259 OID 27555)
+-- TOC entry 5013 (class 1259 OID 27555)
 -- Name: idx_historial_pedidos_pedido_id; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14265,7 +15235,7 @@ CREATE INDEX idx_historial_pedidos_pedido_id ON public.historial_pedidos USING b
 
 
 --
--- TOC entry 4998 (class 1259 OID 27557)
+-- TOC entry 5014 (class 1259 OID 27557)
 -- Name: idx_historial_pedidos_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14273,7 +15243,7 @@ CREATE INDEX idx_historial_pedidos_tenant ON public.historial_pedidos USING btre
 
 
 --
--- TOC entry 4916 (class 1259 OID 26746)
+-- TOC entry 4932 (class 1259 OID 26746)
 -- Name: idx_invconteo_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14281,7 +15251,7 @@ CREATE INDEX idx_invconteo_tenant ON public.toma_inventario_conteos USING btree 
 
 
 --
--- TOC entry 4923 (class 1259 OID 26739)
+-- TOC entry 4939 (class 1259 OID 26739)
 -- Name: idx_invsesion_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14289,7 +15259,7 @@ CREATE INDEX idx_invsesion_tenant ON public.toma_inventario_sesiones USING btree
 
 
 --
--- TOC entry 4807 (class 1259 OID 26709)
+-- TOC entry 4823 (class 1259 OID 26709)
 -- Name: idx_itemscarrito_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14297,7 +15267,7 @@ CREATE INDEX idx_itemscarrito_tenant ON public.itemsdelcarrito USING btree (tena
 
 
 --
--- TOC entry 4936 (class 1259 OID 26128)
+-- TOC entry 4952 (class 1259 OID 26128)
 -- Name: idx_landing_config_section; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14305,7 +15275,7 @@ CREATE INDEX idx_landing_config_section ON public.landing_page_config USING btre
 
 
 --
--- TOC entry 4937 (class 1259 OID 27699)
+-- TOC entry 4953 (class 1259 OID 27699)
 -- Name: idx_landing_page_config_section; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14313,7 +15283,7 @@ CREATE INDEX idx_landing_page_config_section ON public.landing_page_config USING
 
 
 --
--- TOC entry 4938 (class 1259 OID 27700)
+-- TOC entry 4954 (class 1259 OID 27700)
 -- Name: idx_landing_page_config_tenant_section; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14321,7 +15291,7 @@ CREATE INDEX idx_landing_page_config_tenant_section ON public.landing_page_confi
 
 
 --
--- TOC entry 4826 (class 1259 OID 25518)
+-- TOC entry 4842 (class 1259 OID 25518)
 -- Name: idx_log_accion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14329,7 +15299,7 @@ CREATE INDEX idx_log_accion ON public.log_movimientos USING btree (accion);
 
 
 --
--- TOC entry 4810 (class 1259 OID 25519)
+-- TOC entry 4826 (class 1259 OID 25519)
 -- Name: idx_log_clienteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14337,7 +15307,7 @@ CREATE INDEX idx_log_clienteid ON public.log_eventosusuario USING btree (cliente
 
 
 --
--- TOC entry 4827 (class 1259 OID 25520)
+-- TOC entry 4843 (class 1259 OID 25520)
 -- Name: idx_log_entidad; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14345,7 +15315,7 @@ CREATE INDEX idx_log_entidad ON public.log_movimientos USING btree (entidad, ent
 
 
 --
--- TOC entry 4828 (class 1259 OID 25521)
+-- TOC entry 4844 (class 1259 OID 25521)
 -- Name: idx_log_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14353,7 +15323,7 @@ CREATE INDEX idx_log_fecha ON public.log_movimientos USING btree (fecha DESC);
 
 
 --
--- TOC entry 4817 (class 1259 OID 25522)
+-- TOC entry 4833 (class 1259 OID 25522)
 -- Name: idx_log_inventario_cxp; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14361,7 +15331,7 @@ CREATE INDEX idx_log_inventario_cxp ON public.log_inventario USING btree (cxp_id
 
 
 --
--- TOC entry 4818 (class 1259 OID 25523)
+-- TOC entry 4834 (class 1259 OID 25523)
 -- Name: idx_log_inventario_cxp_id; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14369,7 +15339,7 @@ CREATE INDEX idx_log_inventario_cxp_id ON public.log_inventario USING btree (cxp
 
 
 --
--- TOC entry 4819 (class 1259 OID 25524)
+-- TOC entry 4835 (class 1259 OID 25524)
 -- Name: idx_log_inventario_excepcion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14377,7 +15347,7 @@ CREATE INDEX idx_log_inventario_excepcion ON public.log_inventario USING btree (
 
 
 --
--- TOC entry 4820 (class 1259 OID 28439)
+-- TOC entry 4836 (class 1259 OID 28439)
 -- Name: idx_log_inventario_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14385,7 +15355,7 @@ CREATE INDEX idx_log_inventario_fecha ON public.log_inventario USING btree (fech
 
 
 --
--- TOC entry 4821 (class 1259 OID 28437)
+-- TOC entry 4837 (class 1259 OID 28437)
 -- Name: idx_log_inventario_orden_compra; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14393,7 +15363,7 @@ CREATE INDEX idx_log_inventario_orden_compra ON public.log_inventario USING btre
 
 
 --
--- TOC entry 4822 (class 1259 OID 28438)
+-- TOC entry 4838 (class 1259 OID 28438)
 -- Name: idx_log_inventario_sesion_auditoria; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14401,7 +15371,7 @@ CREATE INDEX idx_log_inventario_sesion_auditoria ON public.log_inventario USING 
 
 
 --
--- TOC entry 4823 (class 1259 OID 28436)
+-- TOC entry 4839 (class 1259 OID 28436)
 -- Name: idx_log_inventario_tipo_origen; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14409,7 +15379,7 @@ CREATE INDEX idx_log_inventario_tipo_origen ON public.log_inventario USING btree
 
 
 --
--- TOC entry 4811 (class 1259 OID 25525)
+-- TOC entry 4827 (class 1259 OID 25525)
 -- Name: idx_log_timestamp; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14417,7 +15387,7 @@ CREATE INDEX idx_log_timestamp ON public.log_eventosusuario USING btree ("timest
 
 
 --
--- TOC entry 4812 (class 1259 OID 25526)
+-- TOC entry 4828 (class 1259 OID 25526)
 -- Name: idx_log_tipoevento; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14425,7 +15395,7 @@ CREATE INDEX idx_log_tipoevento ON public.log_eventosusuario USING btree (tipoev
 
 
 --
--- TOC entry 4829 (class 1259 OID 25527)
+-- TOC entry 4845 (class 1259 OID 25527)
 -- Name: idx_log_usuario; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14433,7 +15403,7 @@ CREATE INDEX idx_log_usuario ON public.log_movimientos USING btree (usuarioid);
 
 
 --
--- TOC entry 4813 (class 1259 OID 25528)
+-- TOC entry 4829 (class 1259 OID 25528)
 -- Name: idx_log_varianteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14441,7 +15411,7 @@ CREATE INDEX idx_log_varianteid ON public.log_eventosusuario USING btree (varian
 
 
 --
--- TOC entry 4814 (class 1259 OID 26774)
+-- TOC entry 4830 (class 1259 OID 26774)
 -- Name: idx_logevent_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14449,7 +15419,7 @@ CREATE INDEX idx_logevent_tenant ON public.log_eventosusuario USING btree (tenan
 
 
 --
--- TOC entry 4832 (class 1259 OID 26234)
+-- TOC entry 4848 (class 1259 OID 26234)
 -- Name: idx_medidas_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14457,7 +15427,7 @@ CREATE INDEX idx_medidas_tenant ON public.medidas USING btree (tenant_id);
 
 
 --
--- TOC entry 4833 (class 1259 OID 25529)
+-- TOC entry 4849 (class 1259 OID 25529)
 -- Name: idx_medidas_tipoproducto; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14465,7 +15435,7 @@ CREATE INDEX idx_medidas_tipoproducto ON public.medidas USING btree (tipoproduct
 
 
 --
--- TOC entry 5039 (class 1259 OID 28224)
+-- TOC entry 5057 (class 1259 OID 28224)
 -- Name: idx_mermas_admin; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14473,7 +15443,7 @@ CREATE INDEX idx_mermas_admin ON public.inventario_mermas USING btree (admin_id)
 
 
 --
--- TOC entry 5040 (class 1259 OID 28225)
+-- TOC entry 5058 (class 1259 OID 28225)
 -- Name: idx_mermas_devolucion; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14481,7 +15451,7 @@ CREATE INDEX idx_mermas_devolucion ON public.inventario_mermas USING btree (devo
 
 
 --
--- TOC entry 5041 (class 1259 OID 28226)
+-- TOC entry 5059 (class 1259 OID 28226)
 -- Name: idx_mermas_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14489,7 +15459,7 @@ CREATE INDEX idx_mermas_tenant ON public.inventario_mermas USING btree (tenant_i
 
 
 --
--- TOC entry 5042 (class 1259 OID 28223)
+-- TOC entry 5060 (class 1259 OID 28223)
 -- Name: idx_mermas_variante; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14497,7 +15467,7 @@ CREATE INDEX idx_mermas_variante ON public.inventario_mermas USING btree (varian
 
 
 --
--- TOC entry 4968 (class 1259 OID 27402)
+-- TOC entry 4984 (class 1259 OID 27402)
 -- Name: idx_movimientos_admin; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14505,7 +15475,7 @@ CREATE INDEX idx_movimientos_admin ON public.movimientos_inventario USING btree 
 
 
 --
--- TOC entry 4969 (class 1259 OID 27408)
+-- TOC entry 4985 (class 1259 OID 27408)
 -- Name: idx_movimientos_admin_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14513,7 +15483,7 @@ CREATE INDEX idx_movimientos_admin_fecha ON public.movimientos_inventario USING 
 
 
 --
--- TOC entry 4970 (class 1259 OID 27404)
+-- TOC entry 4986 (class 1259 OID 27404)
 -- Name: idx_movimientos_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14521,7 +15491,7 @@ CREATE INDEX idx_movimientos_fecha ON public.movimientos_inventario USING btree 
 
 
 --
--- TOC entry 4971 (class 1259 OID 27407)
+-- TOC entry 4987 (class 1259 OID 27407)
 -- Name: idx_movimientos_motivo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14529,7 +15499,7 @@ CREATE INDEX idx_movimientos_motivo ON public.movimientos_inventario USING btree
 
 
 --
--- TOC entry 4972 (class 1259 OID 27406)
+-- TOC entry 4988 (class 1259 OID 27406)
 -- Name: idx_movimientos_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14537,7 +15507,7 @@ CREATE INDEX idx_movimientos_tenant ON public.movimientos_inventario USING btree
 
 
 --
--- TOC entry 4973 (class 1259 OID 27405)
+-- TOC entry 4989 (class 1259 OID 27405)
 -- Name: idx_movimientos_tipo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14545,7 +15515,7 @@ CREATE INDEX idx_movimientos_tipo ON public.movimientos_inventario USING btree (
 
 
 --
--- TOC entry 4974 (class 1259 OID 27403)
+-- TOC entry 4990 (class 1259 OID 27403)
 -- Name: idx_movimientos_variante; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14553,7 +15523,7 @@ CREATE INDEX idx_movimientos_variante ON public.movimientos_inventario USING btr
 
 
 --
--- TOC entry 4794 (class 1259 OID 25530)
+-- TOC entry 4810 (class 1259 OID 25530)
 -- Name: idx_notificaciones_clienteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14561,7 +15531,7 @@ CREATE INDEX idx_notificaciones_clienteid ON public.notificaciones USING btree (
 
 
 --
--- TOC entry 4795 (class 1259 OID 25531)
+-- TOC entry 4811 (class 1259 OID 25531)
 -- Name: idx_notificaciones_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14569,7 +15539,7 @@ CREATE INDEX idx_notificaciones_fecha ON public.notificaciones USING btree (fech
 
 
 --
--- TOC entry 4796 (class 1259 OID 25532)
+-- TOC entry 4812 (class 1259 OID 25532)
 -- Name: idx_notificaciones_leida; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14577,7 +15547,7 @@ CREATE INDEX idx_notificaciones_leida ON public.notificaciones USING btree (leid
 
 
 --
--- TOC entry 4797 (class 1259 OID 26337)
+-- TOC entry 4813 (class 1259 OID 26337)
 -- Name: idx_notificaciones_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14585,7 +15555,7 @@ CREATE INDEX idx_notificaciones_tenant ON public.notificaciones USING btree (ten
 
 
 --
--- TOC entry 4798 (class 1259 OID 25533)
+-- TOC entry 4814 (class 1259 OID 25533)
 -- Name: idx_notificaciones_tipo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14593,7 +15563,7 @@ CREATE INDEX idx_notificaciones_tipo ON public.notificaciones USING btree (tipo)
 
 
 --
--- TOC entry 4746 (class 1259 OID 26566)
+-- TOC entry 4762 (class 1259 OID 26566)
 -- Name: idx_numero_cliente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14601,7 +15571,7 @@ CREATE UNIQUE INDEX idx_numero_cliente ON public.clientes USING btree (numero_cl
 
 
 --
--- TOC entry 4838 (class 1259 OID 28270)
+-- TOC entry 4854 (class 1259 OID 28270)
 -- Name: idx_ordenes_admin_creador; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14609,7 +15579,7 @@ CREATE INDEX idx_ordenes_admin_creador ON public.ordenesdecompra USING btree (ad
 
 
 --
--- TOC entry 4839 (class 1259 OID 25534)
+-- TOC entry 4855 (class 1259 OID 25534)
 -- Name: idx_ordenes_exportacion_pendientes; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14617,7 +15587,7 @@ CREATE INDEX idx_ordenes_exportacion_pendientes ON public.ordenesdecompra USING 
 
 
 --
--- TOC entry 5055 (class 1259 OID 28302)
+-- TOC entry 5073 (class 1259 OID 28302)
 -- Name: idx_ordenes_grupos_admin; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14625,7 +15595,7 @@ CREATE INDEX idx_ordenes_grupos_admin ON public.ordenes_grupos USING btree (admi
 
 
 --
--- TOC entry 5056 (class 1259 OID 28304)
+-- TOC entry 5074 (class 1259 OID 28304)
 -- Name: idx_ordenes_grupos_estatus; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14633,7 +15603,7 @@ CREATE INDEX idx_ordenes_grupos_estatus ON public.ordenes_grupos USING btree (es
 
 
 --
--- TOC entry 5057 (class 1259 OID 28301)
+-- TOC entry 5075 (class 1259 OID 28301)
 -- Name: idx_ordenes_grupos_proveedor; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14641,7 +15611,7 @@ CREATE INDEX idx_ordenes_grupos_proveedor ON public.ordenes_grupos USING btree (
 
 
 --
--- TOC entry 5058 (class 1259 OID 28303)
+-- TOC entry 5076 (class 1259 OID 28303)
 -- Name: idx_ordenes_grupos_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14649,7 +15619,7 @@ CREATE INDEX idx_ordenes_grupos_tenant ON public.ordenes_grupos USING btree (ten
 
 
 --
--- TOC entry 4840 (class 1259 OID 26282)
+-- TOC entry 4856 (class 1259 OID 26282)
 -- Name: idx_ordenes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14657,7 +15627,7 @@ CREATE INDEX idx_ordenes_tenant ON public.ordenesdecompra USING btree (tenant_id
 
 
 --
--- TOC entry 4841 (class 1259 OID 28310)
+-- TOC entry 4857 (class 1259 OID 28310)
 -- Name: idx_ordenesdecompra_admin_creador; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14665,7 +15635,7 @@ CREATE INDEX idx_ordenesdecompra_admin_creador ON public.ordenesdecompra USING b
 
 
 --
--- TOC entry 4842 (class 1259 OID 28493)
+-- TOC entry 4858 (class 1259 OID 28493)
 -- Name: idx_ordenesdecompra_admin_trabajando; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14673,7 +15643,7 @@ CREATE INDEX idx_ordenesdecompra_admin_trabajando ON public.ordenesdecompra USIN
 
 
 --
--- TOC entry 4843 (class 1259 OID 28316)
+-- TOC entry 4859 (class 1259 OID 28316)
 -- Name: idx_ordenesdecompra_grupo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14681,7 +15651,7 @@ CREATE INDEX idx_ordenesdecompra_grupo ON public.ordenesdecompra USING btree (gr
 
 
 --
--- TOC entry 4844 (class 1259 OID 25535)
+-- TOC entry 4860 (class 1259 OID 25535)
 -- Name: idx_ordenesdecompra_origenoc; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14689,7 +15659,7 @@ CREATE INDEX idx_ordenesdecompra_origenoc ON public.ordenesdecompra USING btree 
 
 
 --
--- TOC entry 4845 (class 1259 OID 26633)
+-- TOC entry 4861 (class 1259 OID 26633)
 -- Name: idx_ordenesdecompra_pedido_origen; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14697,7 +15667,7 @@ CREATE INDEX idx_ordenesdecompra_pedido_origen ON public.ordenesdecompra USING b
 
 
 --
--- TOC entry 4848 (class 1259 OID 25536)
+-- TOC entry 4864 (class 1259 OID 25536)
 -- Name: idx_pagos_clientes_cliente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14705,7 +15675,7 @@ CREATE INDEX idx_pagos_clientes_cliente ON public.pagos_clientes USING btree (cl
 
 
 --
--- TOC entry 4849 (class 1259 OID 25537)
+-- TOC entry 4865 (class 1259 OID 25537)
 -- Name: idx_pagos_clientes_credito; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14713,7 +15683,7 @@ CREATE INDEX idx_pagos_clientes_credito ON public.pagos_clientes USING btree (cr
 
 
 --
--- TOC entry 4850 (class 1259 OID 25538)
+-- TOC entry 4866 (class 1259 OID 25538)
 -- Name: idx_pagos_clientes_estatus; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14721,7 +15691,7 @@ CREATE INDEX idx_pagos_clientes_estatus ON public.pagos_clientes USING btree (es
 
 
 --
--- TOC entry 4851 (class 1259 OID 25539)
+-- TOC entry 4867 (class 1259 OID 25539)
 -- Name: idx_pagos_clientes_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14729,7 +15699,7 @@ CREATE INDEX idx_pagos_clientes_fecha ON public.pagos_clientes USING btree (fech
 
 
 --
--- TOC entry 4852 (class 1259 OID 26303)
+-- TOC entry 4868 (class 1259 OID 26303)
 -- Name: idx_pagos_clientes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14737,7 +15707,7 @@ CREATE INDEX idx_pagos_clientes_tenant ON public.pagos_clientes USING btree (ten
 
 
 --
--- TOC entry 4855 (class 1259 OID 26310)
+-- TOC entry 4871 (class 1259 OID 26310)
 -- Name: idx_pagos_cxp_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14745,7 +15715,7 @@ CREATE INDEX idx_pagos_cxp_tenant ON public.pagos_cxp USING btree (tenant_id);
 
 
 --
--- TOC entry 4856 (class 1259 OID 25540)
+-- TOC entry 4872 (class 1259 OID 25540)
 -- Name: idx_pagos_historial; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14753,7 +15723,7 @@ CREATE INDEX idx_pagos_historial ON public.pagos_cxp USING btree (cxp_id);
 
 
 --
--- TOC entry 4864 (class 1259 OID 26597)
+-- TOC entry 4880 (class 1259 OID 26597)
 -- Name: idx_pedidos_credito_pendiente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14761,7 +15731,7 @@ CREATE INDEX idx_pedidos_credito_pendiente ON public.pedidos USING btree (client
 
 
 --
--- TOC entry 4865 (class 1259 OID 26596)
+-- TOC entry 4881 (class 1259 OID 26596)
 -- Name: idx_pedidos_fecha_vencimiento; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14769,7 +15739,7 @@ CREATE INDEX idx_pedidos_fecha_vencimiento ON public.pedidos USING btree (fecha_
 
 
 --
--- TOC entry 4866 (class 1259 OID 28254)
+-- TOC entry 4882 (class 1259 OID 28254)
 -- Name: idx_pedidos_prioridad; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14777,8 +15747,8 @@ CREATE INDEX idx_pedidos_prioridad ON public.pedidos USING btree (es_prioritario
 
 
 --
--- TOC entry 5929 (class 0 OID 0)
--- Dependencies: 4866
+-- TOC entry 5964 (class 0 OID 0)
+-- Dependencies: 4882
 -- Name: INDEX idx_pedidos_prioridad; Type: COMMENT; Schema: public; Owner: ferram
 --
 
@@ -14786,7 +15756,7 @@ COMMENT ON INDEX public.idx_pedidos_prioridad IS 'Índice para ordenamiento efic
 
 
 --
--- TOC entry 4867 (class 1259 OID 26275)
+-- TOC entry 4883 (class 1259 OID 26275)
 -- Name: idx_pedidos_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14794,7 +15764,7 @@ CREATE INDEX idx_pedidos_tenant ON public.pedidos USING btree (tenant_id);
 
 
 --
--- TOC entry 4868 (class 1259 OID 28255)
+-- TOC entry 4884 (class 1259 OID 28255)
 -- Name: idx_pedidos_tenant_prioridad; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14802,7 +15772,7 @@ CREATE INDEX idx_pedidos_tenant_prioridad ON public.pedidos USING btree (tenant_
 
 
 --
--- TOC entry 4927 (class 1259 OID 26788)
+-- TOC entry 4943 (class 1259 OID 26788)
 -- Name: idx_prodimgcolor_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14810,7 +15780,7 @@ CREATE INDEX idx_prodimgcolor_tenant ON public.producto_imagenes_color USING btr
 
 
 --
--- TOC entry 4874 (class 1259 OID 26718)
+-- TOC entry 4890 (class 1259 OID 26718)
 -- Name: idx_prodtamanos_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14818,7 +15788,7 @@ CREATE INDEX idx_prodtamanos_tenant ON public.producto_tamanosdisponibles USING 
 
 
 --
--- TOC entry 4891 (class 1259 OID 25541)
+-- TOC entry 4907 (class 1259 OID 25541)
 -- Name: idx_producto_activo; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14826,7 +15796,7 @@ CREATE INDEX idx_producto_activo ON public.productos USING btree (activo);
 
 
 --
--- TOC entry 4928 (class 1259 OID 25891)
+-- TOC entry 4944 (class 1259 OID 25891)
 -- Name: idx_producto_color_busqueda; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14834,7 +15804,7 @@ CREATE INDEX idx_producto_color_busqueda ON public.producto_imagenes_color USING
 
 
 --
--- TOC entry 4882 (class 1259 OID 25542)
+-- TOC entry 4898 (class 1259 OID 25542)
 -- Name: idx_producto_oferta; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14842,7 +15812,7 @@ CREATE INDEX idx_producto_oferta ON public.producto_variantes USING btree (preci
 
 
 --
--- TOC entry 4877 (class 1259 OID 25543)
+-- TOC entry 4893 (class 1259 OID 25543)
 -- Name: idx_producto_variante_imagenes_varianteid; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14850,7 +15820,7 @@ CREATE INDEX idx_producto_variante_imagenes_varianteid ON public.producto_varian
 
 
 --
--- TOC entry 4878 (class 1259 OID 25544)
+-- TOC entry 4894 (class 1259 OID 25544)
 -- Name: idx_producto_variante_imagenes_varianteid_orden; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14858,7 +15828,7 @@ CREATE INDEX idx_producto_variante_imagenes_varianteid_orden ON public.producto_
 
 
 --
--- TOC entry 4871 (class 1259 OID 26684)
+-- TOC entry 4887 (class 1259 OID 26684)
 -- Name: idx_productoimg_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14866,7 +15836,7 @@ CREATE INDEX idx_productoimg_tenant ON public.producto_imagenes USING btree (ten
 
 
 --
--- TOC entry 4892 (class 1259 OID 25935)
+-- TOC entry 4908 (class 1259 OID 25935)
 -- Name: idx_productos_admin_creator; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14874,7 +15844,7 @@ CREATE INDEX idx_productos_admin_creator ON public.productos USING btree (create
 
 
 --
--- TOC entry 4893 (class 1259 OID 26464)
+-- TOC entry 4909 (class 1259 OID 26464)
 -- Name: idx_productos_sku_maestro; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14882,7 +15852,7 @@ CREATE INDEX idx_productos_sku_maestro ON public.productos USING btree (sku_maes
 
 
 --
--- TOC entry 4894 (class 1259 OID 26243)
+-- TOC entry 4910 (class 1259 OID 26243)
 -- Name: idx_productos_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14890,7 +15860,7 @@ CREATE INDEX idx_productos_tenant ON public.productos USING btree (tenant_id);
 
 
 --
--- TOC entry 4883 (class 1259 OID 25545)
+-- TOC entry 4899 (class 1259 OID 25545)
 -- Name: idx_productos_tipoproducto; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14898,7 +15868,7 @@ CREATE INDEX idx_productos_tipoproducto ON public.producto_variantes USING btree
 
 
 --
--- TOC entry 4879 (class 1259 OID 26795)
+-- TOC entry 4895 (class 1259 OID 26795)
 -- Name: idx_prodvarimg_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14906,7 +15876,7 @@ CREATE INDEX idx_prodvarimg_tenant ON public.producto_variante_imagenes USING bt
 
 
 --
--- TOC entry 4902 (class 1259 OID 27705)
+-- TOC entry 4918 (class 1259 OID 27705)
 -- Name: idx_proveedores_imagen_landing; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14914,7 +15884,7 @@ CREATE INDEX idx_proveedores_imagen_landing ON public.proveedores USING btree (i
 
 
 --
--- TOC entry 4903 (class 1259 OID 26200)
+-- TOC entry 4919 (class 1259 OID 26200)
 -- Name: idx_proveedores_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14922,7 +15892,7 @@ CREATE INDEX idx_proveedores_tenant ON public.proveedores USING btree (tenant_id
 
 
 --
--- TOC entry 4899 (class 1259 OID 26753)
+-- TOC entry 4915 (class 1259 OID 26753)
 -- Name: idx_provreglas_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14930,7 +15900,7 @@ CREATE INDEX idx_provreglas_tenant ON public.proveedor_reglas_empaque USING btre
 
 
 --
--- TOC entry 4859 (class 1259 OID 26802)
+-- TOC entry 4875 (class 1259 OID 26802)
 -- Name: idx_pwreset_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14938,7 +15908,7 @@ CREATE INDEX idx_pwreset_tenant ON public.passwordresettokens USING btree (tenan
 
 
 --
--- TOC entry 4954 (class 1259 OID 27000)
+-- TOC entry 4970 (class 1259 OID 27000)
 -- Name: idx_remisiones_cliente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14946,7 +15916,7 @@ CREATE INDEX idx_remisiones_cliente ON public.remisiones USING btree (cliente_id
 
 
 --
--- TOC entry 4955 (class 1259 OID 27001)
+-- TOC entry 4971 (class 1259 OID 27001)
 -- Name: idx_remisiones_estado; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14954,7 +15924,7 @@ CREATE INDEX idx_remisiones_estado ON public.remisiones USING btree (estado);
 
 
 --
--- TOC entry 4956 (class 1259 OID 27003)
+-- TOC entry 4972 (class 1259 OID 27003)
 -- Name: idx_remisiones_folio; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14962,7 +15932,7 @@ CREATE INDEX idx_remisiones_folio ON public.remisiones USING btree (folio);
 
 
 --
--- TOC entry 4957 (class 1259 OID 26999)
+-- TOC entry 4973 (class 1259 OID 26999)
 -- Name: idx_remisiones_pedido; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14970,7 +15940,7 @@ CREATE INDEX idx_remisiones_pedido ON public.remisiones USING btree (pedido_id);
 
 
 --
--- TOC entry 4958 (class 1259 OID 27002)
+-- TOC entry 4974 (class 1259 OID 27002)
 -- Name: idx_remisiones_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14978,7 +15948,31 @@ CREATE INDEX idx_remisiones_tenant ON public.remisiones USING btree (tenant_id);
 
 
 --
--- TOC entry 5049 (class 1259 OID 28227)
+-- TOC entry 5087 (class 1259 OID 28692)
+-- Name: idx_reservas_log_fecha; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_reservas_log_fecha ON public.inventario_reservas_log USING btree (fecha_accion DESC);
+
+
+--
+-- TOC entry 5088 (class 1259 OID 28690)
+-- Name: idx_reservas_log_pedido; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_reservas_log_pedido ON public.inventario_reservas_log USING btree (pedido_id);
+
+
+--
+-- TOC entry 5089 (class 1259 OID 28691)
+-- Name: idx_reservas_log_variante; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_reservas_log_variante ON public.inventario_reservas_log USING btree (variante_id, tenant_id);
+
+
+--
+-- TOC entry 5067 (class 1259 OID 28227)
 -- Name: idx_saldo_favor_cliente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14986,7 +15980,7 @@ CREATE INDEX idx_saldo_favor_cliente ON public.cliente_saldo_favor USING btree (
 
 
 --
--- TOC entry 5050 (class 1259 OID 28228)
+-- TOC entry 5068 (class 1259 OID 28228)
 -- Name: idx_saldo_favor_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -14994,7 +15988,7 @@ CREATE INDEX idx_saldo_favor_tenant ON public.cliente_saldo_favor USING btree (t
 
 
 --
--- TOC entry 5053 (class 1259 OID 28229)
+-- TOC entry 5071 (class 1259 OID 28229)
 -- Name: idx_saldo_movimientos_cliente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15002,7 +15996,7 @@ CREATE INDEX idx_saldo_movimientos_cliente ON public.cliente_saldo_favor_movimie
 
 
 --
--- TOC entry 5054 (class 1259 OID 28230)
+-- TOC entry 5072 (class 1259 OID 28230)
 -- Name: idx_saldo_movimientos_fecha; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15010,7 +16004,7 @@ CREATE INDEX idx_saldo_movimientos_fecha ON public.cliente_saldo_favor_movimient
 
 
 --
--- TOC entry 5004 (class 1259 OID 27787)
+-- TOC entry 5020 (class 1259 OID 27787)
 -- Name: idx_sesiones_inventario_agente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15018,7 +16012,7 @@ CREATE INDEX idx_sesiones_inventario_agente ON public.sesiones_inventario USING 
 
 
 --
--- TOC entry 5005 (class 1259 OID 27788)
+-- TOC entry 5021 (class 1259 OID 27788)
 -- Name: idx_sesiones_inventario_estatus; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15026,7 +16020,7 @@ CREATE INDEX idx_sesiones_inventario_estatus ON public.sesiones_inventario USING
 
 
 --
--- TOC entry 5006 (class 1259 OID 27786)
+-- TOC entry 5022 (class 1259 OID 27786)
 -- Name: idx_sesiones_inventario_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15034,7 +16028,7 @@ CREATE INDEX idx_sesiones_inventario_tenant ON public.sesiones_inventario USING 
 
 
 --
--- TOC entry 5011 (class 1259 OID 27973)
+-- TOC entry 5027 (class 1259 OID 27973)
 -- Name: idx_stock_admin_admin_id; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15042,7 +16036,7 @@ CREATE INDEX idx_stock_admin_admin_id ON public.stock_admin USING btree (admin_i
 
 
 --
--- TOC entry 5012 (class 1259 OID 27976)
+-- TOC entry 5028 (class 1259 OID 27976)
 -- Name: idx_stock_admin_admin_variante_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15050,7 +16044,23 @@ CREATE INDEX idx_stock_admin_admin_variante_tenant ON public.stock_admin USING b
 
 
 --
--- TOC entry 5013 (class 1259 OID 27975)
+-- TOC entry 5029 (class 1259 OID 28674)
+-- Name: idx_stock_admin_disponible; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_stock_admin_disponible ON public.stock_admin USING btree (variante_id, admin_id, tenant_id) WHERE ((cantidad - cantidad_reservada) > 0);
+
+
+--
+-- TOC entry 5030 (class 1259 OID 28675)
+-- Name: idx_stock_admin_reservas_activas; Type: INDEX; Schema: public; Owner: ferram
+--
+
+CREATE INDEX idx_stock_admin_reservas_activas ON public.stock_admin USING btree (tenant_id, cantidad_reservada) WHERE (cantidad_reservada > 0);
+
+
+--
+-- TOC entry 5031 (class 1259 OID 27975)
 -- Name: idx_stock_admin_tenant_id; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15058,7 +16068,7 @@ CREATE INDEX idx_stock_admin_tenant_id ON public.stock_admin USING btree (tenant
 
 
 --
--- TOC entry 5014 (class 1259 OID 27972)
+-- TOC entry 5032 (class 1259 OID 27972)
 -- Name: idx_stock_admin_unique_admin_variant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15066,7 +16076,7 @@ CREATE UNIQUE INDEX idx_stock_admin_unique_admin_variant ON public.stock_admin U
 
 
 --
--- TOC entry 5015 (class 1259 OID 27974)
+-- TOC entry 5033 (class 1259 OID 27974)
 -- Name: idx_stock_admin_variante_id; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15074,7 +16084,7 @@ CREATE INDEX idx_stock_admin_variante_id ON public.stock_admin USING btree (vari
 
 
 --
--- TOC entry 5018 (class 1259 OID 28053)
+-- TOC entry 5036 (class 1259 OID 28053)
 -- Name: idx_surtido_admin; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15082,7 +16092,7 @@ CREATE INDEX idx_surtido_admin ON public.pedido_surtido_detalle USING btree (adm
 
 
 --
--- TOC entry 5019 (class 1259 OID 28052)
+-- TOC entry 5037 (class 1259 OID 28052)
 -- Name: idx_surtido_pedido; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15090,7 +16100,7 @@ CREATE INDEX idx_surtido_pedido ON public.pedido_surtido_detalle USING btree (pe
 
 
 --
--- TOC entry 5020 (class 1259 OID 28055)
+-- TOC entry 5038 (class 1259 OID 28055)
 -- Name: idx_surtido_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15098,7 +16108,7 @@ CREATE INDEX idx_surtido_tenant ON public.pedido_surtido_detalle USING btree (te
 
 
 --
--- TOC entry 5021 (class 1259 OID 28054)
+-- TOC entry 5039 (class 1259 OID 28054)
 -- Name: idx_surtido_variante; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15106,7 +16116,7 @@ CREATE INDEX idx_surtido_variante ON public.pedido_surtido_detalle USING btree (
 
 
 --
--- TOC entry 4722 (class 1259 OID 26225)
+-- TOC entry 4738 (class 1259 OID 26225)
 -- Name: idx_tamanopaquetes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15114,7 +16124,7 @@ CREATE INDEX idx_tamanopaquetes_tenant ON public.cat_tamanopaquetes USING btree 
 
 
 --
--- TOC entry 4943 (class 1259 OID 26371)
+-- TOC entry 4959 (class 1259 OID 26371)
 -- Name: idx_tenants_dominio; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15122,7 +16132,7 @@ CREATE INDEX idx_tenants_dominio ON public.tenants USING btree (dominio) WHERE (
 
 
 --
--- TOC entry 4908 (class 1259 OID 26216)
+-- TOC entry 4924 (class 1259 OID 26216)
 -- Name: idx_tipoproducto_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15130,7 +16140,7 @@ CREATE INDEX idx_tipoproducto_tenant ON public.tipoproducto USING btree (tenant_
 
 
 --
--- TOC entry 4917 (class 1259 OID 27798)
+-- TOC entry 4933 (class 1259 OID 27798)
 -- Name: idx_toma_inventario_conteos_usuario_a; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15138,7 +16148,7 @@ CREATE INDEX idx_toma_inventario_conteos_usuario_a ON public.toma_inventario_con
 
 
 --
--- TOC entry 4918 (class 1259 OID 27799)
+-- TOC entry 4934 (class 1259 OID 27799)
 -- Name: idx_toma_inventario_conteos_usuario_b; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15146,7 +16156,7 @@ CREATE INDEX idx_toma_inventario_conteos_usuario_b ON public.toma_inventario_con
 
 
 --
--- TOC entry 4924 (class 1259 OID 27806)
+-- TOC entry 4940 (class 1259 OID 27806)
 -- Name: idx_toma_inventario_sesiones_agente; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15154,7 +16164,7 @@ CREATE INDEX idx_toma_inventario_sesiones_agente ON public.toma_inventario_sesio
 
 
 --
--- TOC entry 4884 (class 1259 OID 25546)
+-- TOC entry 4900 (class 1259 OID 25546)
 -- Name: idx_variantes_color_nombre; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15162,7 +16172,7 @@ CREATE INDEX idx_variantes_color_nombre ON public.producto_variantes USING btree
 
 
 --
--- TOC entry 4885 (class 1259 OID 26465)
+-- TOC entry 4901 (class 1259 OID 26465)
 -- Name: idx_variantes_sku; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15170,7 +16180,7 @@ CREATE INDEX idx_variantes_sku ON public.producto_variantes USING btree (sku);
 
 
 --
--- TOC entry 4886 (class 1259 OID 26252)
+-- TOC entry 4902 (class 1259 OID 26252)
 -- Name: idx_variantes_tenant; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15178,7 +16188,7 @@ CREATE INDEX idx_variantes_tenant ON public.producto_variantes USING btree (tena
 
 
 --
--- TOC entry 4946 (class 1259 OID 26373)
+-- TOC entry 4962 (class 1259 OID 26373)
 -- Name: unique_tenant_dominio_production; Type: INDEX; Schema: public; Owner: ferram
 --
 
@@ -15186,7 +16196,7 @@ CREATE UNIQUE INDEX unique_tenant_dominio_production ON public.tenants USING btr
 
 
 --
--- TOC entry 5247 (class 2620 OID 26602)
+-- TOC entry 5271 (class 2620 OID 26602)
 -- Name: pedidos trg_actualizar_estatus_deuda; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15194,7 +16204,7 @@ CREATE TRIGGER trg_actualizar_estatus_deuda BEFORE UPDATE ON public.pedidos FOR 
 
 
 --
--- TOC entry 5250 (class 2620 OID 27427)
+-- TOC entry 5274 (class 2620 OID 27427)
 -- Name: movimientos_inventario trg_validar_movimiento_inventario; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15202,7 +16212,7 @@ CREATE TRIGGER trg_validar_movimiento_inventario BEFORE INSERT ON public.movimie
 
 
 --
--- TOC entry 5243 (class 2620 OID 27628)
+-- TOC entry 5267 (class 2620 OID 27628)
 -- Name: detallesdelpedido trg_validar_total_pedido_delete; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15210,7 +16220,7 @@ CREATE TRIGGER trg_validar_total_pedido_delete AFTER DELETE ON public.detallesde
 
 
 --
--- TOC entry 5244 (class 2620 OID 27626)
+-- TOC entry 5268 (class 2620 OID 27626)
 -- Name: detallesdelpedido trg_validar_total_pedido_insert; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15218,7 +16228,7 @@ CREATE TRIGGER trg_validar_total_pedido_insert AFTER INSERT ON public.detallesde
 
 
 --
--- TOC entry 5245 (class 2620 OID 27627)
+-- TOC entry 5269 (class 2620 OID 27627)
 -- Name: detallesdelpedido trg_validar_total_pedido_update; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15226,7 +16236,7 @@ CREATE TRIGGER trg_validar_total_pedido_update AFTER UPDATE ON public.detallesde
 
 
 --
--- TOC entry 5255 (class 2620 OID 28239)
+-- TOC entry 5279 (class 2620 OID 28239)
 -- Name: devoluciones_detalles trigger_actualizar_monto_devolucion_delete; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15234,7 +16244,7 @@ CREATE TRIGGER trigger_actualizar_monto_devolucion_delete AFTER DELETE ON public
 
 
 --
--- TOC entry 5256 (class 2620 OID 28237)
+-- TOC entry 5280 (class 2620 OID 28237)
 -- Name: devoluciones_detalles trigger_actualizar_monto_devolucion_insert; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15242,7 +16252,7 @@ CREATE TRIGGER trigger_actualizar_monto_devolucion_insert AFTER INSERT ON public
 
 
 --
--- TOC entry 5257 (class 2620 OID 28238)
+-- TOC entry 5281 (class 2620 OID 28238)
 -- Name: devoluciones_detalles trigger_actualizar_monto_devolucion_update; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15250,7 +16260,7 @@ CREATE TRIGGER trigger_actualizar_monto_devolucion_update AFTER UPDATE ON public
 
 
 --
--- TOC entry 5253 (class 2620 OID 28232)
+-- TOC entry 5277 (class 2620 OID 28232)
 -- Name: devoluciones trigger_actualizar_timestamp_devolucion; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15258,7 +16268,7 @@ CREATE TRIGGER trigger_actualizar_timestamp_devolucion BEFORE UPDATE ON public.d
 
 
 --
--- TOC entry 5246 (class 2620 OID 25547)
+-- TOC entry 5270 (class 2620 OID 25547)
 -- Name: notificaciones trigger_limitar_notificaciones; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15266,7 +16276,7 @@ CREATE TRIGGER trigger_limitar_notificaciones AFTER INSERT ON public.notificacio
 
 
 --
--- TOC entry 5242 (class 2620 OID 25548)
+-- TOC entry 5266 (class 2620 OID 25548)
 -- Name: cliente_creditos trigger_update_credito_fecha; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15274,7 +16284,7 @@ CREATE TRIGGER trigger_update_credito_fecha BEFORE UPDATE ON public.cliente_cred
 
 
 --
--- TOC entry 5248 (class 2620 OID 26130)
+-- TOC entry 5272 (class 2620 OID 26130)
 -- Name: landing_page_config trigger_update_landing_config_timestamp; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15282,7 +16292,7 @@ CREATE TRIGGER trigger_update_landing_config_timestamp BEFORE UPDATE ON public.l
 
 
 --
--- TOC entry 5249 (class 2620 OID 27020)
+-- TOC entry 5273 (class 2620 OID 27020)
 -- Name: remisiones trigger_update_remision_timestamp; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15290,7 +16300,7 @@ CREATE TRIGGER trigger_update_remision_timestamp BEFORE UPDATE ON public.remisio
 
 
 --
--- TOC entry 5251 (class 2620 OID 27790)
+-- TOC entry 5275 (class 2620 OID 27790)
 -- Name: sesiones_inventario trigger_update_sesiones_inventario_timestamp; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15298,7 +16308,7 @@ CREATE TRIGGER trigger_update_sesiones_inventario_timestamp BEFORE UPDATE ON pub
 
 
 --
--- TOC entry 5252 (class 2620 OID 27978)
+-- TOC entry 5276 (class 2620 OID 27978)
 -- Name: stock_admin trigger_update_stock_admin_timestamp; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15306,7 +16316,7 @@ CREATE TRIGGER trigger_update_stock_admin_timestamp BEFORE UPDATE ON public.stoc
 
 
 --
--- TOC entry 5258 (class 2620 OID 28241)
+-- TOC entry 5282 (class 2620 OID 28241)
 -- Name: devoluciones_detalles trigger_validar_cantidad_devuelta; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15314,7 +16324,7 @@ CREATE TRIGGER trigger_validar_cantidad_devuelta BEFORE INSERT OR UPDATE ON publ
 
 
 --
--- TOC entry 5254 (class 2620 OID 28234)
+-- TOC entry 5278 (class 2620 OID 28234)
 -- Name: devoluciones trigger_validar_plazo_devolucion; Type: TRIGGER; Schema: public; Owner: ferram
 --
 
@@ -15322,7 +16332,7 @@ CREATE TRIGGER trigger_validar_plazo_devolucion BEFORE INSERT ON public.devoluci
 
 
 --
--- TOC entry 5069 (class 2606 OID 26166)
+-- TOC entry 5092 (class 2606 OID 26166)
 -- Name: administradores administradores_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15331,7 +16341,7 @@ ALTER TABLE ONLY public.administradores
 
 
 --
--- TOC entry 5070 (class 2606 OID 26175)
+-- TOC entry 5093 (class 2606 OID 26175)
 -- Name: agentesdeventas agentesdeventas_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15340,7 +16350,7 @@ ALTER TABLE ONLY public.agentesdeventas
 
 
 --
--- TOC entry 5071 (class 2606 OID 25549)
+-- TOC entry 5094 (class 2606 OID 25549)
 -- Name: carritodecompra carritodecompra_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15349,7 +16359,7 @@ ALTER TABLE ONLY public.carritodecompra
 
 
 --
--- TOC entry 5074 (class 2606 OID 26218)
+-- TOC entry 5097 (class 2606 OID 26218)
 -- Name: cat_tamanopaquetes cat_tamanopaquetes_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15358,7 +16368,7 @@ ALTER TABLE ONLY public.cat_tamanopaquetes
 
 
 --
--- TOC entry 5075 (class 2606 OID 25554)
+-- TOC entry 5098 (class 2606 OID 25554)
 -- Name: categorias categorias_parentcategoriaid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15367,7 +16377,7 @@ ALTER TABLE ONLY public.categorias
 
 
 --
--- TOC entry 5076 (class 2606 OID 26202)
+-- TOC entry 5099 (class 2606 OID 26202)
 -- Name: categorias categorias_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15376,7 +16386,7 @@ ALTER TABLE ONLY public.categorias
 
 
 --
--- TOC entry 5077 (class 2606 OID 26312)
+-- TOC entry 5100 (class 2606 OID 26312)
 -- Name: cliente_creditos cliente_creditos_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15385,7 +16395,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 5079 (class 2606 OID 25559)
+-- TOC entry 5102 (class 2606 OID 25559)
 -- Name: cliente_direcciones cliente_direcciones_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15394,7 +16404,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 5233 (class 2606 OID 28181)
+-- TOC entry 5256 (class 2606 OID 28181)
 -- Name: cliente_saldo_favor cliente_saldo_favor_cliente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15403,7 +16413,7 @@ ALTER TABLE ONLY public.cliente_saldo_favor
 
 
 --
--- TOC entry 5234 (class 2606 OID 28199)
+-- TOC entry 5257 (class 2606 OID 28199)
 -- Name: cliente_saldo_favor_movimientos cliente_saldo_favor_movimientos_cliente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15412,7 +16422,7 @@ ALTER TABLE ONLY public.cliente_saldo_favor_movimientos
 
 
 --
--- TOC entry 5235 (class 2606 OID 28204)
+-- TOC entry 5258 (class 2606 OID 28204)
 -- Name: cliente_saldo_favor_movimientos cliente_saldo_favor_movimientos_devolucion_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15421,7 +16431,7 @@ ALTER TABLE ONLY public.cliente_saldo_favor_movimientos
 
 
 --
--- TOC entry 5236 (class 2606 OID 28209)
+-- TOC entry 5259 (class 2606 OID 28209)
 -- Name: cliente_saldo_favor_movimientos cliente_saldo_favor_movimientos_pedido_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15430,7 +16440,7 @@ ALTER TABLE ONLY public.cliente_saldo_favor_movimientos
 
 
 --
--- TOC entry 5240 (class 2606 OID 28554)
+-- TOC entry 5263 (class 2606 OID 28554)
 -- Name: clientes_favoritos clientes_favoritos_cliente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15439,7 +16449,7 @@ ALTER TABLE ONLY public.clientes_favoritos
 
 
 --
--- TOC entry 5241 (class 2606 OID 28559)
+-- TOC entry 5264 (class 2606 OID 28559)
 -- Name: clientes_favoritos clientes_favoritos_variante_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15448,7 +16458,7 @@ ALTER TABLE ONLY public.clientes_favoritos
 
 
 --
--- TOC entry 5082 (class 2606 OID 26186)
+-- TOC entry 5105 (class 2606 OID 26186)
 -- Name: clientes clientes_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15457,7 +16467,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 5084 (class 2606 OID 25564)
+-- TOC entry 5107 (class 2606 OID 25564)
 -- Name: comisiones comisiones_agenteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15466,7 +16476,7 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 5085 (class 2606 OID 25569)
+-- TOC entry 5108 (class 2606 OID 25569)
 -- Name: comisiones comisiones_pedidoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15475,7 +16485,7 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 5096 (class 2606 OID 25574)
+-- TOC entry 5119 (class 2606 OID 25574)
 -- Name: cuentas_por_cobrar cuentas_por_cobrar_cliente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15484,7 +16494,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar
 
 
 --
--- TOC entry 5097 (class 2606 OID 25579)
+-- TOC entry 5120 (class 2606 OID 25579)
 -- Name: cuentas_por_cobrar cuentas_por_cobrar_pedido_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15493,7 +16503,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar
 
 
 --
--- TOC entry 5098 (class 2606 OID 27024)
+-- TOC entry 5121 (class 2606 OID 27024)
 -- Name: cuentas_por_cobrar cuentas_por_cobrar_remision_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15502,7 +16512,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar
 
 
 --
--- TOC entry 5099 (class 2606 OID 26291)
+-- TOC entry 5122 (class 2606 OID 26291)
 -- Name: cuentas_por_cobrar cuentas_por_cobrar_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15511,7 +16521,7 @@ ALTER TABLE ONLY public.cuentas_por_cobrar
 
 
 --
--- TOC entry 5100 (class 2606 OID 25584)
+-- TOC entry 5123 (class 2606 OID 25584)
 -- Name: cuentas_por_pagar cuentas_por_pagar_orden_compra_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15520,7 +16530,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 5101 (class 2606 OID 25589)
+-- TOC entry 5124 (class 2606 OID 25589)
 -- Name: cuentas_por_pagar cuentas_por_pagar_proveedor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15529,7 +16539,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 5102 (class 2606 OID 26284)
+-- TOC entry 5125 (class 2606 OID 26284)
 -- Name: cuentas_por_pagar cuentas_por_pagar_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15538,7 +16548,7 @@ ALTER TABLE ONLY public.cuentas_por_pagar
 
 
 --
--- TOC entry 5191 (class 2606 OID 25914)
+-- TOC entry 5214 (class 2606 OID 25914)
 -- Name: cupones cupones_agente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15547,7 +16557,7 @@ ALTER TABLE ONLY public.cupones
 
 
 --
--- TOC entry 5192 (class 2606 OID 26254)
+-- TOC entry 5215 (class 2606 OID 26254)
 -- Name: cupones cupones_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15556,7 +16566,7 @@ ALTER TABLE ONLY public.cupones
 
 
 --
--- TOC entry 5103 (class 2606 OID 25594)
+-- TOC entry 5126 (class 2606 OID 25594)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_cxp_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15565,7 +16575,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 5104 (class 2606 OID 25599)
+-- TOC entry 5127 (class 2606 OID 25599)
 -- Name: cxp_etiquetas_asignadas cxp_etiquetas_asignadas_etiqueta_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15574,7 +16584,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 5197 (class 2606 OID 26984)
+-- TOC entry 5220 (class 2606 OID 26984)
 -- Name: detalles_remision detalles_remision_detalle_pedido_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15583,7 +16593,7 @@ ALTER TABLE ONLY public.detalles_remision
 
 
 --
--- TOC entry 5198 (class 2606 OID 26979)
+-- TOC entry 5221 (class 2606 OID 26979)
 -- Name: detalles_remision detalles_remision_remision_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15592,7 +16602,7 @@ ALTER TABLE ONLY public.detalles_remision
 
 
 --
--- TOC entry 5199 (class 2606 OID 26994)
+-- TOC entry 5222 (class 2606 OID 26994)
 -- Name: detalles_remision detalles_remision_tamano_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15601,7 +16611,7 @@ ALTER TABLE ONLY public.detalles_remision
 
 
 --
--- TOC entry 5200 (class 2606 OID 26989)
+-- TOC entry 5223 (class 2606 OID 26989)
 -- Name: detalles_remision detalles_remision_variante_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15610,7 +16620,7 @@ ALTER TABLE ONLY public.detalles_remision
 
 
 --
--- TOC entry 5107 (class 2606 OID 25604)
+-- TOC entry 5130 (class 2606 OID 25604)
 -- Name: detallesdelpedido detallesdelpedido_pedidoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15619,7 +16629,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 5111 (class 2606 OID 25609)
+-- TOC entry 5134 (class 2606 OID 25609)
 -- Name: detallesordencompra detallesordencompra_ordencompraid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15628,7 +16638,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 5222 (class 2606 OID 28083)
+-- TOC entry 5245 (class 2606 OID 28083)
 -- Name: devoluciones devoluciones_admin_resolutor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15637,7 +16647,7 @@ ALTER TABLE ONLY public.devoluciones
 
 
 --
--- TOC entry 5223 (class 2606 OID 28078)
+-- TOC entry 5246 (class 2606 OID 28078)
 -- Name: devoluciones devoluciones_cliente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15646,7 +16656,7 @@ ALTER TABLE ONLY public.devoluciones
 
 
 --
--- TOC entry 5225 (class 2606 OID 28106)
+-- TOC entry 5248 (class 2606 OID 28106)
 -- Name: devoluciones_detalles devoluciones_detalles_detalle_pedido_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15655,7 +16665,7 @@ ALTER TABLE ONLY public.devoluciones_detalles
 
 
 --
--- TOC entry 5226 (class 2606 OID 28101)
+-- TOC entry 5249 (class 2606 OID 28101)
 -- Name: devoluciones_detalles devoluciones_detalles_devolucion_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15664,7 +16674,7 @@ ALTER TABLE ONLY public.devoluciones_detalles
 
 
 --
--- TOC entry 5227 (class 2606 OID 28116)
+-- TOC entry 5250 (class 2606 OID 28116)
 -- Name: devoluciones_detalles devoluciones_detalles_tamano_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15673,7 +16683,7 @@ ALTER TABLE ONLY public.devoluciones_detalles
 
 
 --
--- TOC entry 5228 (class 2606 OID 28111)
+-- TOC entry 5251 (class 2606 OID 28111)
 -- Name: devoluciones_detalles devoluciones_detalles_variante_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15682,7 +16692,7 @@ ALTER TABLE ONLY public.devoluciones_detalles
 
 
 --
--- TOC entry 5224 (class 2606 OID 28073)
+-- TOC entry 5247 (class 2606 OID 28073)
 -- Name: devoluciones devoluciones_pedido_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15691,7 +16701,7 @@ ALTER TABLE ONLY public.devoluciones
 
 
 --
--- TOC entry 5229 (class 2606 OID 28134)
+-- TOC entry 5252 (class 2606 OID 28134)
 -- Name: evidencias_devolucion evidencias_devolucion_devolucion_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15700,7 +16710,7 @@ ALTER TABLE ONLY public.evidencias_devolucion
 
 
 --
--- TOC entry 5092 (class 2606 OID 25614)
+-- TOC entry 5115 (class 2606 OID 25614)
 -- Name: credito_movimientos fk_admin_registro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15709,7 +16719,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 5093 (class 2606 OID 25619)
+-- TOC entry 5116 (class 2606 OID 25619)
 -- Name: credito_movimientos fk_agente_registro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15718,7 +16728,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 5206 (class 2606 OID 27469)
+-- TOC entry 5229 (class 2606 OID 27469)
 -- Name: ajustes_inventario fk_ajuste_admin; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15727,7 +16737,7 @@ ALTER TABLE ONLY public.ajustes_inventario
 
 
 --
--- TOC entry 5207 (class 2606 OID 27479)
+-- TOC entry 5230 (class 2606 OID 27479)
 -- Name: ajustes_inventario fk_ajuste_sesion; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15736,7 +16746,7 @@ ALTER TABLE ONLY public.ajustes_inventario
 
 
 --
--- TOC entry 5208 (class 2606 OID 27474)
+-- TOC entry 5231 (class 2606 OID 27474)
 -- Name: ajustes_inventario fk_ajuste_usuario; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15745,7 +16755,7 @@ ALTER TABLE ONLY public.ajustes_inventario
 
 
 --
--- TOC entry 5209 (class 2606 OID 27464)
+-- TOC entry 5232 (class 2606 OID 27464)
 -- Name: ajustes_inventario fk_ajuste_variante; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15754,7 +16764,7 @@ ALTER TABLE ONLY public.ajustes_inventario
 
 
 --
--- TOC entry 5204 (class 2606 OID 27441)
+-- TOC entry 5227 (class 2606 OID 27441)
 -- Name: auditoria_comentarios fk_auditoria_conteo; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15763,7 +16773,7 @@ ALTER TABLE ONLY public.auditoria_comentarios
 
 
 --
--- TOC entry 5205 (class 2606 OID 27446)
+-- TOC entry 5228 (class 2606 OID 27446)
 -- Name: auditoria_comentarios fk_auditoria_usuario; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15772,7 +16782,7 @@ ALTER TABLE ONLY public.auditoria_comentarios
 
 
 --
--- TOC entry 5072 (class 2606 OID 26703)
+-- TOC entry 5095 (class 2606 OID 26703)
 -- Name: carritodecompra fk_carrito_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15781,7 +16791,7 @@ ALTER TABLE ONLY public.carritodecompra
 
 
 --
--- TOC entry 5073 (class 2606 OID 26692)
+-- TOC entry 5096 (class 2606 OID 26692)
 -- Name: cat_cxp_etiquetas fk_cat_cxp_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15790,7 +16800,7 @@ ALTER TABLE ONLY public.cat_cxp_etiquetas
 
 
 --
--- TOC entry 5087 (class 2606 OID 25624)
+-- TOC entry 5110 (class 2606 OID 25624)
 -- Name: communicationlogs fk_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15799,7 +16809,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 5083 (class 2606 OID 25629)
+-- TOC entry 5106 (class 2606 OID 25629)
 -- Name: clientes fk_cliente_agente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15808,7 +16818,7 @@ ALTER TABLE ONLY public.clientes
 
 
 --
--- TOC entry 5078 (class 2606 OID 25634)
+-- TOC entry 5101 (class 2606 OID 25634)
 -- Name: cliente_creditos fk_cliente_credito; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15817,7 +16827,7 @@ ALTER TABLE ONLY public.cliente_creditos
 
 
 --
--- TOC entry 5080 (class 2606 OID 25639)
+-- TOC entry 5103 (class 2606 OID 25639)
 -- Name: cliente_direcciones fk_cliente_estado; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15826,7 +16836,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 5086 (class 2606 OID 26657)
+-- TOC entry 5109 (class 2606 OID 26657)
 -- Name: comisiones fk_comisiones_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15835,7 +16845,7 @@ ALTER TABLE ONLY public.comisiones
 
 
 --
--- TOC entry 5088 (class 2606 OID 26761)
+-- TOC entry 5111 (class 2606 OID 26761)
 -- Name: communicationlogs fk_commlog_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15844,7 +16854,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 5094 (class 2606 OID 26726)
+-- TOC entry 5117 (class 2606 OID 26726)
 -- Name: credito_movimientos fk_credmov_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15853,7 +16863,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 5091 (class 2606 OID 26768)
+-- TOC entry 5114 (class 2606 OID 26768)
 -- Name: control_cambios fk_ctrlcambios_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15862,7 +16872,7 @@ ALTER TABLE ONLY public.control_cambios
 
 
 --
--- TOC entry 5105 (class 2606 OID 26782)
+-- TOC entry 5128 (class 2606 OID 26782)
 -- Name: cxp_etiquetas_asignadas fk_cxpetiqasig_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15871,7 +16881,7 @@ ALTER TABLE ONLY public.cxp_etiquetas_asignadas
 
 
 --
--- TOC entry 5106 (class 2606 OID 26733)
+-- TOC entry 5129 (class 2606 OID 26733)
 -- Name: datos_bancarios_empresa fk_datosbanco_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15880,7 +16890,7 @@ ALTER TABLE ONLY public.datos_bancarios_empresa
 
 
 --
--- TOC entry 5108 (class 2606 OID 25644)
+-- TOC entry 5131 (class 2606 OID 25644)
 -- Name: detallesdelpedido fk_detalles_tamano; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15889,7 +16899,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 5109 (class 2606 OID 25649)
+-- TOC entry 5132 (class 2606 OID 25649)
 -- Name: detallesdelpedido fk_detallesdelpedido_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15898,7 +16908,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 5112 (class 2606 OID 27727)
+-- TOC entry 5135 (class 2606 OID 27727)
 -- Name: detallesordencompra fk_detallesoc_pedido_original; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15907,7 +16917,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 5113 (class 2606 OID 26678)
+-- TOC entry 5136 (class 2606 OID 26678)
 -- Name: detallesordencompra fk_detallesoc_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15916,7 +16926,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 5114 (class 2606 OID 27740)
+-- TOC entry 5137 (class 2606 OID 27740)
 -- Name: detallesordencompra fk_detallesordencompra_admin_cierre; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15925,7 +16935,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 5115 (class 2606 OID 25654)
+-- TOC entry 5138 (class 2606 OID 25654)
 -- Name: detallesordencompra fk_detallesordencompra_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15934,7 +16944,7 @@ ALTER TABLE ONLY public.detallesordencompra
 
 
 --
--- TOC entry 5110 (class 2606 OID 26671)
+-- TOC entry 5133 (class 2606 OID 26671)
 -- Name: detallesdelpedido fk_detallespedido_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15943,7 +16953,7 @@ ALTER TABLE ONLY public.detallesdelpedido
 
 
 --
--- TOC entry 5081 (class 2606 OID 26664)
+-- TOC entry 5104 (class 2606 OID 26664)
 -- Name: cliente_direcciones fk_direcciones_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15952,7 +16962,7 @@ ALTER TABLE ONLY public.cliente_direcciones
 
 
 --
--- TOC entry 5210 (class 2606 OID 27545)
+-- TOC entry 5233 (class 2606 OID 27545)
 -- Name: historial_pedidos fk_historial_pedido; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15961,7 +16971,7 @@ ALTER TABLE ONLY public.historial_pedidos
 
 
 --
--- TOC entry 5211 (class 2606 OID 27550)
+-- TOC entry 5234 (class 2606 OID 27550)
 -- Name: historial_pedidos fk_historial_usuario; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15970,7 +16980,7 @@ ALTER TABLE ONLY public.historial_pedidos
 
 
 --
--- TOC entry 5160 (class 2606 OID 25659)
+-- TOC entry 5183 (class 2606 OID 25659)
 -- Name: producto_imagenes fk_imagen_producto_maestro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15979,7 +16989,7 @@ ALTER TABLE ONLY public.producto_imagenes
 
 
 --
--- TOC entry 5189 (class 2606 OID 25886)
+-- TOC entry 5212 (class 2606 OID 25886)
 -- Name: producto_imagenes_color fk_imagencolor_producto; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15988,7 +16998,7 @@ ALTER TABLE ONLY public.producto_imagenes_color
 
 
 --
--- TOC entry 5183 (class 2606 OID 26747)
+-- TOC entry 5206 (class 2606 OID 26747)
 -- Name: toma_inventario_conteos fk_invconteo_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -15997,7 +17007,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 5186 (class 2606 OID 26740)
+-- TOC entry 5209 (class 2606 OID 26740)
 -- Name: toma_inventario_sesiones fk_invsesion_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16006,7 +17016,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones
 
 
 --
--- TOC entry 5120 (class 2606 OID 25664)
+-- TOC entry 5143 (class 2606 OID 25664)
 -- Name: itemsdelcarrito fk_items_tamano; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16015,7 +17025,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 5121 (class 2606 OID 26710)
+-- TOC entry 5144 (class 2606 OID 26710)
 -- Name: itemsdelcarrito fk_itemscarrito_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16024,7 +17034,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 5122 (class 2606 OID 25669)
+-- TOC entry 5145 (class 2606 OID 25669)
 -- Name: itemsdelcarrito fk_itemsdelcarrito_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16033,7 +17043,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 5127 (class 2606 OID 28431)
+-- TOC entry 5150 (class 2606 OID 28431)
 -- Name: log_inventario fk_log_ajuste; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16042,7 +17052,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 5124 (class 2606 OID 25674)
+-- TOC entry 5147 (class 2606 OID 25674)
 -- Name: log_eventosusuario fk_log_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16051,7 +17061,7 @@ ALTER TABLE ONLY public.log_eventosusuario
 
 
 --
--- TOC entry 5128 (class 2606 OID 28421)
+-- TOC entry 5151 (class 2606 OID 28421)
 -- Name: log_inventario fk_log_orden_compra; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16060,7 +17070,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 5129 (class 2606 OID 28426)
+-- TOC entry 5152 (class 2606 OID 28426)
 -- Name: log_inventario fk_log_sesion_auditoria; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16069,7 +17079,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 5133 (class 2606 OID 25679)
+-- TOC entry 5156 (class 2606 OID 25679)
 -- Name: log_movimientos fk_log_usuario; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16078,7 +17088,7 @@ ALTER TABLE ONLY public.log_movimientos
 
 
 --
--- TOC entry 5125 (class 2606 OID 25684)
+-- TOC entry 5148 (class 2606 OID 25684)
 -- Name: log_eventosusuario fk_log_variante; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16087,7 +17097,7 @@ ALTER TABLE ONLY public.log_eventosusuario
 
 
 --
--- TOC entry 5126 (class 2606 OID 26775)
+-- TOC entry 5149 (class 2606 OID 26775)
 -- Name: log_eventosusuario fk_logevent_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16096,7 +17106,7 @@ ALTER TABLE ONLY public.log_eventosusuario
 
 
 --
--- TOC entry 5130 (class 2606 OID 25689)
+-- TOC entry 5153 (class 2606 OID 25689)
 -- Name: log_inventario fk_loginventario_varianteid; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16105,7 +17115,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 5095 (class 2606 OID 25694)
+-- TOC entry 5118 (class 2606 OID 25694)
 -- Name: credito_movimientos fk_movimiento_credito; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16114,7 +17124,7 @@ ALTER TABLE ONLY public.credito_movimientos
 
 
 --
--- TOC entry 5201 (class 2606 OID 27387)
+-- TOC entry 5224 (class 2606 OID 27387)
 -- Name: movimientos_inventario fk_movimientos_admin; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16123,7 +17133,7 @@ ALTER TABLE ONLY public.movimientos_inventario
 
 
 --
--- TOC entry 5202 (class 2606 OID 27397)
+-- TOC entry 5225 (class 2606 OID 27397)
 -- Name: movimientos_inventario fk_movimientos_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16132,7 +17142,7 @@ ALTER TABLE ONLY public.movimientos_inventario
 
 
 --
--- TOC entry 5203 (class 2606 OID 27392)
+-- TOC entry 5226 (class 2606 OID 27392)
 -- Name: movimientos_inventario fk_movimientos_variante; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16141,7 +17151,7 @@ ALTER TABLE ONLY public.movimientos_inventario
 
 
 --
--- TOC entry 5137 (class 2606 OID 28265)
+-- TOC entry 5160 (class 2606 OID 28265)
 -- Name: ordenesdecompra fk_ordenes_admin_creador; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16150,7 +17160,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 5237 (class 2606 OID 28291)
+-- TOC entry 5260 (class 2606 OID 28291)
 -- Name: ordenes_grupos fk_ordenes_grupos_admin; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16159,7 +17169,7 @@ ALTER TABLE ONLY public.ordenes_grupos
 
 
 --
--- TOC entry 5238 (class 2606 OID 28286)
+-- TOC entry 5261 (class 2606 OID 28286)
 -- Name: ordenes_grupos fk_ordenes_grupos_proveedor; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16168,7 +17178,7 @@ ALTER TABLE ONLY public.ordenes_grupos
 
 
 --
--- TOC entry 5239 (class 2606 OID 28296)
+-- TOC entry 5262 (class 2606 OID 28296)
 -- Name: ordenes_grupos fk_ordenes_grupos_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16177,7 +17187,7 @@ ALTER TABLE ONLY public.ordenes_grupos
 
 
 --
--- TOC entry 5138 (class 2606 OID 28305)
+-- TOC entry 5161 (class 2606 OID 28305)
 -- Name: ordenesdecompra fk_ordenesdecompra_admin_creador; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16186,7 +17196,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 5139 (class 2606 OID 28311)
+-- TOC entry 5162 (class 2606 OID 28311)
 -- Name: ordenesdecompra fk_ordenesdecompra_grupo; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16195,7 +17205,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 5140 (class 2606 OID 26634)
+-- TOC entry 5163 (class 2606 OID 26634)
 -- Name: ordenesdecompra fk_ordenesdecompra_pedido; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16204,7 +17214,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 5145 (class 2606 OID 25699)
+-- TOC entry 5168 (class 2606 OID 25699)
 -- Name: pagos_clientes fk_pagos_clientes_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16213,7 +17223,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 5146 (class 2606 OID 25704)
+-- TOC entry 5169 (class 2606 OID 25704)
 -- Name: pagos_clientes fk_pagos_clientes_credito; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16222,7 +17232,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 5147 (class 2606 OID 25709)
+-- TOC entry 5170 (class 2606 OID 25709)
 -- Name: pagos_clientes fk_pagos_clientes_validador; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16231,7 +17241,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 5149 (class 2606 OID 25714)
+-- TOC entry 5172 (class 2606 OID 25714)
 -- Name: pagos_cxp fk_pagos_cxp; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16240,7 +17250,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 5150 (class 2606 OID 25719)
+-- TOC entry 5173 (class 2606 OID 25719)
 -- Name: pagos_cxp fk_pagos_usuario; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16249,7 +17259,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 5152 (class 2606 OID 25724)
+-- TOC entry 5175 (class 2606 OID 25724)
 -- Name: passwordresettokens fk_passwordreset_agente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16258,7 +17268,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 5153 (class 2606 OID 25729)
+-- TOC entry 5176 (class 2606 OID 25729)
 -- Name: passwordresettokens fk_passwordreset_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16267,7 +17277,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 5089 (class 2606 OID 25734)
+-- TOC entry 5112 (class 2606 OID 25734)
 -- Name: communicationlogs fk_pedido; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16276,7 +17286,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 5212 (class 2606 OID 27613)
+-- TOC entry 5235 (class 2606 OID 27613)
 -- Name: errores_sincronizacion fk_pedido_error; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16285,7 +17295,7 @@ ALTER TABLE ONLY public.errores_sincronizacion
 
 
 --
--- TOC entry 5190 (class 2606 OID 26789)
+-- TOC entry 5213 (class 2606 OID 26789)
 -- Name: producto_imagenes_color fk_prodimgcolor_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16294,7 +17304,7 @@ ALTER TABLE ONLY public.producto_imagenes_color
 
 
 --
--- TOC entry 5162 (class 2606 OID 26719)
+-- TOC entry 5185 (class 2606 OID 26719)
 -- Name: producto_tamanosdisponibles fk_prodtamanos_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16303,7 +17313,7 @@ ALTER TABLE ONLY public.producto_tamanosdisponibles
 
 
 --
--- TOC entry 5171 (class 2606 OID 25930)
+-- TOC entry 5194 (class 2606 OID 25930)
 -- Name: productos fk_producto_admin_creator; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16312,7 +17322,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 5167 (class 2606 OID 25739)
+-- TOC entry 5190 (class 2606 OID 25739)
 -- Name: producto_variantes fk_producto_maestro; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16321,7 +17331,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 5172 (class 2606 OID 25744)
+-- TOC entry 5195 (class 2606 OID 25744)
 -- Name: productos fk_producto_regla_empaque; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16330,7 +17340,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 5161 (class 2606 OID 26685)
+-- TOC entry 5184 (class 2606 OID 26685)
 -- Name: producto_imagenes fk_productoimg_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16339,7 +17349,7 @@ ALTER TABLE ONLY public.producto_imagenes
 
 
 --
--- TOC entry 5165 (class 2606 OID 26796)
+-- TOC entry 5188 (class 2606 OID 26796)
 -- Name: producto_variante_imagenes fk_prodvarimg_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16348,7 +17358,7 @@ ALTER TABLE ONLY public.producto_variante_imagenes
 
 
 --
--- TOC entry 5090 (class 2606 OID 25749)
+-- TOC entry 5113 (class 2606 OID 25749)
 -- Name: communicationlogs fk_proveedor; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16357,7 +17367,7 @@ ALTER TABLE ONLY public.communicationlogs
 
 
 --
--- TOC entry 5173 (class 2606 OID 25754)
+-- TOC entry 5196 (class 2606 OID 25754)
 -- Name: productos fk_proveedor_default; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16366,7 +17376,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 5176 (class 2606 OID 26754)
+-- TOC entry 5199 (class 2606 OID 26754)
 -- Name: proveedor_reglas_empaque fk_provreglas_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16375,7 +17385,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque
 
 
 --
--- TOC entry 5154 (class 2606 OID 26803)
+-- TOC entry 5177 (class 2606 OID 26803)
 -- Name: passwordresettokens fk_pwreset_tenant; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16384,7 +17394,7 @@ ALTER TABLE ONLY public.passwordresettokens
 
 
 --
--- TOC entry 5177 (class 2606 OID 25759)
+-- TOC entry 5200 (class 2606 OID 25759)
 -- Name: proveedor_reglas_empaque fk_regla_proveedor; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16393,7 +17403,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque
 
 
 --
--- TOC entry 5178 (class 2606 OID 25764)
+-- TOC entry 5201 (class 2606 OID 25764)
 -- Name: proveedor_reglas_empaque fk_regla_tipo; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16402,7 +17412,7 @@ ALTER TABLE ONLY public.proveedor_reglas_empaque
 
 
 --
--- TOC entry 5180 (class 2606 OID 25769)
+-- TOC entry 5203 (class 2606 OID 25769)
 -- Name: solicitudes_credito fk_solicitud_cliente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16411,7 +17421,7 @@ ALTER TABLE ONLY public.solicitudes_credito
 
 
 --
--- TOC entry 5218 (class 2606 OID 28047)
+-- TOC entry 5241 (class 2606 OID 28047)
 -- Name: pedido_surtido_detalle fk_surtido_admin; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16420,7 +17430,7 @@ ALTER TABLE ONLY public.pedido_surtido_detalle
 
 
 --
--- TOC entry 5219 (class 2606 OID 28037)
+-- TOC entry 5242 (class 2606 OID 28037)
 -- Name: pedido_surtido_detalle fk_surtido_detalle; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16429,7 +17439,7 @@ ALTER TABLE ONLY public.pedido_surtido_detalle
 
 
 --
--- TOC entry 5220 (class 2606 OID 28032)
+-- TOC entry 5243 (class 2606 OID 28032)
 -- Name: pedido_surtido_detalle fk_surtido_pedido; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16438,7 +17448,7 @@ ALTER TABLE ONLY public.pedido_surtido_detalle
 
 
 --
--- TOC entry 5221 (class 2606 OID 28042)
+-- TOC entry 5244 (class 2606 OID 28042)
 -- Name: pedido_surtido_detalle fk_surtido_variante; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16447,7 +17457,7 @@ ALTER TABLE ONLY public.pedido_surtido_detalle
 
 
 --
--- TOC entry 5163 (class 2606 OID 25774)
+-- TOC entry 5186 (class 2606 OID 25774)
 -- Name: producto_tamanosdisponibles fk_tamanos_producto; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16456,7 +17466,7 @@ ALTER TABLE ONLY public.producto_tamanosdisponibles
 
 
 --
--- TOC entry 5164 (class 2606 OID 25779)
+-- TOC entry 5187 (class 2606 OID 25779)
 -- Name: producto_tamanosdisponibles fk_tamanos_tamano; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16465,7 +17475,7 @@ ALTER TABLE ONLY public.producto_tamanosdisponibles
 
 
 --
--- TOC entry 5187 (class 2606 OID 27801)
+-- TOC entry 5210 (class 2606 OID 27801)
 -- Name: toma_inventario_sesiones fk_toma_inventario_sesiones_agente; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16474,7 +17484,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones
 
 
 --
--- TOC entry 5230 (class 2606 OID 28158)
+-- TOC entry 5253 (class 2606 OID 28158)
 -- Name: inventario_mermas inventario_mermas_admin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16483,7 +17493,7 @@ ALTER TABLE ONLY public.inventario_mermas
 
 
 --
--- TOC entry 5231 (class 2606 OID 28163)
+-- TOC entry 5254 (class 2606 OID 28163)
 -- Name: inventario_mermas inventario_mermas_devolucion_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16492,7 +17502,7 @@ ALTER TABLE ONLY public.inventario_mermas
 
 
 --
--- TOC entry 5232 (class 2606 OID 28153)
+-- TOC entry 5255 (class 2606 OID 28153)
 -- Name: inventario_mermas inventario_mermas_variante_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16501,7 +17511,16 @@ ALTER TABLE ONLY public.inventario_mermas
 
 
 --
--- TOC entry 5123 (class 2606 OID 25784)
+-- TOC entry 5265 (class 2606 OID 28685)
+-- Name: inventario_reservas_log inventario_reservas_log_stockadminid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
+--
+
+ALTER TABLE ONLY public.inventario_reservas_log
+    ADD CONSTRAINT inventario_reservas_log_stockadminid_fkey FOREIGN KEY (stockadminid) REFERENCES public.stock_admin(stockadminid);
+
+
+--
+-- TOC entry 5146 (class 2606 OID 25784)
 -- Name: itemsdelcarrito itemsdelcarrito_carritoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16510,7 +17529,7 @@ ALTER TABLE ONLY public.itemsdelcarrito
 
 
 --
--- TOC entry 5193 (class 2606 OID 26324)
+-- TOC entry 5216 (class 2606 OID 26324)
 -- Name: landing_page_config landing_page_config_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16519,7 +17538,7 @@ ALTER TABLE ONLY public.landing_page_config
 
 
 --
--- TOC entry 5131 (class 2606 OID 25789)
+-- TOC entry 5154 (class 2606 OID 25789)
 -- Name: log_inventario log_inventario_cxp_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16528,7 +17547,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 5132 (class 2606 OID 26345)
+-- TOC entry 5155 (class 2606 OID 26345)
 -- Name: log_inventario log_inventario_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16537,7 +17556,7 @@ ALTER TABLE ONLY public.log_inventario
 
 
 --
--- TOC entry 5134 (class 2606 OID 26339)
+-- TOC entry 5157 (class 2606 OID 26339)
 -- Name: log_movimientos log_movimientos_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16546,7 +17565,7 @@ ALTER TABLE ONLY public.log_movimientos
 
 
 --
--- TOC entry 5135 (class 2606 OID 26227)
+-- TOC entry 5158 (class 2606 OID 26227)
 -- Name: medidas medidas_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16555,7 +17574,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 5136 (class 2606 OID 25794)
+-- TOC entry 5159 (class 2606 OID 25794)
 -- Name: medidas medidas_tipoproductoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16564,7 +17583,7 @@ ALTER TABLE ONLY public.medidas
 
 
 --
--- TOC entry 5116 (class 2606 OID 25799)
+-- TOC entry 5139 (class 2606 OID 25799)
 -- Name: notificaciones notificaciones_administrador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16573,7 +17592,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 5117 (class 2606 OID 25804)
+-- TOC entry 5140 (class 2606 OID 25804)
 -- Name: notificaciones notificaciones_agente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16582,7 +17601,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 5118 (class 2606 OID 25809)
+-- TOC entry 5141 (class 2606 OID 25809)
 -- Name: notificaciones notificaciones_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16591,7 +17610,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 5119 (class 2606 OID 26332)
+-- TOC entry 5142 (class 2606 OID 26332)
 -- Name: notificaciones notificaciones_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16600,7 +17619,7 @@ ALTER TABLE ONLY public.notificaciones
 
 
 --
--- TOC entry 5141 (class 2606 OID 28488)
+-- TOC entry 5164 (class 2606 OID 28488)
 -- Name: ordenesdecompra ordenesdecompra_admin_trabajando_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16609,7 +17628,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 5142 (class 2606 OID 25814)
+-- TOC entry 5165 (class 2606 OID 25814)
 -- Name: ordenesdecompra ordenesdecompra_proveedorid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16618,7 +17637,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 5143 (class 2606 OID 26277)
+-- TOC entry 5166 (class 2606 OID 26277)
 -- Name: ordenesdecompra ordenesdecompra_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16627,7 +17646,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 5144 (class 2606 OID 25819)
+-- TOC entry 5167 (class 2606 OID 25819)
 -- Name: ordenesdecompra ordenesdecompra_usuario_creador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16636,7 +17655,7 @@ ALTER TABLE ONLY public.ordenesdecompra
 
 
 --
--- TOC entry 5148 (class 2606 OID 26298)
+-- TOC entry 5171 (class 2606 OID 26298)
 -- Name: pagos_clientes pagos_clientes_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16645,7 +17664,7 @@ ALTER TABLE ONLY public.pagos_clientes
 
 
 --
--- TOC entry 5151 (class 2606 OID 26305)
+-- TOC entry 5174 (class 2606 OID 26305)
 -- Name: pagos_cxp pagos_cxp_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16654,7 +17673,7 @@ ALTER TABLE ONLY public.pagos_cxp
 
 
 --
--- TOC entry 5155 (class 2606 OID 25824)
+-- TOC entry 5178 (class 2606 OID 25824)
 -- Name: pedidos pedidos_agenteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16663,7 +17682,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 5156 (class 2606 OID 25829)
+-- TOC entry 5179 (class 2606 OID 25829)
 -- Name: pedidos pedidos_clienteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16672,7 +17691,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 5157 (class 2606 OID 25908)
+-- TOC entry 5180 (class 2606 OID 25908)
 -- Name: pedidos pedidos_cupon_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16681,7 +17700,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 5158 (class 2606 OID 25834)
+-- TOC entry 5181 (class 2606 OID 25834)
 -- Name: pedidos pedidos_direccionenvioid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16690,7 +17709,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 5159 (class 2606 OID 26270)
+-- TOC entry 5182 (class 2606 OID 26270)
 -- Name: pedidos pedidos_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16699,7 +17718,7 @@ ALTER TABLE ONLY public.pedidos
 
 
 --
--- TOC entry 5166 (class 2606 OID 25839)
+-- TOC entry 5189 (class 2606 OID 25839)
 -- Name: producto_variante_imagenes producto_variante_imagenes_varianteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16708,7 +17727,7 @@ ALTER TABLE ONLY public.producto_variante_imagenes
 
 
 --
--- TOC entry 5168 (class 2606 OID 26245)
+-- TOC entry 5191 (class 2606 OID 26245)
 -- Name: producto_variantes producto_variantes_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16717,7 +17736,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 5174 (class 2606 OID 25844)
+-- TOC entry 5197 (class 2606 OID 25844)
 -- Name: productos productos_categoriaid_fkey1; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16726,7 +17745,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 5169 (class 2606 OID 25849)
+-- TOC entry 5192 (class 2606 OID 25849)
 -- Name: producto_variantes productos_medidaid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16735,7 +17754,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 5175 (class 2606 OID 26236)
+-- TOC entry 5198 (class 2606 OID 26236)
 -- Name: productos productos_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16744,7 +17763,7 @@ ALTER TABLE ONLY public.productos
 
 
 --
--- TOC entry 5170 (class 2606 OID 25854)
+-- TOC entry 5193 (class 2606 OID 25854)
 -- Name: producto_variantes productos_tipoproductoid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16753,7 +17772,7 @@ ALTER TABLE ONLY public.producto_variantes
 
 
 --
--- TOC entry 5179 (class 2606 OID 26195)
+-- TOC entry 5202 (class 2606 OID 26195)
 -- Name: proveedores proveedores_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16762,7 +17781,7 @@ ALTER TABLE ONLY public.proveedores
 
 
 --
--- TOC entry 5194 (class 2606 OID 26963)
+-- TOC entry 5217 (class 2606 OID 26963)
 -- Name: remisiones remisiones_agente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16771,7 +17790,7 @@ ALTER TABLE ONLY public.remisiones
 
 
 --
--- TOC entry 5195 (class 2606 OID 26958)
+-- TOC entry 5218 (class 2606 OID 26958)
 -- Name: remisiones remisiones_cliente_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16780,7 +17799,7 @@ ALTER TABLE ONLY public.remisiones
 
 
 --
--- TOC entry 5196 (class 2606 OID 26953)
+-- TOC entry 5219 (class 2606 OID 26953)
 -- Name: remisiones remisiones_pedido_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16789,7 +17808,7 @@ ALTER TABLE ONLY public.remisiones
 
 
 --
--- TOC entry 5213 (class 2606 OID 27776)
+-- TOC entry 5236 (class 2606 OID 27776)
 -- Name: sesiones_inventario sesiones_inventario_admin_creador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16798,7 +17817,7 @@ ALTER TABLE ONLY public.sesiones_inventario
 
 
 --
--- TOC entry 5214 (class 2606 OID 27771)
+-- TOC entry 5237 (class 2606 OID 27771)
 -- Name: sesiones_inventario sesiones_inventario_agente_asignado_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16807,7 +17826,7 @@ ALTER TABLE ONLY public.sesiones_inventario
 
 
 --
--- TOC entry 5215 (class 2606 OID 27781)
+-- TOC entry 5238 (class 2606 OID 27781)
 -- Name: sesiones_inventario sesiones_inventario_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16816,7 +17835,7 @@ ALTER TABLE ONLY public.sesiones_inventario
 
 
 --
--- TOC entry 5181 (class 2606 OID 26318)
+-- TOC entry 5204 (class 2606 OID 26318)
 -- Name: solicitudes_credito solicitudes_credito_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16825,7 +17844,7 @@ ALTER TABLE ONLY public.solicitudes_credito
 
 
 --
--- TOC entry 5216 (class 2606 OID 27967)
+-- TOC entry 5239 (class 2606 OID 27967)
 -- Name: stock_admin stock_admin_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16834,7 +17853,7 @@ ALTER TABLE ONLY public.stock_admin
 
 
 --
--- TOC entry 5217 (class 2606 OID 27962)
+-- TOC entry 5240 (class 2606 OID 27962)
 -- Name: stock_admin stock_admin_variante_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16843,7 +17862,7 @@ ALTER TABLE ONLY public.stock_admin
 
 
 --
--- TOC entry 5182 (class 2606 OID 26209)
+-- TOC entry 5205 (class 2606 OID 26209)
 -- Name: tipoproducto tipoproducto_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16852,7 +17871,7 @@ ALTER TABLE ONLY public.tipoproducto
 
 
 --
--- TOC entry 5184 (class 2606 OID 25859)
+-- TOC entry 5207 (class 2606 OID 25859)
 -- Name: toma_inventario_conteos toma_inventario_conteos_sesionid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16861,7 +17880,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 5185 (class 2606 OID 25864)
+-- TOC entry 5208 (class 2606 OID 25864)
 -- Name: toma_inventario_conteos toma_inventario_conteos_varianteid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16870,7 +17889,7 @@ ALTER TABLE ONLY public.toma_inventario_conteos
 
 
 --
--- TOC entry 5188 (class 2606 OID 25869)
+-- TOC entry 5211 (class 2606 OID 25869)
 -- Name: toma_inventario_sesiones toma_inventario_sesiones_usuario_creador_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: ferram
 --
 
@@ -16879,7 +17898,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones
 
 
 --
--- TOC entry 5409 (class 0 OID 27952)
+-- TOC entry 5434 (class 0 OID 27952)
 -- Dependencies: 340
 -- Name: stock_admin; Type: ROW SECURITY; Schema: public; Owner: ferram
 --
@@ -16887,7 +17906,7 @@ ALTER TABLE ONLY public.toma_inventario_sesiones
 ALTER TABLE public.stock_admin ENABLE ROW LEVEL SECURITY;
 
 --
--- TOC entry 5410 (class 3256 OID 27979)
+-- TOC entry 5435 (class 3256 OID 27979)
 -- Name: stock_admin stock_admin_isolation_policy; Type: POLICY; Schema: public; Owner: ferram
 --
 
@@ -16895,7 +17914,7 @@ CREATE POLICY stock_admin_isolation_policy ON public.stock_admin USING ((tenant_
 
 
 --
--- TOC entry 5549 (class 0 OID 0)
+-- TOC entry 5576 (class 0 OID 0)
 -- Dependencies: 9
 -- Name: SCHEMA cron; Type: ACL; Schema: -; Owner: azuresu
 --
@@ -16904,8 +17923,8 @@ GRANT USAGE ON SCHEMA cron TO azure_pg_admin WITH GRANT OPTION;
 
 
 --
--- TOC entry 5552 (class 0 OID 0)
--- Dependencies: 405
+-- TOC entry 5579 (class 0 OID 0)
+-- Dependencies: 409
 -- Name: FUNCTION alter_job(job_id bigint, schedule text, command text, database text, username text, active boolean); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -16913,8 +17932,8 @@ GRANT ALL ON FUNCTION cron.alter_job(job_id bigint, schedule text, command text,
 
 
 --
--- TOC entry 5553 (class 0 OID 0)
--- Dependencies: 404
+-- TOC entry 5580 (class 0 OID 0)
+-- Dependencies: 408
 -- Name: FUNCTION job_cache_invalidate(); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -16922,8 +17941,8 @@ GRANT ALL ON FUNCTION cron.job_cache_invalidate() TO azure_pg_admin WITH GRANT O
 
 
 --
--- TOC entry 5554 (class 0 OID 0)
--- Dependencies: 402
+-- TOC entry 5581 (class 0 OID 0)
+-- Dependencies: 406
 -- Name: FUNCTION schedule(schedule text, command text); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -16931,8 +17950,8 @@ GRANT ALL ON FUNCTION cron.schedule(schedule text, command text) TO azure_pg_adm
 
 
 --
--- TOC entry 5555 (class 0 OID 0)
--- Dependencies: 373
+-- TOC entry 5582 (class 0 OID 0)
+-- Dependencies: 377
 -- Name: FUNCTION schedule(job_name text, schedule text, command text); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -16940,8 +17959,8 @@ GRANT ALL ON FUNCTION cron.schedule(job_name text, schedule text, command text) 
 
 
 --
--- TOC entry 5556 (class 0 OID 0)
--- Dependencies: 406
+-- TOC entry 5583 (class 0 OID 0)
+-- Dependencies: 410
 -- Name: FUNCTION schedule_in_database(job_name text, schedule text, command text, database text, username text, active boolean); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -16949,8 +17968,8 @@ GRANT ALL ON FUNCTION cron.schedule_in_database(job_name text, schedule text, co
 
 
 --
--- TOC entry 5557 (class 0 OID 0)
--- Dependencies: 403
+-- TOC entry 5584 (class 0 OID 0)
+-- Dependencies: 407
 -- Name: FUNCTION unschedule(job_id bigint); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -16958,8 +17977,8 @@ GRANT ALL ON FUNCTION cron.unschedule(job_id bigint) TO azure_pg_admin WITH GRAN
 
 
 --
--- TOC entry 5558 (class 0 OID 0)
--- Dependencies: 407
+-- TOC entry 5585 (class 0 OID 0)
+-- Dependencies: 411
 -- Name: FUNCTION unschedule(job_name text); Type: ACL; Schema: cron; Owner: azuresu
 --
 
@@ -16967,8 +17986,8 @@ GRANT ALL ON FUNCTION cron.unschedule(job_name text) TO azure_pg_admin WITH GRAN
 
 
 --
--- TOC entry 5559 (class 0 OID 0)
--- Dependencies: 374
+-- TOC entry 5586 (class 0 OID 0)
+-- Dependencies: 378
 -- Name: FUNCTION pg_replication_origin_advance(text, pg_lsn); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -16976,8 +17995,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_advance(text, pg_lsn) TO 
 
 
 --
--- TOC entry 5560 (class 0 OID 0)
--- Dependencies: 375
+-- TOC entry 5587 (class 0 OID 0)
+-- Dependencies: 379
 -- Name: FUNCTION pg_replication_origin_create(text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -16985,8 +18004,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_create(text) TO azure_pg_
 
 
 --
--- TOC entry 5561 (class 0 OID 0)
--- Dependencies: 376
+-- TOC entry 5588 (class 0 OID 0)
+-- Dependencies: 380
 -- Name: FUNCTION pg_replication_origin_drop(text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -16994,8 +18013,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_drop(text) TO azure_pg_ad
 
 
 --
--- TOC entry 5562 (class 0 OID 0)
--- Dependencies: 362
+-- TOC entry 5589 (class 0 OID 0)
+-- Dependencies: 365
 -- Name: FUNCTION pg_replication_origin_oid(text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -17003,8 +18022,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_oid(text) TO azure_pg_adm
 
 
 --
--- TOC entry 5563 (class 0 OID 0)
--- Dependencies: 363
+-- TOC entry 5590 (class 0 OID 0)
+-- Dependencies: 366
 -- Name: FUNCTION pg_replication_origin_progress(text, boolean); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -17012,8 +18031,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_progress(text, boolean) T
 
 
 --
--- TOC entry 5564 (class 0 OID 0)
--- Dependencies: 377
+-- TOC entry 5591 (class 0 OID 0)
+-- Dependencies: 381
 -- Name: FUNCTION pg_replication_origin_session_is_setup(); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -17021,8 +18040,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_session_is_setup() TO azu
 
 
 --
--- TOC entry 5565 (class 0 OID 0)
--- Dependencies: 378
+-- TOC entry 5592 (class 0 OID 0)
+-- Dependencies: 382
 -- Name: FUNCTION pg_replication_origin_session_progress(boolean); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -17030,8 +18049,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_session_progress(boolean)
 
 
 --
--- TOC entry 5566 (class 0 OID 0)
--- Dependencies: 379
+-- TOC entry 5593 (class 0 OID 0)
+-- Dependencies: 383
 -- Name: FUNCTION pg_replication_origin_session_reset(); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -17039,8 +18058,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_session_reset() TO azure_
 
 
 --
--- TOC entry 5567 (class 0 OID 0)
--- Dependencies: 380
+-- TOC entry 5594 (class 0 OID 0)
+-- Dependencies: 384
 -- Name: FUNCTION pg_replication_origin_session_setup(text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -17048,8 +18067,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_session_setup(text) TO az
 
 
 --
--- TOC entry 5568 (class 0 OID 0)
--- Dependencies: 383
+-- TOC entry 5595 (class 0 OID 0)
+-- Dependencies: 387
 -- Name: FUNCTION pg_replication_origin_xact_reset(); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -17057,8 +18076,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_xact_reset() TO azure_pg_
 
 
 --
--- TOC entry 5569 (class 0 OID 0)
--- Dependencies: 381
+-- TOC entry 5596 (class 0 OID 0)
+-- Dependencies: 385
 -- Name: FUNCTION pg_replication_origin_xact_setup(pg_lsn, timestamp with time zone); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -17066,8 +18085,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_replication_origin_xact_setup(pg_lsn, timest
 
 
 --
--- TOC entry 5570 (class 0 OID 0)
--- Dependencies: 382
+-- TOC entry 5597 (class 0 OID 0)
+-- Dependencies: 386
 -- Name: FUNCTION pg_show_replication_origin_status(OUT local_id oid, OUT external_id text, OUT remote_lsn pg_lsn, OUT local_lsn pg_lsn); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -17075,8 +18094,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_show_replication_origin_status(OUT local_id 
 
 
 --
--- TOC entry 5571 (class 0 OID 0)
--- Dependencies: 370
+-- TOC entry 5598 (class 0 OID 0)
+-- Dependencies: 373
 -- Name: FUNCTION pg_stat_reset(); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -17084,8 +18103,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_stat_reset() TO azure_pg_admin;
 
 
 --
--- TOC entry 5572 (class 0 OID 0)
--- Dependencies: 364
+-- TOC entry 5599 (class 0 OID 0)
+-- Dependencies: 367
 -- Name: FUNCTION pg_stat_reset_shared(target text); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -17093,8 +18112,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_stat_reset_shared(target text) TO azure_pg_a
 
 
 --
--- TOC entry 5573 (class 0 OID 0)
--- Dependencies: 372
+-- TOC entry 5600 (class 0 OID 0)
+-- Dependencies: 375
 -- Name: FUNCTION pg_stat_reset_single_function_counters(oid); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -17102,8 +18121,8 @@ GRANT ALL ON FUNCTION pg_catalog.pg_stat_reset_single_function_counters(oid) TO 
 
 
 --
--- TOC entry 5574 (class 0 OID 0)
--- Dependencies: 371
+-- TOC entry 5601 (class 0 OID 0)
+-- Dependencies: 374
 -- Name: FUNCTION pg_stat_reset_single_table_counters(oid); Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
 
@@ -17111,7 +18130,7 @@ GRANT ALL ON FUNCTION pg_catalog.pg_stat_reset_single_table_counters(oid) TO azu
 
 
 --
--- TOC entry 5585 (class 0 OID 0)
+-- TOC entry 5613 (class 0 OID 0)
 -- Dependencies: 102
 -- Name: COLUMN pg_config.name; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17120,7 +18139,7 @@ GRANT SELECT(name) ON TABLE pg_catalog.pg_config TO azure_pg_admin;
 
 
 --
--- TOC entry 5586 (class 0 OID 0)
+-- TOC entry 5614 (class 0 OID 0)
 -- Dependencies: 102
 -- Name: COLUMN pg_config.setting; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17129,7 +18148,7 @@ GRANT SELECT(setting) ON TABLE pg_catalog.pg_config TO azure_pg_admin;
 
 
 --
--- TOC entry 5587 (class 0 OID 0)
+-- TOC entry 5615 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.line_number; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17138,7 +18157,7 @@ GRANT SELECT(line_number) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admi
 
 
 --
--- TOC entry 5588 (class 0 OID 0)
+-- TOC entry 5616 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.type; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17147,7 +18166,7 @@ GRANT SELECT(type) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5589 (class 0 OID 0)
+-- TOC entry 5617 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.database; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17156,7 +18175,7 @@ GRANT SELECT(database) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5590 (class 0 OID 0)
+-- TOC entry 5618 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.user_name; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17165,7 +18184,7 @@ GRANT SELECT(user_name) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5591 (class 0 OID 0)
+-- TOC entry 5619 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.address; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17174,7 +18193,7 @@ GRANT SELECT(address) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5592 (class 0 OID 0)
+-- TOC entry 5620 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.netmask; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17183,7 +18202,7 @@ GRANT SELECT(netmask) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5593 (class 0 OID 0)
+-- TOC entry 5621 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.auth_method; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17192,7 +18211,7 @@ GRANT SELECT(auth_method) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admi
 
 
 --
--- TOC entry 5594 (class 0 OID 0)
+-- TOC entry 5622 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.options; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17201,7 +18220,7 @@ GRANT SELECT(options) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5595 (class 0 OID 0)
+-- TOC entry 5623 (class 0 OID 0)
 -- Dependencies: 98
 -- Name: COLUMN pg_hba_file_rules.error; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17210,7 +18229,7 @@ GRANT SELECT(error) ON TABLE pg_catalog.pg_hba_file_rules TO azure_pg_admin;
 
 
 --
--- TOC entry 5596 (class 0 OID 0)
+-- TOC entry 5624 (class 0 OID 0)
 -- Dependencies: 149
 -- Name: COLUMN pg_replication_origin_status.local_id; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17219,7 +18238,7 @@ GRANT SELECT(local_id) ON TABLE pg_catalog.pg_replication_origin_status TO azure
 
 
 --
--- TOC entry 5597 (class 0 OID 0)
+-- TOC entry 5625 (class 0 OID 0)
 -- Dependencies: 149
 -- Name: COLUMN pg_replication_origin_status.external_id; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17228,7 +18247,7 @@ GRANT SELECT(external_id) ON TABLE pg_catalog.pg_replication_origin_status TO az
 
 
 --
--- TOC entry 5598 (class 0 OID 0)
+-- TOC entry 5626 (class 0 OID 0)
 -- Dependencies: 149
 -- Name: COLUMN pg_replication_origin_status.remote_lsn; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17237,7 +18256,7 @@ GRANT SELECT(remote_lsn) ON TABLE pg_catalog.pg_replication_origin_status TO azu
 
 
 --
--- TOC entry 5599 (class 0 OID 0)
+-- TOC entry 5627 (class 0 OID 0)
 -- Dependencies: 149
 -- Name: COLUMN pg_replication_origin_status.local_lsn; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17246,7 +18265,7 @@ GRANT SELECT(local_lsn) ON TABLE pg_catalog.pg_replication_origin_status TO azur
 
 
 --
--- TOC entry 5600 (class 0 OID 0)
+-- TOC entry 5628 (class 0 OID 0)
 -- Dependencies: 103
 -- Name: COLUMN pg_shmem_allocations.name; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17255,7 +18274,7 @@ GRANT SELECT(name) ON TABLE pg_catalog.pg_shmem_allocations TO azure_pg_admin;
 
 
 --
--- TOC entry 5601 (class 0 OID 0)
+-- TOC entry 5629 (class 0 OID 0)
 -- Dependencies: 103
 -- Name: COLUMN pg_shmem_allocations.off; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17264,7 +18283,7 @@ GRANT SELECT(off) ON TABLE pg_catalog.pg_shmem_allocations TO azure_pg_admin;
 
 
 --
--- TOC entry 5602 (class 0 OID 0)
+-- TOC entry 5630 (class 0 OID 0)
 -- Dependencies: 103
 -- Name: COLUMN pg_shmem_allocations.size; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17273,7 +18292,7 @@ GRANT SELECT(size) ON TABLE pg_catalog.pg_shmem_allocations TO azure_pg_admin;
 
 
 --
--- TOC entry 5603 (class 0 OID 0)
+-- TOC entry 5631 (class 0 OID 0)
 -- Dependencies: 103
 -- Name: COLUMN pg_shmem_allocations.allocated_size; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17282,7 +18301,7 @@ GRANT SELECT(allocated_size) ON TABLE pg_catalog.pg_shmem_allocations TO azure_p
 
 
 --
--- TOC entry 5604 (class 0 OID 0)
+-- TOC entry 5632 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.starelid; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17291,7 +18310,7 @@ GRANT SELECT(starelid) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5605 (class 0 OID 0)
+-- TOC entry 5633 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staattnum; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17300,7 +18319,7 @@ GRANT SELECT(staattnum) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5606 (class 0 OID 0)
+-- TOC entry 5634 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stainherit; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17309,7 +18328,7 @@ GRANT SELECT(stainherit) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5607 (class 0 OID 0)
+-- TOC entry 5635 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanullfrac; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17318,7 +18337,7 @@ GRANT SELECT(stanullfrac) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5608 (class 0 OID 0)
+-- TOC entry 5636 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stawidth; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17327,7 +18346,7 @@ GRANT SELECT(stawidth) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5609 (class 0 OID 0)
+-- TOC entry 5637 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stadistinct; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17336,7 +18355,7 @@ GRANT SELECT(stadistinct) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5610 (class 0 OID 0)
+-- TOC entry 5638 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17345,7 +18364,7 @@ GRANT SELECT(stakind1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5611 (class 0 OID 0)
+-- TOC entry 5639 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17354,7 +18373,7 @@ GRANT SELECT(stakind2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5612 (class 0 OID 0)
+-- TOC entry 5640 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17363,7 +18382,7 @@ GRANT SELECT(stakind3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5613 (class 0 OID 0)
+-- TOC entry 5641 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17372,7 +18391,7 @@ GRANT SELECT(stakind4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5614 (class 0 OID 0)
+-- TOC entry 5642 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stakind5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17381,7 +18400,7 @@ GRANT SELECT(stakind5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5615 (class 0 OID 0)
+-- TOC entry 5643 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17390,7 +18409,7 @@ GRANT SELECT(staop1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5616 (class 0 OID 0)
+-- TOC entry 5644 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17399,7 +18418,7 @@ GRANT SELECT(staop2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5617 (class 0 OID 0)
+-- TOC entry 5645 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17408,7 +18427,7 @@ GRANT SELECT(staop3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5618 (class 0 OID 0)
+-- TOC entry 5646 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17417,7 +18436,7 @@ GRANT SELECT(staop4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5619 (class 0 OID 0)
+-- TOC entry 5647 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.staop5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17426,7 +18445,7 @@ GRANT SELECT(staop5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5620 (class 0 OID 0)
+-- TOC entry 5648 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17435,7 +18454,7 @@ GRANT SELECT(stacoll1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5621 (class 0 OID 0)
+-- TOC entry 5649 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17444,7 +18463,7 @@ GRANT SELECT(stacoll2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5622 (class 0 OID 0)
+-- TOC entry 5650 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17453,7 +18472,7 @@ GRANT SELECT(stacoll3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5623 (class 0 OID 0)
+-- TOC entry 5651 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17462,7 +18481,7 @@ GRANT SELECT(stacoll4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5624 (class 0 OID 0)
+-- TOC entry 5652 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stacoll5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17471,7 +18490,7 @@ GRANT SELECT(stacoll5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5625 (class 0 OID 0)
+-- TOC entry 5653 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17480,7 +18499,7 @@ GRANT SELECT(stanumbers1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5626 (class 0 OID 0)
+-- TOC entry 5654 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17489,7 +18508,7 @@ GRANT SELECT(stanumbers2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5627 (class 0 OID 0)
+-- TOC entry 5655 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17498,7 +18517,7 @@ GRANT SELECT(stanumbers3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5628 (class 0 OID 0)
+-- TOC entry 5656 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17507,7 +18526,7 @@ GRANT SELECT(stanumbers4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5629 (class 0 OID 0)
+-- TOC entry 5657 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stanumbers5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17516,7 +18535,7 @@ GRANT SELECT(stanumbers5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5630 (class 0 OID 0)
+-- TOC entry 5658 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues1; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17525,7 +18544,7 @@ GRANT SELECT(stavalues1) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5631 (class 0 OID 0)
+-- TOC entry 5659 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues2; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17534,7 +18553,7 @@ GRANT SELECT(stavalues2) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5632 (class 0 OID 0)
+-- TOC entry 5660 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues3; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17543,7 +18562,7 @@ GRANT SELECT(stavalues3) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5633 (class 0 OID 0)
+-- TOC entry 5661 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues4; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17552,7 +18571,7 @@ GRANT SELECT(stavalues4) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5634 (class 0 OID 0)
+-- TOC entry 5662 (class 0 OID 0)
 -- Dependencies: 43
 -- Name: COLUMN pg_statistic.stavalues5; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17561,7 +18580,7 @@ GRANT SELECT(stavalues5) ON TABLE pg_catalog.pg_statistic TO azure_pg_admin;
 
 
 --
--- TOC entry 5635 (class 0 OID 0)
+-- TOC entry 5663 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.oid; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17570,7 +18589,7 @@ GRANT SELECT(oid) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5636 (class 0 OID 0)
+-- TOC entry 5664 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subdbid; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17579,7 +18598,7 @@ GRANT SELECT(subdbid) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5637 (class 0 OID 0)
+-- TOC entry 5665 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subname; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17588,7 +18607,7 @@ GRANT SELECT(subname) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5638 (class 0 OID 0)
+-- TOC entry 5666 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subowner; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17597,7 +18616,7 @@ GRANT SELECT(subowner) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5639 (class 0 OID 0)
+-- TOC entry 5667 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subenabled; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17606,7 +18625,7 @@ GRANT SELECT(subenabled) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5640 (class 0 OID 0)
+-- TOC entry 5668 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subconninfo; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17615,7 +18634,7 @@ GRANT SELECT(subconninfo) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5641 (class 0 OID 0)
+-- TOC entry 5669 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subslotname; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17624,7 +18643,7 @@ GRANT SELECT(subslotname) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
 --
--- TOC entry 5642 (class 0 OID 0)
+-- TOC entry 5670 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subsynccommit; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17633,7 +18652,7 @@ GRANT SELECT(subsynccommit) ON TABLE pg_catalog.pg_subscription TO azure_pg_admi
 
 
 --
--- TOC entry 5643 (class 0 OID 0)
+-- TOC entry 5671 (class 0 OID 0)
 -- Dependencies: 68
 -- Name: COLUMN pg_subscription.subpublications; Type: ACL; Schema: pg_catalog; Owner: azuresu
 --
@@ -17641,7 +18660,7 @@ GRANT SELECT(subsynccommit) ON TABLE pg_catalog.pg_subscription TO azure_pg_admi
 GRANT SELECT(subpublications) ON TABLE pg_catalog.pg_subscription TO azure_pg_admin;
 
 
--- Completed on 2026-02-20 12:43:33
+-- Completed on 2026-02-23 23:33:57
 
 --
 -- PostgreSQL database dump complete
