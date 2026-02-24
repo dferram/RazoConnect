@@ -17584,6 +17584,7 @@ async function getOrdenCompraReporteDetallado(req, res) {
          pv.preciounitario,
          pv.color_nombre AS color,
          p.nombreproducto,
+         p.imagen_url,
          c.nombre AS categoria
        FROM detallesordencompra doc
        INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
