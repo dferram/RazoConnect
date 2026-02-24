@@ -649,9 +649,41 @@ async function calculateAllocationStatus({
 
     console.log(`📊 [FIFO] Deuda previa: ${deudaPreviaEnPiezas} piezas (${numPedidosAnteriores} pedidos anteriores)`);
 
-    // PASO 3: CÁLCULO FIFO
-    // Stock disponible para ESTE pedido = Stock físico - Deuda de pedidos anteriores
-    const stockDisponibleParaEstePedido = Math.max(stockFisico - deudaPreviaEnPiezas, 0);
+    // PASO 2.5: OBTENER CANTIDAD RESERVADA (HARD-RESERVE)
+    let cantidadReservada = 0;
+    
+    if (adminId) {
+      const { rows: reservaRows } = await db.query(
+        `SELECT COALESCE(cantidad_reservada, 0) as reservada
+         FROM stock_admin
+         WHERE variante_id = $1 AND admin_id = $2 AND tenant_id = $3`,
+        [varianteId, adminId, tenantId]
+      );
+      cantidadReservada = reservaRows.length > 0 ? parseInt(reservaRows[0].reservada, 10) : 0;
+    } else {
+      const { rows: reservaRows } = await db.query(
+        `SELECT COALESCE(SUM(cantidad_reservada), 0) as reservada_total
+         FROM stock_admin
+         WHERE variante_id = $1 AND tenant_id = $2`,
+        [varianteId, tenantId]
+      );
+      cantidadReservada = reservaRows.length > 0 ? parseInt(reservaRows[0].reservada_total, 10) : 0;
+    }
+    
+    console.log(`🔒 [HARD-RESERVE] Variante ${varianteId} - Reservas activas: ${cantidadReservada} piezas`);
+
+    // PASO 3: CÁLCULO FIFO CON HARD-RESERVE
+    // Stock disponible = Stock físico - Reservas activas - Deuda previa
+    const stockDisponibleParaEstePedido = Math.max(
+      stockFisico - cantidadReservada - deudaPreviaEnPiezas, 
+      0
+    );
+    
+    console.log(`📊 [DISPONIBILIDAD REAL]`);
+    console.log(`   Stock físico: ${stockFisico}`);
+    console.log(`   Reservas activas: ${cantidadReservada}`);
+    console.log(`   Deuda FIFO previa: ${deudaPreviaEnPiezas}`);
+    console.log(`   Disponible para este pedido: ${stockDisponibleParaEstePedido}`);
     
     // Convertir a paquetes
     const paquetesDisponibles = Math.floor(stockDisponibleParaEstePedido / piezasPorPaq);

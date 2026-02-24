@@ -287,16 +287,56 @@ exports.generarRemision = async (req, res) => {
         }
       }
 
-      // Descontar stock
-      await client.query(
-        `UPDATE inventarios_admin 
+      // ============================================
+      // HARD-RESERVE: Liberar reserva + Descontar stock físico
+      // ============================================
+      // Al confirmar remisión:
+      // 1. Liberar la reserva (cantidad_reservada -= piezas)
+      // 2. Descontar stock físico (cantidad -= piezas)
+      
+      const stockUpdateResult = await client.query(
+        `UPDATE stock_admin 
          SET cantidad = GREATEST(0, cantidad - $1),
-             ultima_actualizacion = NOW()
-         WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4`,
+             cantidad_reservada = GREATEST(0, cantidad_reservada - $1),
+             updated_at = NOW()
+         WHERE variante_id = $2 
+           AND admin_id = $3 
+           AND tenant_id = $4
+         RETURNING stockadminid, cantidad, cantidad_reservada`,
         [item.piezas_surtidas, item.variante_id, adminIdStock, tenant_id]
       );
 
-      console.log(`📦 [STOCK DEDUCTION] Descontadas ${item.piezas_surtidas} piezas de variante ${item.variante_id} del Admin ${adminIdStock}`);
+      if (stockUpdateResult.rows.length > 0) {
+        const stockInfo = stockUpdateResult.rows[0];
+        console.log(`📦 [STOCK DEDUCTION + RESERVE RELEASE] Variante ${item.variante_id}`);
+        console.log(`   Stock físico descontado: ${item.piezas_surtidas} piezas`);
+        console.log(`   Reserva liberada: ${item.piezas_surtidas} piezas`);
+        console.log(`   Nuevo stock: ${stockInfo.cantidad}, Reservado: ${stockInfo.cantidad_reservada}`);
+        
+        // Registrar en log de auditoría
+        await client.query(
+          `INSERT INTO inventario_reservas_log (
+             stockadminid, variante_id, admin_id, pedido_id, detalle_id,
+             cantidad_reservada, accion, cantidad_antes, cantidad_despues,
+             usuario_id, tenant_id
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, 'CONFIRMAR', $7, $8, $9, $10)`,
+          [
+            stockInfo.stockadminid,
+            item.variante_id,
+            adminIdStock,
+            pedido_id,
+            item.detalle_pedido_id,
+            item.piezas_surtidas,
+            stockInfo.cantidad_reservada + item.piezas_surtidas,
+            stockInfo.cantidad_reservada,
+            req.user?.id || null,
+            tenant_id
+          ]
+        );
+      } else {
+        console.log(`📦 [STOCK DEDUCTION] Descontadas ${item.piezas_surtidas} piezas de variante ${item.variante_id} del Admin ${adminIdStock}`);
+      }
 
       // 6.6. Registrar movimiento en Kardex
       try {
