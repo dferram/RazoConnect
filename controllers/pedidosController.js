@@ -939,17 +939,58 @@ const crearPedido = async (req, res) => {
     }
 
     async function aplicarCargoCredito(info) {
-      // REFACTORIZACIÓN: Ya NO se cobra el crédito al crear el pedido.
-      // El cargo real se aplicará cuando el admin genere la remisión.
-      // Esta función se mantiene por compatibilidad pero ya no ejecuta el cargo.
+      // NUEVA LÓGICA: Reservar el crédito inmediatamente (actualizar saldo_deudor)
+      // pero NO crear registro en cuentas_por_cobrar.
+      // El registro CXC se creará cuando el admin confirme la remisión.
       if (!info) return null;
 
-      // Solo retornamos información sin modificar saldo
+      const saldoAnterior = parseFloat(info.saldoActual || 0);
+      const montoReservar = parseFloat(montoTotalFinal);
+      const nuevoSaldo = parseFloat((saldoAnterior + montoReservar).toFixed(2));
+
+      // Actualizar saldo deudor para reservar el crédito
+      await client.query(
+        `UPDATE cliente_creditos
+         SET saldo_deudor = $1, ultima_actualizacion = NOW()
+         WHERE credito_id = $2`,
+        [nuevoSaldo, info.creditoId]
+      );
+
+      // Registrar movimiento de RESERVA (no es cargo aún)
+      await client.query(
+        `INSERT INTO credito_movimientos (
+           credito_id,
+           tipo_movimiento,
+           monto,
+           referencia_id,
+           descripcion,
+           saldo_despues_movimiento,
+           tenant_id
+         )
+         VALUES ($1, 'RESERVA', $2, $3, $4, $5, $6)`,
+        [
+          info.creditoId,
+          montoReservar.toFixed(2),
+          `PED-${pedidoId}`,
+          `Reserva de crédito por pedido #${pedidoId} (pendiente de confirmación)`,
+          nuevoSaldo.toFixed(2),
+          tenant_id
+        ]
+      );
+
+      console.log(`💳 [CRÉDITO RESERVADO] Pedido #${pedidoId}`);
+      console.log(`   Saldo anterior: $${saldoAnterior.toFixed(2)}`);
+      console.log(`   Monto reservado: $${montoReservar.toFixed(2)}`);
+      console.log(`   Nuevo saldo: $${nuevoSaldo.toFixed(2)}`);
+      console.log(`   ⚠️ CXC NO creado aún - se creará al confirmar remisión`);
+
       return {
         creditoId: info.creditoId,
-        saldoAnterior: info.saldoActual,
-        saldoActual: info.saldoActual, // Mantener el saldo sin cambios
-        cargoDiferido: true, // Indicador de que el cargo está pendiente
+        saldoAnterior: saldoAnterior,
+        saldoActual: nuevoSaldo,
+        montoReservado: montoReservar,
+        creditoReservado: true,
+        cxcPendiente: true,
       };
     }
 
