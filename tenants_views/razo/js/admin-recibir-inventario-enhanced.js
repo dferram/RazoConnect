@@ -688,7 +688,7 @@ async function exportarExcel() {
 }
 
 /**
- * Export to PDF with comprehensive financial summary
+ * Export to PDF using unified module with comprehensive financial summary
  */
 async function exportarPDF() {
   const datos = prepararDatosReporte();
@@ -713,106 +713,19 @@ async function exportarPDF() {
       didOpen: () => { Swal.showLoading(); }
     });
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
-
-    // Add logo
-    try {
-      const logoResponse = await fetch('/icon/Logo_Razo.png');
-      const logoBlob = await logoResponse.blob();
-      const logoBase64 = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(logoBlob);
-      });
-      doc.addImage(logoBase64, 'PNG', 10, 10, 20, 20);
-    } catch (logoError) {
-      console.warn('No se pudo cargar el logo:', logoError);
-    }
-
-    // Header
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text('REPORTE DE RECEPCIÓN / ORDEN DE COMPRA', 148, 15, { align: 'center' });
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`OC #${state.orden.ordenCompraId || ''}`, 240, 12);
-    doc.text(`Fecha: ${new Date().toLocaleDateString('es-MX')}`, 240, 17);
-    doc.text(`Proveedor: ${state.orden.proveedorNombre || 'N/A'}`, 40, 25);
-
-    // Preparar datos de tabla con secciones separadas
-    const tableData = [];
-    
-    // SECCIÓN 1: Productos recibidos
-    if (datos.recibidos.length > 0) {
-      tableData.push([
-        { content: '✅ PRODUCTOS RECIBIDOS', colSpan: 9, styles: { fillColor: [209, 250, 229], textColor: [6, 95, 70], fontStyle: 'bold', halign: 'center' } }
-      ]);
-      
-      datos.recibidos.forEach(item => {
-        tableData.push([
-          item.sku,
-          item.producto,
-          item.categoria,
-          item.variante,
-          item.cantidadPiezas.toLocaleString('es-MX'),
-          `$${item.costoUnitario.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-          `$${item.totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-          `$${item.precioVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-          `$${item.totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-        ]);
-      });
-    }
-    
-    // SECCIÓN 2: Productos cerrados por merma
-    if (datos.cerradosPorMerma.length > 0) {
-      tableData.push([
-        { content: '❌ PRODUCTOS CERRADOS POR MERMA (NO RECIBIDOS)', colSpan: 9, styles: { fillColor: [254, 226, 226], textColor: [153, 27, 27], fontStyle: 'bold', halign: 'center' } }
-      ]);
-      
-      datos.cerradosPorMerma.forEach(item => {
-        tableData.push([
-          item.sku,
-          item.producto,
-          item.categoria,
-          item.variante,
-          { content: item.cantidadPiezas.toLocaleString('es-MX'), styles: { textColor: [220, 38, 38], fontStyle: 'bold' } },
-          `$${item.costoUnitario.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-          { content: `$${item.totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, styles: { textColor: [220, 38, 38], fontStyle: 'bold' } },
-          `$${item.precioVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-          `$${item.totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-        ]);
-      });
-    }
-
-    // Calculate totals
+    // Calcular totales
     let totalPiezasRecibidas = 0;
     let totalInversionRecibida = 0;
     let totalVentaRecibida = 0;
+    let totalPaquetes = 0;
     
-    let totalPiezasMerma = 0;
-    let totalInversionMerma = 0;
-    let totalVentaMerma = 0;
-
     datos.recibidos.forEach(item => {
       totalPiezasRecibidas += item.cantidadPiezas;
       totalInversionRecibida += item.totalCosto;
       totalVentaRecibida += item.totalVenta;
     });
     
-    datos.cerradosPorMerma.forEach(item => {
-      totalPiezasMerma += item.cantidadPiezas;
-      totalInversionMerma += item.totalCosto;
-      totalVentaMerma += item.totalVenta;
-    });
-    
-    const totalPiezas = totalPiezasRecibidas + totalPiezasMerma;
-    const totalInversion = totalInversionRecibida + totalInversionMerma;
-    const totalVentaEsperada = totalVentaRecibida + totalVentaMerma;
-    
-    // Calcular paquetes solo de productos recibidos
-    let totalPaquetes = 0;
+    // Calcular paquetes
     if (Array.isArray(window.sesionRecepcion)) {
       window.sesionRecepcion.forEach(item => {
         const cantidadPiezas = parseInt(item.cantidadPiezas || item.cantidad, 10) || 0;
@@ -822,116 +735,49 @@ async function exportarPDF() {
       });
     }
 
-    // Add table WITHOUT footer (totals will be added separately at the end)
-    doc.autoTable({
-      startY: 35,
-      head: [['SKU', 'Producto', 'Categoría', 'Variante', 'Cantidad\n(Piezas)', 'Costo\nUnit.', 'Total\nCosto', 'Precio\nVenta', 'Total\nVenta']],
-      body: tableData,
-      theme: 'grid',
-      styles: {
-        fontSize: 8,
-        cellPadding: 2,
-        lineColor: [200, 200, 200],
-        lineWidth: 0.1
+    // Preparar datos para módulo unificado
+    const datosPDF = {
+      orden: {
+        ordenCompraId: state.orden.ordenCompraId || 'N/A',
+        proveedorNombre: state.orden.proveedorNombre || 'N/A',
+        estadoRecepcion: state.orden.estatus || 'En Proceso'
       },
-      headStyles: {
-        fillColor: [238, 238, 238],
-        textColor: [0, 0, 0],
-        fontStyle: 'bold',
-        halign: 'center',
-        valign: 'middle'
+      productosRecibidos: datos.recibidos.map(item => ({
+        sku: item.sku,
+        producto: item.producto,
+        categoria: item.categoria,
+        variante: item.variante,
+        cantidadPiezas: item.cantidadPiezas,
+        costoUnitario: item.costoUnitario,
+        totalCosto: item.totalCosto,
+        precioVenta: item.precioVenta,
+        totalVenta: item.totalVenta
+      })),
+      productosFaltantes: datos.cerradosPorMerma.map(item => ({
+        sku: item.sku,
+        producto: item.producto,
+        categoria: item.categoria,
+        variante: item.variante,
+        cantidadPiezas: item.cantidadPiezas,
+        costoUnitario: item.costoUnitario,
+        totalCosto: item.totalCosto,
+        precioVenta: item.precioVenta,
+        totalVenta: item.totalVenta
+      })),
+      sesion: {
+        responsable: window.adminNombre || 'Administrador',
+        fechaRecepcion: new Date().toISOString()
       },
-      columnStyles: {
-        0: { cellWidth: 22 },
-        1: { cellWidth: 45 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 35 },
-        4: { halign: 'center', cellWidth: 18 },
-        5: { halign: 'right', cellWidth: 20 },
-        6: { halign: 'right', cellWidth: 23 },
-        7: { halign: 'right', cellWidth: 20 },
-        8: { halign: 'right', cellWidth: 23 }
+      totales: {
+        totalPiezas: totalPiezasRecibidas,
+        totalPaquetes: totalPaquetes,
+        totalInversion: totalInversionRecibida,
+        totalVentaEsperada: totalVentaRecibida
       }
-    });
+    };
 
-    // MISIÓN 4: Add TOTALS row at the end using finalY
-    const finalY = doc.lastAutoTable.finalY + 2;
-    
-    // Draw totals table
-    doc.autoTable({
-      startY: finalY,
-      head: [[
-        { content: 'TOTALES', colSpan: 4, styles: { halign: 'center', fontStyle: 'bold', fillColor: [249, 250, 251] } },
-        { content: `${totalPiezas.toLocaleString('es-MX')} pzas\n(${totalPaquetes.toLocaleString('es-MX')} paq)`, styles: { halign: 'center', fontStyle: 'bold', fillColor: [249, 250, 251], fontSize: 9 } },
-        { content: '', styles: { fillColor: [249, 250, 251] } },
-        { content: `$${totalInversion.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [220, 38, 38], fillColor: [249, 250, 251] } },
-        { content: '', styles: { fillColor: [249, 250, 251] } },
-        { content: `$${totalVentaEsperada.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, styles: { halign: 'right', fontStyle: 'bold', textColor: [16, 185, 129], fillColor: [249, 250, 251] } }
-      ]],
-      body: [],
-      theme: 'grid',
-      columnStyles: {
-        0: { cellWidth: 22 },
-        1: { cellWidth: 45 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 35 },
-        4: { halign: 'center', cellWidth: 18 },
-        5: { halign: 'right', cellWidth: 20 },
-        6: { halign: 'right', cellWidth: 23 },
-        7: { halign: 'right', cellWidth: 20 },
-        8: { halign: 'right', cellWidth: 23 }
-      }
-    });
-
-    // Financial summary with page break handling
-    const summaryHeight = 45; // Total height needed for summary box (10 + 4*7 + margins)
-    let summaryY = doc.lastAutoTable.finalY + 10;
-    
-    // Check if there's enough space on current page (A4 landscape = 210mm height, margin bottom ~15mm)
-    if (summaryY + summaryHeight > 195) {
-      doc.addPage();
-      summaryY = 20; // Start near top of new page
-    }
-    
-    doc.setFillColor(249, 115, 22);
-    doc.rect(10, summaryY, 120, 10, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('RESUMEN FINANCIERO', 70, summaryY + 7, { align: 'center' });
-
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    
-    let detailY = summaryY + 15;
-    doc.text('Total Piezas Recibidas:', 15, detailY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${totalPiezas.toLocaleString('es-MX')} piezas (${totalPaquetes.toLocaleString('es-MX')} paquetes)`, 80, detailY);
-
-    detailY += 7;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Valor Total de Compra:', 15, detailY);
-    doc.setTextColor(220, 38, 38);
-    doc.text(`$${totalInversion.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 80, detailY);
-
-    detailY += 7;
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Valor Total de Venta Esperado:', 15, detailY);
-    doc.setTextColor(16, 185, 129);
-    doc.text(`$${totalVentaEsperada.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 80, detailY);
-
-    detailY += 7;
-    const margen = totalVentaEsperada - totalInversion;
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Margen Esperado:', 15, detailY);
-    doc.setTextColor(margen >= 0 ? 16 : 220, margen >= 0 ? 185 : 38, margen >= 0 ? 129 : 38);
-    doc.text(`$${margen.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 80, detailY);
-
-    // Save PDF
-    doc.save(`Recepcion_OC_${state.orden.ordenCompraId}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    // Usar módulo unificado de generación de PDF
+    await window.generarPDFEntradaAlmacen(datosPDF);
 
     Swal.fire({
       icon: 'success',
