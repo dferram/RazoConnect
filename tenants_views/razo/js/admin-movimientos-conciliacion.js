@@ -59,7 +59,8 @@ async function cargarSesionesAuditoria() {
       sesiones.forEach(sesion => {
         const option = document.createElement('option');
         option.value = sesion.sesionid;
-        option.textContent = `${sesion.nombre} (${new Date(sesion.fechacreacion).toLocaleDateString('es-MX')})`;
+        const fecha = sesion.fechacierre || sesion.fechainicio;
+        option.textContent = `${sesion.nombre} (${new Date(fecha).toLocaleDateString('es-MX')})`;
         select.appendChild(option);
       });
       console.log(`✅ Cargadas ${sesiones.length} sesiones de auditoría`);
@@ -77,8 +78,8 @@ async function cargarOrdenesCompra() {
     const token = localStorage.getItem('razoconnect_admin_token');
     if (!token) return;
 
-    // Solo cargar órdenes que tengan recepciones (Completa o Parcial)
-    const response = await fetch('/api/admin/ordenes-compra?estatus=Pendiente,Parcial', {
+    // Solo cargar órdenes que tengan al menos un producto recibido (filtrado en backend)
+    const response = await fetch('/api/admin/ordenes-compra', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
