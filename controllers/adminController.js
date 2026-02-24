@@ -17584,8 +17584,19 @@ async function getOrdenCompraReporteDetallado(req, res) {
          pv.preciounitario,
          pv.color_nombre AS color,
          p.nombreproducto,
-         p.imagen_url,
-         c.nombre AS categoria
+         c.nombre AS categoria,
+         COALESCE(
+           (SELECT pvi.url_imagen 
+            FROM producto_variante_imagenes pvi 
+            WHERE pvi.varianteid = pv.varianteid 
+            ORDER BY pvi.orden 
+            LIMIT 1),
+           (SELECT pi.url_imagen 
+            FROM producto_imagenes pi 
+            WHERE pi.productoid = p.productoid 
+            ORDER BY pi.orden 
+            LIMIT 1)
+         ) AS imagen_url
        FROM detallesordencompra doc
        INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
        INNER JOIN productos p ON pv.productoid = p.productoid

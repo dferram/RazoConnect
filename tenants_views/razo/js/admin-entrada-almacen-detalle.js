@@ -139,14 +139,35 @@ function renderizarProductosRecibidos() {
     const tr = document.createElement('tr');
     
     const variante = `${producto.color || ''} ${producto.dimensiones || ''}`.trim() || 'N/A';
-    const imagenUrl = producto.imagen_url || '/images/placeholder-product.png';
     
-    tr.innerHTML = `
-      <td style="text-align: center; padding: 0.5rem;">
-        <img src="${imagenUrl}" alt="${producto.nombreproducto}" 
-             style="width: 50px; height: 50px; object-fit: cover; border-radius: 0.375rem; border: 1px solid #e5e7eb;"
-             onerror="this.src='/images/placeholder-product.png'">
-      </td>
+    // Crear celda de imagen
+    const tdImagen = document.createElement('td');
+    tdImagen.style.cssText = 'text-align: center; padding: 0.5rem;';
+    
+    if (producto.imagen_url) {
+      const img = document.createElement('img');
+      img.src = producto.imagen_url;
+      img.alt = producto.nombreproducto;
+      img.style.cssText = 'width: 50px; height: 50px; object-fit: cover; border-radius: 0.375rem; border: 1px solid #e5e7eb;';
+      img.onerror = function() {
+        this.style.display = 'none';
+        const placeholder = document.createElement('div');
+        placeholder.style.cssText = 'width: 50px; height: 50px; background: #f3f4f6; border-radius: 0.375rem; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 0.75rem;';
+        placeholder.innerHTML = '<i class="bi bi-image"></i>';
+        this.parentNode.appendChild(placeholder);
+      };
+      tdImagen.appendChild(img);
+    } else {
+      const placeholder = document.createElement('div');
+      placeholder.style.cssText = 'width: 50px; height: 50px; background: #f3f4f6; border-radius: 0.375rem; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 1.25rem; margin: 0 auto;';
+      placeholder.innerHTML = '<i class="bi bi-image"></i>';
+      tdImagen.appendChild(placeholder);
+    }
+    
+    tr.appendChild(tdImagen);
+    
+    // Resto de columnas
+    tr.innerHTML += `
       <td style="font-weight: 600;">${producto.nombreproducto || 'N/A'}</td>
       <td>${producto.categoria || 'N/A'}</td>
       <td style="font-size: 0.9rem;">${variante}</td>
@@ -183,14 +204,35 @@ function renderizarProductosFaltantes() {
     
     const variante = `${producto.color || ''} ${producto.dimensiones || ''}`.trim() || 'N/A';
     const motivo = producto.motivo_discrepancia || 'Cerrado por merma';
-    const imagenUrl = producto.imagen_url || '/images/placeholder-product.png';
     
-    tr.innerHTML = `
-      <td style="text-align: center; padding: 0.5rem;">
-        <img src="${imagenUrl}" alt="${producto.nombreproducto}" 
-             style="width: 50px; height: 50px; object-fit: cover; border-radius: 0.375rem; border: 1px solid #e5e7eb; opacity: 0.6;"
-             onerror="this.src='/images/placeholder-product.png'">
-      </td>
+    // Crear celda de imagen
+    const tdImagen = document.createElement('td');
+    tdImagen.style.cssText = 'text-align: center; padding: 0.5rem;';
+    
+    if (producto.imagen_url) {
+      const img = document.createElement('img');
+      img.src = producto.imagen_url;
+      img.alt = producto.nombreproducto;
+      img.style.cssText = 'width: 50px; height: 50px; object-fit: cover; border-radius: 0.375rem; border: 1px solid #e5e7eb; opacity: 0.6;';
+      img.onerror = function() {
+        this.style.display = 'none';
+        const placeholder = document.createElement('div');
+        placeholder.style.cssText = 'width: 50px; height: 50px; background: #f3f4f6; border-radius: 0.375rem; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 0.75rem; opacity: 0.6;';
+        placeholder.innerHTML = '<i class="bi bi-image"></i>';
+        this.parentNode.appendChild(placeholder);
+      };
+      tdImagen.appendChild(img);
+    } else {
+      const placeholder = document.createElement('div');
+      placeholder.style.cssText = 'width: 50px; height: 50px; background: #f3f4f6; border-radius: 0.375rem; border: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 1.25rem; margin: 0 auto; opacity: 0.6;';
+      placeholder.innerHTML = '<i class="bi bi-image"></i>';
+      tdImagen.appendChild(placeholder);
+    }
+    
+    tr.appendChild(tdImagen);
+    
+    // Resto de columnas
+    tr.innerHTML += `
       <td style="font-weight: 600;">${producto.nombreproducto || 'N/A'}</td>
       <td>${producto.categoria || 'N/A'}</td>
       <td style="font-size: 0.9rem;">${variante}</td>
