@@ -448,6 +448,43 @@
       gap: 0.5rem;
     }
 
+    .dynamic-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-move-up,
+    .btn-move-down {
+      width: 36px;
+      height: 36px;
+      border-radius: 0.5rem;
+      background: white;
+      border: 2px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: #6b7280;
+      font-size: 1rem;
+      padding: 0;
+    }
+
+    .btn-move-up:hover,
+    .btn-move-down:hover {
+      background: var(--razo-orange);
+      color: white;
+      border-color: var(--razo-orange);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(249, 115, 22, 0.2);
+    }
+
+    .btn-move-up:active,
+    .btn-move-down:active {
+      transform: translateY(0);
+    }
+
     .btn-delete-item {
       background: #ef4444;
       color: white;
