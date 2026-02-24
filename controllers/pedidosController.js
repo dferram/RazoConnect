@@ -2316,6 +2316,65 @@ const cancelarPedido = async (req, res) => {
 
     console.log(`[Cancelar Pedido] Procesando ${detallesQuery.rows.length} ítems del pedido ${id}`);
 
+    // ============================================
+    // HARD-RESERVE: Liberar reservas al cancelar
+    // ============================================
+    // Obtener detalles del pedido para liberar reservas
+    const detallesReservas = await client.query(
+      `SELECT d.detalleid, d.varianteid, d.piezastotales, d.esbackorder,
+              d.cantidad_surtida_remisiones
+       FROM detallesdelpedido d
+       WHERE d.pedidoid = $1 AND d.tenant_id = $2`,
+      [id, tenant_id]
+    );
+
+    for (const detalle of detallesReservas.rows) {
+      // Solo liberar si NO es backorder y NO ha sido surtido en remisiones
+      if (!detalle.esbackorder && (detalle.cantidad_surtida_remisiones || 0) === 0) {
+        const piezasALiberar = parseInt(detalle.piezastotales, 10);
+        
+        console.log(`🔓 [LIBERAR RESERVA] Variante ${detalle.varianteid}: ${piezasALiberar} piezas`);
+        
+        // Liberar de stock_admin
+        const liberarResult = await client.query(
+          `UPDATE stock_admin
+           SET cantidad_reservada = GREATEST(0, cantidad_reservada - $1),
+               updated_at = NOW()
+           WHERE variante_id = $2 
+             AND tenant_id = $3
+             AND cantidad_reservada > 0
+           RETURNING stockadminid, admin_id, cantidad_reservada`,
+          [piezasALiberar, detalle.varianteid, tenant_id]
+        );
+        
+        // Registrar en log de auditoría
+        for (const row of liberarResult.rows) {
+          await client.query(
+            `INSERT INTO inventario_reservas_log (
+               stockadminid, variante_id, admin_id, pedido_id, detalle_id,
+               cantidad_reservada, accion, cantidad_antes, cantidad_despues,
+               usuario_id, tenant_id
+             )
+             VALUES ($1, $2, $3, $4, $5, $6, 'CANCELAR', $7, $8, $9, $10)`,
+            [
+              row.stockadminid,
+              detalle.varianteid,
+              row.admin_id,
+              id,
+              detalle.detalleid,
+              piezasALiberar,
+              row.cantidad_reservada + piezasALiberar,
+              row.cantidad_reservada,
+              req.user?.id || null,
+              tenant_id
+            ]
+          );
+        }
+        
+        console.log(`   ✅ Reserva liberada en ${liberarResult.rows.length} admin(s)`);
+      }
+    }
+
     // Procesar cada ítem del pedido
     for (const detalle of detallesQuery.rows) {
       const { varianteid, piezastotales, esbackorder, cantidadbackorder, cantidadsurtida } = detalle;
