@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detalle de Entrada de Almacén - Admin RazoConnect</title>
+  <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+  <script src="js/auth-guard-admin.js?v=2.0"></script>
+
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+  <link rel="stylesheet" href="css/mobile-responsive.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- jsPDF para generación de reportes PDF - cargado en head para disponibilidad temprana -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body data-page-title="Detalle de Entrada de Almacén">
+  <div class="admin-layout">
+    <div id="admin-sidebar-container"></div>
+
+    <main class="admin-main">
+      <div id="admin-header-container"></div>
+
+      <div class="admin-content">
+        <!-- Instructional Banner -->
+        <div id="instructionalBanner" class="instructional-banner">
+          <p>
+            💡 <strong>Detalle de Entrada de Almacén:</strong> Consulta la información completa de una recepción de inventario, incluyendo productos recibidos, productos faltantes (cerrados por merma), responsable de la sesión y totales financieros. Genera un reporte PDF detallado con toda la información.
+          </p>
+          <button class="instructional-banner-close" title="Cerrar">
+            ×
+          </button>
+        </div>
+
+        <!-- Botón de regreso -->
+        <div style="margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+          <button
+            onclick="window.location.href='admin-reportes-ordenes-compra.html'"
+            style="
+              padding: 0.75rem 1.5rem;
+              background: white;
+              color: #333;
+              border: 2px solid var(--razo-gray-light);
+              border-radius: 0.5rem;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              display: inline-flex;
+              align-items: center;
+              gap: 0.5rem;
+            "
+            onmouseover="this.style.borderColor='var(--razo-orange)'; this.style.color='var(--razo-orange)'"
+            onmouseout="this.style.borderColor='var(--razo-gray-light)'; this.style.color='#333'"
+          >
+            <i class="bi bi-arrow-left"></i> Volver a Reportes
+          </button>
+          
+          <button
+            id="btnVerCXP"
+            style="
+              padding: 0.75rem 1.5rem;
+              background: var(--razo-orange);
+              color: white;
+              border: none;
+              border-radius: 0.5rem;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.3s ease;
+              display: inline-flex;
+              align-items: center;
+              gap: 0.5rem;
+            "
+            onmouseover="this.style.background='#ea580c'"
+            onmouseout="this.style.background='var(--razo-orange)'"
+          >
+            <i class="bi bi-receipt"></i> Ver Cuenta por Pagar
+          </button>
+        </div>
+
+        <div id="loadingDetalle" class="loading" style="display: flex; min-height: 400px;">
+          <div class="spinner"></div>
+          <p style="margin-top: 1rem; color: #666;">Cargando detalle de entrada...</p>
+        </div>
+
+        <div id="detalleContainer" style="display: none;">
+          <!-- Encabezado de la orden -->
+          <div class="admin-card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.5rem;">
+              <div style="flex: 1; min-width: 300px;">
+                <h2 style="margin: 0 0 1rem 0; color: #111827; font-size: 1.75rem; font-weight: 800;">
+                  <i class="bi bi-box-seam" style="color: var(--razo-orange);"></i>
+                  Entrada de Almacén - OC #<span id="ordenNumero">-</span>
+                </h2>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                  <div>
+                    <div style="font-size: 0.8rem; color: #6b7280; font-weight: 600; margin-bottom: 0.25rem;">PROVEEDOR</div>
+                    <div id="proveedorNombre" style="font-weight: 600; color: #111827;">-</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.8rem; color: #6b7280; font-weight: 600; margin-bottom: 0.25rem;">RESPONSABLE</div>
+                    <div id="responsableNombre" style="font-weight: 600; color: #111827;">-</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.8rem; color: #6b7280; font-weight: 600; margin-bottom: 0.25rem;">FECHA RECEPCIÓN</div>
+                    <div id="fechaRecepcion" style="font-weight: 600; color: #111827;">-</div>
+                  </div>
+                  <div>
+                    <div style="font-size: 0.8rem; color: #6b7280; font-weight: 600; margin-bottom: 0.25rem;">ESTADO</div>
+                    <div id="estadoBadge">-</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <button
+                  id="btnGenerarPDF"
+                  style="
+                    padding: 0.75rem 1.5rem;
+                    background: var(--razo-orange);
+                    color: white;
+                    border: none;
+                    border-radius: 0.5rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                  "
+                  onmouseover="this.style.background='#ea580c'"
+                  onmouseout="this.style.background='var(--razo-orange)'"
+                >
+                  <i class="bi bi-file-earmark-pdf-fill"></i> Generar PDF
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resumen Financiero -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="admin-stat-card">
+              <div class="admin-stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <i class="bi bi-box-seam"></i>
+              </div>
+              <div class="admin-stat-content">
+                <div class="admin-stat-label">Total Piezas Recibidas</div>
+                <div class="admin-stat-value" id="totalPiezas">0</div>
+                <div class="admin-stat-sublabel" id="totalPaquetes">0 paquetes</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-icon" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                <i class="bi bi-cash-stack"></i>
+              </div>
+              <div class="admin-stat-content">
+                <div class="admin-stat-label">Inversión Total</div>
+                <div class="admin-stat-value" id="totalInversion">$0.00</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <i class="bi bi-graph-up-arrow"></i>
+              </div>
+              <div class="admin-stat-content">
+                <div class="admin-stat-label">Venta Esperada</div>
+                <div class="admin-stat-value" id="totalVenta">$0.00</div>
+              </div>
+            </div>
+
+            <div class="admin-stat-card">
+              <div class="admin-stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                <i class="bi bi-percent"></i>
+              </div>
+              <div class="admin-stat-content">
+                <div class="admin-stat-label">Margen Esperado</div>
+                <div class="admin-stat-value" id="margenEsperado">$0.00</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Productos Recibidos -->
+          <div class="admin-table-container" id="productosRecibidosContainer" style="margin-bottom: 1.5rem;">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">
+                <i class="bi bi-check-circle-fill" style="color: #10b981; margin-right: 0.5rem;"></i>
+                Productos Recibidos
+              </h2>
+              <span id="badgeRecibidos" class="admin-badge success">0 productos</span>
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table class="admin-table" id="tablaRecibidos">
+                <thead>
+                  <tr>
+                    <th style="width: 8%; text-align: center;">Imagen</th>
+                    <th style="width: 25%;">Producto</th>
+                    <th style="width: 12%;">Categoría</th>
+                    <th style="width: 15%;">Variante</th>
+                    <th style="width: 10%; text-align: center;">Cantidad</th>
+                    <th style="width: 10%; text-align: right;">Costo Unit.</th>
+                    <th style="width: 12%; text-align: right;">Total Costo</th>
+                    <th style="width: 8%; text-align: right;">P. Venta</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaRecibidosBody">
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Productos Faltantes (Cerrados por Merma) -->
+          <div class="admin-table-container" id="productosFaltantesContainer" style="display: none; margin-bottom: 1.5rem;">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">
+                <i class="bi bi-x-circle-fill" style="color: #ef4444; margin-right: 0.5rem;"></i>
+                Productos Faltantes (Cerrados - No Llegarán)
+              </h2>
+              <span id="badgeFaltantes" class="admin-badge danger">0 productos</span>
+            </div>
+
+            <div style="overflow-x: auto;">
+              <table class="admin-table" id="tablaFaltantes">
+                <thead>
+                  <tr>
+                    <th style="width: 8%; text-align: center;">Imagen</th>
+                    <th style="width: 25%;">Producto</th>
+                    <th style="width: 12%;">Categoría</th>
+                    <th style="width: 15%;">Variante</th>
+                    <th style="width: 10%; text-align: center;">Faltante</th>
+                    <th style="width: 10%; text-align: right;">Costo Unit.</th>
+                    <th style="width: 12%; text-align: right;">Total Costo</th>
+                    <th style="width: 8%;">Motivo</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaFaltantesBody">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="errorContainer" style="display: none;">
+          <div class="empty-state">
+            <div class="empty-state-icon">❌</div>
+            <h3 class="empty-state-title">Error al cargar el detalle</h3>
+            <p class="empty-state-text" id="errorMessage">
+              No se pudo cargar la información de la entrada de almacén
+            </p>
+            <button
+              onclick="window.location.href='admin-reportes-ordenes-compra.html'"
+              style="
+                margin-top: 1rem;
+                padding: 0.75rem 1.5rem;
+                background: var(--razo-orange);
+                color: white;
+                border: none;
+                border-radius: 0.5rem;
+                font-weight: 600;
+                cursor: pointer;
+              "
+            >
+              Volver a Reportes
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/layout.js" defer></script>
+  <script src="js/sidebar-toggle.js" defer></script>
+  <script src="js/components/admin-sidebar-loader.js?v=2.0"></script>
+  <script src="js/components/admin-header-loader.js?v=2.0"></script>
+  <script src="js/instructional-banner.js"></script>
+  <script src="js/pdfGeneratorEntradaAlmacen.js"></script>
+  <script src="js/admin-entrada-almacen-detalle.js"></script>
+</body>
+</html>

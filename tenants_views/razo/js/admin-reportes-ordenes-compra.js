@@ -119,11 +119,11 @@ function renderizarOrdenes() {
     // Badge de estado con colores
     let estadoBadge = '';
     if (orden.estado_recepcion === 'Completa') {
-      estadoBadge = '<span style="background: #10b981; color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.8rem; font-weight: 600;"><i class="bi bi-check-circle-fill"></i> Completa</span>';
+      estadoBadge = '<span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #10b981; color: white; padding: 0.375rem 0.875rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 600;"><i class="bi bi-check-circle-fill"></i> Completa</span>';
     } else if (orden.estado_recepcion === 'Parcial') {
-      estadoBadge = '<span style="background: #f59e0b; color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.8rem; font-weight: 600;"><i class="bi bi-clock-fill"></i> Parcial</span>';
+      estadoBadge = '<span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #f59e0b; color: white; padding: 0.375rem 0.875rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 600;"><i class="bi bi-clock-fill"></i> Parcial</span>';
     } else {
-      estadoBadge = '<span style="background: #6b7280; color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.8rem; font-weight: 600;"><i class="bi bi-hourglass-split"></i> Pendiente</span>';
+      estadoBadge = '<span style="display: inline-flex; align-items: center; gap: 0.25rem; background: #6b7280; color: white; padding: 0.375rem 0.875rem; border-radius: 0.5rem; font-size: 0.8rem; font-weight: 600;"><i class="bi bi-hourglass-split"></i> Pendiente</span>';
     }
 
     // Formatear fechas
@@ -165,16 +165,25 @@ function renderizarOrdenes() {
       </td>
       <td style="text-align: center;">${estadoBadge}</td>
       <td style="text-align: center;">
-        <button 
-          class="btn-icon-action" 
-          onclick="generarReportePDF(${orden.ordencompraid})"
-          title="Generar Reporte PDF"
-          style="background: var(--razo-orange); color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; cursor: pointer; transition: all 0.3s ease;"
-          onmouseover="this.style.background='#ea580c'"
-          onmouseout="this.style.background='var(--razo-orange)'"
-        >
-          <i class="bi bi-file-earmark-pdf-fill"></i>
-        </button>
+        <div style="display: flex; gap: 0.5rem; justify-content: center;">
+          <button 
+            onclick="window.location.href='admin-entrada-almacen-detalle.html?id=${orden.ordencompraid}'"
+            style="background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; transition: all 0.3s ease; font-weight: 600; font-size: 0.875rem;"
+            onmouseover="this.style.background='#2563eb'"
+            onmouseout="this.style.background='#3b82f6'"
+          >
+            Ver Detalle
+          </button>
+          <button 
+            onclick="generarReportePDF(${orden.ordencompraid})"
+            title="Generar Reporte PDF"
+            style="background: var(--razo-orange); color: white; border: none; padding: 0.5rem; border-radius: 0.375rem; cursor: pointer; transition: all 0.3s ease;"
+            onmouseover="this.style.background='#ea580c'"
+            onmouseout="this.style.background='var(--razo-orange)'"
+          >
+            <i class="bi bi-file-earmark-pdf-fill"></i>
+          </button>
+        </div>
       </td>
     `;
 
@@ -197,7 +206,7 @@ function renderizarOrdenes() {
 }
 
 /**
- * Generar reporte PDF de una orden de compra
+ * Generar reporte PDF de una orden de compra usando módulo unificado
  */
 async function generarReportePDF(ordenId) {
   try {
@@ -223,149 +232,71 @@ async function generarReportePDF(ordenId) {
     const data = await response.json();
     const orden = data.orden;
 
-    // Crear PDF con jsPDF
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    // Encabezado
-    doc.setFillColor(249, 115, 22); // Naranja
-    doc.rect(0, 0, 210, 35, 'F');
-    
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('REPORTE DE RECEPCIÓN', 105, 15, { align: 'center' });
-    
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Orden de Compra #${orden.ordencompraid}`, 105, 25, { align: 'center' });
-
-    // Información de la orden
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(10);
-    let yPos = 45;
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('Proveedor:', 20, yPos);
-    doc.setFont('helvetica', 'normal');
-    doc.text(orden.proveedor_nombre || 'N/A', 50, yPos);
-
-    yPos += 7;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Responsable:', 20, yPos);
-    doc.setFont('helvetica', 'normal');
-    doc.text(orden.admin_nombre || 'N/A', 50, yPos);
-
-    yPos += 7;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Fecha Creación:', 20, yPos);
-    doc.setFont('helvetica', 'normal');
-    doc.text(new Date(orden.fechacreacion).toLocaleDateString('es-MX'), 50, yPos);
-
-    yPos += 7;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Estado:', 20, yPos);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(orden.estado_recepcion === 'Completa' ? 16 : (orden.estado_recepcion === 'Parcial' ? 245 : 107), 
-                     orden.estado_recepcion === 'Completa' ? 185 : (orden.estado_recepcion === 'Parcial' ? 158 : 114), 
-                     orden.estado_recepcion === 'Completa' ? 129 : (orden.estado_recepcion === 'Parcial' ? 11 : 128));
-    doc.text(orden.estado_recepcion, 50, yPos);
-    doc.setTextColor(0, 0, 0);
-
-    yPos += 12;
-
-    // Tabla de productos
-    const tableData = orden.detalles.map(detalle => [
-      detalle.sku || 'N/A',
-      detalle.nombreproducto || 'N/A',
-      `${detalle.color || 'N/A'}\n${detalle.dimensiones || 'N/A'}`,
-      `${detalle.cantidad_solicitada || 0}`,
-      `${detalle.cantidad_recibida || 0}`,
-      `${detalle.piezas_por_paquete || 1}`,
-      `${(detalle.cantidad_recibida || 0) * (detalle.piezas_por_paquete || 1)}`,
-      `$${(detalle.costounitario || 0).toFixed(2)}`
-    ]);
-
-    doc.autoTable({
-      startY: yPos,
-      head: [['SKU', 'Producto', 'Variante', 'Solicitado\n(paq)', 'Recibido\n(paq)', 'Pzas/Paq', 'Total\nPiezas', 'Costo Unit.']],
-      body: tableData,
-      theme: 'striped',
-      headStyles: {
-        fillColor: [249, 115, 22],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-        fontSize: 8
+    // Preparar datos para el módulo unificado de PDF
+    const datosPDF = {
+      orden: {
+        ordenCompraId: orden.ordencompraid,
+        proveedorNombre: orden.proveedor_nombre,
+        estadoRecepcion: orden.estado_recepcion,
+        fechaCreacion: orden.fechacreacion
       },
-      bodyStyles: {
-        fontSize: 8
+      productosRecibidos: (orden.productosRecibidos || []).map(p => ({
+        sku: p.sku,
+        producto: p.nombreproducto,
+        categoria: p.categoria,
+        variante: `${p.color || ''}\n${p.dimensiones || ''}`.trim(),
+        cantidadPiezas: p.piezasRecibidas,
+        costoUnitario: p.costounitario,
+        totalCosto: p.totalCosto,
+        precioVenta: p.preciounitario,
+        totalVenta: p.totalVenta
+      })),
+      productosFaltantes: (orden.productosFaltantes || []).map(p => ({
+        sku: p.sku,
+        producto: p.nombreproducto,
+        categoria: p.categoria,
+        variante: `${p.color || ''}\n${p.dimensiones || ''}`.trim(),
+        cantidadPiezas: p.piezasFaltantes,
+        costoUnitario: p.costounitario,
+        totalCosto: p.totalCosto,
+        precioVenta: p.preciounitario,
+        totalVenta: p.totalVenta
+      })),
+      sesion: orden.sesion ? {
+        responsable: orden.sesion.responsable || orden.admin_nombre,
+        fechaRecepcion: orden.sesion.fecha_ultima_actualizacion || orden.fechacreacion
+      } : {
+        responsable: orden.admin_nombre,
+        fechaRecepcion: orden.fechacreacion
       },
-      columnStyles: {
-        0: { cellWidth: 25 },
-        1: { cellWidth: 40 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 15, halign: 'center' },
-        4: { cellWidth: 15, halign: 'center' },
-        5: { cellWidth: 15, halign: 'center' },
-        6: { cellWidth: 15, halign: 'center' },
-        7: { cellWidth: 20, halign: 'right' }
+      totales: orden.totales || {
+        totalPiezas: 0,
+        totalPaquetes: 0,
+        totalInversion: 0,
+        totalVentaEsperada: 0
       }
-    });
+    };
 
-    // Resumen financiero
-    const finalY = doc.lastAutoTable.finalY + 10;
+    // Esperar a que el módulo PDF esté disponible
+    const waitForPDFModule = () => {
+      return new Promise((resolve) => {
+        if (typeof window.generarPDFEntradaAlmacen === 'function') {
+          resolve();
+        } else {
+          const checkInterval = setInterval(() => {
+            if (typeof window.generarPDFEntradaAlmacen === 'function') {
+              clearInterval(checkInterval);
+              resolve();
+            }
+          }, 100);
+        }
+      });
+    };
+
+    await waitForPDFModule();
     
-    doc.roundedRect(130, finalY, 70, 50, 3, 3, 'FD');
-    doc.setFillColor(255, 247, 237);
-    doc.rect(130, finalY, 70, 50, 'F');
-    doc.setDrawColor(249, 115, 22);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(130, finalY, 70, 50, 3, 3, 'S');
-
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(249, 115, 22);
-    doc.text('RESUMEN', 165, finalY + 8, { align: 'center' });
-
-    doc.setDrawColor(249, 115, 22);
-    doc.line(135, finalY + 11, 195, finalY + 11);
-
-    doc.setFontSize(9);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'normal');
-    
-    const totalPiezas = orden.detalles.reduce((sum, d) => sum + ((d.cantidad_recibida || 0) * (d.piezas_por_paquete || 1)), 0);
-    const totalCosto = orden.detalles.reduce((sum, d) => sum + ((d.cantidad_recibida || 0) * (d.piezas_por_paquete || 1) * (d.costounitario || 0)), 0);
-
-    doc.text('Total Piezas:', 135, finalY + 20);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${totalPiezas.toLocaleString('es-MX')} pzas`, 195, finalY + 20, { align: 'right' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.text('Total Paquetes:', 135, finalY + 28);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${orden.detalles.reduce((sum, d) => sum + (d.cantidad_recibida || 0), 0)} paq`, 195, finalY + 28, { align: 'right' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.text('Valor Total:', 135, finalY + 36);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(220, 38, 38);
-    doc.text(`$${totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`, 195, finalY + 36, { align: 'right' });
-
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Productos:', 135, finalY + 44);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${orden.detalles.length}`, 195, finalY + 44, { align: 'right' });
-
-    // Footer
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text(`Generado el ${new Date().toLocaleString('es-MX')}`, 105, 285, { align: 'center' });
-    doc.text('RazoConnect - Sistema de Gestión de Inventario', 105, 290, { align: 'center' });
-
-    // Descargar PDF
-    doc.save(`Reporte_OC_${ordenId}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    // Usar módulo unificado de generación de PDF
+    await window.generarPDFEntradaAlmacen(datosPDF);
 
     Swal.fire({
       icon: 'success',
