@@ -218,8 +218,8 @@ async function generarPDFPedido(req, res) {
 
         // Helper function to render table header (SMART PAGINATION)
         const renderTableHeader = (title, yPos, headerColor = '#F97316') => {
-            // Check if there's enough space for header + at least one row (minimum 100pts)
-            if (yPos > 680) {
+            // Check if there's enough space for header + at least one row (~70pts total)
+            if (yPos + 70 > 730) {
                 doc.addPage();
                 yPos = 260; // Start below header on new page
             }
@@ -259,8 +259,9 @@ async function generarPDFPedido(req, res) {
             doc.font('Helvetica').fillColor('#333333');
 
             items.forEach((item, index) => {
-                // Check if there's space for complete item block (description line 1 + line 2 = ~30pts)
-                if (currentY > 720) {
+                // Check if there's space for complete item block (row height + padding = ~30pts)
+                // Use 730 as threshold to ensure we have at least 30pts before page end (760)
+                if (currentY + rowHeight > 730) {
                     doc.addPage();
                     currentY = 260; // Start below header on new page
                 }
