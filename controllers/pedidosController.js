@@ -1165,78 +1165,119 @@ const crearPedido = async (req, res) => {
           cantidadTotalCobrar: split.cantidadTotalCobrar,
         });
 
-        // ❌ DESHABILITADO: Stock NO se deduce al crear el pedido
-        // ✅ NUEVO FLUJO: El stock se deduce SOLO cuando el admin cambia el estatus a "Confirmado"
-        // Esto permite que los pedidos se creen sin afectar inventario hasta que sean confirmados
-        // Ver: adminController.js -> updatePedidoEstatus() para la lógica de deducción
+        // ============================================
+        // HARD-RESERVE: Reservar stock físicamente
+        // ============================================
+        // El stock NO se descuenta, pero SÍ se RESERVA para evitar race conditions
+        // Stock físico permanece igual, pero cantidad_reservada aumenta
+        // Fórmula: Stock Disponible = cantidad - cantidad_reservada
         
-        /* CÓDIGO ORIGINAL COMENTADO - NO DEDUCIR STOCK AL CREAR PEDIDO
         const piezasRealmenteSurtidas = split.cantidadSurtida * tamanoValor;
-        if (piezasRealmenteSurtidas > 0 && masterInfo) {
-          try {
-            console.log(`\n🔄 [Pedido ${pedidoId}] Procesando allocation para Variante ${masterInfo.varianteId}: ${piezasRealmenteSurtidas} piezas`);
-
+        if (piezasRealmenteSurtidas > 0) {
+          console.log(`🔒 [HARD-RESERVE] Reservando ${piezasRealmenteSurtidas} piezas de variante ${item.varianteid}`);
+          
+          // Determinar admin_id para la reserva
+          const adminIdReserva = req.user?.adminId || null;
+          
+          if (adminIdReserva) {
+            // CASO 1: Cliente con admin asignado - reservar en stock específico
+            const reservaResult = await client.query(
+              `UPDATE stock_admin
+               SET cantidad_reservada = cantidad_reservada + $1,
+                   updated_at = NOW()
+               WHERE variante_id = $2 
+                 AND admin_id = $3 
+                 AND tenant_id = $4
+                 AND (cantidad - cantidad_reservada) >= $1
+               RETURNING stockadminid, cantidad, cantidad_reservada`,
+              [piezasRealmenteSurtidas, item.varianteid, adminIdReserva, tenant_id]
+            );
+            
+            if (reservaResult.rows.length === 0) {
+              throw new Error(`Stock insuficiente para reservar ${item.nombreproducto}. Otro pedido tomó el inventario.`);
+            }
+            
+            const stockInfo = reservaResult.rows[0];
+            console.log(`✅ [RESERVA] Stock: ${stockInfo.cantidad}, Reservado: ${stockInfo.cantidad_reservada}, Disponible: ${stockInfo.cantidad - stockInfo.cantidad_reservada}`);
+            
+            // Registrar en log de auditoría
+            await client.query(
+              `INSERT INTO inventario_reservas_log (
+                 stockadminid, variante_id, admin_id, pedido_id, detalle_id,
+                 cantidad_reservada, accion, cantidad_antes, cantidad_despues,
+                 usuario_id, tenant_id
+               )
+               VALUES ($1, $2, $3, $4, $5, $6, 'RESERVAR', $7, $8, $9, $10)`,
+              [
+                stockInfo.stockadminid,
+                item.varianteid,
+                adminIdReserva,
+                pedidoId,
+                detalleIdSurtido,
+                piezasRealmenteSurtidas,
+                stockInfo.cantidad_reservada - piezasRealmenteSurtidas,
+                stockInfo.cantidad_reservada,
+                clienteId,
+                tenant_id
+              ]
+            );
+          } else {
+            // CASO 2: Cliente sin admin - usar allocation automática
+            console.log(`🔍 [AUTO-ALLOCATION] Buscando admins con stock disponible`);
+            
             const allocationResult = await SmartStockService.allocateStockAutomatically({
-              varianteId: masterInfo.varianteId,
+              varianteId: item.varianteid,
               cantidadRequerida: piezasRealmenteSurtidas,
               tenantId: tenant_id,
               estrategia: 'DESC'
             });
-
+            
             if (!allocationResult.success) {
-              console.error(`❌ [Allocation] Insuficiente para Variante ${masterInfo.varianteId}: ${allocationResult.message}`);
               throw new Error(`Stock insuficiente para ${item.nombreproducto}: ${allocationResult.message}`);
             }
-
-            console.log(`✅ [Allocation] ${allocationResult.totalAsignado} piezas asignadas desde ${allocationResult.allocations.length} admin(s)`);
-            allocationResult.allocations.forEach(a => {
-              console.log(`   📦 Admin ${a.adminId} (${a.adminNombre}): ${a.cantidad} piezas`);
-            });
-
-            const adjustResult = await SmartStockService.adjustStockMultiAdmin({
-              allocations: allocationResult.allocations,
-              varianteId: masterInfo.varianteId,
-              pedidoId: pedidoId,
-              detalleId: detalleIdSurtido,
-              tenantId: tenant_id,
-              motivo: `Venta Pedido #${pedidoId}`,
-              client
-            });
-
-            if (!adjustResult.success) {
-              console.error(`❌ [MultiAdmin] Error al descontar stock:`, adjustResult.message);
-              throw new Error('Error al descontar stock de administradores');
-            }
-
-            console.log(`✅ [MultiAdmin] ${adjustResult.totalDescontado} piezas descontadas exitosamente`);
-
-            for (const result of adjustResult.results) {
-              if (result.success) {
+            
+            // Aplicar reservas en cada admin asignado
+            for (const allocation of allocationResult.allocations) {
+              const reservaResult = await client.query(
+                `UPDATE stock_admin
+                 SET cantidad_reservada = cantidad_reservada + $1,
+                     updated_at = NOW()
+                 WHERE variante_id = $2 
+                   AND admin_id = $3 
+                   AND tenant_id = $4
+                 RETURNING stockadminid, cantidad_reservada`,
+                [allocation.cantidad, item.varianteid, allocation.adminId, tenant_id]
+              );
+              
+              if (reservaResult.rows.length > 0) {
+                const stockInfo = reservaResult.rows[0];
+                console.log(`✅ [RESERVA] Admin ${allocation.adminId}: ${allocation.cantidad} piezas reservadas`);
+                
+                // Registrar en log
                 await client.query(
-                  `INSERT INTO Log_Inventario (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID, tenant_id)
-                   VALUES ($1, $2, $3, $4, $5, $6)`,
+                  `INSERT INTO inventario_reservas_log (
+                     stockadminid, variante_id, admin_id, pedido_id, detalle_id,
+                     cantidad_reservada, accion, cantidad_antes, cantidad_despues,
+                     usuario_id, tenant_id
+                   )
+                   VALUES ($1, $2, $3, $4, $5, $6, 'RESERVAR', $7, $8, $9, $10)`,
                   [
-                    masterInfo.varianteId,
-                    -result.cantidadDescontada,
-                    result.newStock,
-                    `Venta Pedido #${pedidoId} - Admin ${result.adminId}`,
+                    stockInfo.stockadminid,
+                    item.varianteid,
+                    allocation.adminId,
+                    pedidoId,
+                    detalleIdSurtido,
+                    allocation.cantidad,
+                    stockInfo.cantidad_reservada - allocation.cantidad,
+                    stockInfo.cantidad_reservada,
                     clienteId,
-                    tenant_id,
+                    tenant_id
                   ]
                 );
               }
             }
-
-            variantesAfectadas.add(masterInfo.varianteId);
-
-          } catch (stockError) {
-            console.error(`❌ [Allocation] Error crítico:`, stockError);
-            throw new Error(stockError.message || 'Stock insuficiente. El pedido no pudo ser procesado.');
           }
         }
-        FIN CÓDIGO COMENTADO */
-        
-        console.log(`ℹ️ [Pedido ${pedidoId}] Stock NO deducido al crear pedido - se deducirá al confirmar`)
       }
 
       // CRITICAL FIX: Insertar detalle backorder (SOLO si hay cantidad pendiente)
