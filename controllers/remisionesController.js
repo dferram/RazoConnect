@@ -374,21 +374,6 @@ exports.generarRemision = async (req, res) => {
 
     // 9. CRÍTICO: Generar movimiento en CXC solo si la remisión se emite y el cliente es de crédito
     if (emitir_inmediatamente && pedido.es_credito) {
-      await client.query(
-        `INSERT INTO cuentas_por_cobrar 
-         (pedido_id, cliente_id, remision_id, tipo_movimiento, monto, descripcion, tenant_id)
-         VALUES ($1, $2, $3, 'CARGO', $4, $5, $6)`,
-        [
-          pedido_id,
-          pedido.clienteid,
-          remision.remision_id,
-          totalRemision.toFixed(2),
-          `Remisión ${folio} - ${pedido.cliente_nombre} ${pedido.cliente_apellido || ''}`.trim(),
-          tenant_id
-        ]
-      );
-
-      // 10. NUEVO: Aplicar cargo real al saldo de crédito del cliente
       // Obtener información de crédito del cliente
       const creditoQuery = await client.query(
         `SELECT credito_id, saldo_deudor, limite_credito
@@ -401,7 +386,16 @@ exports.generarRemision = async (req, res) => {
       if (creditoQuery.rows.length > 0) {
         const creditoInfo = creditoQuery.rows[0];
         const saldoActual = parseFloat(creditoInfo.saldo_deudor || 0);
-        const nuevoSaldo = parseFloat((saldoActual + totalRemision).toFixed(2));
+        const montoRemision = parseFloat(totalRemision);
+        
+        // NUEVA LÓGICA: El saldo ya incluye la RESERVA del pedido completo.
+        // Ahora debemos:
+        // 1. Restar la reserva del pedido completo
+        // 2. Sumar el cargo real de la remisión
+        // Resultado neto: saldo_deudor refleja solo lo que realmente se ha entregado
+        
+        const saldoSinReserva = parseFloat((saldoActual - montoTotalPedido).toFixed(2));
+        const nuevoSaldo = parseFloat((saldoSinReserva + montoRemision).toFixed(2));
 
         // Actualizar saldo deudor
         await client.query(
@@ -411,7 +405,35 @@ exports.generarRemision = async (req, res) => {
           [nuevoSaldo, creditoInfo.credito_id]
         );
 
-        // Registrar movimiento de crédito
+        console.log(`💳 [CONVERSIÓN RESERVA → CARGO] Pedido #${pedido_id}`);
+        console.log(`   Saldo con reserva: $${saldoActual.toFixed(2)}`);
+        console.log(`   Reserva del pedido: -$${montoTotalPedido.toFixed(2)}`);
+        console.log(`   Cargo de remisión: +$${montoRemision.toFixed(2)}`);
+        console.log(`   Nuevo saldo: $${nuevoSaldo.toFixed(2)}`);
+
+        // Registrar movimiento de AJUSTE (quitar reserva)
+        await client.query(
+          `INSERT INTO credito_movimientos (
+             credito_id,
+             tipo_movimiento,
+             monto,
+             referencia_id,
+             descripcion,
+             saldo_despues_movimiento,
+             tenant_id
+           )
+           VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6)`,
+          [
+            creditoInfo.credito_id,
+            (-montoTotalPedido).toFixed(2),
+            `PED-${pedido_id}`,
+            `Liberación de reserva del pedido #${pedido_id}`,
+            saldoSinReserva.toFixed(2),
+            tenant_id
+          ]
+        );
+
+        // Registrar movimiento de CARGO (cargo real de la remisión)
         await client.query(
           `INSERT INTO credito_movimientos (
              credito_id,
@@ -425,13 +447,30 @@ exports.generarRemision = async (req, res) => {
            VALUES ($1, 'CARGO', $2, $3, $4, $5, $6)`,
           [
             creditoInfo.credito_id,
-            totalRemision.toFixed(2),
+            montoRemision.toFixed(2),
             `REM-${remision.remision_id}`,
-            `Cargo por remisión ${folio} (Pedido #${pedido_id})`,
+            `Cargo confirmado por remisión ${folio} (Pedido #${pedido_id})`,
             nuevoSaldo.toFixed(2),
             tenant_id
           ]
         );
+
+        // AHORA SÍ: Crear registro en CXC (solo cuando se confirma)
+        await client.query(
+          `INSERT INTO cuentas_por_cobrar 
+           (pedido_id, cliente_id, remision_id, tipo_movimiento, monto, descripcion, tenant_id)
+           VALUES ($1, $2, $3, 'CARGO', $4, $5, $6)`,
+          [
+            pedido_id,
+            pedido.clienteid,
+            remision.remision_id,
+            montoRemision.toFixed(2),
+            `Remisión ${folio} - ${pedido.cliente_nombre} ${pedido.cliente_apellido || ''}`.trim(),
+            tenant_id
+          ]
+        );
+
+        console.log(`✅ [CXC CREADO] Registro en cuentas_por_cobrar por $${montoRemision.toFixed(2)}`);
       }
     }
 
