@@ -11853,7 +11853,8 @@ const getAllOrdenesCompra = async (req, res) => {
         p.nombreempresa as proveedornombre,
         COUNT(doc.detalleoc_id) as totalproductos,
         a.nombre as adminnombre,
-        CONCAT(c.nombre, ' ', c.apellido) as nombrecliente
+        CONCAT(c.nombre, ' ', c.apellido) as nombrecliente,
+        COALESCE(SUM(doc.cantidadrecibida), 0) as total_recibido
       FROM ordenesdecompra oc
       INNER JOIN proveedores p ON oc.proveedorid = p.proveedorid
       LEFT JOIN detallesordencompra doc ON oc.ordencompraid = doc.ordencompraid
@@ -11913,6 +11914,7 @@ const getAllOrdenesCompra = async (req, res) => {
       GROUP BY oc.ordencompraid, oc.proveedorid, oc.fechacreacion, 
                oc.fechaentregaesperada, oc.estatus, oc.origenoc, oc.usuario_creador_id,
                oc.admin_creador_id, p.nombreempresa, a.nombre, c.nombre, c.apellido
+      HAVING COALESCE(SUM(doc.cantidadrecibida), 0) > 0
       ORDER BY oc.fechacreacion DESC
     `;
 
@@ -11924,8 +11926,10 @@ const getAllOrdenesCompra = async (req, res) => {
       data: {
         ordenes: result.rows.map((row) => ({
           ordenCompraId: row.ordencompraid,
+          ordencompraid: row.ordencompraid,
           proveedorId: row.proveedorid,
           proveedorNombre: row.proveedornombre,
+          proveedor_nombre: row.proveedornombre,
           fechaCreacion: row.fechacreacion,
           fechaEntregaEsperada: row.fechaentregaesperada,
           estatus: row.estatus,

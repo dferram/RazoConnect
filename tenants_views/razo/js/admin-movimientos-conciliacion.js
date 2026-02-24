@@ -78,8 +78,8 @@ async function cargarOrdenesCompra() {
     const token = localStorage.getItem('razoconnect_admin_token');
     if (!token) return;
 
-    // Solo cargar órdenes que tengan recepciones (Completa o Parcial)
-    const response = await fetch('/api/admin/ordenes-compra?estatus=Pendiente,Parcial', {
+    // Solo cargar órdenes que tengan al menos un producto recibido (filtrado en backend)
+    const response = await fetch('/api/admin/ordenes-compra', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
