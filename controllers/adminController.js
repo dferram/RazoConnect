@@ -17566,32 +17566,122 @@ async function getOrdenCompraReporteDetallado(req, res) {
       });
     }
 
-    // Obtener detalles de productos
+    // Obtener detalles de productos con información completa
     const detallesResult = await db.query(
       `SELECT 
          doc.detalleoc_id AS detalleordencompraid,
          doc.varianteid,
          doc.cantidadsolicitada AS cantidad_solicitada,
          doc.cantidadrecibida AS cantidad_recibida,
+         doc.piezasporpaquete AS piezas_por_paquete,
+         doc.costounitario,
+         doc.cerrado_por_merma,
+         doc.fecha_cierre_merma,
+         doc.motivo_discrepancia,
+         doc.tipo_discrepancia,
          pv.sku,
          pv.dimensiones,
-         pv.piezasporpaquete AS piezas_por_paquete,
-         pv.costounitario,
+         pv.preciounitario,
          pv.color_nombre AS color,
-         p.nombreproducto
+         p.nombreproducto,
+         c.nombre AS categoria,
+         COALESCE(
+           (SELECT pvi.url_imagen 
+            FROM producto_variante_imagenes pvi 
+            WHERE pvi.varianteid = pv.varianteid 
+            ORDER BY pvi.orden 
+            LIMIT 1),
+           (SELECT pi.url_imagen 
+            FROM producto_imagenes pi 
+            WHERE pi.productoid = p.productoid 
+            ORDER BY pi.orden 
+            LIMIT 1)
+         ) AS imagen_url
        FROM detallesordencompra doc
        INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
        INNER JOIN productos p ON pv.productoid = p.productoid
+       LEFT JOIN categorias c ON p.categoriaid = c.categoriaid
        WHERE doc.ordencompraid = $1
-       ORDER BY p.nombreproducto, pv.dimensiones`,
+       ORDER BY doc.cerrado_por_merma ASC, p.nombreproducto, pv.dimensiones`,
       [ordenId]
     );
+
+    // Separar productos recibidos y faltantes
+    const productosRecibidos = [];
+    const productosFaltantes = [];
+
+    detallesResult.rows.forEach(detalle => {
+      const piezasPorPaquete = parseInt(detalle.piezas_por_paquete, 10) || 1;
+      const costoUnitario = parseFloat(detalle.costounitario) || 0;
+      const precioUnitario = parseFloat(detalle.preciounitario) || 0;
+
+      if (detalle.cerrado_por_merma) {
+        // Producto faltante (cerrado por merma)
+        const cantidadFaltante = detalle.cantidad_solicitada - detalle.cantidad_recibida;
+        const piezasFaltantes = cantidadFaltante * piezasPorPaquete;
+        
+        productosFaltantes.push({
+          ...detalle,
+          cantidadFaltante,
+          piezasFaltantes,
+          totalCosto: piezasFaltantes * costoUnitario,
+          totalVenta: piezasFaltantes * precioUnitario
+        });
+      }
+
+      // Siempre agregar productos recibidos (si se recibió algo)
+      if (detalle.cantidad_recibida > 0) {
+        const piezasRecibidas = detalle.cantidad_recibida * piezasPorPaquete;
+        
+        productosRecibidos.push({
+          ...detalle,
+          piezasRecibidas,
+          totalCosto: piezasRecibidas * costoUnitario,
+          totalVenta: piezasRecibidas * precioUnitario
+        });
+      }
+    });
+
+    // Obtener información de sesión (quien trabajó en la recepción)
+    const sesionResult = await db.query(
+      `SELECT 
+         a.nombre AS responsable,
+         a.email AS responsable_email,
+         MAX(doc.fecha_cierre_merma) AS fecha_ultima_actualizacion
+       FROM detallesordencompra doc
+       INNER JOIN ordenesdecompra oc ON doc.ordencompraid = oc.ordencompraid
+       LEFT JOIN administradores a ON oc.admin_creador_id = a.adminid
+       WHERE doc.ordencompraid = $1
+       GROUP BY a.nombre, a.email`,
+      [ordenId]
+    );
+
+    // Calcular totales
+    const totalPiezasRecibidas = productosRecibidos.reduce((sum, p) => sum + (p.piezasRecibidas || 0), 0);
+    const totalPaquetesRecibidos = productosRecibidos.reduce((sum, p) => sum + (p.cantidad_recibida || 0), 0);
+    const totalInversion = productosRecibidos.reduce((sum, p) => sum + (p.totalCosto || 0), 0);
+    const totalVentaEsperada = productosRecibidos.reduce((sum, p) => sum + (p.totalVenta || 0), 0);
+
+    const totalPiezasFaltantes = productosFaltantes.reduce((sum, p) => sum + (p.piezasFaltantes || 0), 0);
+    const totalCostoFaltantes = productosFaltantes.reduce((sum, p) => sum + (p.totalCosto || 0), 0);
 
     return res.json({
       success: true,
       orden: {
         ...ordenResult.rows[0],
-        detalles: detallesResult.rows
+        detalles: detallesResult.rows,
+        productosRecibidos,
+        productosFaltantes,
+        sesion: sesionResult.rows[0] || null,
+        totales: {
+          totalPiezas: totalPiezasRecibidas,
+          totalPaquetes: totalPaquetesRecibidos,
+          totalInversion,
+          totalVentaEsperada,
+          totalPiezasFaltantes,
+          totalCostoFaltantes,
+          margenEsperado: totalVentaEsperada - totalInversion
+        }
       }
     });
   } catch (error) {
