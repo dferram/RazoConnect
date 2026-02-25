@@ -4332,7 +4332,7 @@ const updatePedidoEstatus = async (req, res) => {
           d.detalleid,
           d.esbackorder,
           pv.sku,
-          p.nombre as producto_nombre,
+          p.nombreproducto as producto_nombre,
           pv.dimensiones
          FROM detallesdelpedido d
          INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
@@ -4375,7 +4375,7 @@ const updatePedidoEstatus = async (req, res) => {
           d.varianteid,
           d.cantidadpaquetes,
           pv.sku,
-          p.nombre as producto_nombre,
+          p.nombreproducto as producto_nombre,
           pv.dimensiones,
           COALESCE(pv.stock, 0) as stock_actual
          FROM detallesdelpedido d
@@ -4475,7 +4475,7 @@ const updatePedidoEstatus = async (req, res) => {
           d.cantidadpaquetes,
           d.piezastotales,
           pv.sku,
-          p.nombre as producto_nombre
+          p.nombreproducto as producto_nombre
          FROM detallesdelpedido d
          INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
          INNER JOIN productos p ON p.productoid = pv.productoid
