@@ -2302,3 +2302,79 @@ body.sidebar-collapsed .admin-main-content {
     justify-content: center;
   }
 }
+
+/* ============================================
+   AUTOCOMPLETADO VISUAL DE PRODUCTOS
+   ============================================ */
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+  margin-top: 0.5rem;
+  display: none;
+}
+
+.autocomplete-dropdown.show {
+  display: block;
+}
+
+.autocomplete-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.2s;
+}
+
+.autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-item:hover {
+  background-color: #fef3e7;
+}
+
+.autocomplete-item-image {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  margin-right: 1rem;
+  border: 1px solid #e5e7eb;
+}
+
+.autocomplete-item-info {
+  flex: 1;
+}
+
+.autocomplete-item-name {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.autocomplete-item-category {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.autocomplete-no-results {
+  padding: 1.5rem;
+  text-align: center;
+  color: #9ca3af;
+}
+
+.autocomplete-loading {
+  padding: 1.5rem;
+  text-align: center;
+  color: #6b7280;
+}

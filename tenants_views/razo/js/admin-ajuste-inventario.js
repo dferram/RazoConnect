@@ -1,18 +1,28 @@
 const API_BASE_URL = '/api/admin';
 
-let productoSeleccionado = null;
+let varianteSeleccionada = null;
+let productoActual = null;
 let motivosCache = {};
+let searchTimeout = null;
+let modalVariantes = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     initEventListeners();
+    modalVariantes = new bootstrap.Modal(document.getElementById('modalVariantes'));
 });
 
 const initEventListeners = () => {
-    document.getElementById('btn-buscar-sku').addEventListener('click', buscarProducto);
-    document.getElementById('sku-search').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            buscarProducto();
+    const searchInput = document.getElementById('producto-search');
+    searchInput.addEventListener('input', handleSearchInput);
+    searchInput.addEventListener('focus', () => {
+        if (searchInput.value.trim().length >= 2) {
+            document.getElementById('autocomplete-results').classList.add('show');
+        }
+    });
+    
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#producto-search') && !e.target.closest('#autocomplete-results')) {
+            document.getElementById('autocomplete-results').classList.remove('show');
         }
     });
     
@@ -21,20 +31,33 @@ const initEventListeners = () => {
     document.getElementById('btn-limpiar').addEventListener('click', limpiarFormulario);
 };
 
-const buscarProducto = async () => {
-    const sku = document.getElementById('sku-search').value.trim();
+const handleSearchInput = (e) => {
+    const query = e.target.value.trim();
+    const resultsContainer = document.getElementById('autocomplete-results');
     
-    if (!sku) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'SKU Requerido',
-            text: 'Por favor ingresa un SKU para buscar'
-        });
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    
+    if (query.length < 2) {
+        resultsContainer.classList.remove('show');
+        resultsContainer.innerHTML = '';
         return;
     }
+    
+    resultsContainer.innerHTML = '<div class="autocomplete-loading"><i class="bi bi-hourglass-split"></i> Buscando...</div>';
+    resultsContainer.classList.add('show');
+    
+    searchTimeout = setTimeout(() => {
+        buscarProductos(query);
+    }, 300);
+};
 
+const buscarProductos = async (query) => {
+    const resultsContainer = document.getElementById('autocomplete-results');
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/inventario/buscar-producto?sku=${encodeURIComponent(sku)}`, {
+        const response = await fetch(`${API_BASE_URL}/inventario/productos/autocompletado?q=${encodeURIComponent(query)}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             }
@@ -43,72 +66,157 @@ const buscarProducto = async () => {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.error || 'Error al buscar producto');
+            throw new Error(data.error || 'Error al buscar productos');
         }
 
         if (data.productos.length === 0) {
-            document.getElementById('sku-results').innerHTML = `
-                <div class="alert alert-warning mb-0">
-                    <i class="bi bi-exclamation-triangle"></i> No se encontraron productos con ese SKU
+            resultsContainer.innerHTML = `
+                <div class="autocomplete-no-results">
+                    <i class="bi bi-search"></i> No se encontraron productos
                 </div>
             `;
             return;
         }
 
-        mostrarResultadosBusqueda(data.productos);
+        mostrarResultadosAutocompletado(data.productos);
 
     } catch (error) {
-        console.error('Error al buscar producto:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message
-        });
+        console.error('Error al buscar productos:', error);
+        resultsContainer.innerHTML = `
+            <div class="autocomplete-no-results text-danger">
+                <i class="bi bi-exclamation-triangle"></i> Error al buscar
+            </div>
+        `;
     }
 };
 
-const mostrarResultadosBusqueda = (productos) => {
-    const resultsContainer = document.getElementById('sku-results');
+const mostrarResultadosAutocompletado = (productos) => {
+    const resultsContainer = document.getElementById('autocomplete-results');
     
-    const html = `
-        <div class="list-group">
-            ${productos.map(p => `
-                <button type="button" class="list-group-item list-group-item-action" 
-                        onclick="seleccionarProducto(${JSON.stringify(p).replace(/"/g, '&quot;')})">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <strong class="mb-1">${p.sku}</strong>
-                            <p class="mb-1">${p.nombreproducto}</p>
-                            <small class="text-muted">
-                                ${p.dimensiones || 'Sin dimensiones'} 
-                                ${p.color_nombre ? `| Color: ${p.color_nombre}` : ''}
-                            </small>
-                        </div>
-                        <span class="badge bg-primary">Seleccionar</span>
-                    </div>
-                </button>
-            `).join('')}
+    const html = productos.map(p => `
+        <div class="autocomplete-item" data-producto-id="${p.productoid}">
+            <img src="${p.imagen_url}" alt="${p.nombreproducto}" class="autocomplete-item-image" 
+                 onerror="this.src='/images/placeholder-product.png'">
+            <div class="autocomplete-item-info">
+                <div class="autocomplete-item-name">${p.nombreproducto}</div>
+                <div class="autocomplete-item-category">
+                    <i class="bi bi-tag"></i> ${p.nombrecategoria}
+                    ${p.sku_maestro ? `<span class="ms-2"><i class="bi bi-upc"></i> ${p.sku_maestro}</span>` : ''}
+                </div>
+            </div>
         </div>
-    `;
+    `).join('');
     
     resultsContainer.innerHTML = html;
+    
+    resultsContainer.querySelectorAll('.autocomplete-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const productoId = item.dataset.productoId;
+            abrirModalVariantes(productoId);
+            resultsContainer.classList.remove('show');
+            document.getElementById('producto-search').value = '';
+        });
+    });
 };
 
-window.seleccionarProducto = (producto) => {
-    productoSeleccionado = producto;
+const abrirModalVariantes = async (productoId) => {
+    const tbody = document.getElementById('variantes-tbody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="3" class="text-center text-muted">
+                <i class="bi bi-hourglass-split"></i> Cargando variantes...
+            </td>
+        </tr>
+    `;
     
-    document.getElementById('sku-seleccionado').value = producto.sku;
+    modalVariantes.show();
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/inventario/productos/${productoId}/variantes`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
+            }
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Error al cargar variantes');
+        }
+
+        mostrarVariantes(data.variantes);
+
+    } catch (error) {
+        console.error('Error al cargar variantes:', error);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3" class="text-center text-danger">
+                    <i class="bi bi-exclamation-triangle"></i> ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+};
+
+const mostrarVariantes = (variantes) => {
+    const tbody = document.getElementById('variantes-tbody');
+    const productoInfo = document.getElementById('producto-info');
+    
+    if (variantes.length > 0) {
+        productoInfo.innerHTML = `
+            <div class="alert alert-info mb-0">
+                <strong><i class="bi bi-box-seam"></i> ${variantes[0].nombreproducto}</strong>
+                <p class="mb-0 mt-1"><small>Selecciona la variante que deseas ajustar</small></p>
+            </div>
+        `;
+    }
+    
+    const html = variantes.map(v => {
+        const atributos = [];
+        if (v.dimensiones) atributos.push(`<i class="bi bi-rulers"></i> ${v.dimensiones}`);
+        if (v.color_nombre) {
+            const colorBadge = v.color_hex 
+                ? `<span class="badge" style="background-color: ${v.color_hex}; color: white;">${v.color_nombre}</span>`
+                : `<span class="badge bg-secondary">${v.color_nombre}</span>`;
+            atributos.push(colorBadge);
+        }
+        
+        return `
+            <tr>
+                <td><strong>${v.sku}</strong></td>
+                <td>${atributos.length > 0 ? atributos.join(' ') : '<span class="text-muted">Sin atributos</span>'}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-primary" 
+                            onclick="seleccionarVariante(${JSON.stringify(v).replace(/"/g, '&quot;')})">
+                        <i class="bi bi-check-circle"></i> Seleccionar
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    tbody.innerHTML = html;
+};
+
+window.seleccionarVariante = (variante) => {
+    varianteSeleccionada = variante;
+    
+    document.getElementById('variante-seleccionada').value = variante.varianteid;
+    document.getElementById('sku-seleccionado').value = variante.sku;
+    
+    const atributos = [];
+    if (variante.dimensiones) atributos.push(variante.dimensiones);
+    if (variante.color_nombre) atributos.push(`Color: ${variante.color_nombre}`);
     
     document.getElementById('producto-seleccionado').innerHTML = `
         <div class="d-flex justify-content-between align-items-start">
             <div>
                 <h6 class="mb-1 text-success">
-                    <i class="bi bi-check-circle-fill"></i> ${producto.sku}
+                    <i class="bi bi-check-circle-fill"></i> ${variante.sku}
                 </h6>
-                <p class="mb-1"><strong>${producto.nombreproducto}</strong></p>
+                <p class="mb-1"><strong>${variante.nombreproducto}</strong></p>
                 <small class="text-muted">
-                    ${producto.dimensiones || 'Sin dimensiones'} 
-                    ${producto.color_nombre ? `| Color: ${producto.color_nombre}` : ''}
+                    ${atributos.length > 0 ? atributos.join(' | ') : 'Sin atributos'}
                 </small>
             </div>
             <button type="button" class="btn btn-sm btn-outline-danger" onclick="limpiarSeleccion()">
@@ -117,12 +225,13 @@ window.seleccionarProducto = (producto) => {
         </div>
     `;
     
-    document.getElementById('sku-results').innerHTML = '';
-    document.getElementById('sku-search').value = '';
+    modalVariantes.hide();
 };
 
 window.limpiarSeleccion = () => {
-    productoSeleccionado = null;
+    varianteSeleccionada = null;
+    productoActual = null;
+    document.getElementById('variante-seleccionada').value = '';
     document.getElementById('sku-seleccionado').value = '';
     document.getElementById('producto-seleccionado').innerHTML = `
         <p class="text-muted mb-0">
@@ -182,11 +291,11 @@ const renderizarMotivos = (motivos, tipo) => {
 const registrarAjuste = async (e) => {
     e.preventDefault();
 
-    if (!productoSeleccionado) {
+    if (!varianteSeleccionada) {
         Swal.fire({
             icon: 'warning',
-            title: 'Producto No Seleccionado',
-            text: 'Por favor busca y selecciona un producto antes de continuar'
+            title: 'Variante No Seleccionada',
+            text: 'Por favor busca y selecciona una variante antes de continuar'
         });
         return;
     }
@@ -196,12 +305,17 @@ const registrarAjuste = async (e) => {
     const motivo = document.getElementById('motivo').value;
     const observaciones = document.getElementById('observaciones').value.trim();
 
+    const atributos = [];
+    if (varianteSeleccionada.dimensiones) atributos.push(varianteSeleccionada.dimensiones);
+    if (varianteSeleccionada.color_nombre) atributos.push(`Color: ${varianteSeleccionada.color_nombre}`);
+    
     const confirmResult = await Swal.fire({
         title: '¿Confirmar Ajuste de Inventario?',
         html: `
             <div class="text-start">
-                <p><strong>Producto:</strong> ${productoSeleccionado.nombreproducto}</p>
-                <p><strong>SKU:</strong> ${productoSeleccionado.sku}</p>
+                <p><strong>Producto:</strong> ${varianteSeleccionada.nombreproducto}</p>
+                <p><strong>SKU:</strong> ${varianteSeleccionada.sku}</p>
+                ${atributos.length > 0 ? `<p><strong>Atributos:</strong> ${atributos.join(' | ')}</p>` : ''}
                 <p><strong>Tipo:</strong> <span class="badge bg-${tipo === 'MERMA' ? 'danger' : 'success'}">${tipo}</span></p>
                 <p><strong>Cantidad:</strong> ${cantidad} unidades</p>
                 <p><strong>Motivo:</strong> ${document.getElementById('motivo').selectedOptions[0].text}</p>
@@ -235,7 +349,7 @@ const registrarAjuste = async (e) => {
                 'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
             },
             body: JSON.stringify({
-                sku: productoSeleccionado.sku,
+                sku: varianteSeleccionada.sku,
                 tipo,
                 cantidad,
                 motivo,
@@ -284,7 +398,9 @@ const registrarAjuste = async (e) => {
 const limpiarFormulario = () => {
     document.getElementById('form-ajuste-inventario').reset();
     limpiarSeleccion();
-    document.getElementById('sku-results').innerHTML = '';
+    document.getElementById('autocomplete-results').classList.remove('show');
+    document.getElementById('autocomplete-results').innerHTML = '';
     document.getElementById('motivo').innerHTML = '<option value="">Primero selecciona el tipo de ajuste...</option>';
-    productoSeleccionado = null;
+    varianteSeleccionada = null;
+    productoActual = null;
 };
