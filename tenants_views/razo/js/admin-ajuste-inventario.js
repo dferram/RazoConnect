@@ -200,8 +200,7 @@ const mostrarVariantes = (variantes) => {
                 <td>
                     <img src="${imagenUrl}" 
                          alt="${v.sku}" 
-                         class="img-thumbnail"
-                         style="width: 60px; height: 60px; object-fit: cover;"
+                         class="razo-variant-img"
                          onerror="this.src='/images/placeholder-product.png'">
                 </td>
                 <td><strong>${v.sku}</strong></td>

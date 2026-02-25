@@ -155,25 +155,25 @@
 
     <!-- Modal de Selección de Variantes -->
     <div class="modal fade" id="modalVariantes" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content shadow">
-                <div class="modal-header bg-light">
+        <div class="modal-dialog modal-dialog-centered razo-variantes-modal">
+            <div class="modal-content">
+                <div class="modal-header">
                     <h5 class="modal-title" id="modalVariantesLabel">
                         <i class="bi bi-box-seam"></i> Selecciona una Variante
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div id="producto-info" class="mb-3"></div>
-                    <div class="table-responsive">
-                        <table class="table table-hover admin-table align-middle">
+                <div class="modal-body p-0">
+                    <div id="producto-info" class="mb-3 px-3 pt-3"></div>
+                    <div class="razo-variantes-table-wrapper">
+                        <table class="table razo-variantes-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 80px;">Imagen</th>
-                                    <th style="width: 150px;">SKU</th>
-                                    <th style="width: 150px;">Medidas</th>
-                                    <th style="width: 200px;">Color</th>
-                                    <th style="width: 120px;">Acción</th>
+                                    <th>Imagen</th>
+                                    <th>SKU</th>
+                                    <th>Medidas</th>
+                                    <th>Color</th>
+                                    <th>Acción</th>
                                 </tr>
                             </thead>
                             <tbody id="variantes-tbody">

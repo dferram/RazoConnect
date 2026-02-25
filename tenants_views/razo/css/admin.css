@@ -1664,11 +1664,163 @@ body.sidebar-collapsed .admin-main-content {
   .sidebar-toggle-btn:hover {
     background: var(--razo-orange-dark);
     transform: scale(1.05);
-    box-shadow: 0 8px 20px rgba(255, 119, 51, 0.45);
+    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.25);
   }
 
   .sidebar-toggle-btn:active {
     transform: scale(0.95);
+  }
+
+  /* ========================================
+   COMPONENTE: Modal de Variantes Personalizado
+   ======================================== */
+
+  /* Contenedor personalizado para el modal de variantes */
+  .razo-variantes-modal {
+    max-width: 1200px;
+    width: 90%;
+    margin: 1.75rem auto;
+  }
+  
+  /* Estética de la tabla interna */
+  .razo-variantes-modal .modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+    overflow: hidden;
+  }
+
+  .razo-variantes-modal .modal-header {
+    background: linear-gradient(135deg, #F97316 0%, #FF8C42 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-bottom: none;
+  }
+
+  .razo-variantes-modal .modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: white;
+  }
+
+  .razo-variantes-modal .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+  }
+
+  .razo-variantes-modal .btn-close:hover {
+    opacity: 1;
+  }
+  
+  .razo-variantes-table-wrapper {
+    overflow-x: auto;
+    padding: 0;
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  
+  .razo-variantes-table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  
+  .razo-variantes-table th {
+    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    font-weight: 700;
+    color: #1e293b;
+    white-space: nowrap;
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid #cbd5e1;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .razo-variantes-table td {
+    vertical-align: middle;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9375rem;
+  }
+  
+  .razo-variant-img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .razo-variant-img:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .razo-variantes-table tbody tr {
+    transition: background-color 0.2s ease;
+  }
+
+  .razo-variantes-table tbody tr:hover {
+    background-color: #fef3e7;
+  }
+  
+  .razo-variantes-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* Estilos para badges dentro del modal */
+  .razo-variantes-table .badge {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border-radius: 8px;
+  }
+
+  /* Botones de selección mejorados */
+  .razo-variantes-table .btn-primary {
+    background: linear-gradient(135deg, #F97316 0%, #FF8C42 100%);
+    border: none;
+    padding: 0.625rem 1.25rem;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25);
+  }
+
+  .razo-variantes-table .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+  }
+
+  .razo-variantes-table .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  /* Scrollbar personalizado para la tabla */
+  .razo-variantes-table-wrapper::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .razo-variantes-table-wrapper::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+  }
+
+  .razo-variantes-table-wrapper::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #F97316 0%, #FF8C42 100%);
+    border-radius: 10px;
+  }
+
+  .razo-variantes-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
   }
 
   /* Overlay oscuro cuando sidebar está abierto */
