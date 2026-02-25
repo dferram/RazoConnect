@@ -1672,26 +1672,52 @@ body.sidebar-collapsed .admin-main-content {
   }
 
   /* ========================================
-   MODAL DE VARIANTES - DISEÑO SIMPLE Y ANCHO
+   ESTANDARIZACIÓN VISUAL DE MODALES - TODO EL SISTEMA
+   Solo afecta colores y estructura, NO tamaños
+   ======================================== */
+
+  /* Headers de modales con gradiente naranja */
+  .modal-header {
+    background: linear-gradient(135deg, #F97316 0%, #FF8C42 100%) !important;
+    color: white !important;
+    border-bottom: none !important;
+  }
+
+  .modal-title {
+    color: white !important;
+    font-weight: 700 !important;
+  }
+
+  /* Botón cerrar blanco en headers */
+  .modal-header .btn-close {
+    filter: brightness(0) invert(1) !important;
+    opacity: 0.8 !important;
+  }
+
+  .modal-header .btn-close:hover {
+    opacity: 1 !important;
+  }
+
+  /* Contenido del modal con bordes redondeados */
+  .modal-content {
+    border-radius: 16px !important;
+    border: none !important;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18) !important;
+    overflow: hidden !important;
+  }
+
+  /* Footer de modales */
+  .modal-footer {
+    border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+    background: #f8f9fa !important;
+  }
+
+  /* ========================================
+   MODAL DE VARIANTES - DISEÑO ESPECÍFICO
    ======================================== */
 
   #modalVariantes .modal-dialog {
     max-width: 1000px !important;
-  }
-
-  #modalVariantes .modal-header {
-    background: linear-gradient(135deg, #F97316 0%, #FF8C42 100%);
-    color: white;
-    padding: 2rem;
-  }
-
-  #modalVariantes .modal-title {
-    color: white;
-    font-weight: 700;
-  }
-
-  #modalVariantes .btn-close {
-    filter: brightness(0) invert(1);
   }
 
   #modalVariantes th {
