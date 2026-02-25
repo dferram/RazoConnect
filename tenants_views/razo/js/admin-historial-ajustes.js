@@ -161,9 +161,14 @@ const renderizarTabla = (movimientos) => {
     if (movimientos.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" class="text-center text-muted py-5">
-                    <i class="bi bi-inbox fs-3"></i>
-                    <p class="mt-2">No se encontraron ajustes manuales con los filtros aplicados</p>
+                <td colspan="9" class="text-center py-5">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <h3 class="empty-state-title">No se encontraron ajustes manuales</h3>
+                        <p class="empty-state-text">
+                            Los ajustes de merma y adición aparecerán aquí cuando se registren
+                        </p>
+                    </div>
                 </td>
             </tr>
         `;

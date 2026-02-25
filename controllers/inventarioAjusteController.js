@@ -317,7 +317,11 @@ const obtenerEstadisticasAjustes = async (req, res) => {
         const { tenant_id } = req.tenant;
         const { fechaInicio, fechaFin } = req.query;
 
-        let whereConditions = ['mi.tenant_id = $1'];
+        // ✅ FILTRO ESTRICTO: Solo ajustes manuales del catálogo oficial
+        let whereConditions = [
+            'mi.tenant_id = $1',
+            "EXISTS (SELECT 1 FROM cat_motivos_ajuste cma WHERE cma.codigo = mi.motivo AND cma.activo = true)"
+        ];
         let queryParams = [tenant_id];
         let paramCounter = 2;
 
