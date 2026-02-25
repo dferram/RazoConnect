@@ -167,9 +167,11 @@ const obtenerHistorialMovimientos = async (req, res) => {
 
         // ✅ FILTRO ESTRICTO: Solo ajustes manuales (MERMA y ADICION)
         // Excluye CONTEO_INICIAL, ENTRADA_ALMACEN, RECEPCION_COMPRA, etc.
+        // También excluye motivos que no estén en el catálogo oficial (como "Recepción OC #11")
         let whereConditions = [
             'mi.tenant_id = $1',
-            "mi.tipo IN ('MERMA', 'ADICION')"  // ✅ FILTRO CRÍTICO
+            "mi.tipo IN ('MERMA', 'ADICION')",  // ✅ FILTRO CRÍTICO
+            "EXISTS (SELECT 1 FROM cat_motivos_ajuste cma WHERE cma.codigo = mi.motivo AND cma.activo = true)"  // ✅ Solo motivos válidos del catálogo
         ];
         let queryParams = [tenant_id];
         let paramCounter = 2;

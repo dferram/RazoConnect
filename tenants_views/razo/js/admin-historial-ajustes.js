@@ -56,10 +56,10 @@ const renderizarEstadisticas = (stats) => {
     const adiciones = stats.porTipo.find(t => t.tipo === 'ADICION');
     
     document.getElementById('total-mermas').textContent = 
-        mermas ? `${parseInt(mermas.total_unidades).toLocaleString()} unidades` : '0 unidades';
+        mermas ? `${parseInt(mermas.total_unidades).toLocaleString()} pzas` : '0 pzas';
     
     document.getElementById('total-adiciones').textContent = 
-        adiciones ? `${parseInt(adiciones.total_unidades).toLocaleString()} unidades` : '0 unidades';
+        adiciones ? `${parseInt(adiciones.total_unidades).toLocaleString()} pzas` : '0 pzas';
     
     const totalAdmins = [...new Set([
         ...(mermas ? [parseInt(mermas.admins_involucrados)] : []),
@@ -146,7 +146,7 @@ const cargarMovimientos = async () => {
         console.error('Error al cargar movimientos:', error);
         document.getElementById('tabla-movimientos').innerHTML = `
             <tr>
-                <td colspan="11" class="text-center text-danger py-4">
+                <td colspan="9" class="text-center text-danger py-4">
                     <i class="bi bi-exclamation-triangle fs-3"></i>
                     <p class="mt-2">Error al cargar el historial: ${error.message}</p>
                 </td>
@@ -161,9 +161,9 @@ const renderizarTabla = (movimientos) => {
     if (movimientos.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="11" class="text-center text-muted py-5">
+                <td colspan="9" class="text-center text-muted py-5">
                     <i class="bi bi-inbox fs-3"></i>
-                    <p class="mt-2">No se encontraron movimientos con los filtros aplicados</p>
+                    <p class="mt-2">No se encontraron ajustes manuales con los filtros aplicados</p>
                 </td>
             </tr>
         `;
@@ -181,31 +181,32 @@ const renderizarTabla = (movimientos) => {
 
         return `
             <tr>
-                <td><strong>#${m.movimiento_id}</strong></td>
+                <td><small><strong>#${m.movimiento_id}</strong></small></td>
                 <td>
                     <small>
-                        ${fecha.toLocaleDateString('es-MX')}<br>
+                        ${fecha.toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit', year: '2-digit' })}<br>
                         ${fecha.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
                     </small>
                 </td>
                 <td>${tipoBadge}</td>
-                <td><code style="font-size: 0.85rem;">${m.sku}</code></td>
+                <td><code style="font-size: 0.8rem;">${m.sku}</code></td>
                 <td>
-                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.nombreproducto}${m.dimensiones ? ' - ' + m.dimensiones : ''}">
-                        <strong style="font-size: 0.9rem;">${m.nombreproducto}</strong><br>
+                    <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
+                         title="${m.nombreproducto}${m.dimensiones ? ' - ' + m.dimensiones : ''}">
+                        <small><strong>${m.nombreproducto}</strong></small><br>
                         <small class="text-muted">${m.dimensiones || 'N/A'}</small>
                     </div>
                 </td>
-                <td class="${impactoClass} fw-bold text-center">${impacto}</td>
-                <td class="text-center">${m.stock_previo}</td>
-                <td class="text-center">${m.stock_posterior}</td>
+                <td class="${impactoClass} fw-bold text-center"><small>${impacto}</small></td>
                 <td>
-                    <small style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${formatearMotivo(m.motivo)}">
+                    <small style="display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
+                           title="${formatearMotivo(m.motivo)}">
                         ${formatearMotivo(m.motivo)}
                     </small>
                 </td>
                 <td>
-                    <small style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.admin_nombre} (${m.admin_email})">
+                    <small style="display: block; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
+                           title="${m.admin_nombre}">
                         ${m.admin_nombre}
                     </small>
                 </td>
@@ -412,19 +413,8 @@ const exportarExcel = () => {
         return;
     }
 
-    // Calcular totales
-    let totalPiezasMerma = 0;
-    let totalPiezasAdicion = 0;
-
     const datosExcel = movimientosData.map(m => {
         const fecha = new Date(m.fecha_movimiento);
-        const cantidad = parseInt(m.cantidad, 10) || 0;
-        
-        if (m.tipo === 'MERMA') {
-            totalPiezasMerma += cantidad;
-        } else if (m.tipo === 'ADICION') {
-            totalPiezasAdicion += cantidad;
-        }
         
         return {
             'ID': m.movimiento_id,
@@ -446,108 +436,12 @@ const exportarExcel = () => {
         };
     });
 
-    // Agregar filas de totales
-    const diferenciaNeta = totalPiezasAdicion - totalPiezasMerma;
-    
-    datosExcel.push({});
-    datosExcel.push({
-        'ID': '',
-        'Fecha': '',
-        'Hora': '',
-        'Tipo': 'RESUMEN DE AJUSTES',
-        'SKU': '',
-        'Producto': '',
-        'Dimensiones': '',
-        'Cantidad': '',
-        'Stock Previo': '',
-        'Stock Posterior': '',
-        'Impacto': '',
-        'Motivo': '',
-        'Observaciones': '',
-        'Admin': '',
-        'Email Admin': '',
-        'IP Origen': ''
-    });
-    datosExcel.push({
-        'ID': '',
-        'Fecha': '',
-        'Hora': '',
-        'Tipo': 'Total Mermas',
-        'SKU': '',
-        'Producto': '',
-        'Dimensiones': '',
-        'Cantidad': totalPiezasMerma,
-        'Stock Previo': '',
-        'Stock Posterior': '',
-        'Impacto': `-${totalPiezasMerma}`,
-        'Motivo': '',
-        'Observaciones': '',
-        'Admin': '',
-        'Email Admin': '',
-        'IP Origen': ''
-    });
-    datosExcel.push({
-        'ID': '',
-        'Fecha': '',
-        'Hora': '',
-        'Tipo': 'Total Adiciones',
-        'SKU': '',
-        'Producto': '',
-        'Dimensiones': '',
-        'Cantidad': totalPiezasAdicion,
-        'Stock Previo': '',
-        'Stock Posterior': '',
-        'Impacto': `+${totalPiezasAdicion}`,
-        'Motivo': '',
-        'Observaciones': '',
-        'Admin': '',
-        'Email Admin': '',
-        'IP Origen': ''
-    });
-    datosExcel.push({
-        'ID': '',
-        'Fecha': '',
-        'Hora': '',
-        'Tipo': 'Diferencia Neta',
-        'SKU': '',
-        'Producto': '',
-        'Dimensiones': '',
-        'Cantidad': Math.abs(diferenciaNeta),
-        'Stock Previo': '',
-        'Stock Posterior': '',
-        'Impacto': `${diferenciaNeta >= 0 ? '+' : ''}${diferenciaNeta}`,
-        'Motivo': '',
-        'Observaciones': '',
-        'Admin': '',
-        'Email Admin': '',
-        'IP Origen': ''
-    });
-
     const ws = XLSX.utils.json_to_sheet(datosExcel);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Historial Ajustes');
-
-    ws['!cols'] = [
-        { wch: 8 },
-        { wch: 12 },
-        { wch: 10 },
-        { wch: 10 },
-        { wch: 15 },
-        { wch: 30 },
-        { wch: 15 },
-        { wch: 10 },
-        { wch: 12 },
-        { wch: 12 },
-        { wch: 10 },
-        { wch: 25 },
-        { wch: 30 },
-        { wch: 20 },
-        { wch: 25 },
-        { wch: 15 }
-    ];
+    XLSX.utils.book_append_sheet(wb, ws, 'Ajustes Manuales');
 
     const fechaExport = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(wb, `Historial_Ajustes_Inventario_${fechaExport}.xlsx`);
+    XLSX.writeFile(wb, `Historial_Ajustes_Manuales_${fechaExport}.xlsx`);
 
     Swal.fire({
         icon: 'success',
@@ -558,273 +452,11 @@ const exportarExcel = () => {
     });
 };
 
-const exportarPDF = async () => {
-    if (movimientosData.length === 0) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Sin Datos',
-            text: 'No hay movimientos para exportar'
-        });
-        return;
-    }
-
-    const loadingAlert = Swal.fire({
-        title: 'Generando PDF...',
-        html: '<div class="spinner-border text-primary" role="status"></div>',
-        allowOutsideClick: false,
-        showConfirmButton: false,
-        didOpen: () => {
-            Swal.showLoading();
-        }
+const exportarPDF = () => {
+    Swal.fire({
+        icon: 'info',
+        title: 'Exportación a PDF',
+        text: 'La exportación a PDF estará disponible próximamente',
+        confirmButtonColor: '#F97316'
     });
-
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('landscape', 'mm', 'a4');
-
-        // Cargar logo
-        let logoImgData = null;
-        try {
-            const logoImg = new Image();
-            logoImg.src = '/icon/Logo_Razo.png';
-            await new Promise((resolve) => {
-                logoImg.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = logoImg.width;
-                    canvas.height = logoImg.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(logoImg, 0, 0);
-                    logoImgData = canvas.toDataURL('image/png');
-                    resolve();
-                };
-                logoImg.onerror = () => resolve();
-                setTimeout(() => resolve(), 2000);
-            });
-        } catch (error) {
-            console.warn('Error al cargar logo:', error);
-        }
-
-        const fechaGeneracion = new Date().toLocaleDateString('es-MX', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-
-        const dibujarEncabezado = (doc) => {
-            if (logoImgData) {
-                try {
-                    doc.addImage(logoImgData, 'PNG', 14, 8, 20, 20);
-                } catch (e) {
-                    console.warn('Error al agregar logo:', e);
-                }
-            }
-
-            doc.setFontSize(18);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(0, 0, 0);
-            doc.text('Historial de Ajustes de Inventario', 148, 15, { align: 'center' });
-            
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Generado: ${fechaGeneracion}`, 148, 22, { align: 'center' });
-        };
-
-        dibujarEncabezado(doc);
-
-        let yPosition = 30;
-
-        // Separar movimientos por tipo
-        const mermas = movimientosData.filter(m => m.tipo === 'MERMA');
-        const adiciones = movimientosData.filter(m => m.tipo === 'ADICION');
-
-        // Calcular totales
-        let totalPiezasMerma = 0;
-        let totalPiezasAdicion = 0;
-
-        const crearTabla = (titulo, datos, colorFondo, colorTexto) => {
-            if (datos.length === 0) {
-                return yPosition;
-            }
-
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(colorTexto[0], colorTexto[1], colorTexto[2]);
-            doc.text(titulo, 14, yPosition);
-            yPosition += 2;
-
-            const tableData = datos.map(m => {
-                const fecha = new Date(m.fecha_movimiento);
-                const cantidad = parseInt(m.cantidad, 10) || 0;
-                
-                if (m.tipo === 'MERMA') {
-                    totalPiezasMerma += cantidad;
-                } else {
-                    totalPiezasAdicion += cantidad;
-                }
-
-                return [
-                    `#${m.movimiento_id}`,
-                    fecha.toLocaleDateString('es-MX'),
-                    m.sku || '-',
-                    m.nombreproducto || '-',
-                    m.dimensiones || 'N/A',
-                    cantidad,
-                    m.stock_previo || 0,
-                    m.stock_posterior || 0,
-                    formatearMotivo(m.motivo),
-                    m.admin_nombre || '-'
-                ];
-            });
-
-            const headers = [['ID', 'Fecha', 'SKU', 'Producto', 'Medida', 'Cantidad', 'Stock Previo', 'Stock Post.', 'Motivo', 'Admin']];
-
-            doc.autoTable({
-                startY: yPosition,
-                head: headers,
-                body: tableData,
-                theme: 'grid',
-                headStyles: {
-                    fillColor: colorFondo,
-                    textColor: [255, 255, 255],
-                    fontStyle: 'bold',
-                    fontSize: 8,
-                    halign: 'center'
-                },
-                bodyStyles: {
-                    fontSize: 7,
-                    cellPadding: 1.5
-                },
-                columnStyles: {
-                    0: { cellWidth: 12, halign: 'center' },
-                    1: { cellWidth: 20, halign: 'center' },
-                    2: { cellWidth: 20 },
-                    3: { cellWidth: 50 },
-                    4: { cellWidth: 25 },
-                    5: { cellWidth: 18, halign: 'center' },
-                    6: { cellWidth: 18, halign: 'center' },
-                    7: { cellWidth: 18, halign: 'center' },
-                    8: { cellWidth: 35 },
-                    9: { cellWidth: 30 }
-                },
-                margin: { left: 14, right: 14, top: 35 },
-                didDrawPage: (data) => {
-                    if (data.pageNumber > 1) {
-                        dibujarEncabezado(doc);
-                    }
-                    yPosition = data.cursor.y;
-                }
-            });
-
-            yPosition += 5;
-            return yPosition;
-        };
-
-        // Generar tablas
-        if (mermas.length > 0) {
-            yPosition = crearTabla(
-                `Mermas (${mermas.length} movimientos)`,
-                mermas,
-                [239, 68, 68],
-                [220, 38, 38]
-            );
-        }
-
-        if (yPosition > 160 && adiciones.length > 0) {
-            doc.addPage();
-            dibujarEncabezado(doc);
-            yPosition = 35;
-        }
-
-        if (adiciones.length > 0) {
-            yPosition = crearTabla(
-                `Adiciones (${adiciones.length} movimientos)`,
-                adiciones,
-                [34, 197, 94],
-                [22, 163, 74]
-            );
-        }
-
-        // RESUMEN FINANCIERO GENERAL
-        const summaryHeight = 40;
-        if (yPosition + summaryHeight > 190) {
-            doc.addPage();
-            dibujarEncabezado(doc);
-            yPosition = 35;
-        }
-
-        const boxX = 10;
-        const boxWidth = 120;
-        const boxHeight = 38;
-
-        doc.setFillColor(249, 115, 22);
-        doc.rect(boxX, yPosition, boxWidth, 10, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.text('RESUMEN DE AJUSTES', boxX + boxWidth / 2, yPosition + 7, { align: 'center' });
-
-        doc.setTextColor(0, 0, 0);
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-
-        let detailY = yPosition + 15;
-        doc.text('Total Piezas en Merma:', boxX + 5, detailY);
-        doc.setTextColor(220, 38, 38);
-        doc.text(`-${totalPiezasMerma.toLocaleString('es-MX')} pzas`, boxX + 80, detailY);
-
-        detailY += 7;
-        doc.setTextColor(0, 0, 0);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Total Piezas en Adición:', boxX + 5, detailY);
-        doc.setTextColor(16, 185, 129);
-        doc.text(`+${totalPiezasAdicion.toLocaleString('es-MX')} pzas`, boxX + 80, detailY);
-
-        detailY += 7;
-        const diferencia = totalPiezasAdicion - totalPiezasMerma;
-        doc.setTextColor(0, 0, 0);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Diferencia Neta:', boxX + 5, detailY);
-        doc.setTextColor(diferencia >= 0 ? 16 : 220, diferencia >= 0 ? 185 : 38, diferencia >= 0 ? 129 : 38);
-        doc.text(`${diferencia >= 0 ? '+' : ''}${diferencia.toLocaleString('es-MX')} pzas`, boxX + 80, detailY);
-
-        // Paginación
-        const pageCount = doc.internal.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-            doc.setFontSize(8);
-            doc.setTextColor(150, 150, 150);
-            doc.text(
-                `RazoConnect - Página ${i} de ${pageCount}`,
-                148,
-                200,
-                { align: 'center' }
-            );
-        }
-
-        const fechaExport = new Date().toISOString().split('T')[0];
-        doc.save(`Historial_Ajustes_Inventario_${fechaExport}.pdf`);
-
-        loadingAlert.close();
-
-        Swal.fire({
-            icon: 'success',
-            title: 'PDF Generado',
-            text: 'El reporte se ha descargado correctamente',
-            confirmButtonColor: '#F97316',
-            timer: 3000
-        });
-
-    } catch (error) {
-        console.error('Error al generar PDF:', error);
-        loadingAlert.close();
-
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message || 'No se pudo generar el PDF. Intenta nuevamente.',
-            confirmButtonColor: '#F97316'
-        });
-    }
 };
