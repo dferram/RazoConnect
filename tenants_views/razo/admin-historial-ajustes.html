@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Historial de Ajustes - RazoConnect</title>
+    <title>Historial de Ajustes Manuales - RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -24,46 +24,42 @@
                 <!-- Instructional Banner -->
                 <div id="instructionalBanner" class="instructional-banner">
                     <p>
-                        💡 <strong>Historial de Ajustes de Inventario:</strong> Consulta la auditoría completa de mermas y adiciones de stock. Puedes filtrar por fecha, tipo de ajuste y responsable. Exporta reportes a PDF o Excel para análisis y auditorías contables.
+                        💡 <strong>Historial de Ajustes Manuales:</strong> Esta página muestra ÚNICAMENTE los ajustes manuales de merma y adición registrados por los administradores. Los movimientos de entrada de almacén y conteo inicial se visualizan en otras secciones del sistema.
                     </p>
-                    <button class="instructional-banner-close" title="Cerrar">
-                        ×
-                    </button>
+                    <button class="instructional-banner-close" title="Cerrar" aria-label="Cerrar banner">×</button>
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
                         <h2 class="admin-page-title mb-2">
                             <i class="bi bi-clock-history"></i>
-                            Historial de Ajustes de Inventario
+                            Historial de Ajustes Manuales
                         </h2>
                         <p class="text-muted mb-0">
-                            Auditoría completa de mermas y adiciones
+                            Solo ajustes de merma y adición registrados manualmente
                         </p>
                     </div>
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-danger" id="btn-exportar-pdf">
-                            <i class="bi bi-file-earmark-pdf"></i>
-                            Exportar a PDF
+                            <i class="bi bi-file-earmark-pdf"></i> PDF
                         </button>
                         <button type="button" class="btn btn-success" id="btn-exportar-excel">
-                            <i class="bi bi-file-earmark-excel"></i>
-                            Exportar a Excel
+                            <i class="bi bi-file-earmark-excel"></i> Excel
                         </button>
                         <a href="admin-ajuste-inventario.html" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i>
-                            Nuevo Ajuste
+                            <i class="bi bi-plus-circle"></i> Nuevo Ajuste
                         </a>
                     </div>
                 </div>
 
+                <!-- Estadísticas -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-3">
                         <div class="admin-stat-card text-center">
                             <div class="stat-icon bg-danger bg-opacity-10 text-danger">
                                 <i class="bi bi-arrow-down-circle"></i>
                             </div>
-                            <h3 class="stat-value text-danger" id="total-mermas">-</h3>
+                            <h3 class="stat-value text-danger" id="total-mermas">0</h3>
                             <p class="stat-label">Total Mermas</p>
                         </div>
                     </div>
@@ -72,7 +68,7 @@
                             <div class="stat-icon bg-success bg-opacity-10 text-success">
                                 <i class="bi bi-arrow-up-circle"></i>
                             </div>
-                            <h3 class="stat-value text-success" id="total-adiciones">-</h3>
+                            <h3 class="stat-value text-success" id="total-adiciones">0</h3>
                             <p class="stat-label">Total Adiciones</p>
                         </div>
                     </div>
@@ -81,7 +77,7 @@
                             <div class="stat-icon bg-primary bg-opacity-10 text-primary">
                                 <i class="bi bi-people"></i>
                             </div>
-                            <h3 class="stat-value" id="total-admins">-</h3>
+                            <h3 class="stat-value" id="total-admins">0</h3>
                             <p class="stat-label">Admins Involucrados</p>
                         </div>
                     </div>
@@ -90,16 +86,15 @@
                             <div class="stat-icon bg-warning bg-opacity-10 text-warning">
                                 <i class="bi bi-box-seam"></i>
                             </div>
-                            <h3 class="stat-value" id="total-productos">-</h3>
+                            <h3 class="stat-value" id="total-productos">0</h3>
                             <p class="stat-label">Productos Afectados</p>
                         </div>
                     </div>
                 </div>
 
+                <!-- Filtros -->
                 <div class="admin-stat-card mb-4">
-                    <h5 class="mb-3">
-                        <i class="bi bi-funnel"></i> Filtros de Búsqueda
-                    </h5>
+                    <h5 class="mb-3"><i class="bi bi-funnel"></i> Filtros de Búsqueda</h5>
                     <form id="form-filtros">
                         <div class="row g-3">
                             <div class="col-md-3">
@@ -140,34 +135,31 @@
                     </form>
                 </div>
 
+                <!-- Tabla de Movimientos -->
                 <div class="admin-stat-card">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="mb-0">
-                            <i class="bi bi-list-ul"></i> Movimientos Registrados
-                        </h5>
+                        <h5 class="mb-0"><i class="bi bi-list-ul"></i> Ajustes Registrados</h5>
                         <span class="badge bg-secondary" id="total-registros">0 registros</span>
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table admin-table">
+                        <table class="table admin-table table-sm">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Fecha/Hora</th>
-                                    <th>Tipo</th>
-                                    <th>SKU</th>
-                                    <th>Producto</th>
-                                    <th>Cantidad</th>
-                                    <th>Stock Previo</th>
-                                    <th>Stock Posterior</th>
-                                    <th>Motivo</th>
-                                    <th>Admin</th>
-                                    <th>Acciones</th>
+                                    <th style="width: 50px;">ID</th>
+                                    <th style="width: 100px;">Fecha</th>
+                                    <th style="width: 90px;">Tipo</th>
+                                    <th style="width: 130px;">SKU</th>
+                                    <th style="width: 200px;">Producto</th>
+                                    <th style="width: 70px;" class="text-center">Cantidad</th>
+                                    <th style="width: 150px;">Motivo</th>
+                                    <th style="width: 130px;">Admin</th>
+                                    <th style="width: 70px;" class="text-center">Acción</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-movimientos">
                                 <tr>
-                                    <td colspan="11" class="text-center py-5">
+                                    <td colspan="9" class="text-center py-5">
                                         <div class="spinner-border text-primary" role="status">
                                             <span class="visually-hidden">Cargando...</span>
                                         </div>
@@ -184,17 +176,15 @@
         </main>
     </div>
 
+    <!-- Modal de Detalle -->
     <div class="modal fade" id="modal-detalle-movimiento" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="bi bi-info-circle"></i> Detalle del Movimiento
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" title="Cerrar"></button>
+                    <h5 class="modal-title"><i class="bi bi-info-circle"></i> Detalle del Ajuste</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
-                <div class="modal-body" id="modal-detalle-content">
-                </div>
+                <div class="modal-body" id="modal-detalle-content"></div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
@@ -203,6 +193,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/admin-sidebar-loader.js"></script>
     <script src="js/instructional-banner.js"></script>

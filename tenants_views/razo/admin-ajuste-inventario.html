@@ -10,6 +10,58 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/admin.css">
     <link rel="stylesheet" href="css/mobile-responsive.css">
+    <style>
+        /* Estilos específicos para modal de variantes - Máxima prioridad */
+        #modalVariantes .modal-dialog {
+            max-width: 900px !important;
+            width: 95% !important;
+        }
+
+        #modalVariantes .modal-content {
+            max-width: none !important;
+            width: 100% !important;
+            margin: 0 !important;
+        }
+
+        #modalVariantes .modal-header {
+            background: linear-gradient(135deg, #F97316 0%, #FF8C42 100%) !important;
+            color: white !important;
+            padding: 2rem !important;
+        }
+
+        #modalVariantes .modal-title {
+            color: white !important;
+            font-weight: 700 !important;
+        }
+
+        #modalVariantes .btn-close {
+            filter: brightness(0) invert(1) !important;
+        }
+
+        #modalVariantes .modal-body {
+            padding: 0 !important;
+        }
+
+        #modalVariantes table {
+            width: 100% !important;
+            margin: 0 !important;
+        }
+
+        #modalVariantes th {
+            background: #f8f9fa !important;
+            padding: 1.5rem !important;
+            font-weight: 700 !important;
+        }
+
+        #modalVariantes td {
+            padding: 1.5rem !important;
+        }
+
+        #modalVariantes img {
+            width: 70px !important;
+            border-radius: 10px !important;
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
@@ -57,34 +109,32 @@
                 <div class="admin-stat-card">
                     <form id="form-ajuste-inventario">
                         <div class="row g-4">
-                            <div class="col-md-6">
-                                <label for="sku-search" class="form-label fw-bold">
-                                    <i class="bi bi-search"></i> Buscar Producto por SKU
+                            <div class="col-md-12">
+                                <label for="producto-search" class="form-label fw-bold">
+                                    <i class="bi bi-search"></i> Buscar Producto
                                 </label>
-                                <div class="input-group">
+                                <div class="position-relative">
                                     <input 
                                         type="text" 
                                         class="form-control" 
-                                        id="sku-search" 
-                                        placeholder="Escribe el SKU del producto..."
-                                        autocomplete="off"
-                                        required>
-                                    <button class="btn btn-primary" type="button" id="btn-buscar-sku">
-                                        <i class="bi bi-search"></i> Buscar
-                                    </button>
+                                        id="producto-search" 
+                                        placeholder="Escribe el nombre del producto, categoría o SKU maestro..."
+                                        autocomplete="off">
+                                    <div id="autocomplete-results" class="autocomplete-dropdown"></div>
                                 </div>
-                                <div id="sku-results" class="mt-2"></div>
+                                <small class="text-muted">Escribe al menos 2 caracteres para buscar</small>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-12">
                                 <label class="form-label fw-bold">
-                                    <i class="bi bi-box-seam"></i> Producto Seleccionado
+                                    <i class="bi bi-box-seam"></i> Producto y Variante Seleccionada
                                 </label>
                                 <div id="producto-seleccionado" class="p-3 bg-light rounded">
                                     <p class="text-muted mb-0">
                                         <i class="bi bi-arrow-left"></i> Busca y selecciona un producto
                                     </p>
                                 </div>
+                                <input type="hidden" id="variante-seleccionada" required>
                                 <input type="hidden" id="sku-seleccionado" required>
                             </div>
 
@@ -153,6 +203,41 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Modal de Selección de Variantes -->
+    <div class="modal fade" id="modalVariantes" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-box-seam"></i> Selecciona una Variante
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="producto-info" class="mb-3"></div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Imagen</th>
+                                <th>SKU</th>
+                                <th>Medidas</th>
+                                <th>Color</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="variantes-tbody">
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <i class="bi bi-hourglass-split"></i> Cargando variantes...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

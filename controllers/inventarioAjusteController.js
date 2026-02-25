@@ -165,7 +165,14 @@ const obtenerHistorialMovimientos = async (req, res) => {
             offset = 0
         } = req.query;
 
-        let whereConditions = ['mi.tenant_id = $1'];
+        // ✅ FILTRO ESTRICTO: Solo ajustes manuales (MERMA y ADICION)
+        // Excluye CONTEO_INICIAL, ENTRADA_ALMACEN, RECEPCION_COMPRA, etc.
+        // También excluye motivos que no estén en el catálogo oficial (como "Recepción OC #11")
+        let whereConditions = [
+            'mi.tenant_id = $1',
+            "mi.tipo IN ('MERMA', 'ADICION')",  // ✅ FILTRO CRÍTICO
+            "EXISTS (SELECT 1 FROM cat_motivos_ajuste cma WHERE cma.codigo = mi.motivo AND cma.activo = true)"  // ✅ Solo motivos válidos del catálogo
+        ];
         let queryParams = [tenant_id];
         let paramCounter = 2;
 
@@ -310,18 +317,22 @@ const obtenerEstadisticasAjustes = async (req, res) => {
         const { tenant_id } = req.tenant;
         const { fechaInicio, fechaFin } = req.query;
 
-        let whereConditions = ['tenant_id = $1'];
+        // ✅ FILTRO ESTRICTO: Solo ajustes manuales del catálogo oficial
+        let whereConditions = [
+            'mi.tenant_id = $1',
+            "EXISTS (SELECT 1 FROM cat_motivos_ajuste cma WHERE cma.codigo = mi.motivo AND cma.activo = true)"
+        ];
         let queryParams = [tenant_id];
         let paramCounter = 2;
 
         if (fechaInicio) {
-            whereConditions.push(`fecha_movimiento >= $${paramCounter}::timestamp`);
+            whereConditions.push(`mi.fecha_movimiento >= $${paramCounter}::timestamp`);
             queryParams.push(fechaInicio);
             paramCounter++;
         }
 
         if (fechaFin) {
-            whereConditions.push(`fecha_movimiento <= $${paramCounter}::timestamp`);
+            whereConditions.push(`mi.fecha_movimiento <= $${paramCounter}::timestamp`);
             queryParams.push(fechaFin);
             paramCounter++;
         }
@@ -330,26 +341,26 @@ const obtenerEstadisticasAjustes = async (req, res) => {
 
         const estadisticasQuery = await pool.query(
             `SELECT 
-                tipo,
+                mi.tipo,
                 COUNT(*) as total_movimientos,
-                SUM(cantidad) as total_unidades,
-                COUNT(DISTINCT admin_id) as admins_involucrados,
-                COUNT(DISTINCT variante_id) as productos_afectados
-             FROM movimientos_inventario
+                SUM(mi.cantidad) as total_unidades,
+                COUNT(DISTINCT mi.admin_id) as admins_involucrados,
+                COUNT(DISTINCT mi.variante_id) as productos_afectados
+             FROM movimientos_inventario mi
              WHERE ${whereClause}
-             GROUP BY tipo`,
+             GROUP BY mi.tipo`,
             queryParams
         );
 
         const topMotivosQuery = await pool.query(
             `SELECT 
-                motivo,
-                tipo,
+                mi.motivo,
+                mi.tipo,
                 COUNT(*) as frecuencia,
-                SUM(cantidad) as total_unidades
-             FROM movimientos_inventario
+                SUM(mi.cantidad) as total_unidades
+             FROM movimientos_inventario mi
              WHERE ${whereClause}
-             GROUP BY motivo, tipo
+             GROUP BY mi.motivo, mi.tipo
              ORDER BY frecuencia DESC
              LIMIT 10`,
             queryParams
@@ -410,7 +421,7 @@ const buscarProductoPorSKU = async (req, res) => {
                 p.nombreproducto,
                 p.sku_maestro,
                 p.descripcion,
-                c.nombrecategoria,
+                c.nombre as nombrecategoria,
                 COALESCE(ia.cantidad, 0) as stock_actual
              FROM producto_variantes pv
              INNER JOIN productos p ON pv.productoid = p.productoid
@@ -442,10 +453,143 @@ const buscarProductoPorSKU = async (req, res) => {
     }
 };
 
+/**
+ * Buscar productos para autocompletado visual (SIN MOSTRAR STOCK - Seguridad Ciega)
+ * Retorna solo productos maestros con imagen y categoría
+ */
+const buscarProductosAutocompletado = async (req, res) => {
+    try {
+        const { q } = req.query;
+        const { tenant_id } = req.tenant;
+
+        if (!q || q.trim().length < 2) {
+            return res.json({
+                success: true,
+                productos: []
+            });
+        }
+
+        const searchPattern = `%${q.trim()}%`;
+
+        const query = `
+            SELECT DISTINCT
+                p.productoid,
+                p.nombreproducto,
+                p.sku_maestro,
+                c.nombre as nombrecategoria,
+                COALESCE(
+                    (SELECT pi.url_imagen 
+                     FROM producto_imagenes pi 
+                     WHERE pi.productoid = p.productoid AND pi.tenant_id = $2
+                     ORDER BY pi.orden ASC LIMIT 1),
+                    '/images/placeholder-product.png'
+                ) as imagen_url
+            FROM productos p
+            INNER JOIN categorias c ON p.categoriaid = c.categoriaid
+            INNER JOIN producto_variantes pv ON pv.productoid = p.productoid
+            WHERE p.tenant_id = $2
+                AND pv.tenant_id = $2
+                AND COALESCE(p.activo, TRUE) = TRUE
+                AND COALESCE(pv.activo, TRUE) = TRUE
+                AND (
+                    p.nombreproducto ILIKE $1
+                    OR p.sku_maestro ILIKE $1
+                    OR c.nombre ILIKE $1
+                )
+            ORDER BY p.nombreproducto ASC
+            LIMIT 10
+        `;
+
+        const result = await pool.query(query, [searchPattern, tenant_id]);
+
+        console.log(`🔍 [AUTOCOMPLETADO] Búsqueda: "${q}" - Resultados: ${result.rows.length}`);
+
+        res.json({
+            success: true,
+            productos: result.rows
+        });
+
+    } catch (error) {
+        console.error('❌ Error en buscarProductosAutocompletado:', error);
+        res.status(500).json({ 
+            error: 'Error al buscar productos',
+            detalle: error.message 
+        });
+    }
+};
+
+/**
+ * Obtener variantes de un producto maestro (SIN MOSTRAR STOCK - Seguridad Ciega)
+ * Para el modal de selección de variantes
+ */
+const getVariantesProducto = async (req, res) => {
+    try {
+        const { productoId } = req.params;
+        const { tenant_id } = req.tenant;
+
+        if (!productoId) {
+            return res.status(400).json({ 
+                error: 'El ID del producto es requerido' 
+            });
+        }
+
+        const query = `
+            SELECT 
+                pv.varianteid,
+                pv.sku,
+                pv.dimensiones,
+                pv.color_nombre,
+                pv.color_hex,
+                p.nombreproducto,
+                COALESCE(
+                    (SELECT pvi.url_imagen 
+                     FROM producto_variante_imagenes pvi 
+                     WHERE pvi.varianteid = pv.varianteid AND pvi.tenant_id = $2
+                     ORDER BY pvi.orden ASC LIMIT 1),
+                    (SELECT pi.url_imagen 
+                     FROM producto_imagenes pi 
+                     WHERE pi.productoid = p.productoid AND pi.tenant_id = $2
+                     ORDER BY pi.orden ASC LIMIT 1)
+                ) as imagen_url
+            FROM producto_variantes pv
+            INNER JOIN productos p ON pv.productoid = p.productoid
+            WHERE p.productoid = $1 
+                AND p.tenant_id = $2
+                AND pv.tenant_id = $2
+                AND COALESCE(pv.activo, TRUE) = TRUE
+            ORDER BY pv.varianteid ASC
+        `;
+
+        const result = await pool.query(query, [productoId, tenant_id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ 
+                error: 'No se encontraron variantes para este producto' 
+            });
+        }
+
+        console.log(`📦 [VARIANTES] Producto ID ${productoId} - ${result.rows.length} variantes encontradas`);
+
+        res.json({
+            success: true,
+            variantes: result.rows
+        });
+
+    } catch (error) {
+        console.error('❌ Error en getVariantesProducto:', error);
+        res.status(500).json({ 
+            error: 'Error al obtener variantes',
+            detalle: error.message 
+        });
+    }
+};
+
 module.exports = {
     registrarAjusteInventario,
     obtenerHistorialMovimientos,
     obtenerMotivosAjuste,
     obtenerEstadisticasAjustes,
-    buscarProductoPorSKU
+    buscarProductoPorSKU,
+    buscarProductosAutocompletado,
+    getVariantesProducto
 };

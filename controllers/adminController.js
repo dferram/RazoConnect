@@ -11835,7 +11835,7 @@ const validarRecepcionCompra = async (req, res) => {
  */
 const getAllOrdenesCompra = async (req, res) => {
   try {
-    const { estatus, adminId, origen, proveedorId } = req.query;
+    const { estatus, adminId, origen, proveedorId, soloRecibidas } = req.query;
     const userRole = req.user.rol;
     const userId = req.user.id;
     const { tenant_id } = req.tenant;
@@ -11914,9 +11914,14 @@ const getAllOrdenesCompra = async (req, res) => {
       GROUP BY oc.ordencompraid, oc.proveedorid, oc.fechacreacion, 
                oc.fechaentregaesperada, oc.estatus, oc.origenoc, oc.usuario_creador_id,
                oc.admin_creador_id, p.nombreempresa, a.nombre, c.nombre, c.apellido
-      HAVING COALESCE(SUM(doc.cantidadrecibida), 0) > 0
-      ORDER BY oc.fechacreacion DESC
     `;
+
+    // FILTRO ESPECIAL PARA CONCILIACIÓN: Solo órdenes con productos ya recibidos
+    if (soloRecibidas === 'true') {
+      query += ` HAVING COALESCE(SUM(doc.cantidadrecibida), 0) > 0`;
+    }
+
+    query += ` ORDER BY oc.fechacreacion DESC`;
 
     const result = await db.query(query, values);
 

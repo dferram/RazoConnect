@@ -79,7 +79,7 @@ async function cargarOrdenesCompra() {
     if (!token) return;
 
     // Solo cargar órdenes que tengan al menos un producto recibido (filtrado en backend)
-    const response = await fetch('/api/admin/ordenes-compra', {
+    const response = await fetch('/api/admin/ordenes-compra?soloRecibidas=true', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
 
