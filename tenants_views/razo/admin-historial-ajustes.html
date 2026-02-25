@@ -149,20 +149,20 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table admin-table">
+                        <table class="table admin-table" style="table-layout: fixed; width: 100%;">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>Fecha/Hora</th>
-                                    <th>Tipo</th>
-                                    <th>SKU</th>
-                                    <th>Producto</th>
-                                    <th>Cantidad</th>
-                                    <th>Stock Previo</th>
-                                    <th>Stock Posterior</th>
-                                    <th>Motivo</th>
-                                    <th>Admin</th>
-                                    <th>Acciones</th>
+                                    <th style="width: 60px;">ID</th>
+                                    <th style="width: 110px;">Fecha/Hora</th>
+                                    <th style="width: 100px;">Tipo</th>
+                                    <th style="width: 120px;">SKU</th>
+                                    <th style="width: 200px;">Producto</th>
+                                    <th style="width: 80px;">Cantidad</th>
+                                    <th style="width: 90px;">Stock Previo</th>
+                                    <th style="width: 90px;">Stock Post.</th>
+                                    <th style="width: 150px;">Motivo</th>
+                                    <th style="width: 150px;">Admin</th>
+                                    <th style="width: 80px;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-movimientos">
@@ -203,6 +203,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/admin-sidebar-loader.js"></script>
     <script src="js/instructional-banner.js"></script>

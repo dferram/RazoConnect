@@ -166,26 +166,48 @@ const mostrarVariantes = (variantes) => {
         productoInfo.innerHTML = `
             <div class="alert alert-info mb-0">
                 <strong><i class="bi bi-box-seam"></i> ${variantes[0].nombreproducto}</strong>
-                <p class="mb-0 mt-1"><small>Selecciona la variante que deseas ajustar</small></p>
+                <p class="mb-0 mt-1"><small>Selecciona la variante que deseas ajustar (${variantes.length} variantes disponibles)</small></p>
             </div>
         `;
     }
     
     const html = variantes.map(v => {
-        const atributos = [];
-        if (v.dimensiones) atributos.push(`<i class="bi bi-rulers"></i> ${v.dimensiones}`);
+        // Imagen de la variante o fallback a producto maestro
+        const imagenUrl = v.imagen_url || '/images/placeholder-product.png';
+        
+        // Medidas
+        const medidas = v.dimensiones 
+            ? `<span class="badge bg-secondary"><i class="bi bi-rulers"></i> ${v.dimensiones}</span>`
+            : '<span class="text-muted">Sin medidas</span>';
+        
+        // Color con badge visual
+        let colorDisplay = '<span class="text-muted">Sin color</span>';
         if (v.color_nombre) {
-            const colorBadge = v.color_hex 
-                ? `<span class="badge" style="background-color: ${v.color_hex}; color: white;">${v.color_nombre}</span>`
-                : `<span class="badge bg-secondary">${v.color_nombre}</span>`;
-            atributos.push(colorBadge);
+            if (v.color_hex) {
+                colorDisplay = `
+                    <div class="d-flex align-items-center gap-2">
+                        <div style="width: 30px; height: 30px; background-color: ${v.color_hex}; border: 1px solid #ddd; border-radius: 4px;"></div>
+                        <span>${v.color_nombre}</span>
+                    </div>
+                `;
+            } else {
+                colorDisplay = `<span class="badge bg-secondary">${v.color_nombre}</span>`;
+            }
         }
         
         return `
             <tr>
-                <td><strong>${v.sku}</strong></td>
-                <td>${atributos.length > 0 ? atributos.join(' ') : '<span class="text-muted">Sin atributos</span>'}</td>
                 <td>
+                    <img src="${imagenUrl}" 
+                         alt="${v.sku}" 
+                         class="img-thumbnail"
+                         style="width: 60px; height: 60px; object-fit: cover;"
+                         onerror="this.src='/images/placeholder-product.png'">
+                </td>
+                <td><strong>${v.sku}</strong></td>
+                <td>${medidas}</td>
+                <td>${colorDisplay}</td>
+                <td class="text-center">
                     <button type="button" class="btn btn-sm btn-primary" 
                             onclick="seleccionarVariante(${JSON.stringify(v).replace(/"/g, '&quot;')})">
                         <i class="bi bi-check-circle"></i> Seleccionar

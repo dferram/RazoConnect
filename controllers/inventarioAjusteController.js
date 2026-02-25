@@ -315,18 +315,18 @@ const obtenerEstadisticasAjustes = async (req, res) => {
         const { tenant_id } = req.tenant;
         const { fechaInicio, fechaFin } = req.query;
 
-        let whereConditions = ['tenant_id = $1'];
+        let whereConditions = ['mi.tenant_id = $1'];
         let queryParams = [tenant_id];
         let paramCounter = 2;
 
         if (fechaInicio) {
-            whereConditions.push(`fecha_movimiento >= $${paramCounter}::timestamp`);
+            whereConditions.push(`mi.fecha_movimiento >= $${paramCounter}::timestamp`);
             queryParams.push(fechaInicio);
             paramCounter++;
         }
 
         if (fechaFin) {
-            whereConditions.push(`fecha_movimiento <= $${paramCounter}::timestamp`);
+            whereConditions.push(`mi.fecha_movimiento <= $${paramCounter}::timestamp`);
             queryParams.push(fechaFin);
             paramCounter++;
         }
@@ -335,26 +335,26 @@ const obtenerEstadisticasAjustes = async (req, res) => {
 
         const estadisticasQuery = await pool.query(
             `SELECT 
-                tipo,
+                mi.tipo,
                 COUNT(*) as total_movimientos,
-                SUM(cantidad) as total_unidades,
-                COUNT(DISTINCT admin_id) as admins_involucrados,
-                COUNT(DISTINCT variante_id) as productos_afectados
-             FROM movimientos_inventario
+                SUM(mi.cantidad) as total_unidades,
+                COUNT(DISTINCT mi.admin_id) as admins_involucrados,
+                COUNT(DISTINCT mi.variante_id) as productos_afectados
+             FROM movimientos_inventario mi
              WHERE ${whereClause}
-             GROUP BY tipo`,
+             GROUP BY mi.tipo`,
             queryParams
         );
 
         const topMotivosQuery = await pool.query(
             `SELECT 
-                motivo,
-                tipo,
+                mi.motivo,
+                mi.tipo,
                 COUNT(*) as frecuencia,
-                SUM(cantidad) as total_unidades
-             FROM movimientos_inventario
+                SUM(mi.cantidad) as total_unidades
+             FROM movimientos_inventario mi
              WHERE ${whereClause}
-             GROUP BY motivo, tipo
+             GROUP BY mi.motivo, mi.tipo
              ORDER BY frecuencia DESC
              LIMIT 10`,
             queryParams

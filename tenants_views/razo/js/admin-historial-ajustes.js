@@ -185,30 +185,31 @@ const renderizarTabla = (movimientos) => {
                 <td>
                     <small>
                         ${fecha.toLocaleDateString('es-MX')}<br>
-                        ${fecha.toLocaleTimeString('es-MX')}
+                        ${fecha.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
                     </small>
                 </td>
                 <td>${tipoBadge}</td>
-                <td><code>${m.sku}</code></td>
+                <td><code style="font-size: 0.85rem;">${m.sku}</code></td>
                 <td>
-                    <div style="max-width: 200px;">
-                        <strong>${m.nombreproducto}</strong><br>
+                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.nombreproducto}${m.dimensiones ? ' - ' + m.dimensiones : ''}">
+                        <strong style="font-size: 0.9rem;">${m.nombreproducto}</strong><br>
                         <small class="text-muted">${m.dimensiones || 'N/A'}</small>
                     </div>
                 </td>
-                <td class="${impactoClass} fw-bold">${impacto}</td>
-                <td>${m.stock_previo}</td>
-                <td>${m.stock_posterior}</td>
+                <td class="${impactoClass} fw-bold text-center">${impacto}</td>
+                <td class="text-center">${m.stock_previo}</td>
+                <td class="text-center">${m.stock_posterior}</td>
                 <td>
-                    <small>${formatearMotivo(m.motivo)}</small>
-                </td>
-                <td>
-                    <small>
-                        ${m.admin_nombre}<br>
-                        <span class="text-muted">${m.admin_email}</span>
+                    <small style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${formatearMotivo(m.motivo)}">
+                        ${formatearMotivo(m.motivo)}
                     </small>
                 </td>
                 <td>
+                    <small style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.admin_nombre} (${m.admin_email})">
+                        ${m.admin_nombre}
+                    </small>
+                </td>
+                <td class="text-center">
                     <button class="btn btn-sm btn-outline-primary" onclick="verDetalle(${m.movimiento_id})" title="Ver detalles">
                         <i class="bi bi-eye"></i>
                     </button>

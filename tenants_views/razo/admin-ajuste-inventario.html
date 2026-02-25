@@ -155,9 +155,9 @@
 
     <!-- Modal de Selección de Variantes -->
     <div class="modal fade" id="modalVariantes" tabindex="-1" aria-labelledby="modalVariantesLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
-                <div class="modal-header">
+                <div class="modal-header bg-light">
                     <h5 class="modal-title" id="modalVariantesLabel">
                         <i class="bi bi-box-seam"></i> Selecciona una Variante
                     </h5>
@@ -166,17 +166,19 @@
                 <div class="modal-body">
                     <div id="producto-info" class="mb-3"></div>
                     <div class="table-responsive">
-                        <table class="table table-hover admin-table">
+                        <table class="table table-hover admin-table align-middle">
                             <thead>
                                 <tr>
-                                    <th>SKU</th>
-                                    <th>Atributos</th>
-                                    <th>Acción</th>
+                                    <th style="width: 80px;">Imagen</th>
+                                    <th style="width: 150px;">SKU</th>
+                                    <th style="width: 150px;">Medidas</th>
+                                    <th style="width: 200px;">Color</th>
+                                    <th style="width: 120px;">Acción</th>
                                 </tr>
                             </thead>
                             <tbody id="variantes-tbody">
                                 <tr>
-                                    <td colspan="3" class="text-center text-muted">
+                                    <td colspan="5" class="text-center text-muted py-4">
                                         <i class="bi bi-hourglass-split"></i> Cargando variantes...
                                     </td>
                                 </tr>
