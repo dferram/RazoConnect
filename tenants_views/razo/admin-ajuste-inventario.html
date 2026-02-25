@@ -10,6 +10,58 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/admin.css">
     <link rel="stylesheet" href="css/mobile-responsive.css">
+    <style>
+        /* Estilos específicos para modal de variantes - Máxima prioridad */
+        #modalVariantes .modal-dialog {
+            max-width: 900px !important;
+            width: 95% !important;
+        }
+
+        #modalVariantes .modal-content {
+            max-width: none !important;
+            width: 100% !important;
+            margin: 0 !important;
+        }
+
+        #modalVariantes .modal-header {
+            background: linear-gradient(135deg, #F97316 0%, #FF8C42 100%) !important;
+            color: white !important;
+            padding: 2rem !important;
+        }
+
+        #modalVariantes .modal-title {
+            color: white !important;
+            font-weight: 700 !important;
+        }
+
+        #modalVariantes .btn-close {
+            filter: brightness(0) invert(1) !important;
+        }
+
+        #modalVariantes .modal-body {
+            padding: 0 !important;
+        }
+
+        #modalVariantes table {
+            width: 100% !important;
+            margin: 0 !important;
+        }
+
+        #modalVariantes th {
+            background: #f8f9fa !important;
+            padding: 1.5rem !important;
+            font-weight: 700 !important;
+        }
+
+        #modalVariantes td {
+            padding: 1.5rem !important;
+        }
+
+        #modalVariantes img {
+            width: 70px !important;
+            border-radius: 10px !important;
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
@@ -155,36 +207,34 @@
 
     <!-- Modal de Selección de Variantes -->
     <div class="modal fade" id="modalVariantes" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered razo-variantes-modal">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalVariantesLabel">
+                    <h5 class="modal-title">
                         <i class="bi bi-box-seam"></i> Selecciona una Variante
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body p-0">
-                    <div id="producto-info" class="mb-3 px-3 pt-3"></div>
-                    <div class="razo-variantes-table-wrapper">
-                        <table class="table razo-variantes-table">
-                            <thead>
-                                <tr>
-                                    <th>Imagen</th>
-                                    <th>SKU</th>
-                                    <th>Medidas</th>
-                                    <th>Color</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody id="variantes-tbody">
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted py-4">
-                                        <i class="bi bi-hourglass-split"></i> Cargando variantes...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="modal-body">
+                    <div id="producto-info" class="mb-3"></div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Imagen</th>
+                                <th>SKU</th>
+                                <th>Medidas</th>
+                                <th>Color</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="variantes-tbody">
+                            <tr>
+                                <td colspan="5" class="text-center py-4">
+                                    <i class="bi bi-hourglass-split"></i> Cargando variantes...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

@@ -200,13 +200,12 @@ const mostrarVariantes = (variantes) => {
                 <td>
                     <img src="${imagenUrl}" 
                          alt="${v.sku}" 
-                         class="razo-variant-img"
                          onerror="this.src='/images/placeholder-product.png'">
                 </td>
                 <td><strong>${v.sku}</strong></td>
                 <td>${medidas}</td>
                 <td>${colorDisplay}</td>
-                <td class="text-center">
+                <td>
                     <button type="button" class="btn btn-sm btn-primary" 
                             onclick="seleccionarVariante(${JSON.stringify(v).replace(/"/g, '&quot;')})">
                         <i class="bi bi-check-circle"></i> Seleccionar
