@@ -1107,29 +1107,34 @@ body.sidebar-collapsed .admin-main-content {
   justify-content: space-between;
   gap: 1rem;
   padding: 1.75rem 1.75rem 1rem;
+  background: linear-gradient(135deg, #F97316 0%, #FF8C42 100%) !important;
+  color: white !important;
+  border-bottom: none !important;
 }
 
 .modal-title {
   margin: 0;
   font-family: "Poppins", sans-serif;
   font-size: 1.35rem;
-  color: var(--razo-orange-dark);
-  font-weight: 600;
+  color: white !important;
+  font-weight: 700 !important;
 }
 
 .modal-close-btn {
   background: transparent;
   border: none;
-  color: rgba(15, 23, 42, 0.35);
+  color: white !important;
   font-size: 2rem;
   line-height: 1;
   cursor: pointer;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition: color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+  opacity: 0.8;
 }
 
 .modal-close-btn:hover {
-  color: rgba(15, 23, 42, 0.6);
+  color: white !important;
   transform: scale(1.05);
+  opacity: 1;
 }
 
 .modal-body {
@@ -1676,19 +1681,7 @@ body.sidebar-collapsed .admin-main-content {
    Solo afecta colores y estructura, NO tamaños
    ======================================== */
 
-  /* Headers de modales con gradiente naranja */
-  .modal-header {
-    background: linear-gradient(135deg, #F97316 0%, #FF8C42 100%) !important;
-    color: white !important;
-    border-bottom: none !important;
-  }
-
-  .modal-title {
-    color: white !important;
-    font-weight: 700 !important;
-  }
-
-  /* Botón cerrar blanco en headers */
+  /* Botón cerrar de Bootstrap (para modales de Bootstrap) */
   .modal-header .btn-close {
     filter: brightness(0) invert(1) !important;
     opacity: 0.8 !important;

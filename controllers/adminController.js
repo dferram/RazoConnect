@@ -4288,7 +4288,7 @@ const updatePedidoEstatus = async (req, res) => {
     }
 
     // Validar estatus permitidos
-    const estatusValidos = ['Pendiente', 'Confirmado', 'Procesando', 'Enviado', 'Entregado', 'Cancelado', 'Completado', 'Parcial', 'Parcialmente Surtido'];
+    const estatusValidos = ['Pendiente', 'Surtido', 'Procesando', 'Enviado', 'Entregado', 'Cancelado', 'Completado', 'Parcial', 'Parcialmente Surtido'];
     if (!estatusValidos.includes(estatus)) {
       console.error(`[updatePedidoEstatus] Invalid status: ${estatus}. Valid: ${estatusValidos.join(', ')}`);
       return res.status(400).json({
@@ -4312,18 +4312,58 @@ const updatePedidoEstatus = async (req, res) => {
 
     const estatusActual = pedidoActualResult.rows[0].estatus;
 
-    // Validar que Enviado/Entregado solo se puedan marcar después de Confirmado
-    if ((estatus === 'Enviado' || estatus === 'Entregado') && estatusActual !== 'Confirmado' && estatusActual !== 'Enviado') {
+    // Validar que Enviado/Entregado solo se puedan marcar después de Surtido
+    if ((estatus === 'Enviado' || estatus === 'Entregado') && estatusActual !== 'Surtido' && estatusActual !== 'Enviado') {
       return res.status(400).json({
         success: false,
-        message: `No se puede cambiar a "${estatus}" sin haber confirmado el pedido primero. El pedido debe estar en estado "Confirmado" antes de marcarlo como "${estatus}".`,
+        message: `No se puede cambiar a "${estatus}" sin haber surtido el pedido primero. El pedido debe estar en estado "Surtido" antes de marcarlo como "${estatus}".`,
         estatusActual: estatusActual,
-        estatusRequerido: 'Confirmado'
+        estatusRequerido: 'Surtido'
       });
     }
 
-    // ✅ PROBLEMA 2: Validar stock antes de cambiar a Confirmado, Enviado o Entregado
-    const estatusQueRequierenStock = ['Confirmado', 'Enviado', 'Entregado'];
+    // ✅ Validar que NO haya productos en backorder antes de confirmar
+    if (estatus === 'Surtido' && estatusActual !== 'Surtido') {
+      console.log(`[updatePedidoEstatus] 🔍 Validating no backorder items for order ${pedidoId}`);
+      
+      // Verificar si hay productos marcados como backorder
+      const backorderCheck = await db.query(
+        `SELECT 
+          d.detalleid,
+          d.esbackorder,
+          pv.sku,
+          p.nombreproducto as producto_nombre,
+          pv.dimensiones
+         FROM detallesdelpedido d
+         INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
+         INNER JOIN productos p ON p.productoid = pv.productoid
+         WHERE d.pedidoid = $1 AND p.tenant_id = $2 AND d.esbackorder = true`,
+        [pedidoId, tenant_id]
+      );
+
+      if (backorderCheck.rows.length > 0) {
+        console.error(`[updatePedidoEstatus] ❌ Pedido tiene ${backorderCheck.rows.length} productos en backorder`);
+        
+        const productosBackorder = backorderCheck.rows.map(item => 
+          `${item.producto_nombre} (${item.sku})`
+        ).join(', ');
+        
+        return res.status(400).json({
+          success: false,
+          message: `No se puede confirmar el pedido porque tiene productos marcados como "Bajo Pedido"`,
+          error: `Los siguientes productos están en backorder: ${productosBackorder}. Debes esperar a que llegue el inventario o generar una remisión parcial.`,
+          data: {
+            productosBackorder: backorderCheck.rows,
+            totalBackorder: backorderCheck.rows.length
+          }
+        });
+      }
+
+      console.log(`[updatePedidoEstatus] ✅ No hay productos en backorder`);
+    }
+
+    // ✅ Validar stock antes de cambiar a Surtido, Enviado o Entregado
+    const estatusQueRequierenStock = ['Surtido', 'Enviado', 'Entregado'];
     
     if (estatusQueRequierenStock.includes(estatus) && !confirmarBackorder) {
       console.log(`[updatePedidoEstatus] 🔍 Validating stock for order ${pedidoId} before changing to ${estatus}`);
@@ -4335,7 +4375,7 @@ const updatePedidoEstatus = async (req, res) => {
           d.varianteid,
           d.cantidadpaquetes,
           pv.sku,
-          p.nombre as producto_nombre,
+          p.nombreproducto as producto_nombre,
           pv.dimensiones,
           COALESCE(pv.stock, 0) as stock_actual
          FROM detallesdelpedido d
@@ -4397,12 +4437,35 @@ const updatePedidoEstatus = async (req, res) => {
       console.log(`[updatePedidoEstatus] ✅ Stock validado correctamente para todos los productos`);
     }
 
-    // ✅ DEDUCIR STOCK cuando el estatus cambia a "Confirmado"
-    if (estatus === 'Confirmado' && estatusActual !== 'Confirmado') {
-      console.log(`[updatePedidoEstatus] 📦 Deduciendo stock para pedido ${pedidoId}...`);
+    // ✅ DEDUCIR STOCK y GENERAR CXC cuando el estatus cambia a "Surtido"
+    if (estatus === 'Surtido' && estatusActual !== 'Surtido') {
+      console.log(`[updatePedidoEstatus] 📦 Deduciendo stock y generando CXC para pedido ${pedidoId}...`);
       
       const inventoryService = require('../services/inventoryService');
       const SmartStockService = require('../services/SmartStockService');
+      
+      // Obtener información completa del pedido
+      const pedidoInfo = await db.query(
+        `SELECT 
+          p.pedidoid,
+          p.clienteid,
+          p.montototal,
+          p.es_credito,
+          p.monto_descuento
+         FROM pedidos p
+         WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
+        [pedidoId, tenant_id]
+      );
+
+      if (pedidoInfo.rows.length === 0) {
+        console.error(`[updatePedidoEstatus] ❌ No se encontró información del pedido ${pedidoId}`);
+        return res.status(400).json({
+          success: false,
+          message: "No se encontró información del pedido"
+        });
+      }
+
+      const pedido = pedidoInfo.rows[0];
       
       // Obtener detalles del pedido para deducir stock
       const detallesResult = await db.query(
@@ -4412,7 +4475,7 @@ const updatePedidoEstatus = async (req, res) => {
           d.cantidadpaquetes,
           d.piezastotales,
           pv.sku,
-          p.nombre as producto_nombre
+          p.nombreproducto as producto_nombre
          FROM detallesdelpedido d
          INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
          INNER JOIN productos p ON p.productoid = pv.productoid
@@ -4475,6 +4538,68 @@ const updatePedidoEstatus = async (req, res) => {
       }
 
       console.log(`[updatePedidoEstatus] 🎉 Stock deducido exitosamente para todos los productos del pedido ${pedidoId}`);
+
+      // ✅ GENERAR CXC si el pedido es a crédito
+      if (pedido.es_credito) {
+        console.log(`[updatePedidoEstatus] 💳 Generando CXC para pedido a crédito ${pedidoId}`);
+        
+        const montoTotal = parseFloat(pedido.montototal);
+        const clienteId = parseInt(pedido.clienteid);
+
+        try {
+          // Insertar en cuentas_por_cobrar
+          await db.query(
+            `INSERT INTO cuentas_por_cobrar 
+             (pedido_id, cliente_id, tipo_movimiento, monto, descripcion, tenant_id)
+             VALUES ($1, $2, 'CARGO', $3, $4, $5)`,
+            [
+              pedidoId,
+              clienteId,
+              montoTotal,
+              `Cargo por pedido #${pedidoId} confirmado`,
+              tenant_id
+            ]
+          );
+
+          console.log(`[updatePedidoEstatus] ✅ CXC generado: $${montoTotal.toFixed(2)} para cliente ${clienteId}`);
+
+          // Actualizar saldo deudor del cliente
+          await db.query(
+            `UPDATE cliente_creditos 
+             SET saldo_deudor = saldo_deudor + $1
+             WHERE clienteid = $2 AND tenant_id = $3`,
+            [montoTotal, clienteId, tenant_id]
+          );
+
+          console.log(`[updatePedidoEstatus] ✅ Saldo deudor actualizado para cliente ${clienteId}`);
+
+          // Registrar movimiento en credito_movimientos
+          await db.query(
+            `INSERT INTO credito_movimientos 
+             (clienteid, tipo, monto, descripcion, referencia, tenant_id)
+             VALUES ($1, 'CARGO', $2, $3, $4, $5)`,
+            [
+              clienteId,
+              montoTotal,
+              `Cargo por confirmación de pedido #${pedidoId}`,
+              `PED-${pedidoId}`,
+              tenant_id
+            ]
+          );
+
+          console.log(`[updatePedidoEstatus] ✅ Movimiento de crédito registrado`);
+
+        } catch (cxcError) {
+          console.error(`[updatePedidoEstatus] ❌ Error al generar CXC:`, cxcError);
+          return res.status(500).json({
+            success: false,
+            message: `Error al generar la cuenta por cobrar`,
+            error: cxcError.message
+          });
+        }
+      } else {
+        console.log(`[updatePedidoEstatus] ℹ️ Pedido ${pedidoId} no es a crédito, no se genera CXC`);
+      }
     }
 
     // Actualizar el estatus del pedido (sin FechaActualizacion que no existe)
