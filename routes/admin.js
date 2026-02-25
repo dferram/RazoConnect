@@ -1622,6 +1622,22 @@ router.get(
   inventarioAjusteController.buscarProductoPorSKU
 );
 
+// Autocompletado visual de productos (SIN STOCK - Seguridad Ciega)
+router.get(
+  "/inventario/productos/autocompletado",
+  authenticate,
+  authorizeAdmin,
+  inventarioAjusteController.buscarProductosAutocompletado
+);
+
+// Obtener variantes de un producto maestro (SIN STOCK - Seguridad Ciega)
+router.get(
+  "/inventario/productos/:productoId/variantes",
+  authenticate,
+  authorizeAdmin,
+  inventarioAjusteController.getVariantesProducto
+);
+
 // ============================================
 // RUTAS DE AUDITORÍA MENSUAL DE INVENTARIO
 // ============================================
