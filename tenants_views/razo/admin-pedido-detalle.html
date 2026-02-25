@@ -768,7 +768,7 @@
     <div id="statusModal" class="modal">
       <div class="modal-content modal-content--xl">
         <div class="modal-header">
-          <h2 class="modal-title">Cambiar Estatus del Pedido</h2>
+          <h2 class="modal-title">Confirmar Pedido con Stock Disponible</h2>
           <button class="modal-close-btn" onclick="closeStatusModal()">
             &times;
           </button>
@@ -797,7 +797,7 @@
             >
               <option value="Pendiente">Pendiente</option>
               <option value="Parcialmente Surtido">Parcialmente Surtido</option>
-              <option value="Confirmado">Confirmado ⚠️ (Reduce Stock)</option>
+              <option value="Surtido">✅ Con Stock (Confirmar y Reducir Inventario)</option>
               <option value="Enviado">Enviado</option>
               <option value="Entregado">Entregado</option>
               <option value="Cancelado">Cancelado</option>
@@ -814,9 +814,10 @@
             "
           >
             <p style="font-size: 0.875rem; margin: 0">
-              <strong>⚠️ Importante:</strong> Al cambiar a "Confirmado", se
-              reducirá automáticamente el stock de los productos y se registrará
-              en el log de inventario.
+              <strong>⚠️ Importante:</strong> Al confirmar con stock disponible:
+              <br>• Se reducirá automáticamente el inventario
+              <br>• Se generará la cuenta por cobrar (CXC) si es a crédito
+              <br>• No se puede confirmar si hay productos en "Bajo Pedido"
             </p>
           </div>
 
@@ -842,7 +843,7 @@
               id="btnConfirmar"
               style="flex: 1"
             >
-              <span id="btnConfirmarText">Confirmar Cambio</span>
+              <span id="btnConfirmarText">Confirmar Pedido</span>
               <div
                 class="spinner"
                 id="btnConfirmarSpinner"
