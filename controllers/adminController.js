@@ -5048,7 +5048,11 @@ const saveReglaEmpaque = async (req, res) => {
  * Obtener clientes asignados a un agente específico
  * GET /api/admin/agentes/:id/clientes
  */
-const getAgenteClientes = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use agentesAdminController.getAgenteClientes instead
+ */
+const getAgenteClientes_MIGRATED = async (req, res) => {
   try {
     const agenteId = parseInt(req.params.id, 10);
 
@@ -9417,7 +9421,11 @@ const eliminarCategoria_MIGRATED = async (req, res) => {
  * Crear un nuevo agente
  * POST /api/admin/agentes
  */
-const crearAgente = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use agentesAdminController.crearAgente instead
+ */
+const crearAgente_MIGRATED = async (req, res) => {
   try {
     const { nombre, apellido, email, password, telefono, porcentaje_comision } = req.body;
 
@@ -9645,7 +9653,11 @@ const crearAgente = async (req, res) => {
  * Obtener todos los agentes (reales + pendientes de creación)
  * GET /api/admin/agentes
  */
-const getAllAgentes = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use agentesAdminController.getAllAgentes instead
+ */
+const getAllAgentes_MIGRATED = async (req, res) => {
   try {
     // CRITICAL: Filter by tenant_id for multi-tenant isolation
     const { tenant_id } = req.tenant;
@@ -9784,7 +9796,11 @@ const getAllAgentes = async (req, res) => {
  * Obtener detalles de un agente específico
  * GET /api/admin/agentes/:id
  */
-const getAgenteDetalle = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use agentesAdminController.getAgenteDetalle instead
+ */
+const getAgenteDetalle_MIGRATED = async (req, res) => {
   try {
     const agenteId = parseInt(req.params.id);
 
@@ -9876,7 +9892,11 @@ const getAgenteDetalle = async (req, res) => {
  * Desactivar un agente (soft delete) vía control de cambios
  * PUT /api/admin/agentes/:id/desactivar
  */
-const desactivarAgente = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use agentesAdminController.desactivarAgente instead
+ */
+const desactivarAgente_MIGRATED = async (req, res) => {
   try {
     const agenteId = parseInt(req.params.id);
 
@@ -10024,7 +10044,11 @@ const desactivarAgente = async (req, res) => {
  * Actualizar información de un agente
  * PUT /api/admin/agentes/:id
  */
-const actualizarAgente = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use agentesAdminController.actualizarAgente instead
+ */
+const actualizarAgente_MIGRATED = async (req, res) => {
   try {
     const agenteId = parseInt(req.params.id);
     const { nombre, apellido, email, telefono, porcentaje_comision } = req.body;
@@ -17235,12 +17259,12 @@ module.exports = {
   getMedidasExistentes,
   crearVariante,
   actualizarVariante,
-  crearAgente,
-  actualizarAgente,
-  getAllAgentes,
-  getAgenteDetalle,
-  getAgenteClientes,
-  desactivarAgente,
+  // crearAgente, // ⚠️ MIGRADO a agentesAdminController.js
+  // actualizarAgente, // ⚠️ MIGRADO a agentesAdminController.js
+  // getAllAgentes, // ⚠️ MIGRADO a agentesAdminController.js
+  // getAgenteDetalle, // ⚠️ MIGRADO a agentesAdminController.js
+  // getAgenteClientes, // ⚠️ MIGRADO a agentesAdminController.js
+  // desactivarAgente, // ⚠️ MIGRADO a agentesAdminController.js
   getAllComisiones,
   pagarComision,
   // getAllClientes, // ⚠️ MIGRADO a clientesAdminController.js

@@ -34,6 +34,7 @@ const proveedoresAdminController = require("../controllers/proveedoresAdminContr
 const categoriasAdminController = require("../controllers/categoriasAdminController");
 const variantesAdminController = require("../controllers/variantesAdminController");
 const cxcAdminController = require("../controllers/cxcAdminController");
+const agentesAdminController = require("../controllers/agentesAdminController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -679,41 +680,47 @@ router.get(
 /**
  * Gestión de agentes
  */
+// ✅ REFACTORED: Migrado a agentesAdminController.js
 router.get(
   "/agentes",
   authenticate,
   authorizeAdmin,
-  adminController.getAllAgentes
+  agentesAdminController.getAllAgentes
 );
+// ✅ REFACTORED: Migrado a agentesAdminController.js
 router.post(
   "/agentes",
   authenticate,
   authorizeAdmin,
-  adminController.crearAgente
+  agentesAdminController.crearAgente
 );
+// ✅ REFACTORED: Migrado a agentesAdminController.js
 router.get(
   "/agentes/:id",
   authenticate,
   authorizeAdmin,
-  adminController.getAgenteDetalle
+  agentesAdminController.getAgenteDetalle
 );
+// ✅ REFACTORED: Migrado a agentesAdminController.js
 router.get(
   "/agentes/:id/clientes",
   authenticate,
   authorizeAdmin,
-  adminController.getAgenteClientes
+  agentesAdminController.getAgenteClientes
 );
+// ✅ REFACTORED: Migrado a agentesAdminController.js
 router.put(
   "/agentes/:id",
   authenticate,
   authorizeAdmin,
-  adminController.actualizarAgente
+  agentesAdminController.actualizarAgente
 );
+// ✅ REFACTORED: Migrado a agentesAdminController.js
 router.put(
   "/agentes/:id/desactivar",
   authenticate,
   authorizeAdmin,
-  adminController.desactivarAgente
+  agentesAdminController.desactivarAgente
 );
 
 /**
