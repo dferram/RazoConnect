@@ -146,7 +146,7 @@ const cargarMovimientos = async () => {
         console.error('Error al cargar movimientos:', error);
         document.getElementById('tabla-movimientos').innerHTML = `
             <tr>
-                <td colspan="9" class="text-center text-danger py-4">
+                <td colspan="8" class="text-center text-danger py-4">
                     <i class="bi bi-exclamation-triangle fs-3"></i>
                     <p class="mt-2">Error al cargar el historial: ${error.message}</p>
                 </td>
@@ -161,7 +161,7 @@ const renderizarTabla = (movimientos) => {
     if (movimientos.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" class="text-center py-5">
+                <td colspan="8" class="text-center py-5">
                     <div class="empty-state">
                         <div class="empty-state-icon">📋</div>
                         <h3 class="empty-state-title">No se encontraron ajustes manuales</h3>
@@ -194,7 +194,7 @@ const renderizarTabla = (movimientos) => {
                     </small>
                 </td>
                 <td>${tipoBadge}</td>
-                <td><code style="font-size: 0.8rem;">${m.sku}</code></td>
+                <td><code style="font-size: 0.9rem;">${m.sku}</code></td>
                 <td>
                     <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
                          title="${m.nombreproducto}${m.dimensiones ? ' - ' + m.dimensiones : ''}">
@@ -202,7 +202,7 @@ const renderizarTabla = (movimientos) => {
                         <small class="text-muted">${m.dimensiones || 'N/A'}</small>
                     </div>
                 </td>
-                <td class="${impactoClass} fw-bold text-center"><small>${impacto}</small></td>
+                <td class="${impactoClass} fw-bold text-center font-size=1.2rem;">${impacto}</td>
                 <td>
                     <small style="display: block; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
                            title="${formatearMotivo(m.motivo)}">
@@ -215,11 +215,14 @@ const renderizarTabla = (movimientos) => {
                         ${m.admin_nombre}
                     </small>
                 </td>
+                <!-- Columna de acción comentada - No es necesaria con la tabla -->
+                <!--
                 <td class="text-center">
                     <button class="btn btn-sm btn-outline-primary" onclick="verDetalle(${m.movimiento_id})" title="Ver detalles">
                         <i class="bi bi-eye"></i>
                     </button>
                 </td>
+                -->
             </tr>
         `;
     }).join('');
@@ -309,6 +312,8 @@ window.cambiarPagina = (pagina) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
+// Función verDetalle() comentada - No es necesaria con la tabla
+/*
 window.verDetalle = (movimientoId) => {
     const movimiento = movimientosData.find(m => m.movimiento_id === movimientoId);
     
@@ -401,6 +406,7 @@ window.verDetalle = (movimientoId) => {
     const modal = new bootstrap.Modal(document.getElementById('modal-detalle-movimiento'));
     modal.show();
 };
+*/
 
 const limpiarFiltros = () => {
     document.getElementById('form-filtros').reset();
