@@ -10208,10 +10208,10 @@ const actualizarAgente_MIGRATED = async (req, res) => {
 };
 
 /**
- * Obtener todas las comisiones
- * GET /api/admin/comisiones
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use comisionesAdminController.getAllComisiones instead
  */
-const getAllComisiones = async (req, res) => {
+const getAllComisiones_MIGRATED = async (req, res) => {
   try {
     const { estatus } = req.query;
 
@@ -10270,10 +10270,10 @@ const getAllComisiones = async (req, res) => {
 };
 
 /**
- * Pagar una comisión
- * PUT /api/admin/comisiones/:id/pagar
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use comisionesAdminController.pagarComision instead
  */
-const pagarComision = async (req, res) => {
+const pagarComision_MIGRATED = async (req, res) => {
   try {
     const comisionId = parseInt(req.params.id);
 
@@ -17265,8 +17265,8 @@ module.exports = {
   // getAgenteDetalle, // ⚠️ MIGRADO a agentesAdminController.js
   // getAgenteClientes, // ⚠️ MIGRADO a agentesAdminController.js
   // desactivarAgente, // ⚠️ MIGRADO a agentesAdminController.js
-  getAllComisiones,
-  pagarComision,
+  // getAllComisiones, // ⚠️ MIGRADO a comisionesAdminController.js
+  // pagarComision, // ⚠️ MIGRADO a comisionesAdminController.js
   // getAllClientes, // ⚠️ MIGRADO a clientesAdminController.js
   // getClienteDetalle, // ⚠️ MIGRADO a clientesAdminController.js
   // actualizarEstadoCliente, // ⚠️ MIGRADO a clientesAdminController.js

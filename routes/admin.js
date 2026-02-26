@@ -35,6 +35,7 @@ const categoriasAdminController = require("../controllers/categoriasAdminControl
 const variantesAdminController = require("../controllers/variantesAdminController");
 const cxcAdminController = require("../controllers/cxcAdminController");
 const agentesAdminController = require("../controllers/agentesAdminController");
+const comisionesAdminController = require("../controllers/comisionesAdminController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -726,17 +727,19 @@ router.put(
 /**
  * Gestión de comisiones
  */
+// ✅ REFACTORED: Migrado a comisionesAdminController.js
 router.get(
   "/comisiones",
   authenticate,
   authorizeAdmin,
-  adminController.getAllComisiones
+  comisionesAdminController.getAllComisiones
 );
+// ✅ REFACTORED: Migrado a comisionesAdminController.js
 router.put(
   "/comisiones/:id/pagar",
   authenticate,
   authorizeAdmin,
-  adminController.pagarComision
+  comisionesAdminController.pagarComision
 );
 
 router.get(
