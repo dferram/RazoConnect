@@ -4268,387 +4268,22 @@ const getAllPedidos = async (req, res) => {
 };
 
 /**
- * Actualizar estatus de un pedido
- * PUT /api/admin/pedidos/:id
- * FIX: Validación de stock mejorada para prevenir Error 500
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/pedidosStatusController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * MOTIVO: Implementación de transacciones atómicas con rollback automático
+ * para prevenir inconsistencias de datos (stock deducido sin CXC generado).
+ * 
+ * RUTA: PUT /api/admin/pedidos/:id
+ * NUEVO CONTROLADOR: pedidosStatusController.updatePedidoEstatus
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use pedidosStatusController.updatePedidoEstatus instead
  */
-const updatePedidoEstatus = async (req, res) => {
-  try {
-    const { tenant_id } = req.tenant;
-    const pedidoId = parseInt(req.params.id);
-    const { estatus, confirmarBackorder } = req.body;
-
-    console.log(`[updatePedidoEstatus] Updating order ${pedidoId} to status: ${estatus}`);
-
-    if (!estatus) {
-      return res.status(400).json({
-        success: false,
-        message: "El estatus es requerido"
-      });
-    }
-
-    // Validar estatus permitidos
-    const estatusValidos = ['Pendiente', 'Surtido', 'Procesando', 'Enviado', 'Entregado', 'Cancelado', 'Completado', 'Parcial', 'Parcialmente Surtido'];
-    if (!estatusValidos.includes(estatus)) {
-      console.error(`[updatePedidoEstatus] Invalid status: ${estatus}. Valid: ${estatusValidos.join(', ')}`);
-      return res.status(400).json({
-        success: false,
-        message: `Estatus inválido. Valores permitidos: ${estatusValidos.join(', ')}`
-      });
-    }
-
-    // Obtener el estatus actual del pedido para validar transiciones
-    const pedidoActualResult = await db.query(
-      `SELECT estatus FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2`,
-      [pedidoId, tenant_id]
-    );
-
-    if (pedidoActualResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Pedido no encontrado"
-      });
-    }
-
-    const estatusActual = pedidoActualResult.rows[0].estatus;
-
-    // Validar que Enviado/Entregado solo se puedan marcar después de Surtido
-    if ((estatus === 'Enviado' || estatus === 'Entregado') && estatusActual !== 'Surtido' && estatusActual !== 'Enviado') {
-      return res.status(400).json({
-        success: false,
-        message: `No se puede cambiar a "${estatus}" sin haber surtido el pedido primero. El pedido debe estar en estado "Surtido" antes de marcarlo como "${estatus}".`,
-        estatusActual: estatusActual,
-        estatusRequerido: 'Surtido'
-      });
-    }
-
-    // ✅ Validar stock antes de cambiar a Surtido, Enviado o Entregado
-    // NOTA: Ya NO validamos el flag esbackorder porque es histórico y no refleja
-    // la disponibilidad actual. Solo validamos stock real disponible.
-    const estatusQueRequierenStock = ['Surtido', 'Enviado', 'Entregado'];
-    
-    if (estatusQueRequierenStock.includes(estatus) && !confirmarBackorder) {
-      console.log(`[updatePedidoEstatus] 🔍 Validating stock for order ${pedidoId} before changing to ${estatus}`);
-      
-      // Obtener detalles del pedido con stock actual
-      const detallesResult = await db.query(
-        `SELECT 
-          d.detalleid,
-          d.varianteid,
-          d.cantidadpaquetes,
-          d.piezastotales,
-          pv.sku,
-          p.nombreproducto as producto_nombre,
-          pv.dimensiones,
-          COALESCE(pv.stock, 0) as stock_actual
-         FROM detallesdelpedido d
-         INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
-         INNER JOIN productos p ON p.productoid = pv.productoid
-         WHERE d.pedidoid = $1 AND p.tenant_id = $2`,
-        [pedidoId, tenant_id]
-      );
-
-      if (detallesResult.rows.length === 0) {
-        console.error(`[updatePedidoEstatus] ❌ No se encontraron productos para el pedido ${pedidoId}`);
-        return res.status(400).json({
-          success: false,
-          message: "No se encontraron productos en el pedido"
-        });
-      }
-
-      const itemsConStockInsuficiente = [];
-      
-      for (const item of detallesResult.rows) {
-        // CRÍTICO: Comparar PIEZAS con PIEZAS (no paquetes con piezas)
-        const piezasNecesarias = parseInt(item.piezastotales) || 0;
-        const piezasDisponibles = parseInt(item.stock_actual) || 0;
-        
-        console.log(`[updatePedidoEstatus] 📦 ${item.sku}: Necesario=${piezasNecesarias} pzas, Disponible=${piezasDisponibles} pzas`);
-        
-        if (piezasDisponibles < piezasNecesarias) {
-          itemsConStockInsuficiente.push({
-            sku: item.sku,
-            producto: item.producto_nombre,
-            dimensiones: item.dimensiones || 'N/A',
-            necesario: piezasNecesarias,
-            disponible: piezasDisponibles,
-            faltante: piezasNecesarias - piezasDisponibles
-          });
-        }
-      }
-
-      // Si hay items con stock insuficiente, RECHAZAR la operación
-      if (itemsConStockInsuficiente.length > 0) {
-        console.warn(`[updatePedidoEstatus] ⚠️ Stock insuficiente detectado para ${itemsConStockInsuficiente.length} items`);
-        
-        // Construir mensaje detallado
-        const detalleProductos = itemsConStockInsuficiente.map(item => 
-          `${item.producto} (${item.sku}): Necesitas ${item.necesario}, disponible ${item.disponible}`
-        ).join('; ');
-        
-        return res.status(400).json({
-          success: false,
-          message: `Stock insuficiente para el producto: ${itemsConStockInsuficiente[0].producto}`,
-          error: `No hay suficiente inventario para completar este pedido. ${detalleProductos}`,
-          data: {
-            itemsConStockInsuficiente,
-            totalItems: detallesResult.rows.length,
-            itemsConProblemas: itemsConStockInsuficiente.length
-          }
-        });
-      }
-
-      console.log(`[updatePedidoEstatus] ✅ Stock validado correctamente para todos los productos`);
-    }
-
-    // ✅ DEDUCIR STOCK y GENERAR CXC cuando el estatus cambia a "Surtido"
-    if (estatus === 'Surtido' && estatusActual !== 'Surtido') {
-      console.log(`[updatePedidoEstatus] 📦 Deduciendo stock y generando CXC para pedido ${pedidoId}...`);
-      
-      const inventoryService = require('../services/inventoryService');
-      const SmartStockService = require('../services/SmartStockService');
-      
-      // Obtener información completa del pedido
-      const pedidoInfo = await db.query(
-        `SELECT 
-          p.pedidoid,
-          p.clienteid,
-          p.montototal,
-          p.es_credito,
-          p.monto_descuento
-         FROM pedidos p
-         WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
-        [pedidoId, tenant_id]
-      );
-
-      if (pedidoInfo.rows.length === 0) {
-        console.error(`[updatePedidoEstatus] ❌ No se encontró información del pedido ${pedidoId}`);
-        return res.status(400).json({
-          success: false,
-          message: "No se encontró información del pedido"
-        });
-      }
-
-      const pedido = pedidoInfo.rows[0];
-      
-      // Obtener detalles del pedido para deducir stock
-      const detallesResult = await db.query(
-        `SELECT 
-          d.detalleid,
-          d.varianteid,
-          d.cantidadpaquetes,
-          d.piezastotales,
-          pv.sku,
-          p.nombreproducto as producto_nombre
-         FROM detallesdelpedido d
-         INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
-         INNER JOIN productos p ON p.productoid = pv.productoid
-         WHERE d.pedidoid = $1 AND p.tenant_id = $2`,
-        [pedidoId, tenant_id]
-      );
-
-      if (detallesResult.rows.length === 0) {
-        console.error(`[updatePedidoEstatus] ❌ No se encontraron productos para deducir stock`);
-        return res.status(400).json({
-          success: false,
-          message: "No se encontraron productos en el pedido para deducir stock"
-        });
-      }
-
-      const motivo = `Venta Pedido #${pedidoId}`;
-      
-      // Deducir stock para cada producto usando SmartStockService
-      for (const item of detallesResult.rows) {
-        const varianteId = parseInt(item.varianteid);
-        const piezasTotales = parseInt(item.piezastotales) || 0;
-        
-        if (piezasTotales <= 0) {
-          console.log(`[updatePedidoEstatus] ⏭️ Saltando item ${item.sku} - cantidad 0`);
-          continue;
-        }
-
-        try {
-          console.log(`[updatePedidoEstatus] 📉 Deduciendo ${piezasTotales} piezas de ${item.sku}`);
-          
-          // Usar SmartStockService para deducir stock (afecta producto_variantes y stock_admin)
-          const resultado = await SmartStockService.adjustStock({
-            varianteId,
-            cantidad: -1 * piezasTotales, // Negativo para deducir
-            userId: req.user.id,
-            userRole: req.user.roles || ['admin'],
-            tenantId: tenant_id,
-            motivo,
-            client: db // Usar conexión de db directa (no transacción)
-          });
-
-          if (!resultado.success) {
-            console.error(`[updatePedidoEstatus] ❌ Error al deducir stock de ${item.sku}:`, resultado.message);
-            return res.status(400).json({
-              success: false,
-              message: `Error al deducir stock del producto ${item.producto_nombre} (${item.sku}): ${resultado.message}`
-            });
-          }
-
-          console.log(`[updatePedidoEstatus] ✅ Stock deducido: ${item.sku} - ${piezasTotales} piezas (Stock nuevo: ${resultado.newStock})`);
-          
-          // ✅ REGISTRAR MOVIMIENTO EN KARDEX (movimientos_inventario)
-          try {
-            await db.query(
-              `INSERT INTO movimientos_inventario 
-               (variante_id, tipo, cantidad, stock_previo, stock_posterior, motivo, admin_id, tenant_id)
-               VALUES ($1, 'MERMA', $2, $3, $4, $5, $6, $7)`,
-              [
-                varianteId,
-                piezasTotales,
-                resultado.newStock + piezasTotales, // stock antes de deducir
-                resultado.newStock, // stock después de deducir
-                `Venta - Pedido #${pedidoId}`,
-                req.user.id,
-                tenant_id
-              ]
-            );
-            console.log(`[updatePedidoEstatus] 📝 Movimiento registrado en kardex para ${item.sku}`);
-          } catch (movError) {
-            console.error(`[updatePedidoEstatus] ⚠️ Error al registrar movimiento (no crítico):`, movError);
-            // No detenemos el proceso si falla el registro del movimiento
-          }
-          
-        } catch (invError) {
-          console.error(`[updatePedidoEstatus] ❌ Error al deducir inventario para ${item.sku}:`, invError);
-          return res.status(500).json({
-            success: false,
-            message: `Error al deducir inventario del producto ${item.producto_nombre} (${item.sku})`,
-            error: invError.message
-          });
-        }
-      }
-
-      console.log(`[updatePedidoEstatus] 🎉 Stock deducido exitosamente para todos los productos del pedido ${pedidoId}`);
-
-      // ✅ GENERAR CXC si el pedido es a crédito
-      if (pedido.es_credito) {
-        console.log(`[updatePedidoEstatus] 💳 Generando CXC para pedido a crédito ${pedidoId}`);
-        
-        const montoTotal = parseFloat(pedido.montototal);
-        const clienteId = parseInt(pedido.clienteid);
-
-        try {
-          // Insertar en cuentas_por_cobrar
-          await db.query(
-            `INSERT INTO cuentas_por_cobrar 
-             (pedido_id, cliente_id, tipo_movimiento, monto, descripcion, tenant_id)
-             VALUES ($1, $2, 'CARGO', $3, $4, $5)`,
-            [
-              pedidoId,
-              clienteId,
-              montoTotal,
-              `Cargo por pedido #${pedidoId} confirmado`,
-              tenant_id
-            ]
-          );
-
-          console.log(`[updatePedidoEstatus] ✅ CXC generado: $${montoTotal.toFixed(2)} para cliente ${clienteId}`);
-
-          // Actualizar saldo deudor del cliente
-          const creditoUpdate = await db.query(
-            `UPDATE cliente_creditos 
-             SET saldo_deudor = saldo_deudor + $1,
-                 ultima_actualizacion = NOW()
-             WHERE cliente_id = $2 AND tenant_id = $3
-             RETURNING credito_id, saldo_deudor`,
-            [montoTotal, clienteId, tenant_id]
-          );
-
-          console.log(`[updatePedidoEstatus] ✅ Saldo deudor actualizado para cliente ${clienteId}`);
-
-          // Registrar movimiento en credito_movimientos
-          if (creditoUpdate.rows.length > 0) {
-            const creditoId = creditoUpdate.rows[0].credito_id;
-            const saldoDespues = creditoUpdate.rows[0].saldo_deudor;
-            
-            await db.query(
-              `INSERT INTO credito_movimientos 
-               (credito_id, tipo_movimiento, monto, descripcion, referencia_id, saldo_despues_movimiento, tenant_id)
-               VALUES ($1, 'CARGO', $2, $3, $4, $5, $6)`,
-              [
-                creditoId,
-                montoTotal,
-                `Cargo por confirmación de pedido #${pedidoId}`,
-                `PED-${pedidoId}`,
-                saldoDespues,
-                tenant_id
-              ]
-            );
-
-            console.log(`[updatePedidoEstatus] ✅ Movimiento de crédito registrado`);
-          }
-
-        } catch (cxcError) {
-          console.error(`[updatePedidoEstatus] ❌ Error al generar CXC:`, cxcError);
-          return res.status(500).json({
-            success: false,
-            message: `Error al generar la cuenta por cobrar`,
-            error: cxcError.message
-          });
-        }
-      } else {
-        console.log(`[updatePedidoEstatus] ℹ️ Pedido ${pedidoId} no es a crédito, no se genera CXC`);
-      }
-    }
-
-    // Actualizar el estatus del pedido (sin FechaActualizacion que no existe)
-    const result = await db.query(
-      `UPDATE pedidos 
-       SET estatus = $1
-       WHERE pedidoid = $2 AND tenant_id = $3
-       RETURNING *`,
-      [estatus, pedidoId, tenant_id]
-    );
-
-    if (result.rows.length === 0) {
-      console.error(`[updatePedidoEstatus] Order ${pedidoId} not found`);
-      return res.status(404).json({
-        success: false,
-        message: "Pedido no encontrado"
-      });
-    }
-
-    console.log(`[updatePedidoEstatus] ✅ Order ${pedidoId} updated successfully to ${estatus}`);
-
-    // Crear notificación para el cliente
-    try {
-      await crearNotificacionServicio({
-        clienteId: result.rows[0].clienteid,
-        tipo: 'pedido',
-        titulo: `Pedido ${estatus}`,
-        mensaje: `Tu pedido #${pedidoId} ha sido actualizado a: ${estatus}`,
-        url: `/dashboard.html?tab=pedidos`,
-        prioridad: 'normal',
-        metadata: { pedidoId }
-      });
-    } catch (notifError) {
-      console.error("Error al crear notificación:", notifError);
-    }
-
-    res.json({
-      success: true,
-      message: "Estatus actualizado correctamente",
-      data: {
-        pedidoId: result.rows[0].pedidoid,
-        estatus: result.rows[0].estatus
-      }
-    });
-  } catch (error) {
-    console.error("[updatePedidoEstatus] ❌ Error:", error);
-    console.error("Error stack:", error.stack);
-    res.status(500).json({
-      success: false,
-      message: "Error al actualizar estatus del pedido",
-      error: error.message,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
-  }
-};
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/pedidosStatusController.js
 
 /**
  * Obtener medidas existentes (dimensiones únicas de variantes)
@@ -11949,10 +11584,21 @@ const validarRecepcionCompra = async (req, res) => {
 };
 
 /**
- * Obtener todas las órdenes de compra (con filtro por estatus)
- * GET /api/admin/ordenes-compra
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/ordenesCompraController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: GET /api/admin/ordenes-compra
+ * NUEVO CONTROLADOR: ordenesCompraController.getAllOrdenesCompra
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use ordenesCompraController.getAllOrdenesCompra instead
  */
-const getAllOrdenesCompra = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/ordenesCompraController.js
+
+const getAllOrdenesCompra_MIGRATED = async (req, res) => {
   try {
     const { estatus, adminId, origen, proveedorId, soloRecibidas } = req.query;
     const userRole = req.user.rol;
@@ -13387,10 +13033,21 @@ const recibirItemOrdenCompra = async (req, res) => {
 };
 
 /**
- * Crear una nueva orden de compra
- * POST /api/admin/ordenes-compra
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/ordenesCompraController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: POST /api/admin/ordenes-compra
+ * NUEVO CONTROLADOR: ordenesCompraController.crearOrdenCompra
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use ordenesCompraController.crearOrdenCompra instead
  */
-const crearOrdenCompra = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/ordenesCompraController.js
+
+const crearOrdenCompra_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -17473,7 +17130,7 @@ module.exports = {
   refreshAdminToken,
   getDashboardStats,
   getAllPedidos,
-  updatePedidoEstatus,
+  // updatePedidoEstatus, // ⚠️ MIGRADO a pedidosStatusController.js
   confirmarPedido,
   updateCostoEnvio,
   getPedidoDetalle,
@@ -17528,7 +17185,7 @@ module.exports = {
   saveReglasEmpaqueMultiples,
   getTiposProductoAdmin,
   crearTipoProductoAdmin,
-  getAllOrdenesCompra,
+  // getAllOrdenesCompra, // ⚠️ MIGRADO a ordenesCompraController.js
   getAdministradoresOrdenesCompra,
   bloquearSesionRecepcion,
   desbloquearSesionRecepcion,
@@ -17540,7 +17197,7 @@ module.exports = {
   getComprasPendientes,
   getCompraDetalleCiego,
   validarRecepcionCompra,
-  crearOrdenCompra,
+  // crearOrdenCompra, // ⚠️ MIGRADO a ordenesCompraController.js
   addItemToOrder,
   removeItemFromOrder,
   getOrderDetailsForExcel,

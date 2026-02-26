@@ -25,6 +25,8 @@ const auditController = require("../controllers/auditController");
 const ajustePedidosController = require("../controllers/ajustePedidosController");
 const cuponesController = require("../controllers/cuponesController");
 const inventarioReportesController = require("../controllers/inventarioReportesController");
+const pedidosStatusController = require("../controllers/pedidosStatusController");
+const ordenesCompraController = require("../controllers/ordenesCompraController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -235,11 +237,12 @@ router.get(
   authorizeAdmin,
   adminController.getAllPedidos
 );
+// ✅ REFACTORED: Migrado a pedidosStatusController.js (Strangler Pattern)
 router.put(
   "/pedidos/:id",
   authenticate,
   authorizeAdminOrAgente,
-  adminController.updatePedidoEstatus
+  pedidosStatusController.updatePedidoEstatus
 );
 router.put(
   "/pedidos/:id/costo-envio",
@@ -1111,11 +1114,12 @@ router.post(
 /**
  * Gestión de órdenes de compra
  */
+// ✅ REFACTORED: Migrado a ordenesCompraController.js
 router.get(
   "/ordenes-compra",
   authenticate,
   authorizeAdmin,
-  adminController.getAllOrdenesCompra
+  ordenesCompraController.getAllOrdenesCompra
 );
 router.get(
   "/ordenes-compra/reportes",
@@ -1177,11 +1181,12 @@ router.post(
   authorizeAdmin,
   adminController.cancelarOrdenBackorder
 );
+// ✅ REFACTORED: Migrado a ordenesCompraController.js
 router.post(
   "/ordenes-compra",
   authenticate,
   authorizeAdmin,
-  adminController.crearOrdenCompra
+  ordenesCompraController.crearOrdenCompra
 );
 router.post(
   "/ordenes-compra/:id/items",
