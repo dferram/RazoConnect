@@ -1021,10 +1021,10 @@
                 (item) => {
                   // Calculate stock availability
                   const stock = item.stock !== undefined ? item.stock : 0;
-                  const piezasPorPaquete = item.piezasPorPaquete || 1;
-                  const cantidadSolicitada = item.cantidadPaquetes || 0;
-                  const piezasNecesarias = cantidadSolicitada * piezasPorPaquete;
+                  const piezasNecesarias = item.piezasTotales || 0;
                   const hayStockSuficiente = stock >= piezasNecesarias;
+                  
+                  console.log(`[Badge Logic] SKU: ${item.sku} | Stock: ${stock} pzas | Necesarias: ${piezasNecesarias} pzas | Suficiente: ${hayStockSuficiente} | esBackorder: ${item.esbackorder}`);
                   
                   // Integrity check
                   if (hayStockSuficiente && stock === 0) {

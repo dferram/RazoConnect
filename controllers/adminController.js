@@ -4322,47 +4322,9 @@ const updatePedidoEstatus = async (req, res) => {
       });
     }
 
-    // ✅ Validar que NO haya productos en backorder antes de confirmar
-    if (estatus === 'Surtido' && estatusActual !== 'Surtido') {
-      console.log(`[updatePedidoEstatus] 🔍 Validating no backorder items for order ${pedidoId}`);
-      
-      // Verificar si hay productos marcados como backorder
-      const backorderCheck = await db.query(
-        `SELECT 
-          d.detalleid,
-          d.esbackorder,
-          pv.sku,
-          p.nombreproducto as producto_nombre,
-          pv.dimensiones
-         FROM detallesdelpedido d
-         INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
-         INNER JOIN productos p ON p.productoid = pv.productoid
-         WHERE d.pedidoid = $1 AND p.tenant_id = $2 AND d.esbackorder = true`,
-        [pedidoId, tenant_id]
-      );
-
-      if (backorderCheck.rows.length > 0) {
-        console.error(`[updatePedidoEstatus] ❌ Pedido tiene ${backorderCheck.rows.length} productos en backorder`);
-        
-        const productosBackorder = backorderCheck.rows.map(item => 
-          `${item.producto_nombre} (${item.sku})`
-        ).join(', ');
-        
-        return res.status(400).json({
-          success: false,
-          message: `No se puede confirmar el pedido porque tiene productos marcados como "Bajo Pedido"`,
-          error: `Los siguientes productos están en backorder: ${productosBackorder}. Debes esperar a que llegue el inventario o generar una remisión parcial.`,
-          data: {
-            productosBackorder: backorderCheck.rows,
-            totalBackorder: backorderCheck.rows.length
-          }
-        });
-      }
-
-      console.log(`[updatePedidoEstatus] ✅ No hay productos en backorder`);
-    }
-
     // ✅ Validar stock antes de cambiar a Surtido, Enviado o Entregado
+    // NOTA: Ya NO validamos el flag esbackorder porque es histórico y no refleja
+    // la disponibilidad actual. Solo validamos stock real disponible.
     const estatusQueRequierenStock = ['Surtido', 'Enviado', 'Entregado'];
     
     if (estatusQueRequierenStock.includes(estatus) && !confirmarBackorder) {
@@ -4374,6 +4336,7 @@ const updatePedidoEstatus = async (req, res) => {
           d.detalleid,
           d.varianteid,
           d.cantidadpaquetes,
+          d.piezastotales,
           pv.sku,
           p.nombreproducto as producto_nombre,
           pv.dimensiones,
@@ -4396,19 +4359,20 @@ const updatePedidoEstatus = async (req, res) => {
       const itemsConStockInsuficiente = [];
       
       for (const item of detallesResult.rows) {
-        const stockNecesario = parseInt(item.cantidadpaquetes) || 0;
-        const stockDisponible = parseInt(item.stock_actual) || 0;
+        // CRÍTICO: Comparar PIEZAS con PIEZAS (no paquetes con piezas)
+        const piezasNecesarias = parseInt(item.piezastotales) || 0;
+        const piezasDisponibles = parseInt(item.stock_actual) || 0;
         
-        console.log(`[updatePedidoEstatus] 📦 ${item.sku}: Necesario=${stockNecesario}, Disponible=${stockDisponible}`);
+        console.log(`[updatePedidoEstatus] 📦 ${item.sku}: Necesario=${piezasNecesarias} pzas, Disponible=${piezasDisponibles} pzas`);
         
-        if (stockDisponible < stockNecesario) {
+        if (piezasDisponibles < piezasNecesarias) {
           itemsConStockInsuficiente.push({
             sku: item.sku,
             producto: item.producto_nombre,
             dimensiones: item.dimensiones || 'N/A',
-            necesario: stockNecesario,
-            disponible: stockDisponible,
-            faltante: stockNecesario - stockDisponible
+            necesario: piezasNecesarias,
+            disponible: piezasDisponibles,
+            faltante: piezasNecesarias - piezasDisponibles
           });
         }
       }
@@ -4531,15 +4495,16 @@ const updatePedidoEstatus = async (req, res) => {
           try {
             await db.query(
               `INSERT INTO movimientos_inventario 
-               (varianteid, tipo_movimiento, cantidad, motivo, usuario_id, tenant_id, referencia)
-               VALUES ($1, 'SALIDA', $2, $3, $4, $5, $6)`,
+               (variante_id, tipo, cantidad, stock_previo, stock_posterior, motivo, admin_id, tenant_id)
+               VALUES ($1, 'MERMA', $2, $3, $4, $5, $6, $7)`,
               [
                 varianteId,
                 piezasTotales,
+                resultado.newStock + piezasTotales, // stock antes de deducir
+                resultado.newStock, // stock después de deducir
                 `Venta - Pedido #${pedidoId}`,
                 req.user.id,
-                tenant_id,
-                `PED-${pedidoId}`
+                tenant_id
               ]
             );
             console.log(`[updatePedidoEstatus] 📝 Movimiento registrado en kardex para ${item.sku}`);
@@ -4585,30 +4550,38 @@ const updatePedidoEstatus = async (req, res) => {
           console.log(`[updatePedidoEstatus] ✅ CXC generado: $${montoTotal.toFixed(2)} para cliente ${clienteId}`);
 
           // Actualizar saldo deudor del cliente
-          await db.query(
+          const creditoUpdate = await db.query(
             `UPDATE cliente_creditos 
-             SET saldo_deudor = saldo_deudor + $1
-             WHERE clienteid = $2 AND tenant_id = $3`,
+             SET saldo_deudor = saldo_deudor + $1,
+                 ultima_actualizacion = NOW()
+             WHERE cliente_id = $2 AND tenant_id = $3
+             RETURNING credito_id, saldo_deudor`,
             [montoTotal, clienteId, tenant_id]
           );
 
           console.log(`[updatePedidoEstatus] ✅ Saldo deudor actualizado para cliente ${clienteId}`);
 
           // Registrar movimiento en credito_movimientos
-          await db.query(
-            `INSERT INTO credito_movimientos 
-             (clienteid, tipo, monto, descripcion, referencia, tenant_id)
-             VALUES ($1, 'CARGO', $2, $3, $4, $5)`,
-            [
-              clienteId,
-              montoTotal,
-              `Cargo por confirmación de pedido #${pedidoId}`,
-              `PED-${pedidoId}`,
-              tenant_id
-            ]
-          );
+          if (creditoUpdate.rows.length > 0) {
+            const creditoId = creditoUpdate.rows[0].credito_id;
+            const saldoDespues = creditoUpdate.rows[0].saldo_deudor;
+            
+            await db.query(
+              `INSERT INTO credito_movimientos 
+               (credito_id, tipo_movimiento, monto, descripcion, referencia_id, saldo_despues_movimiento, tenant_id)
+               VALUES ($1, 'CARGO', $2, $3, $4, $5, $6)`,
+              [
+                creditoId,
+                montoTotal,
+                `Cargo por confirmación de pedido #${pedidoId}`,
+                `PED-${pedidoId}`,
+                saldoDespues,
+                tenant_id
+              ]
+            );
 
-          console.log(`[updatePedidoEstatus] ✅ Movimiento de crédito registrado`);
+            console.log(`[updatePedidoEstatus] ✅ Movimiento de crédito registrado`);
+          }
 
         } catch (cxcError) {
           console.error(`[updatePedidoEstatus] ❌ Error al generar CXC:`, cxcError);
