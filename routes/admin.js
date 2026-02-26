@@ -30,6 +30,7 @@ const ordenesCompraController = require("../controllers/ordenesCompraController"
 const recepcionInventarioController = require("../controllers/recepcionInventarioController");
 const productosAdminController = require("../controllers/productosAdminController");
 const clientesAdminController = require("../controllers/clientesAdminController");
+const proveedoresAdminController = require("../controllers/proveedoresAdminController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -998,29 +999,33 @@ router.get(
 /**
  * Gestión de proveedores
  */
+// ✅ REFACTORED: Migrado a proveedoresAdminController.js
 router.get(
   "/proveedores",
   authenticate,
   authorizeAdmin,
-  adminController.getAllProveedores
+  proveedoresAdminController.getAllProveedores
 );
+// ✅ REFACTORED: Migrado a proveedoresAdminController.js
 router.get(
   "/proveedores/:id",
   authenticate,
   authorizeAdmin,
-  adminController.getProveedorById
+  proveedoresAdminController.getProveedorById
 );
+// ✅ REFACTORED: Migrado a proveedoresAdminController.js
 router.post(
   "/proveedores",
   authenticate,
   authorizeAdmin,
-  adminController.crearProveedor
+  proveedoresAdminController.crearProveedor
 );
+// ✅ REFACTORED: Migrado a proveedoresAdminController.js
 router.put(
   "/proveedores/:id",
   authenticate,
   authorizeAdmin,
-  adminController.actualizarProveedor
+  proveedoresAdminController.actualizarProveedor
 );
 
 router.get(

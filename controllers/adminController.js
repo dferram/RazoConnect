@@ -3407,7 +3407,12 @@ const PEDIDO_ESTATUS_EMAIL_TEMPLATES = {
   },
 };
 
-const getProveedorById = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use proveedoresAdminController.getProveedorById instead
+ */
+const getProveedorById_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const proveedorId = Number.parseInt(req.params.id, 10);
@@ -10589,10 +10594,11 @@ const getPedidoDetalle = async (req, res) => {
  */
 
 /**
- * Obtener todos los proveedores (reales + pendientes de creación)
- * GET /api/admin/proveedores
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use proveedoresAdminController.getAllProveedores instead
  */
-const getAllProveedores = async (req, res) => {
+const getAllProveedores_MIGRATED = async (req, res) => {
   try {
     console.log("\n=== INICIO getAllProveedores ===");
     const { tenant_id } = req.tenant;
@@ -10659,10 +10665,11 @@ const getAllProveedores = async (req, res) => {
 };
 
 /**
- * Crear un nuevo proveedor
- * POST /api/admin/proveedores
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use proveedoresAdminController.crearProveedor instead
  */
-const crearProveedor = async (req, res) => {
+const crearProveedor_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -10934,10 +10941,11 @@ const crearProveedor = async (req, res) => {
 };
 
 /**
- * Actualizar un proveedor existente
- * PUT /api/admin/proveedores/:id
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use proveedoresAdminController.actualizarProveedor instead
  */
-const actualizarProveedor = async (req, res) => {
+const actualizarProveedor_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -17233,10 +17241,10 @@ module.exports = {
   desvincularClienteDeAgente,
   // actualizarCreditoCliente, // ⚠️ MIGRADO a clientesAdminController.js
   // getClienteCreditoInfo, // ⚠️ MIGRADO a clientesAdminController.js
-  getAllProveedores,
-  getProveedorById,
-  crearProveedor,
-  actualizarProveedor,
+  // getAllProveedores, // ⚠️ MIGRADO a proveedoresAdminController.js
+  // getProveedorById, // ⚠️ MIGRADO a proveedoresAdminController.js
+  // crearProveedor, // ⚠️ MIGRADO a proveedoresAdminController.js
+  // actualizarProveedor, // ⚠️ MIGRADO a proveedoresAdminController.js
   getSolicitudesPendientesProveedor,
   getReglasEmpaqueProveedor,
   getReglasEmpaqueProveedorMultiples,
