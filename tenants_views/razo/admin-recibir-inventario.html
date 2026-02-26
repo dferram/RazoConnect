@@ -1620,12 +1620,12 @@
         const itemsOrden = Array.isArray(state.items) ? state.items : [];
         
         // Construir tabla de resumen
-        let tablaResumen = '<table style="width:100%; border-collapse: collapse; margin: 1rem 0;">';
-        tablaResumen += '<thead><tr style="background: #f3f4f6; text-align: left;">';
-        tablaResumen += '<th style="padding: 0.5rem; border: 1px solid #e5e7eb;">Producto</th>';
-        tablaResumen += '<th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">Piezas Sesión</th>';
-        tablaResumen += '<th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">Total Recibido</th>';
-        tablaResumen += '<th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: right;">Subtotal</th>';
+        let tablaResumen = '<table class="admin-table" style="margin: 1rem 0; font-size: 0.875rem;">';
+        tablaResumen += '<thead><tr>';
+        tablaResumen += '<th>Producto</th>';
+        tablaResumen += '<th style="text-align: center;">Piezas Sesión</th>';
+        tablaResumen += '<th style="text-align: center;">Total Recibido</th>';
+        tablaResumen += '<th style="text-align: right;">Subtotal</th>';
         tablaResumen += '</tr></thead><tbody>';
 
         for (const itemSesion of sesionRecepcion) {
