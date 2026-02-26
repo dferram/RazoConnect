@@ -28,6 +28,7 @@ const inventarioReportesController = require("../controllers/inventarioReportesC
 const pedidosStatusController = require("../controllers/pedidosStatusController");
 const ordenesCompraController = require("../controllers/ordenesCompraController");
 const recepcionInventarioController = require("../controllers/recepcionInventarioController");
+const productosAdminController = require("../controllers/productosAdminController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -262,11 +263,12 @@ router.post(
 /**
  * Gestión de productos
  */
+// ✅ REFACTORED: Migrado a productosAdminController.js
 router.get(
   "/productos",
   authenticate,
   authorizeAdmin,
-  adminController.getAllProductos
+  productosAdminController.getAllProductos
 );
 
 router.get(
@@ -296,19 +298,21 @@ router.get(
   authorizeAdmin,
   adminController.getVariantesPendientesProducto
 );
+// ✅ REFACTORED: Migrado a productosAdminController.js
 router.post(
   "/productos",
   authenticate,
   authorizeAdmin,
   uploadProductImages,
-  adminController.crearProducto
+  productosAdminController.crearProducto
 );
+// ✅ REFACTORED: Migrado a productosAdminController.js
 router.put(
   "/productos/:id",
   authenticate,
   authorizeAdmin,
   uploadProductImages,
-  adminController.actualizarProducto
+  productosAdminController.actualizarProducto
 );
 
 /**

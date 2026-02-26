@@ -6310,10 +6310,21 @@ const procesarColorParaSkuVariante = (colorNombre) => {
 };
 
 /**
- * Crear un nuevo producto
- * POST /api/admin/productos
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/productosAdminController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: POST /api/admin/productos
+ * NUEVO CONTROLADOR: productosAdminController.crearProducto
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use productosAdminController.crearProducto instead
  */
-const crearProducto = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/productosAdminController.js
+
+const crearProducto_MIGRATED = async (req, res) => {
   const { tenant_id } = req.tenant;
   const {
     nombre,
@@ -7234,10 +7245,21 @@ const getTamanosDisponiblesProducto = async (req, res) => {
 };
 
 /**
- * Actualizar un producto existente
- * PUT /api/admin/productos/:id
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/productosAdminController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: PUT /api/admin/productos/:id
+ * NUEVO CONTROLADOR: productosAdminController.actualizarProducto
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use productosAdminController.actualizarProducto instead
  */
-const actualizarProducto = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/productosAdminController.js
+
+const actualizarProducto_MIGRATED = async (req, res) => {
   const { tenant_id } = req.tenant;
   const productoId = Number.parseInt(req.params.id, 10);
 
@@ -8598,10 +8620,21 @@ const getProductoDetalle = async (req, res) => {
 };
 
 /**
- * Obtener todos los productos (para gestión)
- * GET /api/admin/productos
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/productosAdminController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: GET /api/admin/productos
+ * NUEVO CONTROLADOR: productosAdminController.getAllProductos
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use productosAdminController.getAllProductos instead
  */
-const getAllProductos = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/productosAdminController.js
+
+const getAllProductos_MIGRATED = async (req, res) => {
   try {
     const result = await db.query(
       `SELECT 
@@ -17157,9 +17190,9 @@ module.exports = {
   buscarProductosCompra,
   getProductoDetalle,
   getVariantesPendientesProducto,
-  getAllProductos,
-  crearProducto,
-  actualizarProducto,
+  // getAllProductos, // ⚠️ MIGRADO a productosAdminController.js
+  // crearProducto, // ⚠️ MIGRADO a productosAdminController.js
+  // actualizarProducto, // ⚠️ MIGRADO a productosAdminController.js
   toggleProductoVisibilidad,
   getTamanosPaquetes,
   getTamanosDisponiblesProducto,
