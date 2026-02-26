@@ -10,6 +10,7 @@
     <script src="js/auth-guard-admin.js"></script>
 
     <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/components/back-button-loader.js"></script>
     <link rel="stylesheet" href="css/admin.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -482,6 +483,7 @@
 
 
         <div class="admin-content">
+          <div id="back-button-container"></div>
           <div class="pedido-detail-wrapper">
             <!-- Loading state -->
             <div id="loadingState" class="loading-state">
@@ -492,13 +494,6 @@
             <!-- Error state -->
             <div id="errorState" class="error-state" style="display: none">
               <p id="errorMessage">No se pudo cargar el pedido</p>
-              <button
-                type="button"
-                class="btn btn-outline btn-sm"
-                onclick="sessionStorage.setItem('_navigating', 'true'); localStorage.setItem('_nav_timestamp', Date.now().toString()); window.location.href='/admin-pedidos.html';"
-              >
-                ← Volver a pedidos
-              </button>
             </div>
 
             <!-- Content -->
@@ -1434,6 +1429,14 @@
           }
         };
       })();
+
+      // Cargar botón de volver
+      window.addEventListener('DOMContentLoaded', function() {
+        loadBackButton({
+          backUrl: '/admin-pedidos.html',
+          backText: 'Volver a pedidos'
+        });
+      });
     </script>
   </body>
 </html>

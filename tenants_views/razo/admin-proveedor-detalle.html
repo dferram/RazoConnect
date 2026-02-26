@@ -17,7 +17,8 @@
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
-      <link rel="stylesheet" href="css/mobile-responsive.css" />
+    <link rel="stylesheet" href="css/mobile-responsive.css" />
+    <script src="js/components/back-button-loader.js"></script>
   </head>
   <body data-page-title="Detalle del Proveedor">
     <div class="admin-layout">
@@ -27,7 +28,8 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content">
-          <!-- Instructional Banner -->
+          <div id="back-button-container"></div>
+          <div style="max-width: 1200px; margin: 0 auto">
           <div id="instructionalBanner" class="instructional-banner">
             <p>
               💡 <strong>Detalle del Proveedor:</strong> Consulta la información completa de un proveedor. Puedes ver sus datos de contacto, reglas de empaque configuradas, productos asociados y gestionar su información. Usa esta vista para administrar la relación con cada proveedor.
@@ -37,12 +39,6 @@
             </button>
           </div>
 
-          <div style="margin-bottom: 1.5rem;">
-            <button onclick="window.history.back()" class="btn btn-secondary btn-sm">
-              <i class="bi bi-arrow-left"></i>
-              Regresar
-            </button>
-          </div>
           <div id="loadingData" class="loading">
             <div class="spinner"></div>
           </div>
@@ -191,5 +187,15 @@
     <script src="js/components/user-profile.js"></script>
     <script src="js/instructional-banner.js"></script>
     <script src="js/admin-proveedor-detalle.js"></script>
+    
+    <script>
+      // Cargar botón de volver
+      window.addEventListener('DOMContentLoaded', function() {
+        loadBackButton({
+          backUrl: '/admin-proveedores.html',
+          backText: 'Volver a proveedores'
+        });
+      });
+    </script>
   </body>
 </html>

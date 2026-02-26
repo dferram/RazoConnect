@@ -12,6 +12,7 @@
 
     <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
 
+    <script src="js/components/back-button-loader.js"></script>
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
     <link rel="stylesheet" href="css/utility-classes.css" />
@@ -37,38 +38,56 @@
             </button>
           </div>
 
-          <div style="margin-bottom: 1rem;">
-            <button onclick="window.history.back()" class="btn btn-secondary btn-sm">
-              <i class="bi bi-arrow-left"></i>
-              Regresar
-            </button>
-          </div>
-          <section class="admin-card u-section-spacing">
-            <div>
-              <p class="eyebrow u-margin-bottom-0-4">Clientes · Seguimiento individual</p>
-              <h2 class="u-title-no-margin u-font-size-responsive" id="clienteTitulo">
-                Detalle del cliente
-              </h2>
-              <p class="u-subtitle" id="clienteSubtitle">
-                Consulta la información completa del cliente
-              </p>
+          <div id="back-button-container"></div>
+          <div class="u-max-width-1200 u-margin-auto">
+            <section class="admin-card u-section-spacing">
+              <div>
+                <p class="eyebrow u-margin-bottom-0-4">Clientes · Seguimiento individual</p>
+                <h2 class="u-title-no-margin u-font-size-responsive" id="clienteTitulo">
+                  Detalle del cliente
+                </h2>
+                <p class="u-subtitle" id="clienteSubtitle">
+                  Consulta la información completa del cliente
+                </p>
+              </div>
+              <div id="estadoBadge"></div>
+            </section>
+
+            <div class="u-flex-between u-margin-bottom-1-5">
+              <div class="admin-badge info u-display-none" id="secondaryEstadoBadge"></div>
             </div>
-            <div id="estadoBadge"></div>
-          </section>
 
-          <div class="u-flex-between u-margin-bottom-1-5">
-            <button
-              class="btn btn-secondary u-padding-btn-md"
-              onclick="history.back()"
+            <div id="loadingState" class="loading u-min-height-220">
+              <div class="spinner"></div>
+            </div>
+
+            <div id="errorState" class="empty-state u-display-none">
+              <div class="empty-state-icon">⚠️</div>
+              <h3 class="empty-state-title">No se pudo cargar el cliente</h3>
+              <p class="empty-state-text" id="errorMessage">
+                Intenta nuevamente más tarde.
+              </p>
+              <button
+                class="btn btn-primary u-margin-top-1"
+                onclick="loadClienteDetalle()"
+              >
+                Reintentar
+              </button>
+            </div>
+
+            <div
+              id="detalleContenido"
+              class="u-display-none u-grid-gap-1-5"
             >
-              Volver a clientes
-            </button>
-            <div class="admin-badge info u-display-none" id="secondaryEstadoBadge"></div>
-          </div>
-
-          <div id="loadingState" class="loading u-min-height-220">
-            <div class="spinner"></div>
-          </div>
+              <!-- Perfil del Cliente -->
+              <section
+                class="admin-card u-padding-1-75"
+                id="perfilCliente"
+              >
+                <h2 class="u-title-with-margin u-font-size-1-25 u-color-orange">
+                  🧾 Perfil del cliente
+                </h2>
+                <div class="admin-info-grid">
 
           <div id="errorState" class="empty-state u-display-none">
             <div class="empty-state-icon">⚠️</div>
@@ -756,6 +775,14 @@
 
       verifyAndLoadAdmin();
       loadClienteDetalle();
+
+      // Cargar botón de volver
+      window.addEventListener('DOMContentLoaded', function() {
+        loadBackButton({
+          backUrl: '/admin-clientes.html',
+          backText: 'Volver a clientes'
+        });
+      });
     </script>
   </body>
 </html>

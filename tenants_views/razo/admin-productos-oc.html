@@ -9,6 +9,7 @@
     <script src="js/auth-guard-admin.js"></script>
 
     <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/components/back-button-loader.js"></script>
     <link rel="stylesheet" href="css/admin.css" />
     <link
       rel="stylesheet"
@@ -43,6 +44,7 @@
         </div>
 
         <div class="admin-content">
+          <div id="back-button-container"></div>
           <div class="admin-table-container" style="max-width: 1200px; margin: 0 auto">
             <div
               style="
@@ -63,15 +65,6 @@
               </div>
 
               <div style="display: flex; align-items: center; gap: 0.75rem">
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  id="btnVolverOC"
-                  style="padding: 0.6rem 1rem"
-                >
-                  <i class="bi bi-arrow-left"></i>
-                  Volver a OC
-                </button>
               </div>
             </div>
 
@@ -408,5 +401,18 @@
         }
       }
     </style>
+
+    <script>
+      // Cargar botón de volver
+      window.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const ordenId = urlParams.get('ordenId');
+        
+        loadBackButton({
+          backUrl: ordenId ? `/admin-crear-oc.html?id=${ordenId}` : '/admin-ordenes-compra.html',
+          backText: 'Volver a OC'
+        });
+      });
+    </script>
   </body>
 </html>

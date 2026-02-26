@@ -7,7 +7,7 @@
   <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
   <script src="js/auth-guard-admin.js?v=2.0"></script>
-
+  <script src="js/components/back-button-loader.js"></script>
   <link rel="stylesheet" href="css/styles.css" />
   <link rel="stylesheet" href="css/admin.css" />
   <link rel="stylesheet" href="css/mobile-responsive.css" />
@@ -36,64 +36,37 @@
           </button>
         </div>
 
-        <div style="margin-bottom: 1.5rem;">
-          <button
-            onclick="window.location.href='/admin-inventario-reportes.html'"
-            style="
-              background: white;
-              border: 2px solid var(--razo-gray-light);
-              padding: 0.75rem 1.5rem;
-              border-radius: 0.5rem;
-              cursor: pointer;
-              font-weight: 600;
-              transition: all 0.3s ease;
-              display: inline-flex;
-              align-items: center;
-              gap: 0.5rem;
-            "
-            onmouseover="this.style.borderColor='var(--razo-orange)'; this.style.color='var(--razo-orange)'"
-            onmouseout="this.style.borderColor='var(--razo-gray-light)'; this.style.color='inherit'"
-          >
-            <i class="bi bi-arrow-left"></i> Volver al historial
-          </button>
-        </div>
-
-        <div class="admin-table-container">
-          <div class="admin-table-header" style="display: flex; justify-content: space-between; align-items: center;">
-            <h2 class="admin-table-title">
-              <i class="bi bi-clipboard-data" style="color: var(--razo-orange); margin-right: 0.5rem;"></i>
-              <span id="sesionTitulo">Detalle de Sesión</span>
-            </h2>
-            <button
-              id="btnDescargarPDF"
-              style="
-                background: var(--razo-orange);
-                color: white;
-                border: none;
-                padding: 0.75rem 1.5rem;
-                border-radius: 0.5rem;
-                cursor: pointer;
-                font-weight: 600;
-                transition: all 0.3s ease;
-                display: inline-flex;
-                align-items: center;
-                gap: 0.5rem;
-              "
-              onmouseover="this.style.background='#ea580c'"
-              onmouseout="this.style.background='var(--razo-orange)'"
-            >
-              <i class="bi bi-file-earmark-pdf-fill"></i> Descargar PDF
-            </button>
+        <div id="back-button-container"></div>
+        <div style="max-width: 1400px; margin: 0 auto">
+          <div style="margin-bottom: 1.5rem;">
           </div>
 
-          <div id="loadingDetalle" class="loading" style="display: flex;">
-            <div class="spinner"></div>
-            <p style="margin-top: 1rem; color: #666;">Cargando detalles de la sesión...</p>
-          </div>
-
-          <div id="detalleContent" style="display: none;">
-            <div style="padding: 1.5rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
-              <h3 style="font-size: 1.25rem; font-weight: 700; color: #333; margin-bottom: 1rem;">
+          <div class="admin-table-container">
+            <div class="admin-table-header" style="display: flex; justify-content: space-between; align-items: center;">
+              <h2 class="admin-table-title">
+                <i class="bi bi-clipboard-data" style="color: var(--razo-orange); margin-right: 0.5rem;"></i>
+                <span id="sesionTitulo">Detalle de Sesión</span>
+              </h2>
+              <button
+                id="btnDescargarPDF"
+                style="
+                  background: var(--razo-orange);
+                  color: white;
+                  border: none;
+                  padding: 0.75rem 1.5rem;
+                  border-radius: 0.5rem;
+                  cursor: pointer;
+                  font-weight: 600;
+                  transition: all 0.3s ease;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 0.5rem;
+                "
+                onmouseover="this.style.background='#ea580c'"
+                onmouseout="this.style.background='var(--razo-orange)'"
+              >
+                <i class="bi bi-file-earmark-pdf-fill"></i> Descargar PDF
+              </button>
                 Información General
               </h3>
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
@@ -290,5 +263,15 @@
   <script src="js/components/admin-sidebar-loader.js"></script>
   <script src="js/instructional-banner.js"></script>
   <script src="js/admin-inventario-detalle.js?v=5.0"></script>
+  
+  <script>
+    // Cargar botón de volver
+    window.addEventListener('DOMContentLoaded', function() {
+      loadBackButton({
+        backUrl: '/admin-toma-inventario.html',
+        backText: 'Volver al historial'
+      });
+    });
+  </script>
 </body>
 </html>

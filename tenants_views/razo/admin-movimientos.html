@@ -16,6 +16,7 @@
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/components/back-button-loader.js"></script>
     <link rel="stylesheet" href="css/admin.css" />
     <link rel="stylesheet" href="css/mobile-responsive.css" />
     <link rel="stylesheet" href="css/search-autocomplete.css" />
@@ -31,34 +32,19 @@
         <div id="admin-header-container"></div>
 
         <div class="admin-content">
-          <!-- Instructional Banner -->
-          <div id="instructionalBanner" class="instructional-banner">
-            <p>
-              💡 <strong>Movimientos (Kardex):</strong> Consulta el historial completo de movimientos de inventario. Puedes filtrar por variante, tipo de movimiento (entrada, salida, ajuste), fechas y buscar por texto. Ideal para auditorías y rastreo de stock.
-            </p>
-            <button class="instructional-banner-close" title="Cerrar">
-              ×
-            </button>
-          </div>
-
-          <div class="admin-table-container">
-            <div class="admin-table-header" style="flex-wrap: wrap; gap: 1rem">
-              <div>
-                <h2 class="admin-table-title">Movimientos (Kardex)</h2>
-                <p style="margin: 0; color: var(--razo-gray-warm); font-size: 0.9rem">
-                  Consulta los últimos movimientos de inventario y filtra por variante, tipo, fechas o texto.
-                </p>
+          <div id="back-button-container"></div>
+          <div class="admin-header">
+            <!-- Instructional Banner -->
+            <div id="instructionalBanner" class="instructional-banner">
+              <p>
+                💡 <strong>Movimientos (Kardex):</strong> Consulta el historial completo de movimientos de inventario. Puedes filtrar por variante, tipo de movimiento (entrada, salida, ajuste), fechas y buscar por texto. Ideal para auditorías y rastreo de stock.
+              </p>
+              <button class="instructional-banner-close" title="Cerrar">
+                ×
+              </button>
               </div>
 
               <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center">
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  onclick="window.history.back()"
-                  style="display: inline-flex; align-items: center; gap: 0.5rem;"
-                >
-                  <i class="bi bi-arrow-left"></i> Volver
-                </button>
                 <button id="btnLimpiarFiltros" class="btn btn-secondary" type="button">
                   Limpiar Filtros
                 </button>
@@ -883,6 +869,14 @@
         if (searchAutocomplete) {
           searchAutocomplete.close();
         }
+      });
+
+      // Cargar botón de volver
+      window.addEventListener('DOMContentLoaded', function() {
+        loadBackButton({
+          backUrl: '/admin-inventario.html',
+          backText: 'Volver'
+        });
       });
     </script>
   </body>

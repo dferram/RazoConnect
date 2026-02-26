@@ -16,8 +16,8 @@
 
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
-
     <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/components/back-button-loader.js"></script>
     <link rel="stylesheet" href="css/admin.css" />
     <link
       rel="stylesheet"
@@ -34,39 +34,15 @@
       <main class="admin-main">
         <div id="admin-header-container"></div>
 
-        <div class="admin-content" style="display: grid; gap: 1.5rem">
-          <!-- Instructional Banner -->
-          <div id="instructionalBanner" class="instructional-banner">
-            <p>
-              💡 <strong>Detalle Grupo de Órdenes:</strong> Visualiza el detalle de un grupo consolidado de órdenes de compra. Puedes ver todos los productos agrupados, cantidades totales, confirmar el grupo y generar documentos PDF para enviar al proveedor.
-            </p>
-            <button class="instructional-banner-close" title="Cerrar">
-              ×
-            </button>
-          </div>
+        <div class="admin-content">
+          <div id="back-button-container"></div>
+          <div class="admin-header">-container"></div>
 
-          <!-- Loading State -->
-          <div id="loadingState" class="loading" style="min-height: 300px">
-            <div class="spinner"></div>
-          </div>
-
-          <!-- Error State -->
-          <div id="errorState" class="empty-state" style="display: none">
-            <div class="empty-state-icon">⚠️</div>
-            <h3 class="empty-state-title">Error al cargar el grupo</h3>
-            <p class="empty-state-text" id="errorMessage"></p>
-            <button
-              onclick="window.location.href='admin-ordenes-compra.html'"
-              class="btn btn-primary"
-            >
-              Volver a Órdenes
-            </button>
-          </div>
-
-          <!-- Group Header -->
-          <section id="grupoHeader" class="admin-card" style="padding: 1.5rem; display: none">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-              <div>
+          <div class="admin-content" style="display: grid; gap: 1.5rem">
+            <!-- Instructional Banner -->
+            <div id="instructionalBanner" class="instructional-banner">
+              <p>
+                💡 <strong>Detalle Grupo de Órdenes:</strong> Visualiza el detalle de un grupo consolidado de órdenes de compra. Puedes ver todos los productos agrupados, cantidades totales, confirmar el grupo y generar documentos PDF para enviar al proveedor.
                 <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
                   <h1 style="margin: 0; font-size: 1.5rem; color: #111827;">
                     <i class="bi bi-collection"></i> <span id="nombreGrupo"></span>
@@ -931,6 +907,14 @@
           }
         }
       })();
+
+      // Cargar botón de volver
+      window.addEventListener('DOMContentLoaded', function() {
+        loadBackButton({
+          backUrl: '/admin-ordenes-compra.html',
+          backText: 'Volver a Órdenes'
+        });
+      });
     </script>
   </body>
 </html>

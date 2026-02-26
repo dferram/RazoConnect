@@ -1,0 +1,49 @@
+<!-- Botón de Volver Estandarizado -->
+<div class="back-button-container">
+  <button type="button" class="btn-back-standard" id="btnVolverStandard">
+    <i class="bi bi-arrow-left"></i>
+    <span class="back-text">Volver</span>
+  </button>
+</div>
+
+<style>
+  .back-button-container {
+    margin-bottom: 1.5rem;
+    padding: 0;
+  }
+
+  .btn-back-standard {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    color: #374151;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+
+  .btn-back-standard:hover {
+    background: #f9fafb;
+    border-color: var(--razo-orange, #F97316);
+    color: var(--razo-orange, #F97316);
+    transform: translateX(-2px);
+  }
+
+  .btn-back-standard:active {
+    transform: translateX(-2px) scale(0.98);
+  }
+
+  .btn-back-standard i {
+    font-size: 1rem;
+  }
+
+  .back-text {
+    line-height: 1;
+  }
+</style>
