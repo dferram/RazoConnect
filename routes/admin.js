@@ -27,6 +27,7 @@ const cuponesController = require("../controllers/cuponesController");
 const inventarioReportesController = require("../controllers/inventarioReportesController");
 const pedidosStatusController = require("../controllers/pedidosStatusController");
 const ordenesCompraController = require("../controllers/ordenesCompraController");
+const recepcionInventarioController = require("../controllers/recepcionInventarioController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -1212,11 +1213,12 @@ router.get(
   authorizeAdmin,
   ordenCompraPDFController.generarPDFOrdenCompra
 );
+// ✅ REFACTORED: Migrado a recepcionInventarioController.js
 router.post(
   "/ordenes-compra/recibir",
   authenticate,
   authorizeAdmin,
-  adminController.recibirInventario
+  recepcionInventarioController.recibirInventario
 );
 
 router.post(

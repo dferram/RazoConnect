@@ -12290,10 +12290,21 @@ const getDetallesOrdenCompra = async (req, res) => {
 };
 
 /**
- * Recibir inventario de una orden de compra
- * POST /api/admin/ordenes-compra/recibir
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/recepcionInventarioController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: POST /api/admin/ordenes-compra/recibir
+ * NUEVO CONTROLADOR: recepcionInventarioController.recibirInventario
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use recepcionInventarioController.recibirInventario instead
  */
-const recibirInventario = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/recepcionInventarioController.js
+
+const recibirInventario_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -17202,7 +17213,7 @@ module.exports = {
   removeItemFromOrder,
   getOrderDetailsForExcel,
   cancelarOrdenCompra,
-  recibirInventario,
+  // recibirInventario, // ⚠️ MIGRADO a recepcionInventarioController.js
   cerrarSesionRecepcion,
   recibirItemOrdenCompra,
   getMovimientosInventario,
