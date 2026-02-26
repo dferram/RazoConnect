@@ -17394,7 +17394,7 @@ const searchVariantesMovimientos = async (req, res) => {
     const proveedorId = req.query.proveedor_id;
     if (proveedorId && proveedorId !== 'todos') {
       values.push(parseInt(proveedorId, 10));
-      where.push(`p.proveedorid = $${values.length}`);
+      where.push(`pre.proveedorid = $${values.length}`);
     }
     
     // Filtro por medida
@@ -17429,7 +17429,8 @@ const searchVariantesMovimientos = async (req, res) => {
        FROM producto_variantes pv
        INNER JOIN productos p ON p.productoid = pv.productoid
        LEFT JOIN categorias c ON c.categoriaid = p.categoriaid
-       LEFT JOIN proveedores pr ON pr.proveedorid = p.proveedorid
+       LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
+       LEFT JOIN proveedores pr ON pr.proveedorid = pre.proveedorid
        LEFT JOIN medidas m ON m.medidaid = pv.medidaid
        WHERE ${whereSql}
        ORDER BY p.nombreproducto ASC, pv.sku ASC
