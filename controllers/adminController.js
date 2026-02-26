@@ -4527,6 +4527,27 @@ const updatePedidoEstatus = async (req, res) => {
 
           console.log(`[updatePedidoEstatus] ✅ Stock deducido: ${item.sku} - ${piezasTotales} piezas (Stock nuevo: ${resultado.newStock})`);
           
+          // ✅ REGISTRAR MOVIMIENTO EN KARDEX (movimientos_inventario)
+          try {
+            await db.query(
+              `INSERT INTO movimientos_inventario 
+               (varianteid, tipo_movimiento, cantidad, motivo, usuario_id, tenant_id, referencia)
+               VALUES ($1, 'SALIDA', $2, $3, $4, $5, $6)`,
+              [
+                varianteId,
+                piezasTotales,
+                `Venta - Pedido #${pedidoId}`,
+                req.user.id,
+                tenant_id,
+                `PED-${pedidoId}`
+              ]
+            );
+            console.log(`[updatePedidoEstatus] 📝 Movimiento registrado en kardex para ${item.sku}`);
+          } catch (movError) {
+            console.error(`[updatePedidoEstatus] ⚠️ Error al registrar movimiento (no crítico):`, movError);
+            // No detenemos el proceso si falla el registro del movimiento
+          }
+          
         } catch (invError) {
           console.error(`[updatePedidoEstatus] ❌ Error al deducir inventario para ${item.sku}:`, invError);
           return res.status(500).json({

@@ -1036,11 +1036,16 @@
                     console.error(`[ERROR DE INTEGRIDAD] El producto SKU: ${item.sku} muestra stock fantasma.`);
                   }
                   
-                  // Determinar estado del badge basado en stock Y estatus del pedido
-                  const pedidoConfirmado = pedido.estatus && pedido.estatus.toLowerCase() === 'confirmado';
+                  // Determinar estado del badge basado en esbackorder flag Y stock
+                  const esBackorder = item.esbackorder === true || item.esbackorder === 'true';
+                  const pedidoConfirmado = pedido.estatus && (pedido.estatus.toLowerCase() === 'confirmado' || pedido.estatus.toLowerCase() === 'surtido');
                   
                   let badgeClass, badgeText;
-                  if (!hayStockSuficiente) {
+                  if (esBackorder) {
+                    // Marcado explícitamente como backorder - BAJO PEDIDO (rojo)
+                    badgeClass = 'badge-stock bajo-pedido';
+                    badgeText = 'BAJO PEDIDO';
+                  } else if (!hayStockSuficiente) {
                     // No hay stock suficiente - BAJO PEDIDO (rojo)
                     badgeClass = 'badge-stock bajo-pedido';
                     badgeText = 'BAJO PEDIDO';
@@ -1141,7 +1146,7 @@
           if (statusModal) statusModal.style.display = "none";
         };
 
-        async function updateOrderStatus() {
+        window.updateOrderStatus = async function() {
           if (!selectedOrderId) return;
 
           const modalNuevoEstatus =
