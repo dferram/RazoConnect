@@ -31,6 +31,8 @@ const recepcionInventarioController = require("../controllers/recepcionInventari
 const productosAdminController = require("../controllers/productosAdminController");
 const clientesAdminController = require("../controllers/clientesAdminController");
 const proveedoresAdminController = require("../controllers/proveedoresAdminController");
+const categoriasAdminController = require("../controllers/categoriasAdminController");
+const variantesAdminController = require("../controllers/variantesAdminController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -547,31 +549,35 @@ router.get(
   authorizeAdmin,
   adminController.getTamanosDisponiblesProducto
 );
+// ✅ REFACTORED: Migrado a categoriasAdminController.js
 router.get(
   "/categorias",
   authenticate,
   authorizeAdminOrAgente,
-  adminController.getCategorias
+  categoriasAdminController.getCategorias
 );
+// ✅ REFACTORED: Migrado a categoriasAdminController.js
 router.post(
   "/categorias",
   authenticate,
   authorizeAdmin,
   uploadCategoryImage.single("image"),
-  adminController.crearCategoria
+  categoriasAdminController.crearCategoria
 );
+// ✅ REFACTORED: Migrado a categoriasAdminController.js
 router.put(
   "/categorias/:id",
   authenticate,
   authorizeAdmin,
   uploadCategoryImage.single("image"),
-  adminController.actualizarCategoria
+  categoriasAdminController.actualizarCategoria
 );
+// ✅ REFACTORED: Migrado a categoriasAdminController.js
 router.delete(
   "/categorias/:id",
   authenticate,
   authorizeAdmin,
-  adminController.eliminarCategoria
+  categoriasAdminController.eliminarCategoria
 );
 router.get(
   "/medidas",

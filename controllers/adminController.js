@@ -8792,10 +8792,10 @@ const getAllProductos_MIGRATED = async (req, res) => {
 };
 
 /**
- * Obtener categorías disponibles
- * GET /api/admin/categorias
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use categoriasAdminController.getCategorias instead
  */
-const getCategorias = async (req, res) => {
+const getCategorias_MIGRATED = async (req, res) => {
   try {
     console.log("\n=== INICIO getCategorias ===");
     const { tenant_id } = req.tenant;
@@ -8849,10 +8849,10 @@ const getCategorias = async (req, res) => {
 };
 
 /**
- * Crear una nueva categoría
- * POST /api/admin/categorias
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use categoriasAdminController.crearCategoria instead
  */
-const crearCategoria = async (req, res) => {
+const crearCategoria_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const { nombre, descripcion, parentCategoriaId, activo } = req.body;
@@ -8998,10 +8998,10 @@ const crearCategoria = async (req, res) => {
 };
 
 /**
- * Actualizar una categoría existente
- * PUT /api/admin/categorias/:id
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use categoriasAdminController.actualizarCategoria instead
  */
-const actualizarCategoria = async (req, res) => {
+const actualizarCategoria_MIGRATED = async (req, res) => {
   try {
     const categoriaId = parseInt(req.params.id, 10);
     const { nombre, descripcion, parentCategoriaId, activo } = req.body;
@@ -9262,10 +9262,10 @@ const toggleProductoVisibilidad = async (req, res) => {
 };
 
 /**
- * Eliminar una categoría
- * DELETE /api/admin/categorias/:id
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use categoriasAdminController.eliminarCategoria instead
  */
-const eliminarCategoria = async (req, res) => {
+const eliminarCategoria_MIGRATED = async (req, res) => {
   try {
     const categoriaId = parseInt(req.params.id, 10);
 
@@ -17219,10 +17219,10 @@ module.exports = {
   toggleProductoVisibilidad,
   getTamanosPaquetes,
   getTamanosDisponiblesProducto,
-  getCategorias,
-  crearCategoria,
-  actualizarCategoria,
-  eliminarCategoria,
+  // getCategorias, // ⚠️ MIGRADO a categoriasAdminController.js
+  // crearCategoria, // ⚠️ MIGRADO a categoriasAdminController.js
+  // actualizarCategoria, // ⚠️ MIGRADO a categoriasAdminController.js
+  // eliminarCategoria, // ⚠️ MIGRADO a categoriasAdminController.js
   getMedidas,
   getMedidasExistentes,
   crearVariante,
