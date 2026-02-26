@@ -25,6 +25,18 @@ const auditController = require("../controllers/auditController");
 const ajustePedidosController = require("../controllers/ajustePedidosController");
 const cuponesController = require("../controllers/cuponesController");
 const inventarioReportesController = require("../controllers/inventarioReportesController");
+const pedidosStatusController = require("../controllers/pedidosStatusController");
+const ordenesCompraController = require("../controllers/ordenesCompraController");
+const recepcionInventarioController = require("../controllers/recepcionInventarioController");
+const productosAdminController = require("../controllers/productosAdminController");
+const clientesAdminController = require("../controllers/clientesAdminController");
+const proveedoresAdminController = require("../controllers/proveedoresAdminController");
+const categoriasAdminController = require("../controllers/categoriasAdminController");
+const variantesAdminController = require("../controllers/variantesAdminController");
+const cxcAdminController = require("../controllers/cxcAdminController");
+const agentesAdminController = require("../controllers/agentesAdminController");
+const comisionesAdminController = require("../controllers/comisionesAdminController");
+const pedidosAdminController = require("../controllers/pedidosAdminController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -229,17 +241,19 @@ router.get(
 /**
  * Gestión de pedidos
  */
+// ✅ REFACTORED: Migrado a pedidosAdminController.js
 router.get(
   "/pedidos",
   authenticate,
   authorizeAdmin,
-  adminController.getAllPedidos
+  pedidosAdminController.getAllPedidos
 );
+// ✅ REFACTORED: Migrado a pedidosStatusController.js (Strangler Pattern)
 router.put(
   "/pedidos/:id",
   authenticate,
   authorizeAdminOrAgente,
-  adminController.updatePedidoEstatus
+  pedidosStatusController.updatePedidoEstatus
 );
 router.put(
   "/pedidos/:id/costo-envio",
@@ -248,21 +262,23 @@ router.put(
   adminController.updateCostoEnvio
 );
 
+// ✅ REFACTORED: Migrado a pedidosAdminController.js
 router.post(
   "/pedidos/:id/confirmar",
   authenticate,
   authorizeAdmin,
-  adminController.confirmarPedido
+  pedidosAdminController.confirmarPedido
 );
 
 /**
  * Gestión de productos
  */
+// ✅ REFACTORED: Migrado a productosAdminController.js
 router.get(
   "/productos",
   authenticate,
   authorizeAdmin,
-  adminController.getAllProductos
+  productosAdminController.getAllProductos
 );
 
 router.get(
@@ -292,19 +308,21 @@ router.get(
   authorizeAdmin,
   adminController.getVariantesPendientesProducto
 );
+// ✅ REFACTORED: Migrado a productosAdminController.js
 router.post(
   "/productos",
   authenticate,
   authorizeAdmin,
   uploadProductImages,
-  adminController.crearProducto
+  productosAdminController.crearProducto
 );
+// ✅ REFACTORED: Migrado a productosAdminController.js
 router.put(
   "/productos/:id",
   authenticate,
   authorizeAdmin,
   uploadProductImages,
-  adminController.actualizarProducto
+  productosAdminController.actualizarProducto
 );
 
 /**
@@ -537,31 +555,35 @@ router.get(
   authorizeAdmin,
   adminController.getTamanosDisponiblesProducto
 );
+// ✅ REFACTORED: Migrado a categoriasAdminController.js
 router.get(
   "/categorias",
   authenticate,
   authorizeAdminOrAgente,
-  adminController.getCategorias
+  categoriasAdminController.getCategorias
 );
+// ✅ REFACTORED: Migrado a categoriasAdminController.js
 router.post(
   "/categorias",
   authenticate,
   authorizeAdmin,
   uploadCategoryImage.single("image"),
-  adminController.crearCategoria
+  categoriasAdminController.crearCategoria
 );
+// ✅ REFACTORED: Migrado a categoriasAdminController.js
 router.put(
   "/categorias/:id",
   authenticate,
   authorizeAdmin,
   uploadCategoryImage.single("image"),
-  adminController.actualizarCategoria
+  categoriasAdminController.actualizarCategoria
 );
+// ✅ REFACTORED: Migrado a categoriasAdminController.js
 router.delete(
   "/categorias/:id",
   authenticate,
   authorizeAdmin,
-  adminController.eliminarCategoria
+  categoriasAdminController.eliminarCategoria
 );
 router.get(
   "/medidas",
@@ -662,57 +684,65 @@ router.get(
 /**
  * Gestión de agentes
  */
+// ✅ REFACTORED: Migrado a agentesAdminController.js
 router.get(
   "/agentes",
   authenticate,
   authorizeAdmin,
-  adminController.getAllAgentes
+  agentesAdminController.getAllAgentes
 );
+// ✅ REFACTORED: Migrado a agentesAdminController.js
 router.post(
   "/agentes",
   authenticate,
   authorizeAdmin,
-  adminController.crearAgente
+  agentesAdminController.crearAgente
 );
+// ✅ REFACTORED: Migrado a agentesAdminController.js
 router.get(
   "/agentes/:id",
   authenticate,
   authorizeAdmin,
-  adminController.getAgenteDetalle
+  agentesAdminController.getAgenteDetalle
 );
+// ✅ REFACTORED: Migrado a agentesAdminController.js
 router.get(
   "/agentes/:id/clientes",
   authenticate,
   authorizeAdmin,
-  adminController.getAgenteClientes
+  agentesAdminController.getAgenteClientes
 );
+// ✅ REFACTORED: Migrado a agentesAdminController.js
 router.put(
   "/agentes/:id",
   authenticate,
   authorizeAdmin,
-  adminController.actualizarAgente
+  agentesAdminController.actualizarAgente
 );
+// ✅ REFACTORED: Migrado a agentesAdminController.js
 router.put(
   "/agentes/:id/desactivar",
   authenticate,
   authorizeAdmin,
-  adminController.desactivarAgente
+  agentesAdminController.desactivarAgente
 );
 
 /**
  * Gestión de comisiones
  */
+// ✅ REFACTORED: Migrado a comisionesAdminController.js
 router.get(
   "/comisiones",
   authenticate,
   authorizeAdmin,
-  adminController.getAllComisiones
+  comisionesAdminController.getAllComisiones
 );
+// ✅ REFACTORED: Migrado a comisionesAdminController.js
 router.put(
   "/comisiones/:id/pagar",
   authenticate,
   authorizeAdmin,
-  adminController.pagarComision
+  comisionesAdminController.pagarComision
 );
 
 router.get(
@@ -751,11 +781,12 @@ router.get(
   cxpController.exportarLoteCxP
 );
 
+// ✅ REFACTORED: Migrado a cxcAdminController.js
 router.get(
   "/cxc-summary",
   authenticate,
   authorizeAdmin,
-  adminController.getCxcSummary
+  cxcAdminController.getCxcSummary
 );
 
 router.get(
@@ -857,7 +888,7 @@ router.post(
   "/registrar-abono",
   authenticate,
   authorizeAdminOrAgente,
-  adminController.registrarAbonoCxC
+  cxcAdminController.registrarAbonoCxC
 );
 
 router.get(
@@ -908,23 +939,26 @@ router.put(
 /**
  * Gestión de clientes
  */
+// ✅ REFACTORED: Migrado a clientesAdminController.js
 router.get(
   "/clientes",
   authenticate,
   authorizeAdmin,
-  adminController.getAllClientes
+  clientesAdminController.getAllClientes
 );
+// ✅ REFACTORED: Migrado a clientesAdminController.js
 router.get(
   "/clientes/:id",
   authenticate,
   authorizeAdmin,
-  adminController.getClienteDetalle
+  clientesAdminController.getClienteDetalle
 );
+// ✅ REFACTORED: Migrado a clientesAdminController.js
 router.put(
   "/clientes/:id/estado",
   authenticate,
   authorizeAdmin,
-  adminController.actualizarEstadoCliente
+  clientesAdminController.actualizarEstadoCliente
 );
 router.put(
   "/clientes/:id/desvincular",
@@ -938,27 +972,30 @@ router.put(
   authorizeAdmin,
   authController.adminResetPassword
 );
+// ✅ REFACTORED: Migrado a clientesAdminController.js
 router.get(
   "/clientes/:id/credito",
   authenticate,
   authorizeAdmin,
-  adminController.getClienteCreditoInfo
+  clientesAdminController.getClienteCreditoInfo
 );
+// ✅ REFACTORED: Migrado a clientesAdminController.js
 router.put(
   "/clientes/:id/credito",
   authenticate,
   authorizeAdmin,
-  adminController.actualizarCreditoCliente
+  clientesAdminController.actualizarCreditoCliente
 );
 
 /**
  * Detalle de pedido
  */
+// ✅ REFACTORED: Migrado a pedidosAdminController.js
 router.get(
   "/pedidos/:id/detalle",
   authenticate,
   authorizeAdmin,
-  adminController.getPedidoDetalle
+  pedidosAdminController.getPedidoDetalle
 );
 
 /**
@@ -984,29 +1021,33 @@ router.get(
 /**
  * Gestión de proveedores
  */
+// ✅ REFACTORED: Migrado a proveedoresAdminController.js
 router.get(
   "/proveedores",
   authenticate,
   authorizeAdmin,
-  adminController.getAllProveedores
+  proveedoresAdminController.getAllProveedores
 );
+// ✅ REFACTORED: Migrado a proveedoresAdminController.js
 router.get(
   "/proveedores/:id",
   authenticate,
   authorizeAdmin,
-  adminController.getProveedorById
+  proveedoresAdminController.getProveedorById
 );
+// ✅ REFACTORED: Migrado a proveedoresAdminController.js
 router.post(
   "/proveedores",
   authenticate,
   authorizeAdmin,
-  adminController.crearProveedor
+  proveedoresAdminController.crearProveedor
 );
+// ✅ REFACTORED: Migrado a proveedoresAdminController.js
 router.put(
   "/proveedores/:id",
   authenticate,
   authorizeAdmin,
-  adminController.actualizarProveedor
+  proveedoresAdminController.actualizarProveedor
 );
 
 router.get(
@@ -1111,11 +1152,12 @@ router.post(
 /**
  * Gestión de órdenes de compra
  */
+// ✅ REFACTORED: Migrado a ordenesCompraController.js
 router.get(
   "/ordenes-compra",
   authenticate,
   authorizeAdmin,
-  adminController.getAllOrdenesCompra
+  ordenesCompraController.getAllOrdenesCompra
 );
 router.get(
   "/ordenes-compra/reportes",
@@ -1177,11 +1219,12 @@ router.post(
   authorizeAdmin,
   adminController.cancelarOrdenBackorder
 );
+// ✅ REFACTORED: Migrado a ordenesCompraController.js
 router.post(
   "/ordenes-compra",
   authenticate,
   authorizeAdmin,
-  adminController.crearOrdenCompra
+  ordenesCompraController.crearOrdenCompra
 );
 router.post(
   "/ordenes-compra/:id/items",
@@ -1207,11 +1250,12 @@ router.get(
   authorizeAdmin,
   ordenCompraPDFController.generarPDFOrdenCompra
 );
+// ✅ REFACTORED: Migrado a recepcionInventarioController.js
 router.post(
   "/ordenes-compra/recibir",
   authenticate,
   authorizeAdmin,
-  adminController.recibirInventario
+  recepcionInventarioController.recibirInventario
 );
 
 router.post(

@@ -110,7 +110,11 @@ const subirEvidenciaRecepcionOC = async (req, res) => {
   }
 };
 
-const getCxcSummary = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxcAdminController.getCxcSummary instead
+ */
+const getCxcSummary_MIGRATED = async (req, res) => {
   try {
     const result = await db.query(
       `SELECT
@@ -208,7 +212,11 @@ const getCxcSummary = async (req, res) => {
   }
 };
 
-const registrarAbonoCxC = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxcAdminController.registrarAbonoCxC instead
+ */
+const registrarAbonoCxC_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -2477,7 +2485,11 @@ const buscarProductosCompra = async (req, res) => {
   }
 };
 
-const confirmarPedido = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use pedidosAdminController.confirmarPedido instead
+ */
+const confirmarPedido_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -3407,7 +3419,12 @@ const PEDIDO_ESTATUS_EMAIL_TEMPLATES = {
   },
 };
 
-const getProveedorById = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use proveedoresAdminController.getProveedorById instead
+ */
+const getProveedorById_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const proveedorId = Number.parseInt(req.params.id, 10);
@@ -4084,10 +4101,10 @@ const getDashboardStats = async (req, res) => {
 };
 
 /**
- * Obtener todos los pedidos (para gestión admin)
- * GET /api/admin/pedidos
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use pedidosAdminController.getAllPedidos instead
  */
-const getAllPedidos = async (req, res) => {
+const getAllPedidos_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const { estatus, clienteId, agenteId, fechaInicio, fechaFin } = req.query;
@@ -4268,387 +4285,22 @@ const getAllPedidos = async (req, res) => {
 };
 
 /**
- * Actualizar estatus de un pedido
- * PUT /api/admin/pedidos/:id
- * FIX: Validación de stock mejorada para prevenir Error 500
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/pedidosStatusController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * MOTIVO: Implementación de transacciones atómicas con rollback automático
+ * para prevenir inconsistencias de datos (stock deducido sin CXC generado).
+ * 
+ * RUTA: PUT /api/admin/pedidos/:id
+ * NUEVO CONTROLADOR: pedidosStatusController.updatePedidoEstatus
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use pedidosStatusController.updatePedidoEstatus instead
  */
-const updatePedidoEstatus = async (req, res) => {
-  try {
-    const { tenant_id } = req.tenant;
-    const pedidoId = parseInt(req.params.id);
-    const { estatus, confirmarBackorder } = req.body;
-
-    console.log(`[updatePedidoEstatus] Updating order ${pedidoId} to status: ${estatus}`);
-
-    if (!estatus) {
-      return res.status(400).json({
-        success: false,
-        message: "El estatus es requerido"
-      });
-    }
-
-    // Validar estatus permitidos
-    const estatusValidos = ['Pendiente', 'Surtido', 'Procesando', 'Enviado', 'Entregado', 'Cancelado', 'Completado', 'Parcial', 'Parcialmente Surtido'];
-    if (!estatusValidos.includes(estatus)) {
-      console.error(`[updatePedidoEstatus] Invalid status: ${estatus}. Valid: ${estatusValidos.join(', ')}`);
-      return res.status(400).json({
-        success: false,
-        message: `Estatus inválido. Valores permitidos: ${estatusValidos.join(', ')}`
-      });
-    }
-
-    // Obtener el estatus actual del pedido para validar transiciones
-    const pedidoActualResult = await db.query(
-      `SELECT estatus FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2`,
-      [pedidoId, tenant_id]
-    );
-
-    if (pedidoActualResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Pedido no encontrado"
-      });
-    }
-
-    const estatusActual = pedidoActualResult.rows[0].estatus;
-
-    // Validar que Enviado/Entregado solo se puedan marcar después de Surtido
-    if ((estatus === 'Enviado' || estatus === 'Entregado') && estatusActual !== 'Surtido' && estatusActual !== 'Enviado') {
-      return res.status(400).json({
-        success: false,
-        message: `No se puede cambiar a "${estatus}" sin haber surtido el pedido primero. El pedido debe estar en estado "Surtido" antes de marcarlo como "${estatus}".`,
-        estatusActual: estatusActual,
-        estatusRequerido: 'Surtido'
-      });
-    }
-
-    // ✅ Validar stock antes de cambiar a Surtido, Enviado o Entregado
-    // NOTA: Ya NO validamos el flag esbackorder porque es histórico y no refleja
-    // la disponibilidad actual. Solo validamos stock real disponible.
-    const estatusQueRequierenStock = ['Surtido', 'Enviado', 'Entregado'];
-    
-    if (estatusQueRequierenStock.includes(estatus) && !confirmarBackorder) {
-      console.log(`[updatePedidoEstatus] 🔍 Validating stock for order ${pedidoId} before changing to ${estatus}`);
-      
-      // Obtener detalles del pedido con stock actual
-      const detallesResult = await db.query(
-        `SELECT 
-          d.detalleid,
-          d.varianteid,
-          d.cantidadpaquetes,
-          d.piezastotales,
-          pv.sku,
-          p.nombreproducto as producto_nombre,
-          pv.dimensiones,
-          COALESCE(pv.stock, 0) as stock_actual
-         FROM detallesdelpedido d
-         INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
-         INNER JOIN productos p ON p.productoid = pv.productoid
-         WHERE d.pedidoid = $1 AND p.tenant_id = $2`,
-        [pedidoId, tenant_id]
-      );
-
-      if (detallesResult.rows.length === 0) {
-        console.error(`[updatePedidoEstatus] ❌ No se encontraron productos para el pedido ${pedidoId}`);
-        return res.status(400).json({
-          success: false,
-          message: "No se encontraron productos en el pedido"
-        });
-      }
-
-      const itemsConStockInsuficiente = [];
-      
-      for (const item of detallesResult.rows) {
-        // CRÍTICO: Comparar PIEZAS con PIEZAS (no paquetes con piezas)
-        const piezasNecesarias = parseInt(item.piezastotales) || 0;
-        const piezasDisponibles = parseInt(item.stock_actual) || 0;
-        
-        console.log(`[updatePedidoEstatus] 📦 ${item.sku}: Necesario=${piezasNecesarias} pzas, Disponible=${piezasDisponibles} pzas`);
-        
-        if (piezasDisponibles < piezasNecesarias) {
-          itemsConStockInsuficiente.push({
-            sku: item.sku,
-            producto: item.producto_nombre,
-            dimensiones: item.dimensiones || 'N/A',
-            necesario: piezasNecesarias,
-            disponible: piezasDisponibles,
-            faltante: piezasNecesarias - piezasDisponibles
-          });
-        }
-      }
-
-      // Si hay items con stock insuficiente, RECHAZAR la operación
-      if (itemsConStockInsuficiente.length > 0) {
-        console.warn(`[updatePedidoEstatus] ⚠️ Stock insuficiente detectado para ${itemsConStockInsuficiente.length} items`);
-        
-        // Construir mensaje detallado
-        const detalleProductos = itemsConStockInsuficiente.map(item => 
-          `${item.producto} (${item.sku}): Necesitas ${item.necesario}, disponible ${item.disponible}`
-        ).join('; ');
-        
-        return res.status(400).json({
-          success: false,
-          message: `Stock insuficiente para el producto: ${itemsConStockInsuficiente[0].producto}`,
-          error: `No hay suficiente inventario para completar este pedido. ${detalleProductos}`,
-          data: {
-            itemsConStockInsuficiente,
-            totalItems: detallesResult.rows.length,
-            itemsConProblemas: itemsConStockInsuficiente.length
-          }
-        });
-      }
-
-      console.log(`[updatePedidoEstatus] ✅ Stock validado correctamente para todos los productos`);
-    }
-
-    // ✅ DEDUCIR STOCK y GENERAR CXC cuando el estatus cambia a "Surtido"
-    if (estatus === 'Surtido' && estatusActual !== 'Surtido') {
-      console.log(`[updatePedidoEstatus] 📦 Deduciendo stock y generando CXC para pedido ${pedidoId}...`);
-      
-      const inventoryService = require('../services/inventoryService');
-      const SmartStockService = require('../services/SmartStockService');
-      
-      // Obtener información completa del pedido
-      const pedidoInfo = await db.query(
-        `SELECT 
-          p.pedidoid,
-          p.clienteid,
-          p.montototal,
-          p.es_credito,
-          p.monto_descuento
-         FROM pedidos p
-         WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
-        [pedidoId, tenant_id]
-      );
-
-      if (pedidoInfo.rows.length === 0) {
-        console.error(`[updatePedidoEstatus] ❌ No se encontró información del pedido ${pedidoId}`);
-        return res.status(400).json({
-          success: false,
-          message: "No se encontró información del pedido"
-        });
-      }
-
-      const pedido = pedidoInfo.rows[0];
-      
-      // Obtener detalles del pedido para deducir stock
-      const detallesResult = await db.query(
-        `SELECT 
-          d.detalleid,
-          d.varianteid,
-          d.cantidadpaquetes,
-          d.piezastotales,
-          pv.sku,
-          p.nombreproducto as producto_nombre
-         FROM detallesdelpedido d
-         INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
-         INNER JOIN productos p ON p.productoid = pv.productoid
-         WHERE d.pedidoid = $1 AND p.tenant_id = $2`,
-        [pedidoId, tenant_id]
-      );
-
-      if (detallesResult.rows.length === 0) {
-        console.error(`[updatePedidoEstatus] ❌ No se encontraron productos para deducir stock`);
-        return res.status(400).json({
-          success: false,
-          message: "No se encontraron productos en el pedido para deducir stock"
-        });
-      }
-
-      const motivo = `Venta Pedido #${pedidoId}`;
-      
-      // Deducir stock para cada producto usando SmartStockService
-      for (const item of detallesResult.rows) {
-        const varianteId = parseInt(item.varianteid);
-        const piezasTotales = parseInt(item.piezastotales) || 0;
-        
-        if (piezasTotales <= 0) {
-          console.log(`[updatePedidoEstatus] ⏭️ Saltando item ${item.sku} - cantidad 0`);
-          continue;
-        }
-
-        try {
-          console.log(`[updatePedidoEstatus] 📉 Deduciendo ${piezasTotales} piezas de ${item.sku}`);
-          
-          // Usar SmartStockService para deducir stock (afecta producto_variantes y stock_admin)
-          const resultado = await SmartStockService.adjustStock({
-            varianteId,
-            cantidad: -1 * piezasTotales, // Negativo para deducir
-            userId: req.user.id,
-            userRole: req.user.roles || ['admin'],
-            tenantId: tenant_id,
-            motivo,
-            client: db // Usar conexión de db directa (no transacción)
-          });
-
-          if (!resultado.success) {
-            console.error(`[updatePedidoEstatus] ❌ Error al deducir stock de ${item.sku}:`, resultado.message);
-            return res.status(400).json({
-              success: false,
-              message: `Error al deducir stock del producto ${item.producto_nombre} (${item.sku}): ${resultado.message}`
-            });
-          }
-
-          console.log(`[updatePedidoEstatus] ✅ Stock deducido: ${item.sku} - ${piezasTotales} piezas (Stock nuevo: ${resultado.newStock})`);
-          
-          // ✅ REGISTRAR MOVIMIENTO EN KARDEX (movimientos_inventario)
-          try {
-            await db.query(
-              `INSERT INTO movimientos_inventario 
-               (variante_id, tipo, cantidad, stock_previo, stock_posterior, motivo, admin_id, tenant_id)
-               VALUES ($1, 'MERMA', $2, $3, $4, $5, $6, $7)`,
-              [
-                varianteId,
-                piezasTotales,
-                resultado.newStock + piezasTotales, // stock antes de deducir
-                resultado.newStock, // stock después de deducir
-                `Venta - Pedido #${pedidoId}`,
-                req.user.id,
-                tenant_id
-              ]
-            );
-            console.log(`[updatePedidoEstatus] 📝 Movimiento registrado en kardex para ${item.sku}`);
-          } catch (movError) {
-            console.error(`[updatePedidoEstatus] ⚠️ Error al registrar movimiento (no crítico):`, movError);
-            // No detenemos el proceso si falla el registro del movimiento
-          }
-          
-        } catch (invError) {
-          console.error(`[updatePedidoEstatus] ❌ Error al deducir inventario para ${item.sku}:`, invError);
-          return res.status(500).json({
-            success: false,
-            message: `Error al deducir inventario del producto ${item.producto_nombre} (${item.sku})`,
-            error: invError.message
-          });
-        }
-      }
-
-      console.log(`[updatePedidoEstatus] 🎉 Stock deducido exitosamente para todos los productos del pedido ${pedidoId}`);
-
-      // ✅ GENERAR CXC si el pedido es a crédito
-      if (pedido.es_credito) {
-        console.log(`[updatePedidoEstatus] 💳 Generando CXC para pedido a crédito ${pedidoId}`);
-        
-        const montoTotal = parseFloat(pedido.montototal);
-        const clienteId = parseInt(pedido.clienteid);
-
-        try {
-          // Insertar en cuentas_por_cobrar
-          await db.query(
-            `INSERT INTO cuentas_por_cobrar 
-             (pedido_id, cliente_id, tipo_movimiento, monto, descripcion, tenant_id)
-             VALUES ($1, $2, 'CARGO', $3, $4, $5)`,
-            [
-              pedidoId,
-              clienteId,
-              montoTotal,
-              `Cargo por pedido #${pedidoId} confirmado`,
-              tenant_id
-            ]
-          );
-
-          console.log(`[updatePedidoEstatus] ✅ CXC generado: $${montoTotal.toFixed(2)} para cliente ${clienteId}`);
-
-          // Actualizar saldo deudor del cliente
-          const creditoUpdate = await db.query(
-            `UPDATE cliente_creditos 
-             SET saldo_deudor = saldo_deudor + $1,
-                 ultima_actualizacion = NOW()
-             WHERE cliente_id = $2 AND tenant_id = $3
-             RETURNING credito_id, saldo_deudor`,
-            [montoTotal, clienteId, tenant_id]
-          );
-
-          console.log(`[updatePedidoEstatus] ✅ Saldo deudor actualizado para cliente ${clienteId}`);
-
-          // Registrar movimiento en credito_movimientos
-          if (creditoUpdate.rows.length > 0) {
-            const creditoId = creditoUpdate.rows[0].credito_id;
-            const saldoDespues = creditoUpdate.rows[0].saldo_deudor;
-            
-            await db.query(
-              `INSERT INTO credito_movimientos 
-               (credito_id, tipo_movimiento, monto, descripcion, referencia_id, saldo_despues_movimiento, tenant_id)
-               VALUES ($1, 'CARGO', $2, $3, $4, $5, $6)`,
-              [
-                creditoId,
-                montoTotal,
-                `Cargo por confirmación de pedido #${pedidoId}`,
-                `PED-${pedidoId}`,
-                saldoDespues,
-                tenant_id
-              ]
-            );
-
-            console.log(`[updatePedidoEstatus] ✅ Movimiento de crédito registrado`);
-          }
-
-        } catch (cxcError) {
-          console.error(`[updatePedidoEstatus] ❌ Error al generar CXC:`, cxcError);
-          return res.status(500).json({
-            success: false,
-            message: `Error al generar la cuenta por cobrar`,
-            error: cxcError.message
-          });
-        }
-      } else {
-        console.log(`[updatePedidoEstatus] ℹ️ Pedido ${pedidoId} no es a crédito, no se genera CXC`);
-      }
-    }
-
-    // Actualizar el estatus del pedido (sin FechaActualizacion que no existe)
-    const result = await db.query(
-      `UPDATE pedidos 
-       SET estatus = $1
-       WHERE pedidoid = $2 AND tenant_id = $3
-       RETURNING *`,
-      [estatus, pedidoId, tenant_id]
-    );
-
-    if (result.rows.length === 0) {
-      console.error(`[updatePedidoEstatus] Order ${pedidoId} not found`);
-      return res.status(404).json({
-        success: false,
-        message: "Pedido no encontrado"
-      });
-    }
-
-    console.log(`[updatePedidoEstatus] ✅ Order ${pedidoId} updated successfully to ${estatus}`);
-
-    // Crear notificación para el cliente
-    try {
-      await crearNotificacionServicio({
-        clienteId: result.rows[0].clienteid,
-        tipo: 'pedido',
-        titulo: `Pedido ${estatus}`,
-        mensaje: `Tu pedido #${pedidoId} ha sido actualizado a: ${estatus}`,
-        url: `/dashboard.html?tab=pedidos`,
-        prioridad: 'normal',
-        metadata: { pedidoId }
-      });
-    } catch (notifError) {
-      console.error("Error al crear notificación:", notifError);
-    }
-
-    res.json({
-      success: true,
-      message: "Estatus actualizado correctamente",
-      data: {
-        pedidoId: result.rows[0].pedidoid,
-        estatus: result.rows[0].estatus
-      }
-    });
-  } catch (error) {
-    console.error("[updatePedidoEstatus] ❌ Error:", error);
-    console.error("Error stack:", error.stack);
-    res.status(500).json({
-      success: false,
-      message: "Error al actualizar estatus del pedido",
-      error: error.message,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
-  }
-};
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/pedidosStatusController.js
 
 /**
  * Obtener medidas existentes (dimensiones únicas de variantes)
@@ -5400,7 +5052,11 @@ const saveReglaEmpaque = async (req, res) => {
  * Obtener clientes asignados a un agente específico
  * GET /api/admin/agentes/:id/clientes
  */
-const getAgenteClientes = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use agentesAdminController.getAgenteClientes instead
+ */
+const getAgenteClientes_MIGRATED = async (req, res) => {
   try {
     const agenteId = parseInt(req.params.id, 10);
 
@@ -5650,10 +5306,11 @@ const updateCostoEnvio = async (req, res) => {
 };
 
 /**
- * Obtener detalle de un cliente
- * GET /api/admin/clientes/:id
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use clientesAdminController.getClienteDetalle instead
  */
-const getClienteDetalle = async (req, res) => {
+const getClienteDetalle_MIGRATED = async (req, res) => {
   try {
     const clienteId = parseInt(req.params.id, 10);
 
@@ -5780,10 +5437,11 @@ const getClienteDetalle = async (req, res) => {
 };
 
 /**
- * Actualizar estado activo de un cliente
- * PUT /api/admin/clientes/:id/estado
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use clientesAdminController.actualizarEstadoCliente instead
  */
-const actualizarEstadoCliente = async (req, res) => {
+const actualizarEstadoCliente_MIGRATED = async (req, res) => {
   try {
     const clienteId = parseInt(req.params.id, 10);
     const { activo } = req.body;
@@ -5891,10 +5549,11 @@ const actualizarEstadoCliente = async (req, res) => {
 };
 
 /**
- * Actualizar configuración de crédito de un cliente
- * PUT /api/admin/clientes/:id/credito
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use clientesAdminController.actualizarCreditoCliente instead
  */
-const actualizarCreditoCliente = async (req, res) => {
+const actualizarCreditoCliente_MIGRATED = async (req, res) => {
   try {
     const clienteId = parseInt(req.params.id, 10);
     const { limiteCredito, diasGracia, activo } = req.body;
@@ -6004,10 +5663,11 @@ const actualizarCreditoCliente = async (req, res) => {
 };
 
 /**
- * Obtener información de crédito de un cliente
- * GET /api/admin/clientes/:id/credito
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use clientesAdminController.getClienteCreditoInfo instead
  */
-const getClienteCreditoInfo = async (req, res) => {
+const getClienteCreditoInfo_MIGRATED = async (req, res) => {
   try {
     const clienteId = parseInt(req.params.id, 10);
 
@@ -6675,10 +6335,21 @@ const procesarColorParaSkuVariante = (colorNombre) => {
 };
 
 /**
- * Crear un nuevo producto
- * POST /api/admin/productos
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/productosAdminController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: POST /api/admin/productos
+ * NUEVO CONTROLADOR: productosAdminController.crearProducto
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use productosAdminController.crearProducto instead
  */
-const crearProducto = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/productosAdminController.js
+
+const crearProducto_MIGRATED = async (req, res) => {
   const { tenant_id } = req.tenant;
   const {
     nombre,
@@ -7599,10 +7270,21 @@ const getTamanosDisponiblesProducto = async (req, res) => {
 };
 
 /**
- * Actualizar un producto existente
- * PUT /api/admin/productos/:id
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/productosAdminController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: PUT /api/admin/productos/:id
+ * NUEVO CONTROLADOR: productosAdminController.actualizarProducto
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use productosAdminController.actualizarProducto instead
  */
-const actualizarProducto = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/productosAdminController.js
+
+const actualizarProducto_MIGRATED = async (req, res) => {
   const { tenant_id } = req.tenant;
   const productoId = Number.parseInt(req.params.id, 10);
 
@@ -8963,10 +8645,21 @@ const getProductoDetalle = async (req, res) => {
 };
 
 /**
- * Obtener todos los productos (para gestión)
- * GET /api/admin/productos
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/productosAdminController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: GET /api/admin/productos
+ * NUEVO CONTROLADOR: productosAdminController.getAllProductos
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use productosAdminController.getAllProductos instead
  */
-const getAllProductos = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/productosAdminController.js
+
+const getAllProductos_MIGRATED = async (req, res) => {
   try {
     const result = await db.query(
       `SELECT 
@@ -9115,10 +8808,10 @@ const getAllProductos = async (req, res) => {
 };
 
 /**
- * Obtener categorías disponibles
- * GET /api/admin/categorias
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use categoriasAdminController.getCategorias instead
  */
-const getCategorias = async (req, res) => {
+const getCategorias_MIGRATED = async (req, res) => {
   try {
     console.log("\n=== INICIO getCategorias ===");
     const { tenant_id } = req.tenant;
@@ -9172,10 +8865,10 @@ const getCategorias = async (req, res) => {
 };
 
 /**
- * Crear una nueva categoría
- * POST /api/admin/categorias
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use categoriasAdminController.crearCategoria instead
  */
-const crearCategoria = async (req, res) => {
+const crearCategoria_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const { nombre, descripcion, parentCategoriaId, activo } = req.body;
@@ -9321,10 +9014,10 @@ const crearCategoria = async (req, res) => {
 };
 
 /**
- * Actualizar una categoría existente
- * PUT /api/admin/categorias/:id
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use categoriasAdminController.actualizarCategoria instead
  */
-const actualizarCategoria = async (req, res) => {
+const actualizarCategoria_MIGRATED = async (req, res) => {
   try {
     const categoriaId = parseInt(req.params.id, 10);
     const { nombre, descripcion, parentCategoriaId, activo } = req.body;
@@ -9585,10 +9278,10 @@ const toggleProductoVisibilidad = async (req, res) => {
 };
 
 /**
- * Eliminar una categoría
- * DELETE /api/admin/categorias/:id
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use categoriasAdminController.eliminarCategoria instead
  */
-const eliminarCategoria = async (req, res) => {
+const eliminarCategoria_MIGRATED = async (req, res) => {
   try {
     const categoriaId = parseInt(req.params.id, 10);
 
@@ -9732,7 +9425,11 @@ const eliminarCategoria = async (req, res) => {
  * Crear un nuevo agente
  * POST /api/admin/agentes
  */
-const crearAgente = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use agentesAdminController.crearAgente instead
+ */
+const crearAgente_MIGRATED = async (req, res) => {
   try {
     const { nombre, apellido, email, password, telefono, porcentaje_comision } = req.body;
 
@@ -9960,7 +9657,11 @@ const crearAgente = async (req, res) => {
  * Obtener todos los agentes (reales + pendientes de creación)
  * GET /api/admin/agentes
  */
-const getAllAgentes = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use agentesAdminController.getAllAgentes instead
+ */
+const getAllAgentes_MIGRATED = async (req, res) => {
   try {
     // CRITICAL: Filter by tenant_id for multi-tenant isolation
     const { tenant_id } = req.tenant;
@@ -10099,7 +9800,11 @@ const getAllAgentes = async (req, res) => {
  * Obtener detalles de un agente específico
  * GET /api/admin/agentes/:id
  */
-const getAgenteDetalle = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use agentesAdminController.getAgenteDetalle instead
+ */
+const getAgenteDetalle_MIGRATED = async (req, res) => {
   try {
     const agenteId = parseInt(req.params.id);
 
@@ -10191,7 +9896,11 @@ const getAgenteDetalle = async (req, res) => {
  * Desactivar un agente (soft delete) vía control de cambios
  * PUT /api/admin/agentes/:id/desactivar
  */
-const desactivarAgente = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use agentesAdminController.desactivarAgente instead
+ */
+const desactivarAgente_MIGRATED = async (req, res) => {
   try {
     const agenteId = parseInt(req.params.id);
 
@@ -10339,7 +10048,11 @@ const desactivarAgente = async (req, res) => {
  * Actualizar información de un agente
  * PUT /api/admin/agentes/:id
  */
-const actualizarAgente = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use agentesAdminController.actualizarAgente instead
+ */
+const actualizarAgente_MIGRATED = async (req, res) => {
   try {
     const agenteId = parseInt(req.params.id);
     const { nombre, apellido, email, telefono, porcentaje_comision } = req.body;
@@ -10499,10 +10212,10 @@ const actualizarAgente = async (req, res) => {
 };
 
 /**
- * Obtener todas las comisiones
- * GET /api/admin/comisiones
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use comisionesAdminController.getAllComisiones instead
  */
-const getAllComisiones = async (req, res) => {
+const getAllComisiones_MIGRATED = async (req, res) => {
   try {
     const { estatus } = req.query;
 
@@ -10561,10 +10274,10 @@ const getAllComisiones = async (req, res) => {
 };
 
 /**
- * Pagar una comisión
- * PUT /api/admin/comisiones/:id/pagar
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use comisionesAdminController.pagarComision instead
  */
-const pagarComision = async (req, res) => {
+const pagarComision_MIGRATED = async (req, res) => {
   try {
     const comisionId = parseInt(req.params.id);
 
@@ -10662,10 +10375,21 @@ const pagarComision = async (req, res) => {
 };
 
 /**
- * Obtener todos los clientes
- * GET /api/admin/clientes
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/clientesAdminController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: GET /api/admin/clientes
+ * NUEVO CONTROLADOR: clientesAdminController.getAllClientes
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use clientesAdminController.getAllClientes instead
  */
-const getAllClientes = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/clientesAdminController.js
+
+const getAllClientes_MIGRATED = async (req, res) => {
   try {
     // CRITICAL: Filter by tenant_id for multi-tenant isolation
     const { tenant_id } = req.tenant;
@@ -10715,10 +10439,10 @@ const getAllClientes = async (req, res) => {
 };
 
 /**
- * Obtener detalle de un pedido
- * GET /api/admin/pedidos/:id/detalle
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use pedidosAdminController.getPedidoDetalle instead
  */
-const getPedidoDetalle = async (req, res) => {
+const getPedidoDetalle_MIGRATED = async (req, res) => {
   try {
     const pedidoId = parseInt(req.params.id);
 
@@ -10906,10 +10630,11 @@ const getPedidoDetalle = async (req, res) => {
  */
 
 /**
- * Obtener todos los proveedores (reales + pendientes de creación)
- * GET /api/admin/proveedores
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use proveedoresAdminController.getAllProveedores instead
  */
-const getAllProveedores = async (req, res) => {
+const getAllProveedores_MIGRATED = async (req, res) => {
   try {
     console.log("\n=== INICIO getAllProveedores ===");
     const { tenant_id } = req.tenant;
@@ -10976,10 +10701,11 @@ const getAllProveedores = async (req, res) => {
 };
 
 /**
- * Crear un nuevo proveedor
- * POST /api/admin/proveedores
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use proveedoresAdminController.crearProveedor instead
  */
-const crearProveedor = async (req, res) => {
+const crearProveedor_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -11251,10 +10977,11 @@ const crearProveedor = async (req, res) => {
 };
 
 /**
- * Actualizar un proveedor existente
- * PUT /api/admin/proveedores/:id
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use proveedoresAdminController.actualizarProveedor instead
  */
-const actualizarProveedor = async (req, res) => {
+const actualizarProveedor_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -11949,10 +11676,21 @@ const validarRecepcionCompra = async (req, res) => {
 };
 
 /**
- * Obtener todas las órdenes de compra (con filtro por estatus)
- * GET /api/admin/ordenes-compra
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/ordenesCompraController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: GET /api/admin/ordenes-compra
+ * NUEVO CONTROLADOR: ordenesCompraController.getAllOrdenesCompra
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use ordenesCompraController.getAllOrdenesCompra instead
  */
-const getAllOrdenesCompra = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/ordenesCompraController.js
+
+const getAllOrdenesCompra_MIGRATED = async (req, res) => {
   try {
     const { estatus, adminId, origen, proveedorId, soloRecibidas } = req.query;
     const userRole = req.user.rol;
@@ -12644,10 +12382,21 @@ const getDetallesOrdenCompra = async (req, res) => {
 };
 
 /**
- * Recibir inventario de una orden de compra
- * POST /api/admin/ordenes-compra/recibir
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/recepcionInventarioController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: POST /api/admin/ordenes-compra/recibir
+ * NUEVO CONTROLADOR: recepcionInventarioController.recibirInventario
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use recepcionInventarioController.recibirInventario instead
  */
-const recibirInventario = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/recepcionInventarioController.js
+
+const recibirInventario_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -13387,10 +13136,21 @@ const recibirItemOrdenCompra = async (req, res) => {
 };
 
 /**
- * Crear una nueva orden de compra
- * POST /api/admin/ordenes-compra
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/ordenesCompraController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: POST /api/admin/ordenes-compra
+ * NUEVO CONTROLADOR: ordenesCompraController.crearOrdenCompra
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use ordenesCompraController.crearOrdenCompra instead
  */
-const crearOrdenCompra = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/ordenesCompraController.js
+
+const crearOrdenCompra_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -17472,11 +17232,11 @@ module.exports = {
   verifyAdmin,
   refreshAdminToken,
   getDashboardStats,
-  getAllPedidos,
-  updatePedidoEstatus,
-  confirmarPedido,
+  // getAllPedidos, // ⚠️ MIGRADO a pedidosAdminController.js
+  // updatePedidoEstatus, // ⚠️ MIGRADO a pedidosStatusController.js
+  // confirmarPedido, // ⚠️ MIGRADO a pedidosAdminController.js
   updateCostoEnvio,
-  getPedidoDetalle,
+  // getPedidoDetalle, // ⚠️ MIGRADO a pedidosAdminController.js
   getMovimientosInventario,
   getHistorialInventarioVariante,
   recepcionarMercancia,
@@ -17489,38 +17249,38 @@ module.exports = {
   buscarProductosCompra,
   getProductoDetalle,
   getVariantesPendientesProducto,
-  getAllProductos,
-  crearProducto,
-  actualizarProducto,
+  // getAllProductos, // ⚠️ MIGRADO a productosAdminController.js
+  // crearProducto, // ⚠️ MIGRADO a productosAdminController.js
+  // actualizarProducto, // ⚠️ MIGRADO a productosAdminController.js
   toggleProductoVisibilidad,
   getTamanosPaquetes,
   getTamanosDisponiblesProducto,
-  getCategorias,
-  crearCategoria,
-  actualizarCategoria,
-  eliminarCategoria,
+  // getCategorias, // ⚠️ MIGRADO a categoriasAdminController.js
+  // crearCategoria, // ⚠️ MIGRADO a categoriasAdminController.js
+  // actualizarCategoria, // ⚠️ MIGRADO a categoriasAdminController.js
+  // eliminarCategoria, // ⚠️ MIGRADO a categoriasAdminController.js
   getMedidas,
   getMedidasExistentes,
   crearVariante,
   actualizarVariante,
-  crearAgente,
-  actualizarAgente,
-  getAllAgentes,
-  getAgenteDetalle,
-  getAgenteClientes,
-  desactivarAgente,
-  getAllComisiones,
-  pagarComision,
-  getAllClientes,
-  getClienteDetalle,
-  actualizarEstadoCliente,
+  // crearAgente, // ⚠️ MIGRADO a agentesAdminController.js
+  // actualizarAgente, // ⚠️ MIGRADO a agentesAdminController.js
+  // getAllAgentes, // ⚠️ MIGRADO a agentesAdminController.js
+  // getAgenteDetalle, // ⚠️ MIGRADO a agentesAdminController.js
+  // getAgenteClientes, // ⚠️ MIGRADO a agentesAdminController.js
+  // desactivarAgente, // ⚠️ MIGRADO a agentesAdminController.js
+  // getAllComisiones, // ⚠️ MIGRADO a comisionesAdminController.js
+  // pagarComision, // ⚠️ MIGRADO a comisionesAdminController.js
+  // getAllClientes, // ⚠️ MIGRADO a clientesAdminController.js
+  // getClienteDetalle, // ⚠️ MIGRADO a clientesAdminController.js
+  // actualizarEstadoCliente, // ⚠️ MIGRADO a clientesAdminController.js
   desvincularClienteDeAgente,
-  actualizarCreditoCliente,
-  getClienteCreditoInfo,
-  getAllProveedores,
-  getProveedorById,
-  crearProveedor,
-  actualizarProveedor,
+  // actualizarCreditoCliente, // ⚠️ MIGRADO a clientesAdminController.js
+  // getClienteCreditoInfo, // ⚠️ MIGRADO a clientesAdminController.js
+  // getAllProveedores, // ⚠️ MIGRADO a proveedoresAdminController.js
+  // getProveedorById, // ⚠️ MIGRADO a proveedoresAdminController.js
+  // crearProveedor, // ⚠️ MIGRADO a proveedoresAdminController.js
+  // actualizarProveedor, // ⚠️ MIGRADO a proveedoresAdminController.js
   getSolicitudesPendientesProveedor,
   getReglasEmpaqueProveedor,
   getReglasEmpaqueProveedorMultiples,
@@ -17528,7 +17288,7 @@ module.exports = {
   saveReglasEmpaqueMultiples,
   getTiposProductoAdmin,
   crearTipoProductoAdmin,
-  getAllOrdenesCompra,
+  // getAllOrdenesCompra, // ⚠️ MIGRADO a ordenesCompraController.js
   getAdministradoresOrdenesCompra,
   bloquearSesionRecepcion,
   desbloquearSesionRecepcion,
@@ -17540,12 +17300,13 @@ module.exports = {
   getComprasPendientes,
   getCompraDetalleCiego,
   validarRecepcionCompra,
-  crearOrdenCompra,
+  // crearOrdenCompra, // ⚠️ MIGRADO a ordenesCompraController.js
   addItemToOrder,
   removeItemFromOrder,
   getOrderDetailsForExcel,
   cancelarOrdenCompra,
-  recibirInventario,
+  // recibirInventario, // ⚠️ MIGRADO a recepcionInventarioController.js
+  recepcionMasivaOrdenCompra,
   cerrarSesionRecepcion,
   recibirItemOrdenCompra,
   getMovimientosInventario,
@@ -17554,9 +17315,8 @@ module.exports = {
   getReporteVentasPorAdmin,
   getCuentasPorPagar,
   registrarPagoCuentaPorPagar,
-  getCxcSummary,
-  registrarAbonoCxC,
-  recepcionMasivaOrdenCompra,
+  // getCxcSummary, // ⚠️ MIGRADO a cxcAdminController.js
+  // registrarAbonoCxC, // ⚠️ MIGRADO a cxcAdminController.js
   getResumenEstadoCuentaProveedores,
   getEstadoCuentaProveedorMovimientos,
   getProductosRecibidosPorCxp,
