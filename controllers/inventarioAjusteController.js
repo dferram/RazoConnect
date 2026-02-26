@@ -1,8 +1,8 @@
-const pool = require('../db');
+const db = require('../db');
 const SmartStockService = require('../services/SmartStockService');
 
 const registrarAjusteInventario = async (req, res) => {
-    const client = await pool.connect();
+    const client = await db.getClient();
     
     try {
         const { sku, tipo, cantidad, motivo, observaciones } = req.body;
@@ -214,7 +214,7 @@ const obtenerHistorialMovimientos = async (req, res) => {
 
         const whereClause = whereConditions.join(' AND ');
 
-        const countQuery = await pool.query(
+        const countQuery = await db.query(
             `SELECT COUNT(*) as total
              FROM movimientos_inventario mi
              INNER JOIN producto_variantes pv ON mi.variante_id = pv.varianteid
@@ -227,7 +227,7 @@ const obtenerHistorialMovimientos = async (req, res) => {
         queryParams.push(parseInt(limite));
         queryParams.push(parseInt(offset));
 
-        const movimientosQuery = await pool.query(
+        const movimientosQuery = await db.query(
             `SELECT 
                 mi.movimiento_id,
                 mi.fecha_movimiento,
@@ -290,7 +290,7 @@ const obtenerMotivosAjuste = async (req, res) => {
             queryParams.push(tipo);
         }
 
-        const motivosQuery = await pool.query(
+        const motivosQuery = await db.query(
             `SELECT motivo_id, codigo, descripcion, tipo_aplicable
              FROM cat_motivos_ajuste
              WHERE ${whereClause}
@@ -339,7 +339,7 @@ const obtenerEstadisticasAjustes = async (req, res) => {
 
         const whereClause = whereConditions.join(' AND ');
 
-        const estadisticasQuery = await pool.query(
+        const estadisticasQuery = await db.query(
             `SELECT 
                 mi.tipo,
                 COUNT(*) as total_movimientos,
@@ -352,7 +352,7 @@ const obtenerEstadisticasAjustes = async (req, res) => {
             queryParams
         );
 
-        const topMotivosQuery = await pool.query(
+        const topMotivosQuery = await db.query(
             `SELECT 
                 mi.motivo,
                 mi.tipo,
@@ -366,7 +366,7 @@ const obtenerEstadisticasAjustes = async (req, res) => {
             queryParams
         );
 
-        const topAdminsQuery = await pool.query(
+        const topAdminsQuery = await db.query(
             `SELECT 
                 a.nombre,
                 a.email,
@@ -412,7 +412,7 @@ const buscarProductoPorSKU = async (req, res) => {
             });
         }
 
-        const productoQuery = await pool.query(
+        const productoQuery = await db.query(
             `SELECT 
                 pv.varianteid,
                 pv.sku,
@@ -500,7 +500,7 @@ const buscarProductosAutocompletado = async (req, res) => {
             LIMIT 10
         `;
 
-        const result = await pool.query(query, [searchPattern, tenant_id]);
+        const result = await db.query(query, [searchPattern, tenant_id]);
 
         console.log(`🔍 [AUTOCOMPLETADO] Búsqueda: "${q}" - Resultados: ${result.rows.length}`);
 
@@ -560,7 +560,7 @@ const getVariantesProducto = async (req, res) => {
             ORDER BY pv.varianteid ASC
         `;
 
-        const result = await pool.query(query, [productoId, tenant_id]);
+        const result = await db.query(query, [productoId, tenant_id]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ 
