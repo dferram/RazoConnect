@@ -110,7 +110,11 @@ const subirEvidenciaRecepcionOC = async (req, res) => {
   }
 };
 
-const getCxcSummary = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxcAdminController.getCxcSummary instead
+ */
+const getCxcSummary_MIGRATED = async (req, res) => {
   try {
     const result = await db.query(
       `SELECT
@@ -208,7 +212,11 @@ const getCxcSummary = async (req, res) => {
   }
 };
 
-const registrarAbonoCxC = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxcAdminController.registrarAbonoCxC instead
+ */
+const registrarAbonoCxC_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -17270,6 +17278,7 @@ module.exports = {
   getOrderDetailsForExcel,
   cancelarOrdenCompra,
   // recibirInventario, // ⚠️ MIGRADO a recepcionInventarioController.js
+  recepcionMasivaOrdenCompra,
   cerrarSesionRecepcion,
   recibirItemOrdenCompra,
   getMovimientosInventario,
@@ -17278,9 +17287,8 @@ module.exports = {
   getReporteVentasPorAdmin,
   getCuentasPorPagar,
   registrarPagoCuentaPorPagar,
-  getCxcSummary,
-  registrarAbonoCxC,
-  recepcionMasivaOrdenCompra,
+  // getCxcSummary, // ⚠️ MIGRADO a cxcAdminController.js
+  // registrarAbonoCxC, // ⚠️ MIGRADO a cxcAdminController.js
   getResumenEstadoCuentaProveedores,
   getEstadoCuentaProveedorMovimientos,
   getProductosRecibidosPorCxp,

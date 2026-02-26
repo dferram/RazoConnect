@@ -33,6 +33,7 @@ const clientesAdminController = require("../controllers/clientesAdminController"
 const proveedoresAdminController = require("../controllers/proveedoresAdminController");
 const categoriasAdminController = require("../controllers/categoriasAdminController");
 const variantesAdminController = require("../controllers/variantesAdminController");
+const cxcAdminController = require("../controllers/cxcAdminController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -767,11 +768,12 @@ router.get(
   cxpController.exportarLoteCxP
 );
 
+// ✅ REFACTORED: Migrado a cxcAdminController.js
 router.get(
   "/cxc-summary",
   authenticate,
   authorizeAdmin,
-  adminController.getCxcSummary
+  cxcAdminController.getCxcSummary
 );
 
 router.get(
@@ -873,7 +875,7 @@ router.post(
   "/registrar-abono",
   authenticate,
   authorizeAdminOrAgente,
-  adminController.registrarAbonoCxC
+  cxcAdminController.registrarAbonoCxC
 );
 
 router.get(
