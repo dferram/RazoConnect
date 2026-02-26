@@ -29,6 +29,7 @@ const pedidosStatusController = require("../controllers/pedidosStatusController"
 const ordenesCompraController = require("../controllers/ordenesCompraController");
 const recepcionInventarioController = require("../controllers/recepcionInventarioController");
 const productosAdminController = require("../controllers/productosAdminController");
+const clientesAdminController = require("../controllers/clientesAdminController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -916,23 +917,26 @@ router.put(
 /**
  * Gestión de clientes
  */
+// ✅ REFACTORED: Migrado a clientesAdminController.js
 router.get(
   "/clientes",
   authenticate,
   authorizeAdmin,
-  adminController.getAllClientes
+  clientesAdminController.getAllClientes
 );
+// ✅ REFACTORED: Migrado a clientesAdminController.js
 router.get(
   "/clientes/:id",
   authenticate,
   authorizeAdmin,
-  adminController.getClienteDetalle
+  clientesAdminController.getClienteDetalle
 );
+// ✅ REFACTORED: Migrado a clientesAdminController.js
 router.put(
   "/clientes/:id/estado",
   authenticate,
   authorizeAdmin,
-  adminController.actualizarEstadoCliente
+  clientesAdminController.actualizarEstadoCliente
 );
 router.put(
   "/clientes/:id/desvincular",
@@ -946,17 +950,19 @@ router.put(
   authorizeAdmin,
   authController.adminResetPassword
 );
+// ✅ REFACTORED: Migrado a clientesAdminController.js
 router.get(
   "/clientes/:id/credito",
   authenticate,
   authorizeAdmin,
-  adminController.getClienteCreditoInfo
+  clientesAdminController.getClienteCreditoInfo
 );
+// ✅ REFACTORED: Migrado a clientesAdminController.js
 router.put(
   "/clientes/:id/credito",
   authenticate,
   authorizeAdmin,
-  adminController.actualizarCreditoCliente
+  clientesAdminController.actualizarCreditoCliente
 );
 
 /**

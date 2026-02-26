@@ -5285,10 +5285,11 @@ const updateCostoEnvio = async (req, res) => {
 };
 
 /**
- * Obtener detalle de un cliente
- * GET /api/admin/clientes/:id
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use clientesAdminController.getClienteDetalle instead
  */
-const getClienteDetalle = async (req, res) => {
+const getClienteDetalle_MIGRATED = async (req, res) => {
   try {
     const clienteId = parseInt(req.params.id, 10);
 
@@ -5415,10 +5416,11 @@ const getClienteDetalle = async (req, res) => {
 };
 
 /**
- * Actualizar estado activo de un cliente
- * PUT /api/admin/clientes/:id/estado
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use clientesAdminController.actualizarEstadoCliente instead
  */
-const actualizarEstadoCliente = async (req, res) => {
+const actualizarEstadoCliente_MIGRATED = async (req, res) => {
   try {
     const clienteId = parseInt(req.params.id, 10);
     const { activo } = req.body;
@@ -5526,10 +5528,11 @@ const actualizarEstadoCliente = async (req, res) => {
 };
 
 /**
- * Actualizar configuración de crédito de un cliente
- * PUT /api/admin/clientes/:id/credito
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use clientesAdminController.actualizarCreditoCliente instead
  */
-const actualizarCreditoCliente = async (req, res) => {
+const actualizarCreditoCliente_MIGRATED = async (req, res) => {
   try {
     const clienteId = parseInt(req.params.id, 10);
     const { limiteCredito, diasGracia, activo } = req.body;
@@ -5639,10 +5642,11 @@ const actualizarCreditoCliente = async (req, res) => {
 };
 
 /**
- * Obtener información de crédito de un cliente
- * GET /api/admin/clientes/:id/credito
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * @deprecated Use clientesAdminController.getClienteCreditoInfo instead
  */
-const getClienteCreditoInfo = async (req, res) => {
+const getClienteCreditoInfo_MIGRATED = async (req, res) => {
   try {
     const clienteId = parseInt(req.params.id, 10);
 
@@ -10330,10 +10334,21 @@ const pagarComision = async (req, res) => {
 };
 
 /**
- * Obtener todos los clientes
- * GET /api/admin/clientes
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * 
+ * Esta función ha sido extraída a controllers/clientesAdminController.js
+ * como parte del proceso de refactorización (Strangler Pattern).
+ * 
+ * RUTA: GET /api/admin/clientes
+ * NUEVO CONTROLADOR: clientesAdminController.getAllClientes
+ * FECHA MIGRACIÓN: 2026-02-26
+ * 
+ * @deprecated Use clientesAdminController.getAllClientes instead
  */
-const getAllClientes = async (req, res) => {
+// ⚠️ FUNCIÓN MIGRADA - No usar
+// Ver controllers/clientesAdminController.js
+
+const getAllClientes_MIGRATED = async (req, res) => {
   try {
     // CRITICAL: Filter by tenant_id for multi-tenant isolation
     const { tenant_id } = req.tenant;
@@ -17212,12 +17227,12 @@ module.exports = {
   desactivarAgente,
   getAllComisiones,
   pagarComision,
-  getAllClientes,
-  getClienteDetalle,
-  actualizarEstadoCliente,
+  // getAllClientes, // ⚠️ MIGRADO a clientesAdminController.js
+  // getClienteDetalle, // ⚠️ MIGRADO a clientesAdminController.js
+  // actualizarEstadoCliente, // ⚠️ MIGRADO a clientesAdminController.js
   desvincularClienteDeAgente,
-  actualizarCreditoCliente,
-  getClienteCreditoInfo,
+  // actualizarCreditoCliente, // ⚠️ MIGRADO a clientesAdminController.js
+  // getClienteCreditoInfo, // ⚠️ MIGRADO a clientesAdminController.js
   getAllProveedores,
   getProveedorById,
   crearProveedor,
