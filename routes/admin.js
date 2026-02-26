@@ -36,6 +36,7 @@ const variantesAdminController = require("../controllers/variantesAdminControlle
 const cxcAdminController = require("../controllers/cxcAdminController");
 const agentesAdminController = require("../controllers/agentesAdminController");
 const comisionesAdminController = require("../controllers/comisionesAdminController");
+const pedidosAdminController = require("../controllers/pedidosAdminController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -240,11 +241,12 @@ router.get(
 /**
  * Gestión de pedidos
  */
+// ✅ REFACTORED: Migrado a pedidosAdminController.js
 router.get(
   "/pedidos",
   authenticate,
   authorizeAdmin,
-  adminController.getAllPedidos
+  pedidosAdminController.getAllPedidos
 );
 // ✅ REFACTORED: Migrado a pedidosStatusController.js (Strangler Pattern)
 router.put(
@@ -260,11 +262,12 @@ router.put(
   adminController.updateCostoEnvio
 );
 
+// ✅ REFACTORED: Migrado a pedidosAdminController.js
 router.post(
   "/pedidos/:id/confirmar",
   authenticate,
   authorizeAdmin,
-  adminController.confirmarPedido
+  pedidosAdminController.confirmarPedido
 );
 
 /**
@@ -987,11 +990,12 @@ router.put(
 /**
  * Detalle de pedido
  */
+// ✅ REFACTORED: Migrado a pedidosAdminController.js
 router.get(
   "/pedidos/:id/detalle",
   authenticate,
   authorizeAdmin,
-  adminController.getPedidoDetalle
+  pedidosAdminController.getPedidoDetalle
 );
 
 /**

@@ -2485,7 +2485,11 @@ const buscarProductosCompra = async (req, res) => {
   }
 };
 
-const confirmarPedido = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use pedidosAdminController.confirmarPedido instead
+ */
+const confirmarPedido_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -4097,10 +4101,10 @@ const getDashboardStats = async (req, res) => {
 };
 
 /**
- * Obtener todos los pedidos (para gestión admin)
- * GET /api/admin/pedidos
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use pedidosAdminController.getAllPedidos instead
  */
-const getAllPedidos = async (req, res) => {
+const getAllPedidos_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const { estatus, clienteId, agenteId, fechaInicio, fechaFin } = req.query;
@@ -10435,10 +10439,10 @@ const getAllClientes_MIGRATED = async (req, res) => {
 };
 
 /**
- * Obtener detalle de un pedido
- * GET /api/admin/pedidos/:id/detalle
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use pedidosAdminController.getPedidoDetalle instead
  */
-const getPedidoDetalle = async (req, res) => {
+const getPedidoDetalle_MIGRATED = async (req, res) => {
   try {
     const pedidoId = parseInt(req.params.id);
 
@@ -17228,11 +17232,11 @@ module.exports = {
   verifyAdmin,
   refreshAdminToken,
   getDashboardStats,
-  getAllPedidos,
+  // getAllPedidos, // ⚠️ MIGRADO a pedidosAdminController.js
   // updatePedidoEstatus, // ⚠️ MIGRADO a pedidosStatusController.js
-  confirmarPedido,
+  // confirmarPedido, // ⚠️ MIGRADO a pedidosAdminController.js
   updateCostoEnvio,
-  getPedidoDetalle,
+  // getPedidoDetalle, // ⚠️ MIGRADO a pedidosAdminController.js
   getMovimientosInventario,
   getHistorialInventarioVariante,
   recepcionarMercancia,
