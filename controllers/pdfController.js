@@ -377,12 +377,6 @@ async function generarPDFPedido(req, res) {
             yPosition += 55;
         }
 
-        // Check if we need a new page for totals + signatures section (needs ~200px)
-        if (yPosition > 650) {
-            doc.addPage();
-            yPosition = 260; // Start below header on new page
-        }
-
         yPosition += 5;
 
         doc.moveTo(50, yPosition)
@@ -450,6 +444,13 @@ async function generarPDFPedido(req, res) {
         if (tieneCupon && montoDescuento > 0) boxHeight += 12;
         boxHeight += 6;  // Separator before total
         boxHeight += 14; // Total final
+        
+        // Check if we need a new page for the financial summary box + footer text (~50px extra)
+        const spaceNeeded = boxHeight + 50;
+        if (yPosition + spaceNeeded > 750) {
+            doc.addPage();
+            yPosition = 260; // Start below header on new page
+        }
         
         doc.save();
         doc.roundedRect(boxX, yPosition, boxWidth, boxHeight, 5)
