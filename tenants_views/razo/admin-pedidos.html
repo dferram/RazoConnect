@@ -863,14 +863,14 @@
                     Se detectaron ${data.data.itemsConProblemas} productos con stock insuficiente:
                   </p>
                   <div style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+                    <table class="admin-table" style="font-size: 0.875rem;">
                       <thead>
-                        <tr style="background: #f8f9fa;">
-                          <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: left;">SKU</th>
-                          <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: left;">Producto</th>
-                          <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">Necesario</th>
-                          <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">Disponible</th>
-                          <th style="padding: 0.5rem; border: 1px solid #ddd; text-align: center;">Faltante</th>
+                        <tr>
+                          <th>SKU</th>
+                          <th>Producto</th>
+                          <th style="text-align: center;">Solicitado</th>
+                          <th style="text-align: center;">Disponible</th>
+                          <th style="text-align: center;">Faltante</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1438,7 +1438,7 @@
               <h2>Detalle de Productos</h2>
             </div>
 
-            <table>
+            <table class="admin-table">
               <thead>
                 <tr>
                   <th>SKU</th>
@@ -1584,7 +1584,7 @@
               title: '✅ Sin Conflictos de Inventario',
               html: `
                 <p style="margin-bottom: 1rem;">El Pedido #${pedidoId} puede ser marcado como VIP sin afectar a otros pedidos.</p>
-                <p style="font-size: 0.875rem; color: #15803d; background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #16a34a;">
+                <p style="font-size: 0.875rem; color: #666; background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #16a34a;">
                   <strong>✅ Stock suficiente:</strong> Hay inventario disponible para surtir este pedido sin quitar stock de pedidos existentes.
                 </p>
               `,
@@ -1638,14 +1638,14 @@
                   </p>
                   
                   <div style="overflow-x: auto; margin-bottom: 1rem;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem; background: white; border-radius: 0.5rem; overflow: hidden;">
+                    <table class="admin-table" style="font-size: 0.875rem;">
                       <thead>
-                        <tr style="background: #fef2f2; border-bottom: 2px solid #dc2626;">
-                          <th style="padding: 0.75rem; text-align: left; font-weight: 600;">Pedido</th>
-                          <th style="padding: 0.75rem; text-align: left; font-weight: 600;">Cliente</th>
-                          <th style="padding: 0.75rem; text-align: left; font-weight: 600;">Estado Actual</th>
-                          <th style="padding: 0.75rem; text-align: left; font-weight: 600;">Estado Nuevo</th>
-                          <th style="padding: 0.75rem; text-align: left; font-weight: 600;">Items Afectados</th>
+                        <tr>
+                          <th>Pedido</th>
+                          <th>Cliente</th>
+                          <th>Estado Actual</th>
+                          <th>Estado Nuevo</th>
+                          <th>Items Afectados</th>
                         </tr>
                       </thead>
                       <tbody>
