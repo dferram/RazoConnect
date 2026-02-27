@@ -49,6 +49,7 @@ const exportacionInventarioController = require("../controllers/exportacionInven
 const busquedaInventarioController = require("../controllers/busquedaInventarioController");
 const ajustesInventarioController = require("../controllers/ajustesInventarioController");
 const recepcionManualController = require("../controllers/recepcionManualController");
+const reglasEmpaqueController = require("../controllers/reglasEmpaqueController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -1104,39 +1105,44 @@ router.get(
   adminController.getSolicitudesPendientesProveedor
 );
 
+// ✅ REFACTORED: Migrado a reglasEmpaqueController.js
 router.get(
   "/proveedores/:id/reglas",
   authenticate,
   authorizeAdmin,
-  adminController.getReglasEmpaqueProveedor
+  reglasEmpaqueController.getReglasEmpaqueProveedor
 );
 
+// ✅ REFACTORED: Migrado a reglasEmpaqueController.js
 router.get(
   "/proveedores/:id/reglas-multiples",
   authenticate,
   authorizeAdmin,
-  adminController.getReglasEmpaqueProveedorMultiples
+  reglasEmpaqueController.getReglasEmpaqueProveedorMultiples
 );
 
+// ✅ REFACTORED: Migrado a reglasEmpaqueController.js
 router.post(
   "/save-reglas-empaque",
   authenticate,
   authorizeAdmin,
-  adminController.saveReglasEmpaqueMultiples
+  reglasEmpaqueController.saveReglasEmpaqueMultiples
 );
 
+// ✅ REFACTORED: Migrado a reglasEmpaqueController.js
 router.post(
   "/proveedores/reglas",
   authenticate,
   authorizeAdmin,
-  adminController.saveReglaEmpaque
+  reglasEmpaqueController.saveReglaEmpaque
 );
 
+// ✅ REFACTORED: Migrado a reglasEmpaqueController.js
 router.put(
   "/proveedores/:id/reglas",
   authenticate,
   authorizeAdmin,
-  adminController.saveReglaEmpaque
+  reglasEmpaqueController.saveReglaEmpaque
 );
 
 /**

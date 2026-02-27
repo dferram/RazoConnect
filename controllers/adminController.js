@@ -4364,7 +4364,11 @@ const getMedidasExistentes_MIGRATED = async (req, res) => {
   }
 };
 
-const getReglasEmpaqueProveedor = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reglasEmpaqueController.getReglasEmpaqueProveedor instead
+ */
+const getReglasEmpaqueProveedor_MIGRATED = async (req, res) => {
   try {
     const proveedorId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
@@ -4441,7 +4445,11 @@ const getReglasEmpaqueProveedor = async (req, res) => {
   }
 };
 
-const getReglasEmpaqueProveedorMultiples = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reglasEmpaqueController.getReglasEmpaqueProveedorMultiples instead
+ */
+const getReglasEmpaqueProveedorMultiples_MIGRATED = async (req, res) => {
   try {
     const proveedorId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
@@ -4497,7 +4505,11 @@ const getReglasEmpaqueProveedorMultiples = async (req, res) => {
   }
 };
 
-const saveReglasEmpaqueMultiples = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reglasEmpaqueController.saveReglasEmpaqueMultiples instead
+ */
+const saveReglasEmpaqueMultiples_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -4784,7 +4796,11 @@ const saveReglasEmpaqueMultiples = async (req, res) => {
   }
 };
 
-const saveReglaEmpaque = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reglasEmpaqueController.saveReglaEmpaque instead
+ */
+const saveReglaEmpaque_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -17292,10 +17308,10 @@ module.exports = {
   // crearProveedor, // ⚠️ MIGRADO a proveedoresAdminController.js
   // actualizarProveedor, // ⚠️ MIGRADO a proveedoresAdminController.js
   getSolicitudesPendientesProveedor,
-  getReglasEmpaqueProveedor,
-  getReglasEmpaqueProveedorMultiples,
-  saveReglaEmpaque,
-  saveReglasEmpaqueMultiples,
+  // getReglasEmpaqueProveedor, // ⚠️ MIGRADO a reglasEmpaqueController.js
+  // getReglasEmpaqueProveedorMultiples, // ⚠️ MIGRADO a reglasEmpaqueController.js
+  // saveReglaEmpaque, // ⚠️ MIGRADO a reglasEmpaqueController.js
+  // saveReglasEmpaqueMultiples, // ⚠️ MIGRADO a reglasEmpaqueController.js
   getTiposProductoAdmin,
   crearTipoProductoAdmin,
   // getAllOrdenesCompra, // ⚠️ MIGRADO a ordenesCompraController.js
