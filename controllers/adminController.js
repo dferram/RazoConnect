@@ -9242,10 +9242,10 @@ const actualizarCategoria_MIGRATED = async (req, res) => {
 };
 
 /**
- * Toggle product visibility (activo field)
- * PUT /api/admin/productos/:id/toggle-visibilidad
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use toggleVisibilidadController.toggleProductoVisibilidad instead
  */
-const toggleProductoVisibilidad = async (req, res) => {
+const toggleProductoVisibilidad_MIGRATED = async (req, res) => {
   try {
     const productoId = parseInt(req.params.id, 10);
     const { activo } = req.body;
@@ -17286,7 +17286,7 @@ module.exports = {
   // getAllProductos, // ⚠️ MIGRADO a productosAdminController.js
   // crearProducto, // ⚠️ MIGRADO a productosAdminController.js
   // actualizarProducto, // ⚠️ MIGRADO a productosAdminController.js
-  toggleProductoVisibilidad,
+  // toggleProductoVisibilidad, // ⚠️ MIGRADO a toggleVisibilidadController.js
   // getTamanosPaquetes, // ⚠️ MIGRADO a tamanosAdminController.js
   // getTamanosDisponiblesProducto, // ⚠️ MIGRADO a tamanosAdminController.js
   // getCategorias, // ⚠️ MIGRADO a categoriasAdminController.js

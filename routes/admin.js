@@ -53,6 +53,7 @@ const reglasEmpaqueController = require("../controllers/reglasEmpaqueController"
 const tiposProductoController = require("../controllers/tiposProductoController");
 const detallesProductoController = require("../controllers/detallesProductoController");
 const variantesPendientesController = require("../controllers/variantesPendientesController");
+const toggleVisibilidadController = require("../controllers/toggleVisibilidadController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -348,16 +349,12 @@ router.put(
   productosAdminController.actualizarProducto
 );
 
-/**
- * @route   PUT /api/admin/productos/:id/toggle-visibilidad
- * @desc    Toggle product visibility (activo field)
- * @access  Private (Admin only)
- */
+// ✅ REFACTORED: Migrado a toggleVisibilidadController.js
 router.put(
   "/productos/:id/toggle-visibilidad",
   authenticate,
   authorizeAdmin,
-  adminController.toggleProductoVisibilidad
+  toggleVisibilidadController.toggleProductoVisibilidad
 );
 
 /**
