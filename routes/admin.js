@@ -62,6 +62,8 @@ const gestionOrdenCompraController = require("../controllers/gestionOrdenCompraC
 const busquedaVariantesController = require("../controllers/busquedaVariantesController");
 const optimizacionController = require("../controllers/optimizacionController");
 const reportesOrdenesCompraController = require("../controllers/reportesOrdenesCompraController");
+const ajustesInventarioFiltradosController = require("../controllers/ajustesInventarioFiltradosController");
+const backorderController = require("../controllers/backorderController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -702,19 +704,21 @@ router.get(
 );
 
 // Ajustes de inventario con filtros avanzados para conciliación
+// ✅ REFACTORED: Migrado a ajustesInventarioFiltradosController.js
 router.get(
   "/ajustes-inventario/filtrados",
   authenticate,
   authorizeAdmin,
-  adminController.getAjustesInventarioFiltrados
+  ajustesInventarioFiltradosController.getAjustesInventarioFiltrados
 );
 
 // Obtener tipos de ajuste disponibles
+// ✅ REFACTORED: Migrado a ajustesInventarioFiltradosController.js
 router.get(
   "/ajustes-inventario/tipos",
   authenticate,
   authorizeAdmin,
-  adminController.getTiposAjusteInventario
+  ajustesInventarioFiltradosController.getTiposAjusteInventario
 );
 
 // ✅ REFACTORED: Migrado a recepcionManualController.js
@@ -1270,17 +1274,19 @@ router.delete(
   authorizeAdmin,
   gestionOrdenCompraController.quitarProductoDeOrdenCompra
 );
+// ✅ REFACTORED: Migrado a backorderController.js
 router.post(
   "/ordenes-compra/:id/confirmar",
   authenticate,
   authorizeAdmin,
-  adminController.confirmarOrdenBackorder
+  backorderController.confirmarOrdenBackorder
 );
+// ✅ REFACTORED: Migrado a backorderController.js
 router.post(
   "/ordenes-compra/:id/cancelar",
   authenticate,
   authorizeAdmin,
-  adminController.cancelarOrdenBackorder
+  backorderController.cancelarOrdenBackorder
 );
 // ✅ REFACTORED: Migrado a ordenesCompraController.js
 router.post(
