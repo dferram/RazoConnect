@@ -64,6 +64,10 @@ const optimizacionController = require("../controllers/optimizacionController");
 const reportesOrdenesCompraController = require("../controllers/reportesOrdenesCompraController");
 const ajustesInventarioFiltradosController = require("../controllers/ajustesInventarioFiltradosController");
 const backorderController = require("../controllers/backorderController");
+const evidenciasController = require("../controllers/evidenciasController");
+const remisionesPedidosController = require("../controllers/remisionesPedidosController");
+const gestionPedidosAdminController = require("../controllers/gestionPedidosAdminController");
+const sesionesRecepcionController = require("../controllers/sesionesRecepcionController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -285,11 +289,12 @@ router.put(
   authorizeAdminOrAgente,
   pedidosStatusController.updatePedidoEstatus
 );
+// ✅ REFACTORED: Migrado a gestionPedidosAdminController.js
 router.put(
   "/pedidos/:id/costo-envio",
   authenticate,
   authorizeAdmin,
-  adminController.updateCostoEnvio
+  gestionPedidosAdminController.updateCostoEnvio
 );
 
 // ✅ REFACTORED: Migrado a pedidosAdminController.js
@@ -1057,19 +1062,21 @@ router.get(
  */
 const uploadEvidenciaEntrega = require("../middlewares/uploadEvidenciaEntrega");
 
+// ✅ REFACTORED: Migrado a evidenciasController.js
 router.post(
   "/pedidos/:id/evidencia",
   authenticate,
   authorizeAdmin,
   uploadEvidenciaEntrega.single("evidencia"),
-  adminController.subirEvidenciaEntrega
+  evidenciasController.subirEvidenciaEntrega
 );
 
+// ✅ REFACTORED: Migrado a remisionesPedidosController.js
 router.get(
   "/pedidos/:id/remision",
   authenticate,
   authorizeAdmin,
-  adminController.obtenerRemisionPedido
+  remisionesPedidosController.obtenerRemisionPedido
 );
 
 /**
@@ -1349,56 +1356,60 @@ router.patch(
   reasignarOrdenController.reasignarOrdenCompra
 );
 
-// Session locking for inventory reception
+// ✅ REFACTORED: Migrado a sesionesRecepcionController.js
 router.post(
   "/ordenes-compra/:id/bloquear-sesion",
   authenticate,
   authorizeAdmin,
-  adminController.bloquearSesionRecepcion
+  sesionesRecepcionController.bloquearSesionRecepcion
 );
 
+// ✅ REFACTORED: Migrado a sesionesRecepcionController.js
 router.post(
   "/ordenes-compra/:id/desbloquear-sesion",
   authenticate,
   authorizeAdmin,
-  adminController.desbloquearSesionRecepcion
+  sesionesRecepcionController.desbloquearSesionRecepcion
 );
 
+// ✅ REFACTORED: Migrado a sesionesRecepcionController.js
 router.get(
   "/ordenes-compra/:id/verificar-bloqueo",
   authenticate,
   authorizeAdmin,
-  adminController.verificarBloqueoSesion
+  sesionesRecepcionController.verificarBloqueoSesion
 );
 
+// ✅ REFACTORED: Migrado a sesionesRecepcionController.js
 router.post(
   "/ordenes-compra/:id/reasignar-sesion",
   authenticate,
   authorizeSuperAdmin,
-  adminController.reasignarSesion
+  sesionesRecepcionController.reasignarSesion
 );
 
+// ✅ REFACTORED: Migrado a sesionesRecepcionController.js
 router.post(
   "/ordenes-compra/:id/forzar-liberacion",
   authenticate,
   authorizeSuperAdmin,
-  adminController.forzarLiberacionSesion
+  sesionesRecepcionController.forzarLiberacionSesion
 );
 
 router.post(
   "/recepcion-masiva",
   authenticate,
   authorizeAdmin,
-  uploadComprobante.single("archivoRemision"),
   adminController.recepcionMasivaOrdenCompra
 );
 
+// ✅ REFACTORED: Migrado a evidenciasController.js
 router.post(
-  "/ordenes-compra/recibir/evidencia",
+  "/ordenes-compra/:id/evidencia",
   authenticate,
   authorizeAdmin,
   upload.single("evidencia"),
-  adminController.subirEvidenciaRecepcionOC
+  evidenciasController.subirEvidenciaRecepcionOC
 );
 
 /**
