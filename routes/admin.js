@@ -37,6 +37,24 @@ const cxcAdminController = require("../controllers/cxcAdminController");
 const agentesAdminController = require("../controllers/agentesAdminController");
 const comisionesAdminController = require("../controllers/comisionesAdminController");
 const pedidosAdminController = require("../controllers/pedidosAdminController");
+const cxpAdminController = require("../controllers/cxpAdminController");
+const movimientosInventarioController = require("../controllers/movimientosInventarioController");
+const medidasAdminController = require("../controllers/medidasAdminController");
+const tamanosAdminController = require("../controllers/tamanosAdminController");
+const dashboardAdminController = require("../controllers/dashboardAdminController");
+const reportesVentasController = require("../controllers/reportesVentasController");
+const authAdminController = require("../controllers/authAdminController");
+const inventarioResumenController = require("../controllers/inventarioResumenController");
+const exportacionInventarioController = require("../controllers/exportacionInventarioController");
+const busquedaInventarioController = require("../controllers/busquedaInventarioController");
+const ajustesInventarioController = require("../controllers/ajustesInventarioController");
+const recepcionManualController = require("../controllers/recepcionManualController");
+const reglasEmpaqueController = require("../controllers/reglasEmpaqueController");
+const tiposProductoController = require("../controllers/tiposProductoController");
+const detallesProductoController = require("../controllers/detallesProductoController");
+const variantesPendientesController = require("../controllers/variantesPendientesController");
+const toggleVisibilidadController = require("../controllers/toggleVisibilidadController");
+const desvincularClienteController = require("../controllers/desvincularClienteController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -59,7 +77,8 @@ const {
 /**
  * Rutas de autenticación de admin (públicas)
  */
-router.post("/login", adminController.loginAdmin);
+// ✅ REFACTORED: Migrado a authAdminController.js
+router.post("/login", authAdminController.loginAdmin);
 
 /**
  * Rutas protegidas de admin (requieren autenticación y rol admin)
@@ -74,11 +93,12 @@ router.post(
 );
 
 // Admin authentication verification endpoint
+// ✅ REFACTORED: Migrado a authAdminController.js
 router.get(
   "/verify",
   authenticate,
   authorizeAdmin,
-  adminController.verifyAdmin
+  authAdminController.verifyAdmin
 );
 
 /**
@@ -231,11 +251,12 @@ router.get(
 /**
  * Dashboard y estadísticas
  */
+// ✅ REFACTORED: Migrado a dashboardAdminController.js
 router.get(
   "/dashboard-stats",
   authenticate,
   authorizeAdmin,
-  adminController.getDashboardStats
+  dashboardAdminController.getDashboardStats
 );
 
 /**
@@ -281,32 +302,36 @@ router.get(
   productosAdminController.getAllProductos
 );
 
+// ✅ REFACTORED: Migrado a busquedaInventarioController.js
 router.get(
   "/productos/buscar",
   authenticate,
   authorizeAdmin,
-  adminController.buscarProductosAjuste
+  busquedaInventarioController.buscarProductosAjuste
 );
 
+// ✅ REFACTORED: Migrado a busquedaInventarioController.js
 router.get(
   "/productos/buscar-compra",
   authenticate,
   authorizeAdminOrAgente,
-  adminController.buscarProductosCompra
+  busquedaInventarioController.buscarProductosCompra
 );
 
+// ✅ REFACTORED: Migrado a detallesProductoController.js
 router.get(
   "/productos/:id",
   authenticate,
   authorizeAdmin,
-  adminController.getProductoDetalle
+  detallesProductoController.getProductoDetalle
 );
 
+// ✅ REFACTORED: Migrado a variantesPendientesController.js
 router.get(
   "/productos/:id/variantes-pendientes",
   authenticate,
   authorizeAdmin,
-  adminController.getVariantesPendientesProducto
+  variantesPendientesController.getVariantesPendientesProducto
 );
 // ✅ REFACTORED: Migrado a productosAdminController.js
 router.post(
@@ -325,16 +350,12 @@ router.put(
   productosAdminController.actualizarProducto
 );
 
-/**
- * @route   PUT /api/admin/productos/:id/toggle-visibilidad
- * @desc    Toggle product visibility (activo field)
- * @access  Private (Admin only)
- */
+// ✅ REFACTORED: Migrado a toggleVisibilidadController.js
 router.put(
   "/productos/:id/toggle-visibilidad",
   authenticate,
   authorizeAdmin,
-  adminController.toggleProductoVisibilidad
+  toggleVisibilidadController.toggleProductoVisibilidad
 );
 
 /**
@@ -542,18 +563,20 @@ router.put(
   authorizeAdmin,
   adminController.actualizarOrdenImagenesVariante
 );
+// ✅ REFACTORED: Migrado a tamanosAdminController.js
 router.get(
   "/tamanos-paquetes",
   authenticate,
   authorizeAdmin,
-  adminController.getTamanosPaquetes
+  tamanosAdminController.getTamanosPaquetes
 );
 
+// ✅ REFACTORED: Migrado a tamanosAdminController.js
 router.get(
   "/productos/:id/tamanos-disponibles",
   authenticate,
   authorizeAdmin,
-  adminController.getTamanosDisponiblesProducto
+  tamanosAdminController.getTamanosDisponiblesProducto
 );
 // ✅ REFACTORED: Migrado a categoriasAdminController.js
 router.get(
@@ -585,27 +608,30 @@ router.delete(
   authorizeAdmin,
   categoriasAdminController.eliminarCategoria
 );
+// ✅ REFACTORED: Migrado a medidasAdminController.js
 router.get(
   "/medidas",
   authenticate,
   authorizeAdmin,
-  adminController.getMedidas
+  medidasAdminController.getMedidas
 );
+// ✅ REFACTORED: Migrado a medidasAdminController.js
 router.get(
   "/medidas-existentes",
   authenticate,
   authorizeAdminOrAgente,
-  adminController.getMedidasExistentes
+  medidasAdminController.getMedidasExistentes
 );
 
 /**
  * Gestión de inventario
  */
+// ✅ REFACTORED: Migrado a inventarioResumenController.js
 router.get(
   "/inventario",
   authenticate,
   authorizeAdmin,
-  adminController.getInventarioResumen
+  inventarioResumenController.getInventarioResumen
 );
 
 router.get(
@@ -615,39 +641,44 @@ router.get(
   adminController.getAllAdministradores
 );
 
+// ✅ REFACTORED: Migrado a exportacionInventarioController.js
 router.get(
   "/inventario/exportar-pdf",
   authenticate,
   authorizeAdmin,
-  adminController.exportarInventarioPDF
+  exportacionInventarioController.exportarInventarioPDF
 );
 
+// ✅ REFACTORED: Migrado a inventarioResumenController.js
 router.get(
   "/inventario/producto-detalle/:id",
   authenticate,
   authorizeAdmin,
-  adminController.getProductoDetalleInventario
+  inventarioResumenController.getProductoDetalleInventario
 );
 
-// router.post(
-//   "/inventario/ajuste",
-//   authenticate,
-//   authorizeAdmin,
-//   adminController.ajustarInventario
-// );
+// ✅ REFACTORED: Migrado a ajustesInventarioController.js
+router.post(
+  "/inventario/ajuste",
+  authenticate,
+  authorizeAdmin,
+  ajustesInventarioController.ajustarInventario
+);
 
+// ✅ REFACTORED: Migrado a movimientosInventarioController.js
 router.get(
   "/inventario/:varianteId/historial",
   authenticate,
   authorizeAdmin,
-  adminController.getHistorialInventarioVariante
+  movimientosInventarioController.getHistorialInventarioVariante
 );
 
+// ✅ REFACTORED: Migrado a movimientosInventarioController.js
 router.get(
   "/movimientos",
   authenticate,
   authorizeAdmin,
-  adminController.getMovimientosInventario
+  movimientosInventarioController.getMovimientosInventario
 );
 
 // Búsqueda de variantes con autocompletado para movimientos
@@ -674,12 +705,13 @@ router.get(
   adminController.getTiposAjusteInventario
 );
 
-// router.post(
-//   "/recepcion",
-//   authenticate,
-//   authorizeAdmin,
-//   adminController.recepcionarMercancia
-// );
+// ✅ REFACTORED: Migrado a recepcionManualController.js
+router.post(
+  "/recepcion",
+  authenticate,
+  authorizeAdmin,
+  recepcionManualController.recepcionarMercancia
+);
 
 /**
  * Gestión de agentes
@@ -752,11 +784,12 @@ router.get(
   cxpController.getCxPKPIs
 );
 
+// ✅ REFACTORED: Migrado a cxpAdminController.js
 router.get(
   "/cuentas-por-pagar",
   authenticate,
   authorizeAdmin,
-  cxpController.getCuentasPorPagar
+  cxpAdminController.getCuentasPorPagar
 );
 
 router.get(
@@ -766,12 +799,13 @@ router.get(
   cxpController.getCxPDetalle
 );
 
+// ✅ REFACTORED: Migrado a cxpAdminController.js
 router.post(
   "/cuentas-por-pagar/:id/pagar",
   authenticate,
   authorizeAdmin,
   uploadComprobante.single("comprobante"),
-  cxpController.registrarPago
+  cxpAdminController.registrarPagoCuentaPorPagar
 );
 
 router.get(
@@ -891,25 +925,28 @@ router.post(
   cxcAdminController.registrarAbonoCxC
 );
 
+// ✅ REFACTORED: Migrado a cxpAdminController.js
 router.get(
   "/estado-cuenta/resumen",
   authenticate,
   authorizeAdmin,
-  adminController.getResumenEstadoCuentaProveedores
+  cxpAdminController.getResumenEstadoCuentaProveedores
 );
 
+// ✅ REFACTORED: Migrado a cxpAdminController.js
 router.get(
   "/estado-cuenta/proveedores/:id/movimientos",
   authenticate,
   authorizeAdmin,
-  adminController.getEstadoCuentaProveedorMovimientos
+  cxpAdminController.getEstadoCuentaProveedorMovimientos
 );
 
+// ✅ REFACTORED: Migrado a cxpAdminController.js
 router.get(
   "/estado-cuenta/cxp/:id/productos",
   authenticate,
   authorizeAdmin,
-  adminController.getProductosRecibidosPorCxp
+  cxpAdminController.getProductosRecibidosPorCxp
 );
 
 /**
@@ -960,11 +997,12 @@ router.put(
   authorizeAdmin,
   clientesAdminController.actualizarEstadoCliente
 );
+// ✅ REFACTORED: Migrado a desvincularClienteController.js
 router.put(
   "/clientes/:id/desvincular",
   authenticate,
   authorizeAdmin,
-  adminController.desvincularClienteDeAgente
+  desvincularClienteController.desvincularClienteDeAgente
 );
 router.put(
   "/clientes/:id/reset-password",
@@ -1050,18 +1088,20 @@ router.put(
   proveedoresAdminController.actualizarProveedor
 );
 
+// ✅ REFACTORED: Migrado a tiposProductoController.js
 router.get(
   "/tipos-producto",
   authenticate,
   authorizeAdmin,
-  adminController.getTiposProductoAdmin
+  tiposProductoController.getTiposProductoAdmin
 );
 
+// ✅ REFACTORED: Migrado a tiposProductoController.js
 router.post(
   "/tipos-producto",
   authenticate,
   authorizeAdmin,
-  adminController.crearTipoProductoAdmin
+  tiposProductoController.crearTipoProductoAdmin
 );
 
 router.get(
@@ -1071,39 +1111,44 @@ router.get(
   adminController.getSolicitudesPendientesProveedor
 );
 
+// ✅ REFACTORED: Migrado a reglasEmpaqueController.js
 router.get(
   "/proveedores/:id/reglas",
   authenticate,
   authorizeAdmin,
-  adminController.getReglasEmpaqueProveedor
+  reglasEmpaqueController.getReglasEmpaqueProveedor
 );
 
+// ✅ REFACTORED: Migrado a reglasEmpaqueController.js
 router.get(
   "/proveedores/:id/reglas-multiples",
   authenticate,
   authorizeAdmin,
-  adminController.getReglasEmpaqueProveedorMultiples
+  reglasEmpaqueController.getReglasEmpaqueProveedorMultiples
 );
 
+// ✅ REFACTORED: Migrado a reglasEmpaqueController.js
 router.post(
   "/save-reglas-empaque",
   authenticate,
   authorizeAdmin,
-  adminController.saveReglasEmpaqueMultiples
+  reglasEmpaqueController.saveReglasEmpaqueMultiples
 );
 
+// ✅ REFACTORED: Migrado a reglasEmpaqueController.js
 router.post(
   "/proveedores/reglas",
   authenticate,
   authorizeAdmin,
-  adminController.saveReglaEmpaque
+  reglasEmpaqueController.saveReglaEmpaque
 );
 
+// ✅ REFACTORED: Migrado a reglasEmpaqueController.js
 router.put(
   "/proveedores/:id/reglas",
   authenticate,
   authorizeAdmin,
-  adminController.saveReglaEmpaque
+  reglasEmpaqueController.saveReglaEmpaque
 );
 
 /**
@@ -1905,27 +1950,30 @@ router.get(
  */
 
 // Ver mis ventas (cada admin ve solo sus ventas)
+// ✅ REFACTORED: Migrado a reportesVentasController.js
 router.get(
   "/mis-ventas",
   authenticate,
   authorizeAdmin,
-  adminController.getMisVentas
+  reportesVentasController.getMisVentas
 );
 
 // Ver breakdown de allocation de un pedido (Super Admin)
+// ✅ REFACTORED: Migrado a reportesVentasController.js
 router.get(
   "/pedidos/:pedidoId/allocation",
   authenticate,
   authorizeAdmin,
-  adminController.getPedidoAllocation
+  reportesVentasController.getPedidoAllocation
 );
 
 // Reporte de ventas por administrador (Super Admin)
+// ✅ REFACTORED: Migrado a reportesVentasController.js
 router.get(
   "/reportes/ventas-por-admin",
   authenticate,
   authorizeAdmin,
-  adminController.getReporteVentasPorAdmin
+  reportesVentasController.getReporteVentasPorAdmin
 );
 
 /**

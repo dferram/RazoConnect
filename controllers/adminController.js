@@ -410,7 +410,11 @@ const registrarAbonoCxC_MIGRATED = async (req, res) => {
   }
 };
 
-const getCuentasPorPagar = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxpAdminController.getCuentasPorPagar instead
+ */
+const getCuentasPorPagar_MIGRATED = async (req, res) => {
   try {
     const estatus = (req.query.estatus || "").toString().trim().toUpperCase();
     const modo = (req.query.modo || "").toString().trim().toLowerCase();
@@ -509,7 +513,11 @@ const getCuentasPorPagar = async (req, res) => {
   }
 };
 
-const registrarPagoCuentaPorPagar = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxpAdminController.registrarPagoCuentaPorPagar instead
+ */
+const registrarPagoCuentaPorPagar_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -691,7 +699,11 @@ const registrarPagoCuentaPorPagar = async (req, res) => {
   }
 };
 
-const getResumenEstadoCuentaProveedores = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxpAdminController.getResumenEstadoCuentaProveedores instead
+ */
+const getResumenEstadoCuentaProveedores_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
 
@@ -729,7 +741,11 @@ const getResumenEstadoCuentaProveedores = async (req, res) => {
   }
 };
 
-const getEstadoCuentaProveedorMovimientos = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxpAdminController.getEstadoCuentaProveedorMovimientos instead
+ */
+const getEstadoCuentaProveedorMovimientos_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const proveedorId = Number.parseInt(req.params.id, 10);
@@ -881,7 +897,11 @@ const getEstadoCuentaProveedorMovimientos = async (req, res) => {
   }
 };
 
-const getProductosRecibidosPorCxp = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxpAdminController.getProductosRecibidosPorCxp instead
+ */
+const getProductosRecibidosPorCxp_MIGRATED = async (req, res) => {
   try {
     const cxpId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(cxpId) || cxpId <= 0) {
@@ -1987,7 +2007,11 @@ async function registrarAuditoriaReglasEmpaque(client, req, eventos) {
   }
 }
 
-const getTiposProductoAdmin = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use tiposProductoController.getTiposProductoAdmin instead
+ */
+const getTiposProductoAdmin_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const result = await db.query(
@@ -2022,7 +2046,11 @@ const getTiposProductoAdmin = async (req, res) => {
   }
 };
 
-const crearTipoProductoAdmin = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use tiposProductoController.crearTipoProductoAdmin instead
+ */
+const crearTipoProductoAdmin_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const nombreRaw = req.body?.nombre ?? req.body?.Nombre ?? req.body?.tipoProducto;
@@ -2078,7 +2106,11 @@ const crearTipoProductoAdmin = async (req, res) => {
   }
 };
 
-const buscarProductosAjuste = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use busquedaInventarioController.buscarProductosAjuste instead
+ */
+const buscarProductosAjuste_MIGRATED = async (req, res) => {
   try {
     if (!req.tenant || !req.tenant.tenant_id) {
       return res.status(500).json({
@@ -2243,7 +2275,11 @@ const buscarProductosAjuste = async (req, res) => {
   }
 };
 
-const buscarProductosCompra = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use busquedaInventarioController.buscarProductosCompra instead
+ */
+const buscarProductosCompra_MIGRATED = async (req, res) => {
   try {
     console.log("\n=== INICIO buscarProductosCompra ===");
     console.log("req.query:", JSON.stringify(req.query, null, 2));
@@ -2629,11 +2665,10 @@ const confirmarPedido_MIGRATED = async (req, res) => {
 };
 
 /**
- * Recepción de mercancía inteligente (entrada por bultos/cajas)
- * POST /api/admin/recepcion
- * Body: { varianteId, cantidadBultos, proveedorId (opcional), esExcepcion, comentarios }
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use recepcionManualController.recepcionarMercancia instead
  */
-const recepcionarMercancia = async (req, res) => {
+const recepcionarMercancia_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -2865,16 +2900,6 @@ const recepcionarMercancia = async (req, res) => {
 };
 
 /**
- * Movimientos (Kardex) global con filtros
- * GET /api/admin/movimientos
- * Query params: varianteId, search, tipo (ENTRADA|SALIDA), fechaInicio, fechaFin
- */
-const getMovimientosInventario = async (req, res) => {
-  try {
-    const { tenant_id } = req.tenant;
-    const where = [`mi.tenant_id = $1`];
-    const values = [tenant_id];
-
     const varianteIdRaw = req.query.varianteId;
     if (varianteIdRaw !== undefined && varianteIdRaw !== null && varianteIdRaw !== "") {
       const varianteId = Number.parseInt(varianteIdRaw, 10);
@@ -3308,10 +3333,10 @@ const getTiposAjusteInventario = async (req, res) => {
 };
 
 /**
- * Historial (Kardex) de movimientos por variante
- * GET /api/admin/inventario/:varianteId/historial
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use movimientosInventarioController.getHistorialInventarioVariante instead
  */
-const getHistorialInventarioVariante = async (req, res) => {
+const getHistorialInventarioVariante_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const varianteId = Number.parseInt(req.params.varianteId, 10);
@@ -3465,10 +3490,10 @@ const getProveedorById_MIGRATED = async (req, res) => {
 };
 
 /**
- * Obtener variantes pendientes (INSERT) desde control_cambios
- * GET /api/admin/productos/:id/variantes-pendientes
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use variantesPendientesController.getVariantesPendientesProducto instead
  */
-const getVariantesPendientesProducto = async (req, res) => {
+const getVariantesPendientesProducto_MIGRATED = async (req, res) => {
   try {
     const productoId = Number.parseInt(req.params.id, 10);
 
@@ -3702,10 +3727,10 @@ const getAgenteAdminColumnsInfo = async () => {
 };
 
 /**
- * Login de administrador
- * POST /api/admin/login
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use authAdminController.loginAdmin instead
  */
-const loginAdmin = async (req, res) => {
+const loginAdmin_MIGRATED = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -3949,10 +3974,10 @@ const loginAdmin = async (req, res) => {
 };
 
 /**
- * Obtener estadísticas del dashboard de administrador
- * GET /api/admin/dashboard-stats
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use dashboardAdminController.getDashboardStats instead
  */
-const getDashboardStats = async (req, res) => {
+const getDashboardStats_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     console.log('📊 [Dashboard Stats] Tenant ID:', tenant_id);
@@ -4303,10 +4328,10 @@ const getAllPedidos_MIGRATED = async (req, res) => {
 // Ver controllers/pedidosStatusController.js
 
 /**
- * Obtener medidas existentes (dimensiones únicas de variantes)
- * GET /api/admin/medidas-existentes
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use medidasAdminController.getMedidasExistentes instead
  */
-const getMedidasExistentes = async (req, res) => {
+const getMedidasExistentes_MIGRATED = async (req, res) => {
   try {
     console.log("\n=== INICIO getMedidasExistentes ===");
     const { tenant_id } = req.tenant;
@@ -4347,7 +4372,11 @@ const getMedidasExistentes = async (req, res) => {
   }
 };
 
-const getReglasEmpaqueProveedor = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reglasEmpaqueController.getReglasEmpaqueProveedor instead
+ */
+const getReglasEmpaqueProveedor_MIGRATED = async (req, res) => {
   try {
     const proveedorId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
@@ -4424,7 +4453,11 @@ const getReglasEmpaqueProveedor = async (req, res) => {
   }
 };
 
-const getReglasEmpaqueProveedorMultiples = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reglasEmpaqueController.getReglasEmpaqueProveedorMultiples instead
+ */
+const getReglasEmpaqueProveedorMultiples_MIGRATED = async (req, res) => {
   try {
     const proveedorId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(proveedorId) || proveedorId <= 0) {
@@ -4480,7 +4513,11 @@ const getReglasEmpaqueProveedorMultiples = async (req, res) => {
   }
 };
 
-const saveReglasEmpaqueMultiples = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reglasEmpaqueController.saveReglasEmpaqueMultiples instead
+ */
+const saveReglasEmpaqueMultiples_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -4767,7 +4804,11 @@ const saveReglasEmpaqueMultiples = async (req, res) => {
   }
 };
 
-const saveReglaEmpaque = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reglasEmpaqueController.saveReglaEmpaque instead
+ */
+const saveReglaEmpaque_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -5137,10 +5178,10 @@ const getAgenteClientes_MIGRATED = async (req, res) => {
 };
 
 /**
- * Desvincular un cliente de su agente asignado
- * PUT /api/admin/clientes/:id/desvincular
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use desvincularClienteController.desvincularClienteDeAgente instead
  */
-const desvincularClienteDeAgente = async (req, res) => {
+const desvincularClienteDeAgente_MIGRATED = async (req, res) => {
   try {
     const clienteId = parseInt(req.params.id, 10);
 
@@ -5731,10 +5772,10 @@ const getClienteCreditoInfo_MIGRATED = async (req, res) => {
 };
 
 /**
- * Obtener catálogo de medidas disponibles
- * GET /api/admin/medidas
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use medidasAdminController.getMedidas instead
  */
-const getMedidas = async (req, res) => {
+const getMedidas_MIGRATED = async (req, res) => {
   try {
     console.log("\n=== INICIO getMedidas ===");
     const { tenant_id } = req.tenant;
@@ -5783,10 +5824,10 @@ const getMedidas = async (req, res) => {
 
 
 /**
- * Verificar token de admin
- * GET /api/admin/verify
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use authAdminController.verifyAdmin instead
  */
-const verifyAdmin = async (req, res) => {
+const verifyAdmin_MIGRATED = async (req, res) => {
   try {
     // El middleware ya validó el token y agregó req.user
     const adminId = req.user.id;
@@ -5966,10 +6007,10 @@ const getAdminProfile = async (req, res) => {
 };
 
 /**
- * Renovar token de admin
- * POST /api/admin/refresh-token
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use authAdminController.refreshAdminToken instead
  */
-const refreshAdminToken = async (req, res) => {
+const refreshAdminToken_MIGRATED = async (req, res) => {
   try {
     // El middleware authenticate ya verificó el token actual
     const adminId = req.user.id;
@@ -7177,15 +7218,10 @@ const crearProducto_MIGRATED = async (req, res) => {
 };
 
 /**
- * Obtener catálogo de tamaños de paquetes
- * GET /api/admin/tamanos-paquetes
- * 
- * SCHEMA (backup.sql):
- * - tamanoid (PK, integer)
- * - cantidad (integer, NOT NULL)
- * - tenant_id (integer, FK to tenants)
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use tamanosAdminController.getTamanosPaquetes instead
  */
-const getTamanosPaquetes = async (req, res) => {
+const getTamanosPaquetes_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
 
@@ -7223,10 +7259,10 @@ const getTamanosPaquetes = async (req, res) => {
 };
 
 /**
- * Obtener tamaños de paquetes disponibles para un producto específico
- * GET /api/admin/productos/:id/tamanos-disponibles
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use tamanosAdminController.getTamanosDisponiblesProducto instead
  */
-const getTamanosDisponiblesProducto = async (req, res) => {
+const getTamanosDisponiblesProducto_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const productoId = parseInt(req.params.id, 10);
@@ -7779,10 +7815,10 @@ const actualizarProducto_MIGRATED = async (req, res) => {
 };
 
 /**
- * Ajustar inventario manualmente
- * POST /api/admin/inventario/ajuste
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use ajustesInventarioController.ajustarInventario instead
  */
-const ajustarInventario = async (req, res) => {
+const ajustarInventario_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -7924,10 +7960,10 @@ const ajustarInventario = async (req, res) => {
 };
 
 /**
- * Obtener resumen de inventario por producto maestro
- * GET /api/admin/inventario
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use inventarioResumenController.getInventarioResumen instead
  */
-const getInventarioResumen = async (req, res) => {
+const getInventarioResumen_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const userId = req.user?.id;
@@ -8106,11 +8142,10 @@ const getInventarioResumen = async (req, res) => {
 };
 
 /**
- * Obtener detalle completo de producto para modal de inventario
- * GET /api/admin/inventario/producto-detalle/:id
- * Incluye: proveedor, variantes con stock por admin, totales
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use inventarioResumenController.getProductoDetalleInventario instead
  */
-const getProductoDetalleInventario = async (req, res) => {
+const getProductoDetalleInventario_MIGRATED = async (req, res) => {
   try {
     const productoId = parseInt(req.params.id, 10);
     const userId = req.user?.id;
@@ -8274,10 +8309,10 @@ const getProductoDetalleInventario = async (req, res) => {
 };
 
 /**
- * Obtener detalle de un producto maestro con sus variantes
- * GET /api/admin/productos/:id
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use detallesProductoController.getProductoDetalle instead
  */
-const getProductoDetalle = async (req, res) => {
+const getProductoDetalle_MIGRATED = async (req, res) => {
   try {
     const productoId = parseInt(req.params.id, 10);
 
@@ -9207,10 +9242,10 @@ const actualizarCategoria_MIGRATED = async (req, res) => {
 };
 
 /**
- * Toggle product visibility (activo field)
- * PUT /api/admin/productos/:id/toggle-visibilidad
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use toggleVisibilidadController.toggleProductoVisibilidad instead
  */
-const toggleProductoVisibilidad = async (req, res) => {
+const toggleProductoVisibilidad_MIGRATED = async (req, res) => {
   try {
     const productoId = parseInt(req.params.id, 10);
     const { activo } = req.body;
@@ -16309,11 +16344,10 @@ const getAllAdministradores = async (req, res) => {
 };
 
 /**
- * Exportar inventario para PDF
- * GET /api/admin/inventario/exportar-pdf
- * Retorna datos de variantes con stock > 0, respetando filtros aplicados
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use exportacionInventarioController.exportarInventarioPDF instead
  */
-const exportarInventarioPDF = async (req, res) => {
+const exportarInventarioPDF_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const userId = req.user?.id;
@@ -16486,10 +16520,10 @@ const exportarInventarioPDF = async (req, res) => {
 };
 
 /**
- * ✅ NUEVO: Ver ventas del admin desde pedido_surtido_detalle
- * GET /api/admin/mis-ventas
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reportesVentasController.getMisVentas instead
  */
-const getMisVentas = async (req, res) => {
+const getMisVentas_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const adminId = req.user.id;
@@ -16561,10 +16595,10 @@ const getMisVentas = async (req, res) => {
 };
 
 /**
- * ✅ NUEVO: Ver breakdown de allocation por pedido (Super Admin)
- * GET /api/admin/pedidos/:pedidoId/allocation
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reportesVentasController.getPedidoAllocation instead
  */
-const getPedidoAllocation = async (req, res) => {
+const getPedidoAllocation_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const pedidoId = parseInt(req.params.pedidoId, 10);
@@ -16636,10 +16670,10 @@ const getPedidoAllocation = async (req, res) => {
 };
 
 /**
- * ✅ NUEVO: Reporte de ventas por administrador (Super Admin)
- * GET /api/admin/reportes/ventas-por-admin
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reportesVentasController.getReporteVentasPorAdmin instead
  */
-const getReporteVentasPorAdmin = async (req, res) => {
+const getReporteVentasPorAdmin_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const { fechaInicio, fechaFin } = req.query;
@@ -17228,39 +17262,39 @@ const searchVariantesMovimientos = async (req, res) => {
 };
 
 module.exports = {
-  loginAdmin,
-  verifyAdmin,
-  refreshAdminToken,
-  getDashboardStats,
+  // loginAdmin, // ⚠️ MIGRADO a authAdminController.js
+  // verifyAdmin, // ⚠️ MIGRADO a authAdminController.js
+  // refreshAdminToken, // ⚠️ MIGRADO a authAdminController.js
+  // getDashboardStats, // ⚠️ MIGRADO a dashboardAdminController.js
   // getAllPedidos, // ⚠️ MIGRADO a pedidosAdminController.js
   // updatePedidoEstatus, // ⚠️ MIGRADO a pedidosStatusController.js
   // confirmarPedido, // ⚠️ MIGRADO a pedidosAdminController.js
   updateCostoEnvio,
   // getPedidoDetalle, // ⚠️ MIGRADO a pedidosAdminController.js
-  getMovimientosInventario,
-  getHistorialInventarioVariante,
-  recepcionarMercancia,
-  ajustarInventario,
-  getInventarioResumen,
-  getProductoDetalleInventario,
+  // getMovimientosInventario, // ⚠️ MIGRADO a movimientosInventarioController.js
+  // getHistorialInventarioVariante, // ⚠️ MIGRADO a movimientosInventarioController.js
+  // recepcionarMercancia, // ⚠️ MIGRADO a recepcionManualController.js
+  // ajustarInventario, // ⚠️ MIGRADO a ajustesInventarioController.js
+  // getInventarioResumen, // ⚠️ MIGRADO a inventarioResumenController.js
+  // getProductoDetalleInventario, // ⚠️ MIGRADO a inventarioResumenController.js
   getAllAdministradores,
-  exportarInventarioPDF,
-  buscarProductosAjuste,
-  buscarProductosCompra,
-  getProductoDetalle,
-  getVariantesPendientesProducto,
+  // exportarInventarioPDF, // ⚠️ MIGRADO a exportacionInventarioController.js
+  // buscarProductosAjuste, // ⚠️ MIGRADO a busquedaInventarioController.js
+  // buscarProductosCompra, // ⚠️ MIGRADO a busquedaInventarioController.js
+  // getProductoDetalle, // ⚠️ MIGRADO a detallesProductoController.js
+  // getVariantesPendientesProducto, // ⚠️ MIGRADO a variantesPendientesController.js
   // getAllProductos, // ⚠️ MIGRADO a productosAdminController.js
   // crearProducto, // ⚠️ MIGRADO a productosAdminController.js
   // actualizarProducto, // ⚠️ MIGRADO a productosAdminController.js
-  toggleProductoVisibilidad,
-  getTamanosPaquetes,
-  getTamanosDisponiblesProducto,
+  // toggleProductoVisibilidad, // ⚠️ MIGRADO a toggleVisibilidadController.js
+  // getTamanosPaquetes, // ⚠️ MIGRADO a tamanosAdminController.js
+  // getTamanosDisponiblesProducto, // ⚠️ MIGRADO a tamanosAdminController.js
   // getCategorias, // ⚠️ MIGRADO a categoriasAdminController.js
   // crearCategoria, // ⚠️ MIGRADO a categoriasAdminController.js
   // actualizarCategoria, // ⚠️ MIGRADO a categoriasAdminController.js
   // eliminarCategoria, // ⚠️ MIGRADO a categoriasAdminController.js
-  getMedidas,
-  getMedidasExistentes,
+  // getMedidas, // ⚠️ MIGRADO a medidasAdminController.js
+  // getMedidasExistentes, // ⚠️ MIGRADO a medidasAdminController.js
   crearVariante,
   actualizarVariante,
   // crearAgente, // ⚠️ MIGRADO a agentesAdminController.js
@@ -17274,7 +17308,7 @@ module.exports = {
   // getAllClientes, // ⚠️ MIGRADO a clientesAdminController.js
   // getClienteDetalle, // ⚠️ MIGRADO a clientesAdminController.js
   // actualizarEstadoCliente, // ⚠️ MIGRADO a clientesAdminController.js
-  desvincularClienteDeAgente,
+  // desvincularClienteDeAgente, // ⚠️ MIGRADO a desvincularClienteController.js
   // actualizarCreditoCliente, // ⚠️ MIGRADO a clientesAdminController.js
   // getClienteCreditoInfo, // ⚠️ MIGRADO a clientesAdminController.js
   // getAllProveedores, // ⚠️ MIGRADO a proveedoresAdminController.js
@@ -17282,12 +17316,12 @@ module.exports = {
   // crearProveedor, // ⚠️ MIGRADO a proveedoresAdminController.js
   // actualizarProveedor, // ⚠️ MIGRADO a proveedoresAdminController.js
   getSolicitudesPendientesProveedor,
-  getReglasEmpaqueProveedor,
-  getReglasEmpaqueProveedorMultiples,
-  saveReglaEmpaque,
-  saveReglasEmpaqueMultiples,
-  getTiposProductoAdmin,
-  crearTipoProductoAdmin,
+  // getReglasEmpaqueProveedor, // ⚠️ MIGRADO a reglasEmpaqueController.js
+  // getReglasEmpaqueProveedorMultiples, // ⚠️ MIGRADO a reglasEmpaqueController.js
+  // saveReglaEmpaque, // ⚠️ MIGRADO a reglasEmpaqueController.js
+  // saveReglasEmpaqueMultiples, // ⚠️ MIGRADO a reglasEmpaqueController.js
+  // getTiposProductoAdmin, // ⚠️ MIGRADO a tiposProductoController.js
+  // crearTipoProductoAdmin, // ⚠️ MIGRADO a tiposProductoController.js
   // getAllOrdenesCompra, // ⚠️ MIGRADO a ordenesCompraController.js
   getAdministradoresOrdenesCompra,
   bloquearSesionRecepcion,
@@ -17309,17 +17343,17 @@ module.exports = {
   recepcionMasivaOrdenCompra,
   cerrarSesionRecepcion,
   recibirItemOrdenCompra,
-  getMovimientosInventario,
-  getMisVentas,
-  getPedidoAllocation,
-  getReporteVentasPorAdmin,
-  getCuentasPorPagar,
-  registrarPagoCuentaPorPagar,
+  // getMovimientosInventario, // ⚠️ MIGRADO a movimientosInventarioController.js
+  // getMisVentas, // ⚠️ MIGRADO a reportesVentasController.js
+  // getPedidoAllocation, // ⚠️ MIGRADO a reportesVentasController.js
+  // getReporteVentasPorAdmin, // ⚠️ MIGRADO a reportesVentasController.js
+  // getCuentasPorPagar, // ⚠️ MIGRADO a cxpAdminController.js
+  // registrarPagoCuentaPorPagar, // ⚠️ MIGRADO a cxpAdminController.js
   // getCxcSummary, // ⚠️ MIGRADO a cxcAdminController.js
   // registrarAbonoCxC, // ⚠️ MIGRADO a cxcAdminController.js
-  getResumenEstadoCuentaProveedores,
-  getEstadoCuentaProveedorMovimientos,
-  getProductosRecibidosPorCxp,
+  // getResumenEstadoCuentaProveedores, // ⚠️ MIGRADO a cxpAdminController.js
+  // getEstadoCuentaProveedorMovimientos, // ⚠️ MIGRADO a cxpAdminController.js
+  // getProductosRecibidosPorCxp, // ⚠️ MIGRADO a cxpAdminController.js
   subirEvidenciaRecepcionOC,
   subirImagenProducto,
   subirImagenesProductoMultiple,
