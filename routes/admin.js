@@ -75,6 +75,7 @@ const validacionRecepcionController = require("../controllers/validacionRecepcio
 const itemsOrdenCompraController = require("../controllers/itemsOrdenCompraController");
 const excelOrdenCompraController = require("../controllers/excelOrdenCompraController");
 const administradoresOCController = require("../controllers/administradoresOCController");
+const recepcionMasivaController = require("../controllers/recepcionMasivaController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -485,7 +486,7 @@ router.post(
       });
     });
   },
-  adminController.crearVariante
+  variantesAdminController.crearVariante
 );
 router.put(
   "/variantes/:id",
@@ -527,7 +528,7 @@ router.put(
       });
     });
   },
-  adminController.actualizarVariante
+  variantesAdminController.actualizarVariante
 );
 
 router.get(
@@ -1418,7 +1419,7 @@ router.post(
   "/recepcion-masiva",
   authenticate,
   authorizeAdmin,
-  adminController.recepcionMasivaOrdenCompra
+  recepcionMasivaController.recepcionMasivaOrdenCompra
 );
 
 // ✅ REFACTORED: Migrado a evidenciasController.js
