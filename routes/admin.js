@@ -68,6 +68,8 @@ const evidenciasController = require("../controllers/evidenciasController");
 const remisionesPedidosController = require("../controllers/remisionesPedidosController");
 const gestionPedidosAdminController = require("../controllers/gestionPedidosAdminController");
 const sesionesRecepcionController = require("../controllers/sesionesRecepcionController");
+const recepcionItemsController = require("../controllers/recepcionItemsController");
+const detallesOrdenCompraController = require("../controllers/detallesOrdenCompraController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -1241,17 +1243,19 @@ router.get(
   authorizeAdmin,
   adminController.getAdministradoresOrdenesCompra
 );
+// ✅ REFACTORED: Migrado a detallesOrdenCompraController.js
 router.get(
   "/ordenes-compra/:id/detalles",
   authenticate,
   authorizeAdmin,
-  adminController.getDetallesOrdenCompra
+  detallesOrdenCompraController.getDetallesOrdenCompra
 );
+// ✅ REFACTORED: Migrado a detallesOrdenCompraController.js
 router.get(
   "/ordenes-compra/:id/recepcion",
   authenticate,
   authorizeAdmin,
-  adminController.getRecepcionOrdenCompra
+  detallesOrdenCompraController.getRecepcionOrdenCompra
 );
 // ✅ REFACTORED: Migrado a reportesOrdenesCompraController.js
 router.get(
@@ -1334,18 +1338,20 @@ router.post(
   recepcionInventarioController.recibirInventario
 );
 
+// ✅ REFACTORED: Migrado a recepcionItemsController.js
 router.post(
   "/ordenes-compra/:id/cerrar-sesion",
   authenticate,
   authorizeAdmin,
-  adminController.cerrarSesionRecepcion
+  recepcionItemsController.cerrarSesionRecepcion
 );
 
+// ✅ REFACTORED: Migrado a recepcionItemsController.js
 router.post(
   "/ordenes-compra/:id/recibir-item",
   authenticate,
   authorizeAdmin,
-  adminController.recibirItemOrdenCompra
+  recepcionItemsController.recibirItemOrdenCompra
 );
 
 // Reasignar orden de compra (solo super admin)
