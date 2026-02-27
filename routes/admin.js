@@ -70,6 +70,11 @@ const gestionPedidosAdminController = require("../controllers/gestionPedidosAdmi
 const sesionesRecepcionController = require("../controllers/sesionesRecepcionController");
 const recepcionItemsController = require("../controllers/recepcionItemsController");
 const detallesOrdenCompraController = require("../controllers/detallesOrdenCompraController");
+const comprasPendientesController = require("../controllers/comprasPendientesController");
+const validacionRecepcionController = require("../controllers/validacionRecepcionController");
+const itemsOrdenCompraController = require("../controllers/itemsOrdenCompraController");
+const excelOrdenCompraController = require("../controllers/excelOrdenCompraController");
+const administradoresOCController = require("../controllers/administradoresOCController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -1180,23 +1185,26 @@ router.put(
 /**
  * Conteo Ciego (Blind Count) - Recepción de Órdenes de Compra
  */
+// ✅ REFACTORED: Migrado a comprasPendientesController.js
 router.get(
   "/compras/pendientes",
   authenticate,
   authorizeAdmin,
-  adminController.getComprasPendientes
+  comprasPendientesController.getComprasPendientes
 );
+// ✅ REFACTORED: Migrado a comprasPendientesController.js
 router.get(
   "/compras/:id/detalle-ciego",
   authenticate,
   authorizeAdmin,
-  adminController.getCompraDetalleCiego
+  comprasPendientesController.getCompraDetalleCiego
 );
+// ✅ REFACTORED: Migrado a validacionRecepcionController.js
 router.post(
   "/compras/:id/validar-recepcion",
   authenticate,
   authorizeAdmin,
-  adminController.validarRecepcionCompra
+  validacionRecepcionController.validarRecepcionCompra
 );
 
 router.get(
@@ -1237,11 +1245,12 @@ router.get(
   authorizeAdmin,
   reportesOrdenesCompraController.getOrdenesCompraReportes
 );
+// ✅ REFACTORED: Migrado a administradoresOCController.js
 router.get(
   "/ordenes-compra/administradores",
   authenticate,
   authorizeAdmin,
-  adminController.getAdministradoresOrdenesCompra
+  administradoresOCController.getAdministradoresOrdenesCompra
 );
 // ✅ REFACTORED: Migrado a detallesOrdenCompraController.js
 router.get(
@@ -1306,23 +1315,26 @@ router.post(
   authorizeAdmin,
   ordenesCompraController.crearOrdenCompra
 );
+// ✅ REFACTORED: Migrado a itemsOrdenCompraController.js
 router.post(
   "/ordenes-compra/:id/items",
   authenticate,
   authorizeAdmin,
-  adminController.addItemToOrder
+  itemsOrdenCompraController.addItemToOrder
 );
+// ✅ REFACTORED: Migrado a itemsOrdenCompraController.js
 router.delete(
   "/ordenes-compra/:id/items/:detalleId",
   authenticate,
   authorizeAdmin,
-  adminController.removeItemFromOrder
+  itemsOrdenCompraController.removeItemFromOrder
 );
+// ✅ REFACTORED: Migrado a excelOrdenCompraController.js
 router.get(
   "/ordenes-compra/:id/export",
   authenticate,
   authorizeAdmin,
-  adminController.getOrderDetailsForExcel
+  excelOrdenCompraController.getOrderDetailsForExcel
 );
 router.get(
   "/ordenes-compra/:id/pdf",
