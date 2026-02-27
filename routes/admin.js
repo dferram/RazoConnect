@@ -42,6 +42,7 @@ const movimientosInventarioController = require("../controllers/movimientosInven
 const medidasAdminController = require("../controllers/medidasAdminController");
 const tamanosAdminController = require("../controllers/tamanosAdminController");
 const dashboardAdminController = require("../controllers/dashboardAdminController");
+const reportesVentasController = require("../controllers/reportesVentasController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -1922,27 +1923,30 @@ router.get(
  */
 
 // Ver mis ventas (cada admin ve solo sus ventas)
+// ✅ REFACTORED: Migrado a reportesVentasController.js
 router.get(
   "/mis-ventas",
   authenticate,
   authorizeAdmin,
-  adminController.getMisVentas
+  reportesVentasController.getMisVentas
 );
 
 // Ver breakdown de allocation de un pedido (Super Admin)
+// ✅ REFACTORED: Migrado a reportesVentasController.js
 router.get(
   "/pedidos/:pedidoId/allocation",
   authenticate,
   authorizeAdmin,
-  adminController.getPedidoAllocation
+  reportesVentasController.getPedidoAllocation
 );
 
 // Reporte de ventas por administrador (Super Admin)
+// ✅ REFACTORED: Migrado a reportesVentasController.js
 router.get(
   "/reportes/ventas-por-admin",
   authenticate,
   authorizeAdmin,
-  adminController.getReporteVentasPorAdmin
+  reportesVentasController.getReporteVentasPorAdmin
 );
 
 /**

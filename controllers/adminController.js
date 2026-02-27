@@ -16491,10 +16491,10 @@ const exportarInventarioPDF = async (req, res) => {
 };
 
 /**
- * ✅ NUEVO: Ver ventas del admin desde pedido_surtido_detalle
- * GET /api/admin/mis-ventas
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reportesVentasController.getMisVentas instead
  */
-const getMisVentas = async (req, res) => {
+const getMisVentas_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const adminId = req.user.id;
@@ -16566,10 +16566,10 @@ const getMisVentas = async (req, res) => {
 };
 
 /**
- * ✅ NUEVO: Ver breakdown de allocation por pedido (Super Admin)
- * GET /api/admin/pedidos/:pedidoId/allocation
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reportesVentasController.getPedidoAllocation instead
  */
-const getPedidoAllocation = async (req, res) => {
+const getPedidoAllocation_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const pedidoId = parseInt(req.params.pedidoId, 10);
@@ -16641,10 +16641,10 @@ const getPedidoAllocation = async (req, res) => {
 };
 
 /**
- * ✅ NUEVO: Reporte de ventas por administrador (Super Admin)
- * GET /api/admin/reportes/ventas-por-admin
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use reportesVentasController.getReporteVentasPorAdmin instead
  */
-const getReporteVentasPorAdmin = async (req, res) => {
+const getReporteVentasPorAdmin_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const { fechaInicio, fechaFin } = req.query;
@@ -17315,9 +17315,9 @@ module.exports = {
   cerrarSesionRecepcion,
   recibirItemOrdenCompra,
   // getMovimientosInventario, // ⚠️ MIGRADO a movimientosInventarioController.js
-  getMisVentas,
-  getPedidoAllocation,
-  getReporteVentasPorAdmin,
+  // getMisVentas, // ⚠️ MIGRADO a reportesVentasController.js
+  // getPedidoAllocation, // ⚠️ MIGRADO a reportesVentasController.js
+  // getReporteVentasPorAdmin, // ⚠️ MIGRADO a reportesVentasController.js
   // getCuentasPorPagar, // ⚠️ MIGRADO a cxpAdminController.js
   // registrarPagoCuentaPorPagar, // ⚠️ MIGRADO a cxpAdminController.js
   // getCxcSummary, // ⚠️ MIGRADO a cxcAdminController.js
