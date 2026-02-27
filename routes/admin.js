@@ -59,6 +59,9 @@ const imagenesProductoController = require("../controllers/imagenesProductoContr
 const administradoresController = require("../controllers/administradoresController");
 const solicitudesProveedorController = require("../controllers/solicitudesProveedorController");
 const gestionOrdenCompraController = require("../controllers/gestionOrdenCompraController");
+const busquedaVariantesController = require("../controllers/busquedaVariantesController");
+const optimizacionController = require("../controllers/optimizacionController");
+const reportesOrdenesCompraController = require("../controllers/reportesOrdenesCompraController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -690,11 +693,12 @@ router.get(
 );
 
 // Búsqueda de variantes con autocompletado para movimientos
+// ✅ REFACTORED: Migrado a busquedaVariantesController.js
 router.get(
   "/variantes/search",
   authenticate,
   authorizeAdmin,
-  adminController.searchVariantesMovimientos
+  busquedaVariantesController.searchVariantesMovimientos
 );
 
 // Ajustes de inventario con filtros avanzados para conciliación
@@ -1213,11 +1217,12 @@ router.get(
   authorizeAdmin,
   ordenesCompraController.getAllOrdenesCompra
 );
+// ✅ REFACTORED: Migrado a reportesOrdenesCompraController.js
 router.get(
   "/ordenes-compra/reportes",
   authenticate,
   authorizeAdmin,
-  adminController.getOrdenesCompraReportes
+  reportesOrdenesCompraController.getOrdenesCompraReportes
 );
 router.get(
   "/ordenes-compra/administradores",
@@ -1237,11 +1242,12 @@ router.get(
   authorizeAdmin,
   adminController.getRecepcionOrdenCompra
 );
+// ✅ REFACTORED: Migrado a reportesOrdenesCompraController.js
 router.get(
   "/ordenes-compra/:id/reporte-detallado",
   authenticate,
   authorizeAdmin,
-  adminController.getOrdenCompraReporteDetallado
+  reportesOrdenesCompraController.getOrdenCompraReporteDetallado
 );
 // ✅ REFACTORED: Migrado a gestionOrdenCompraController.js
 router.get(
@@ -1456,17 +1462,19 @@ router.delete(
 /**
  * Rutas de Optimización de Compras (Consolidación)
  */
+// ✅ REFACTORED: Migrado a optimizacionController.js
 router.get(
   "/ordenes/sugerencias-optimizacion",
   authenticate,
   authorizeAdmin,
-  adminController.getSugerenciasOptimizacion
+  optimizacionController.getSugerenciasOptimizacion
 );
+// ✅ REFACTORED: Migrado a optimizacionController.js
 router.post(
   "/ordenes/crear-grupo-optimizado",
   authenticate,
   authorizeAdmin,
-  adminController.crearGrupoOptimizado
+  optimizacionController.crearGrupoOptimizado
 );
 
 /**
