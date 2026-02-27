@@ -57,6 +57,7 @@ const toggleVisibilidadController = require("../controllers/toggleVisibilidadCon
 const desvincularClienteController = require("../controllers/desvincularClienteController");
 const imagenesProductoController = require("../controllers/imagenesProductoController");
 const administradoresController = require("../controllers/administradoresController");
+const solicitudesProveedorController = require("../controllers/solicitudesProveedorController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -1109,11 +1110,12 @@ router.post(
   tiposProductoController.crearTipoProductoAdmin
 );
 
+// ✅ REFACTORED: Migrado a solicitudesProveedorController.js
 router.get(
   "/proveedores/:id/solicitudes-pendientes",
   authenticate,
   authorizeAdmin,
-  adminController.getSolicitudesPendientesProveedor
+  solicitudesProveedorController.getSolicitudesPendientesProveedor
 );
 
 // ✅ REFACTORED: Migrado a reglasEmpaqueController.js
