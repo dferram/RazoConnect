@@ -47,6 +47,8 @@ const authAdminController = require("../controllers/authAdminController");
 const inventarioResumenController = require("../controllers/inventarioResumenController");
 const exportacionInventarioController = require("../controllers/exportacionInventarioController");
 const busquedaInventarioController = require("../controllers/busquedaInventarioController");
+const ajustesInventarioController = require("../controllers/ajustesInventarioController");
+const recepcionManualController = require("../controllers/recepcionManualController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -651,12 +653,13 @@ router.get(
   inventarioResumenController.getProductoDetalleInventario
 );
 
-// router.post(
-//   "/inventario/ajuste",
-//   authenticate,
-//   authorizeAdmin,
-//   adminController.ajustarInventario
-// );
+// ✅ REFACTORED: Migrado a ajustesInventarioController.js
+router.post(
+  "/inventario/ajuste",
+  authenticate,
+  authorizeAdmin,
+  ajustesInventarioController.ajustarInventario
+);
 
 // ✅ REFACTORED: Migrado a movimientosInventarioController.js
 router.get(
@@ -698,12 +701,13 @@ router.get(
   adminController.getTiposAjusteInventario
 );
 
-// router.post(
-//   "/recepcion",
-//   authenticate,
-//   authorizeAdmin,
-//   adminController.recepcionarMercancia
-// );
+// ✅ REFACTORED: Migrado a recepcionManualController.js
+router.post(
+  "/recepcion",
+  authenticate,
+  authorizeAdmin,
+  recepcionManualController.recepcionarMercancia
+);
 
 /**
  * Gestión de agentes

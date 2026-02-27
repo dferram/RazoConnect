@@ -2657,11 +2657,10 @@ const confirmarPedido_MIGRATED = async (req, res) => {
 };
 
 /**
- * Recepción de mercancía inteligente (entrada por bultos/cajas)
- * POST /api/admin/recepcion
- * Body: { varianteId, cantidadBultos, proveedorId (opcional), esExcepcion, comentarios }
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use recepcionManualController.recepcionarMercancia instead
  */
-const recepcionarMercancia = async (req, res) => {
+const recepcionarMercancia_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -7792,10 +7791,10 @@ const actualizarProducto_MIGRATED = async (req, res) => {
 };
 
 /**
- * Ajustar inventario manualmente
- * POST /api/admin/inventario/ajuste
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use ajustesInventarioController.ajustarInventario instead
  */
-const ajustarInventario = async (req, res) => {
+const ajustarInventario_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -17250,8 +17249,8 @@ module.exports = {
   // getPedidoDetalle, // ⚠️ MIGRADO a pedidosAdminController.js
   // getMovimientosInventario, // ⚠️ MIGRADO a movimientosInventarioController.js
   // getHistorialInventarioVariante, // ⚠️ MIGRADO a movimientosInventarioController.js
-  recepcionarMercancia,
-  ajustarInventario,
+  // recepcionarMercancia, // ⚠️ MIGRADO a recepcionManualController.js
+  // ajustarInventario, // ⚠️ MIGRADO a ajustesInventarioController.js
   // getInventarioResumen, // ⚠️ MIGRADO a inventarioResumenController.js
   // getProductoDetalleInventario, // ⚠️ MIGRADO a inventarioResumenController.js
   getAllAdministradores,
