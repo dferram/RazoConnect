@@ -55,6 +55,8 @@ const detallesProductoController = require("../controllers/detallesProductoContr
 const variantesPendientesController = require("../controllers/variantesPendientesController");
 const toggleVisibilidadController = require("../controllers/toggleVisibilidadController");
 const desvincularClienteController = require("../controllers/desvincularClienteController");
+const imagenesProductoController = require("../controllers/imagenesProductoController");
+const administradoresController = require("../controllers/administradoresController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -363,12 +365,13 @@ router.put(
  * @desc    Subir imagen para un producto
  * @access  Private (Admin only)
  */
+// ✅ REFACTORED: Migrado a imagenesProductoController.js
 router.post(
   "/productos/:id/imagen",
   authenticate,
   authorizeAdmin,
   upload.single("imagen"),
-  adminController.subirImagenProducto
+  imagenesProductoController.subirImagenProducto
 );
 
 router.post(
@@ -411,15 +414,16 @@ router.post(
       });
     });
   },
-  adminController.subirImagenesProductoMultiple
+  imagenesProductoController.subirImagenesProductoMultiple
 );
 
 // DELETE: Eliminar imagen de producto (físicamente de Cloudinary + BD)
+// ✅ REFACTORED: Migrado a imagenesProductoController.js
 router.delete(
   "/productos/imagenes/:id",
   authenticate,
   authorizeAdmin,
-  adminController.eliminarImagenProducto
+  imagenesProductoController.eliminarImagenProducto
 );
 
 router.post(
@@ -511,7 +515,7 @@ router.get(
   "/variantes/:id/imagenes",
   authenticate,
   authorizeAdmin,
-  adminController.getImagenesVariante
+  imagenesProductoController.getImagenesVariante
 );
 
 router.post(
@@ -554,7 +558,7 @@ router.post(
       });
     });
   },
-  adminController.subirImagenesVarianteMultiple
+  imagenesProductoController.subirImagenesVarianteMultiple
 );
 
 router.put(
@@ -634,11 +638,12 @@ router.get(
   inventarioResumenController.getInventarioResumen
 );
 
+// ✅ REFACTORED: Migrado a administradoresController.js
 router.get(
   "/administradores",
   authenticate,
   authorizeAdmin,
-  adminController.getAllAdministradores
+  administradoresController.getAllAdministradores
 );
 
 // ✅ REFACTORED: Migrado a exportacionInventarioController.js
