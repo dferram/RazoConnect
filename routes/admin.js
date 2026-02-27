@@ -50,6 +50,9 @@ const busquedaInventarioController = require("../controllers/busquedaInventarioC
 const ajustesInventarioController = require("../controllers/ajustesInventarioController");
 const recepcionManualController = require("../controllers/recepcionManualController");
 const reglasEmpaqueController = require("../controllers/reglasEmpaqueController");
+const tiposProductoController = require("../controllers/tiposProductoController");
+const detallesProductoController = require("../controllers/detallesProductoController");
+const variantesPendientesController = require("../controllers/variantesPendientesController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -313,18 +316,20 @@ router.get(
   busquedaInventarioController.buscarProductosCompra
 );
 
+// ✅ REFACTORED: Migrado a detallesProductoController.js
 router.get(
   "/productos/:id",
   authenticate,
   authorizeAdmin,
-  adminController.getProductoDetalle
+  detallesProductoController.getProductoDetalle
 );
 
+// ✅ REFACTORED: Migrado a variantesPendientesController.js
 router.get(
   "/productos/:id/variantes-pendientes",
   authenticate,
   authorizeAdmin,
-  adminController.getVariantesPendientesProducto
+  variantesPendientesController.getVariantesPendientesProducto
 );
 // ✅ REFACTORED: Migrado a productosAdminController.js
 router.post(
@@ -1084,18 +1089,20 @@ router.put(
   proveedoresAdminController.actualizarProveedor
 );
 
+// ✅ REFACTORED: Migrado a tiposProductoController.js
 router.get(
   "/tipos-producto",
   authenticate,
   authorizeAdmin,
-  adminController.getTiposProductoAdmin
+  tiposProductoController.getTiposProductoAdmin
 );
 
+// ✅ REFACTORED: Migrado a tiposProductoController.js
 router.post(
   "/tipos-producto",
   authenticate,
   authorizeAdmin,
-  adminController.crearTipoProductoAdmin
+  tiposProductoController.crearTipoProductoAdmin
 );
 
 router.get(

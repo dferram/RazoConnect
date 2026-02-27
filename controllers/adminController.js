@@ -2007,7 +2007,11 @@ async function registrarAuditoriaReglasEmpaque(client, req, eventos) {
   }
 }
 
-const getTiposProductoAdmin = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use tiposProductoController.getTiposProductoAdmin instead
+ */
+const getTiposProductoAdmin_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const result = await db.query(
@@ -2042,7 +2046,11 @@ const getTiposProductoAdmin = async (req, res) => {
   }
 };
 
-const crearTipoProductoAdmin = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use tiposProductoController.crearTipoProductoAdmin instead
+ */
+const crearTipoProductoAdmin_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const nombreRaw = req.body?.nombre ?? req.body?.Nombre ?? req.body?.tipoProducto;
@@ -3482,10 +3490,10 @@ const getProveedorById_MIGRATED = async (req, res) => {
 };
 
 /**
- * Obtener variantes pendientes (INSERT) desde control_cambios
- * GET /api/admin/productos/:id/variantes-pendientes
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use variantesPendientesController.getVariantesPendientesProducto instead
  */
-const getVariantesPendientesProducto = async (req, res) => {
+const getVariantesPendientesProducto_MIGRATED = async (req, res) => {
   try {
     const productoId = Number.parseInt(req.params.id, 10);
 
@@ -8301,10 +8309,10 @@ const getProductoDetalleInventario_MIGRATED = async (req, res) => {
 };
 
 /**
- * Obtener detalle de un producto maestro con sus variantes
- * GET /api/admin/productos/:id
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use detallesProductoController.getProductoDetalle instead
  */
-const getProductoDetalle = async (req, res) => {
+const getProductoDetalle_MIGRATED = async (req, res) => {
   try {
     const productoId = parseInt(req.params.id, 10);
 
@@ -17273,8 +17281,8 @@ module.exports = {
   // exportarInventarioPDF, // ⚠️ MIGRADO a exportacionInventarioController.js
   // buscarProductosAjuste, // ⚠️ MIGRADO a busquedaInventarioController.js
   // buscarProductosCompra, // ⚠️ MIGRADO a busquedaInventarioController.js
-  getProductoDetalle,
-  getVariantesPendientesProducto,
+  // getProductoDetalle, // ⚠️ MIGRADO a detallesProductoController.js
+  // getVariantesPendientesProducto, // ⚠️ MIGRADO a variantesPendientesController.js
   // getAllProductos, // ⚠️ MIGRADO a productosAdminController.js
   // crearProducto, // ⚠️ MIGRADO a productosAdminController.js
   // actualizarProducto, // ⚠️ MIGRADO a productosAdminController.js
@@ -17312,8 +17320,8 @@ module.exports = {
   // getReglasEmpaqueProveedorMultiples, // ⚠️ MIGRADO a reglasEmpaqueController.js
   // saveReglaEmpaque, // ⚠️ MIGRADO a reglasEmpaqueController.js
   // saveReglasEmpaqueMultiples, // ⚠️ MIGRADO a reglasEmpaqueController.js
-  getTiposProductoAdmin,
-  crearTipoProductoAdmin,
+  // getTiposProductoAdmin, // ⚠️ MIGRADO a tiposProductoController.js
+  // crearTipoProductoAdmin, // ⚠️ MIGRADO a tiposProductoController.js
   // getAllOrdenesCompra, // ⚠️ MIGRADO a ordenesCompraController.js
   getAdministradoresOrdenesCompra,
   bloquearSesionRecepcion,
