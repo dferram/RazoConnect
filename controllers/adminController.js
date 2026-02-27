@@ -4313,10 +4313,10 @@ const getAllPedidos_MIGRATED = async (req, res) => {
 // Ver controllers/pedidosStatusController.js
 
 /**
- * Obtener medidas existentes (dimensiones únicas de variantes)
- * GET /api/admin/medidas-existentes
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use medidasAdminController.getMedidasExistentes instead
  */
-const getMedidasExistentes = async (req, res) => {
+const getMedidasExistentes_MIGRATED = async (req, res) => {
   try {
     console.log("\n=== INICIO getMedidasExistentes ===");
     const { tenant_id } = req.tenant;
@@ -5741,10 +5741,10 @@ const getClienteCreditoInfo_MIGRATED = async (req, res) => {
 };
 
 /**
- * Obtener catálogo de medidas disponibles
- * GET /api/admin/medidas
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use medidasAdminController.getMedidas instead
  */
-const getMedidas = async (req, res) => {
+const getMedidas_MIGRATED = async (req, res) => {
   try {
     console.log("\n=== INICIO getMedidas ===");
     const { tenant_id } = req.tenant;
@@ -7187,15 +7187,10 @@ const crearProducto_MIGRATED = async (req, res) => {
 };
 
 /**
- * Obtener catálogo de tamaños de paquetes
- * GET /api/admin/tamanos-paquetes
- * 
- * SCHEMA (backup.sql):
- * - tamanoid (PK, integer)
- * - cantidad (integer, NOT NULL)
- * - tenant_id (integer, FK to tenants)
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use tamanosAdminController.getTamanosPaquetes instead
  */
-const getTamanosPaquetes = async (req, res) => {
+const getTamanosPaquetes_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
 
@@ -7233,10 +7228,10 @@ const getTamanosPaquetes = async (req, res) => {
 };
 
 /**
- * Obtener tamaños de paquetes disponibles para un producto específico
- * GET /api/admin/productos/:id/tamanos-disponibles
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use tamanosAdminController.getTamanosDisponiblesProducto instead
  */
-const getTamanosDisponiblesProducto = async (req, res) => {
+const getTamanosDisponiblesProducto_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const productoId = parseInt(req.params.id, 10);
@@ -17263,14 +17258,14 @@ module.exports = {
   // crearProducto, // ⚠️ MIGRADO a productosAdminController.js
   // actualizarProducto, // ⚠️ MIGRADO a productosAdminController.js
   toggleProductoVisibilidad,
-  getTamanosPaquetes,
-  getTamanosDisponiblesProducto,
+  // getTamanosPaquetes, // ⚠️ MIGRADO a tamanosAdminController.js
+  // getTamanosDisponiblesProducto, // ⚠️ MIGRADO a tamanosAdminController.js
   // getCategorias, // ⚠️ MIGRADO a categoriasAdminController.js
   // crearCategoria, // ⚠️ MIGRADO a categoriasAdminController.js
   // actualizarCategoria, // ⚠️ MIGRADO a categoriasAdminController.js
   // eliminarCategoria, // ⚠️ MIGRADO a categoriasAdminController.js
-  getMedidas,
-  getMedidasExistentes,
+  // getMedidas, // ⚠️ MIGRADO a medidasAdminController.js
+  // getMedidasExistentes, // ⚠️ MIGRADO a medidasAdminController.js
   crearVariante,
   actualizarVariante,
   // crearAgente, // ⚠️ MIGRADO a agentesAdminController.js

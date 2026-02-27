@@ -39,6 +39,8 @@ const comisionesAdminController = require("../controllers/comisionesAdminControl
 const pedidosAdminController = require("../controllers/pedidosAdminController");
 const cxpAdminController = require("../controllers/cxpAdminController");
 const movimientosInventarioController = require("../controllers/movimientosInventarioController");
+const medidasAdminController = require("../controllers/medidasAdminController");
+const tamanosAdminController = require("../controllers/tamanosAdminController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -544,18 +546,20 @@ router.put(
   authorizeAdmin,
   adminController.actualizarOrdenImagenesVariante
 );
+// ✅ REFACTORED: Migrado a tamanosAdminController.js
 router.get(
   "/tamanos-paquetes",
   authenticate,
   authorizeAdmin,
-  adminController.getTamanosPaquetes
+  tamanosAdminController.getTamanosPaquetes
 );
 
+// ✅ REFACTORED: Migrado a tamanosAdminController.js
 router.get(
   "/productos/:id/tamanos-disponibles",
   authenticate,
   authorizeAdmin,
-  adminController.getTamanosDisponiblesProducto
+  tamanosAdminController.getTamanosDisponiblesProducto
 );
 // ✅ REFACTORED: Migrado a categoriasAdminController.js
 router.get(
@@ -587,17 +591,19 @@ router.delete(
   authorizeAdmin,
   categoriasAdminController.eliminarCategoria
 );
+// ✅ REFACTORED: Migrado a medidasAdminController.js
 router.get(
   "/medidas",
   authenticate,
   authorizeAdmin,
-  adminController.getMedidas
+  medidasAdminController.getMedidas
 );
+// ✅ REFACTORED: Migrado a medidasAdminController.js
 router.get(
   "/medidas-existentes",
   authenticate,
   authorizeAdminOrAgente,
-  adminController.getMedidasExistentes
+  medidasAdminController.getMedidasExistentes
 );
 
 /**
