@@ -46,6 +46,7 @@ const reportesVentasController = require("../controllers/reportesVentasControlle
 const authAdminController = require("../controllers/authAdminController");
 const inventarioResumenController = require("../controllers/inventarioResumenController");
 const exportacionInventarioController = require("../controllers/exportacionInventarioController");
+const busquedaInventarioController = require("../controllers/busquedaInventarioController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -293,18 +294,20 @@ router.get(
   productosAdminController.getAllProductos
 );
 
+// ✅ REFACTORED: Migrado a busquedaInventarioController.js
 router.get(
   "/productos/buscar",
   authenticate,
   authorizeAdmin,
-  adminController.buscarProductosAjuste
+  busquedaInventarioController.buscarProductosAjuste
 );
 
+// ✅ REFACTORED: Migrado a busquedaInventarioController.js
 router.get(
   "/productos/buscar-compra",
   authenticate,
   authorizeAdminOrAgente,
-  adminController.buscarProductosCompra
+  busquedaInventarioController.buscarProductosCompra
 );
 
 router.get(

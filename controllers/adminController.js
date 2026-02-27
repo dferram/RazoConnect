@@ -2098,7 +2098,11 @@ const crearTipoProductoAdmin = async (req, res) => {
   }
 };
 
-const buscarProductosAjuste = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use busquedaInventarioController.buscarProductosAjuste instead
+ */
+const buscarProductosAjuste_MIGRATED = async (req, res) => {
   try {
     if (!req.tenant || !req.tenant.tenant_id) {
       return res.status(500).json({
@@ -2263,7 +2267,11 @@ const buscarProductosAjuste = async (req, res) => {
   }
 };
 
-const buscarProductosCompra = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use busquedaInventarioController.buscarProductosCompra instead
+ */
+const buscarProductosCompra_MIGRATED = async (req, res) => {
   try {
     console.log("\n=== INICIO buscarProductosCompra ===");
     console.log("req.query:", JSON.stringify(req.query, null, 2));
@@ -17248,8 +17256,8 @@ module.exports = {
   // getProductoDetalleInventario, // ⚠️ MIGRADO a inventarioResumenController.js
   getAllAdministradores,
   // exportarInventarioPDF, // ⚠️ MIGRADO a exportacionInventarioController.js
-  buscarProductosAjuste,
-  buscarProductosCompra,
+  // buscarProductosAjuste, // ⚠️ MIGRADO a busquedaInventarioController.js
+  // buscarProductosCompra, // ⚠️ MIGRADO a busquedaInventarioController.js
   getProductoDetalle,
   getVariantesPendientesProducto,
   // getAllProductos, // ⚠️ MIGRADO a productosAdminController.js
