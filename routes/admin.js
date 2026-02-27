@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const adminController = require("../controllers/adminController");
 const authController = require("../controllers/authController");
 const bitacoraController = require("../controllers/bitacoraController");
 const changeRequestController = require("../controllers/changeRequestController");
@@ -55,6 +54,27 @@ const detallesProductoController = require("../controllers/detallesProductoContr
 const variantesPendientesController = require("../controllers/variantesPendientesController");
 const toggleVisibilidadController = require("../controllers/toggleVisibilidadController");
 const desvincularClienteController = require("../controllers/desvincularClienteController");
+const imagenesProductoController = require("../controllers/imagenesProductoController");
+const administradoresController = require("../controllers/administradoresController");
+const solicitudesProveedorController = require("../controllers/solicitudesProveedorController");
+const gestionOrdenCompraController = require("../controllers/gestionOrdenCompraController");
+const busquedaVariantesController = require("../controllers/busquedaVariantesController");
+const optimizacionController = require("../controllers/optimizacionController");
+const reportesOrdenesCompraController = require("../controllers/reportesOrdenesCompraController");
+const ajustesInventarioFiltradosController = require("../controllers/ajustesInventarioFiltradosController");
+const backorderController = require("../controllers/backorderController");
+const evidenciasController = require("../controllers/evidenciasController");
+const remisionesPedidosController = require("../controllers/remisionesPedidosController");
+const gestionPedidosAdminController = require("../controllers/gestionPedidosAdminController");
+const sesionesRecepcionController = require("../controllers/sesionesRecepcionController");
+const recepcionItemsController = require("../controllers/recepcionItemsController");
+const detallesOrdenCompraController = require("../controllers/detallesOrdenCompraController");
+const comprasPendientesController = require("../controllers/comprasPendientesController");
+const validacionRecepcionController = require("../controllers/validacionRecepcionController");
+const itemsOrdenCompraController = require("../controllers/itemsOrdenCompraController");
+const excelOrdenCompraController = require("../controllers/excelOrdenCompraController");
+const administradoresOCController = require("../controllers/administradoresOCController");
+const recepcionMasivaController = require("../controllers/recepcionMasivaController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -276,11 +296,12 @@ router.put(
   authorizeAdminOrAgente,
   pedidosStatusController.updatePedidoEstatus
 );
+// ✅ REFACTORED: Migrado a gestionPedidosAdminController.js
 router.put(
   "/pedidos/:id/costo-envio",
   authenticate,
   authorizeAdmin,
-  adminController.updateCostoEnvio
+  gestionPedidosAdminController.updateCostoEnvio
 );
 
 // ✅ REFACTORED: Migrado a pedidosAdminController.js
@@ -363,12 +384,13 @@ router.put(
  * @desc    Subir imagen para un producto
  * @access  Private (Admin only)
  */
+// ✅ REFACTORED: Migrado a imagenesProductoController.js
 router.post(
   "/productos/:id/imagen",
   authenticate,
   authorizeAdmin,
   upload.single("imagen"),
-  adminController.subirImagenProducto
+  imagenesProductoController.subirImagenProducto
 );
 
 router.post(
@@ -411,15 +433,16 @@ router.post(
       });
     });
   },
-  adminController.subirImagenesProductoMultiple
+  imagenesProductoController.subirImagenesProductoMultiple
 );
 
 // DELETE: Eliminar imagen de producto (físicamente de Cloudinary + BD)
+// ✅ REFACTORED: Migrado a imagenesProductoController.js
 router.delete(
   "/productos/imagenes/:id",
   authenticate,
   authorizeAdmin,
-  adminController.eliminarImagenProducto
+  imagenesProductoController.eliminarImagenProducto
 );
 
 router.post(
@@ -462,7 +485,7 @@ router.post(
       });
     });
   },
-  adminController.crearVariante
+  variantesAdminController.crearVariante
 );
 router.put(
   "/variantes/:id",
@@ -504,14 +527,14 @@ router.put(
       });
     });
   },
-  adminController.actualizarVariante
+  variantesAdminController.actualizarVariante
 );
 
 router.get(
   "/variantes/:id/imagenes",
   authenticate,
   authorizeAdmin,
-  adminController.getImagenesVariante
+  imagenesProductoController.getImagenesVariante
 );
 
 router.post(
@@ -554,14 +577,15 @@ router.post(
       });
     });
   },
-  adminController.subirImagenesVarianteMultiple
+  imagenesProductoController.subirImagenesVarianteMultiple
 );
 
+// ✅ REFACTORED: Migrado a imagenesProductoController.js
 router.put(
   "/variantes/:id/orden-imagenes",
   authenticate,
   authorizeAdmin,
-  adminController.actualizarOrdenImagenesVariante
+  imagenesProductoController.actualizarOrdenImagenesVariante
 );
 // ✅ REFACTORED: Migrado a tamanosAdminController.js
 router.get(
@@ -634,11 +658,12 @@ router.get(
   inventarioResumenController.getInventarioResumen
 );
 
+// ✅ REFACTORED: Migrado a administradoresController.js
 router.get(
   "/administradores",
   authenticate,
   authorizeAdmin,
-  adminController.getAllAdministradores
+  administradoresController.getAllAdministradores
 );
 
 // ✅ REFACTORED: Migrado a exportacionInventarioController.js
@@ -682,27 +707,30 @@ router.get(
 );
 
 // Búsqueda de variantes con autocompletado para movimientos
+// ✅ REFACTORED: Migrado a busquedaVariantesController.js
 router.get(
   "/variantes/search",
   authenticate,
   authorizeAdmin,
-  adminController.searchVariantesMovimientos
+  busquedaVariantesController.searchVariantesMovimientos
 );
 
 // Ajustes de inventario con filtros avanzados para conciliación
+// ✅ REFACTORED: Migrado a ajustesInventarioFiltradosController.js
 router.get(
   "/ajustes-inventario/filtrados",
   authenticate,
   authorizeAdmin,
-  adminController.getAjustesInventarioFiltrados
+  ajustesInventarioFiltradosController.getAjustesInventarioFiltrados
 );
 
 // Obtener tipos de ajuste disponibles
+// ✅ REFACTORED: Migrado a ajustesInventarioFiltradosController.js
 router.get(
   "/ajustes-inventario/tipos",
   authenticate,
   authorizeAdmin,
-  adminController.getTiposAjusteInventario
+  ajustesInventarioFiltradosController.getTiposAjusteInventario
 );
 
 // ✅ REFACTORED: Migrado a recepcionManualController.js
@@ -1041,19 +1069,21 @@ router.get(
  */
 const uploadEvidenciaEntrega = require("../middlewares/uploadEvidenciaEntrega");
 
+// ✅ REFACTORED: Migrado a evidenciasController.js
 router.post(
   "/pedidos/:id/evidencia",
   authenticate,
   authorizeAdmin,
   uploadEvidenciaEntrega.single("evidencia"),
-  adminController.subirEvidenciaEntrega
+  evidenciasController.subirEvidenciaEntrega
 );
 
+// ✅ REFACTORED: Migrado a remisionesPedidosController.js
 router.get(
   "/pedidos/:id/remision",
   authenticate,
   authorizeAdmin,
-  adminController.obtenerRemisionPedido
+  remisionesPedidosController.obtenerRemisionPedido
 );
 
 /**
@@ -1104,11 +1134,12 @@ router.post(
   tiposProductoController.crearTipoProductoAdmin
 );
 
+// ✅ REFACTORED: Migrado a solicitudesProveedorController.js
 router.get(
   "/proveedores/:id/solicitudes-pendientes",
   authenticate,
   authorizeAdmin,
-  adminController.getSolicitudesPendientesProveedor
+  solicitudesProveedorController.getSolicitudesPendientesProveedor
 );
 
 // ✅ REFACTORED: Migrado a reglasEmpaqueController.js
@@ -1154,23 +1185,26 @@ router.put(
 /**
  * Conteo Ciego (Blind Count) - Recepción de Órdenes de Compra
  */
+// ✅ REFACTORED: Migrado a comprasPendientesController.js
 router.get(
   "/compras/pendientes",
   authenticate,
   authorizeAdmin,
-  adminController.getComprasPendientes
+  comprasPendientesController.getComprasPendientes
 );
+// ✅ REFACTORED: Migrado a comprasPendientesController.js
 router.get(
   "/compras/:id/detalle-ciego",
   authenticate,
   authorizeAdmin,
-  adminController.getCompraDetalleCiego
+  comprasPendientesController.getCompraDetalleCiego
 );
+// ✅ REFACTORED: Migrado a validacionRecepcionController.js
 router.post(
   "/compras/:id/validar-recepcion",
   authenticate,
   authorizeAdmin,
-  adminController.validarRecepcionCompra
+  validacionRecepcionController.validarRecepcionCompra
 );
 
 router.get(
@@ -1204,65 +1238,75 @@ router.get(
   authorizeAdmin,
   ordenesCompraController.getAllOrdenesCompra
 );
+// ✅ REFACTORED: Migrado a reportesOrdenesCompraController.js
 router.get(
   "/ordenes-compra/reportes",
   authenticate,
   authorizeAdmin,
-  adminController.getOrdenesCompraReportes
+  reportesOrdenesCompraController.getOrdenesCompraReportes
 );
+// ✅ REFACTORED: Migrado a administradoresOCController.js
 router.get(
   "/ordenes-compra/administradores",
   authenticate,
   authorizeAdmin,
-  adminController.getAdministradoresOrdenesCompra
+  administradoresOCController.getAdministradoresOrdenesCompra
 );
+// ✅ REFACTORED: Migrado a detallesOrdenCompraController.js
 router.get(
   "/ordenes-compra/:id/detalles",
   authenticate,
   authorizeAdmin,
-  adminController.getDetallesOrdenCompra
+  detallesOrdenCompraController.getDetallesOrdenCompra
 );
+// ✅ REFACTORED: Migrado a detallesOrdenCompraController.js
 router.get(
   "/ordenes-compra/:id/recepcion",
   authenticate,
   authorizeAdmin,
-  adminController.getRecepcionOrdenCompra
+  detallesOrdenCompraController.getRecepcionOrdenCompra
 );
+// ✅ REFACTORED: Migrado a reportesOrdenesCompraController.js
 router.get(
   "/ordenes-compra/:id/reporte-detallado",
   authenticate,
   authorizeAdmin,
-  adminController.getOrdenCompraReporteDetallado
+  reportesOrdenesCompraController.getOrdenCompraReporteDetallado
 );
+// ✅ REFACTORED: Migrado a gestionOrdenCompraController.js
 router.get(
   "/productos/variantes-proveedor/:proveedorId",
   authenticate,
   authorizeAdmin,
-  adminController.getVariantesProveedor
+  gestionOrdenCompraController.getVariantesProveedor
 );
+// ✅ REFACTORED: Migrado a gestionOrdenCompraController.js
 router.post(
   "/ordenes-compra/:id/agregar-producto",
   authenticate,
   authorizeAdmin,
-  adminController.agregarProductoAOrdenCompra
+  gestionOrdenCompraController.agregarProductoAOrdenCompra
 );
+// ✅ REFACTORED: Migrado a gestionOrdenCompraController.js
 router.delete(
   "/ordenes-compra/:id/quitar-producto/:detalleId",
   authenticate,
   authorizeAdmin,
-  adminController.quitarProductoDeOrdenCompra
+  gestionOrdenCompraController.quitarProductoDeOrdenCompra
 );
+// ✅ REFACTORED: Migrado a backorderController.js
 router.post(
   "/ordenes-compra/:id/confirmar",
   authenticate,
   authorizeAdmin,
-  adminController.confirmarOrdenBackorder
+  backorderController.confirmarOrdenBackorder
 );
+// ✅ REFACTORED: Migrado a backorderController.js
 router.post(
   "/ordenes-compra/:id/cancelar",
   authenticate,
   authorizeAdmin,
-  adminController.cancelarOrdenBackorder
+  backorderController.cancelarOrdenBackorder
 );
 // ✅ REFACTORED: Migrado a ordenesCompraController.js
 router.post(
@@ -1271,23 +1315,26 @@ router.post(
   authorizeAdmin,
   ordenesCompraController.crearOrdenCompra
 );
+// ✅ REFACTORED: Migrado a itemsOrdenCompraController.js
 router.post(
   "/ordenes-compra/:id/items",
   authenticate,
   authorizeAdmin,
-  adminController.addItemToOrder
+  itemsOrdenCompraController.addItemToOrder
 );
+// ✅ REFACTORED: Migrado a itemsOrdenCompraController.js
 router.delete(
   "/ordenes-compra/:id/items/:detalleId",
   authenticate,
   authorizeAdmin,
-  adminController.removeItemFromOrder
+  itemsOrdenCompraController.removeItemFromOrder
 );
+// ✅ REFACTORED: Migrado a excelOrdenCompraController.js
 router.get(
   "/ordenes-compra/:id/export",
   authenticate,
   authorizeAdmin,
-  adminController.getOrderDetailsForExcel
+  excelOrdenCompraController.getOrderDetailsForExcel
 );
 router.get(
   "/ordenes-compra/:id/pdf",
@@ -1303,18 +1350,20 @@ router.post(
   recepcionInventarioController.recibirInventario
 );
 
+// ✅ REFACTORED: Migrado a recepcionItemsController.js
 router.post(
   "/ordenes-compra/:id/cerrar-sesion",
   authenticate,
   authorizeAdmin,
-  adminController.cerrarSesionRecepcion
+  recepcionItemsController.cerrarSesionRecepcion
 );
 
+// ✅ REFACTORED: Migrado a recepcionItemsController.js
 router.post(
   "/ordenes-compra/:id/recibir-item",
   authenticate,
   authorizeAdmin,
-  adminController.recibirItemOrdenCompra
+  recepcionItemsController.recibirItemOrdenCompra
 );
 
 // Reasignar orden de compra (solo super admin)
@@ -1325,56 +1374,60 @@ router.patch(
   reasignarOrdenController.reasignarOrdenCompra
 );
 
-// Session locking for inventory reception
+// ✅ REFACTORED: Migrado a sesionesRecepcionController.js
 router.post(
   "/ordenes-compra/:id/bloquear-sesion",
   authenticate,
   authorizeAdmin,
-  adminController.bloquearSesionRecepcion
+  sesionesRecepcionController.bloquearSesionRecepcion
 );
 
+// ✅ REFACTORED: Migrado a sesionesRecepcionController.js
 router.post(
   "/ordenes-compra/:id/desbloquear-sesion",
   authenticate,
   authorizeAdmin,
-  adminController.desbloquearSesionRecepcion
+  sesionesRecepcionController.desbloquearSesionRecepcion
 );
 
+// ✅ REFACTORED: Migrado a sesionesRecepcionController.js
 router.get(
   "/ordenes-compra/:id/verificar-bloqueo",
   authenticate,
   authorizeAdmin,
-  adminController.verificarBloqueoSesion
+  sesionesRecepcionController.verificarBloqueoSesion
 );
 
+// ✅ REFACTORED: Migrado a sesionesRecepcionController.js
 router.post(
   "/ordenes-compra/:id/reasignar-sesion",
   authenticate,
   authorizeSuperAdmin,
-  adminController.reasignarSesion
+  sesionesRecepcionController.reasignarSesion
 );
 
+// ✅ REFACTORED: Migrado a sesionesRecepcionController.js
 router.post(
   "/ordenes-compra/:id/forzar-liberacion",
   authenticate,
   authorizeSuperAdmin,
-  adminController.forzarLiberacionSesion
+  sesionesRecepcionController.forzarLiberacionSesion
 );
 
 router.post(
   "/recepcion-masiva",
   authenticate,
   authorizeAdmin,
-  uploadComprobante.single("archivoRemision"),
-  adminController.recepcionMasivaOrdenCompra
+  recepcionMasivaController.recepcionMasivaOrdenCompra
 );
 
+// ✅ REFACTORED: Migrado a evidenciasController.js
 router.post(
-  "/ordenes-compra/recibir/evidencia",
+  "/ordenes-compra/:id/evidencia",
   authenticate,
   authorizeAdmin,
   upload.single("evidencia"),
-  adminController.subirEvidenciaRecepcionOC
+  evidenciasController.subirEvidenciaRecepcionOC
 );
 
 /**
@@ -1444,17 +1497,19 @@ router.delete(
 /**
  * Rutas de Optimización de Compras (Consolidación)
  */
+// ✅ REFACTORED: Migrado a optimizacionController.js
 router.get(
   "/ordenes/sugerencias-optimizacion",
   authenticate,
   authorizeAdmin,
-  adminController.getSugerenciasOptimizacion
+  optimizacionController.getSugerenciasOptimizacion
 );
+// ✅ REFACTORED: Migrado a optimizacionController.js
 router.post(
   "/ordenes/crear-grupo-optimizado",
   authenticate,
   authorizeAdmin,
-  adminController.crearGrupoOptimizado
+  optimizacionController.crearGrupoOptimizado
 );
 
 /**
