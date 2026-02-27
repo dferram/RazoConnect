@@ -41,6 +41,7 @@ const cxpAdminController = require("../controllers/cxpAdminController");
 const movimientosInventarioController = require("../controllers/movimientosInventarioController");
 const medidasAdminController = require("../controllers/medidasAdminController");
 const tamanosAdminController = require("../controllers/tamanosAdminController");
+const dashboardAdminController = require("../controllers/dashboardAdminController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -235,11 +236,12 @@ router.get(
 /**
  * Dashboard y estadísticas
  */
+// ✅ REFACTORED: Migrado a dashboardAdminController.js
 router.get(
   "/dashboard-stats",
   authenticate,
   authorizeAdmin,
-  adminController.getDashboardStats
+  dashboardAdminController.getDashboardStats
 );
 
 /**

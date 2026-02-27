@@ -3959,10 +3959,10 @@ const loginAdmin = async (req, res) => {
 };
 
 /**
- * Obtener estadísticas del dashboard de administrador
- * GET /api/admin/dashboard-stats
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use dashboardAdminController.getDashboardStats instead
  */
-const getDashboardStats = async (req, res) => {
+const getDashboardStats_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     console.log('📊 [Dashboard Stats] Tenant ID:', tenant_id);
@@ -17236,7 +17236,7 @@ module.exports = {
   loginAdmin,
   verifyAdmin,
   refreshAdminToken,
-  getDashboardStats,
+  // getDashboardStats, // ⚠️ MIGRADO a dashboardAdminController.js
   // getAllPedidos, // ⚠️ MIGRADO a pedidosAdminController.js
   // updatePedidoEstatus, // ⚠️ MIGRADO a pedidosStatusController.js
   // confirmarPedido, // ⚠️ MIGRADO a pedidosAdminController.js
