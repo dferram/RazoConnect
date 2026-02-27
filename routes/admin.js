@@ -45,6 +45,7 @@ const dashboardAdminController = require("../controllers/dashboardAdminControlle
 const reportesVentasController = require("../controllers/reportesVentasController");
 const authAdminController = require("../controllers/authAdminController");
 const inventarioResumenController = require("../controllers/inventarioResumenController");
+const exportacionInventarioController = require("../controllers/exportacionInventarioController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -631,11 +632,12 @@ router.get(
   adminController.getAllAdministradores
 );
 
+// ✅ REFACTORED: Migrado a exportacionInventarioController.js
 router.get(
   "/inventario/exportar-pdf",
   authenticate,
   authorizeAdmin,
-  adminController.exportarInventarioPDF
+  exportacionInventarioController.exportarInventarioPDF
 );
 
 // ✅ REFACTORED: Migrado a inventarioResumenController.js

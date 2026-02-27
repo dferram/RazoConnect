@@ -16313,11 +16313,10 @@ const getAllAdministradores = async (req, res) => {
 };
 
 /**
- * Exportar inventario para PDF
- * GET /api/admin/inventario/exportar-pdf
- * Retorna datos de variantes con stock > 0, respetando filtros aplicados
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use exportacionInventarioController.exportarInventarioPDF instead
  */
-const exportarInventarioPDF = async (req, res) => {
+const exportarInventarioPDF_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const userId = req.user?.id;
@@ -17248,7 +17247,7 @@ module.exports = {
   // getInventarioResumen, // ⚠️ MIGRADO a inventarioResumenController.js
   // getProductoDetalleInventario, // ⚠️ MIGRADO a inventarioResumenController.js
   getAllAdministradores,
-  exportarInventarioPDF,
+  // exportarInventarioPDF, // ⚠️ MIGRADO a exportacionInventarioController.js
   buscarProductosAjuste,
   buscarProductosCompra,
   getProductoDetalle,
