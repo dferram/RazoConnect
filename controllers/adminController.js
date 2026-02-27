@@ -7929,10 +7929,10 @@ const ajustarInventario = async (req, res) => {
 };
 
 /**
- * Obtener resumen de inventario por producto maestro
- * GET /api/admin/inventario
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use inventarioResumenController.getInventarioResumen instead
  */
-const getInventarioResumen = async (req, res) => {
+const getInventarioResumen_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const userId = req.user?.id;
@@ -8111,11 +8111,10 @@ const getInventarioResumen = async (req, res) => {
 };
 
 /**
- * Obtener detalle completo de producto para modal de inventario
- * GET /api/admin/inventario/producto-detalle/:id
- * Incluye: proveedor, variantes con stock por admin, totales
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use inventarioResumenController.getProductoDetalleInventario instead
  */
-const getProductoDetalleInventario = async (req, res) => {
+const getProductoDetalleInventario_MIGRATED = async (req, res) => {
   try {
     const productoId = parseInt(req.params.id, 10);
     const userId = req.user?.id;
@@ -17246,8 +17245,8 @@ module.exports = {
   // getHistorialInventarioVariante, // ⚠️ MIGRADO a movimientosInventarioController.js
   recepcionarMercancia,
   ajustarInventario,
-  getInventarioResumen,
-  getProductoDetalleInventario,
+  // getInventarioResumen, // ⚠️ MIGRADO a inventarioResumenController.js
+  // getProductoDetalleInventario, // ⚠️ MIGRADO a inventarioResumenController.js
   getAllAdministradores,
   exportarInventarioPDF,
   buscarProductosAjuste,

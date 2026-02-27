@@ -44,6 +44,7 @@ const tamanosAdminController = require("../controllers/tamanosAdminController");
 const dashboardAdminController = require("../controllers/dashboardAdminController");
 const reportesVentasController = require("../controllers/reportesVentasController");
 const authAdminController = require("../controllers/authAdminController");
+const inventarioResumenController = require("../controllers/inventarioResumenController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -615,11 +616,12 @@ router.get(
 /**
  * Gestión de inventario
  */
+// ✅ REFACTORED: Migrado a inventarioResumenController.js
 router.get(
   "/inventario",
   authenticate,
   authorizeAdmin,
-  adminController.getInventarioResumen
+  inventarioResumenController.getInventarioResumen
 );
 
 router.get(
@@ -636,11 +638,12 @@ router.get(
   adminController.exportarInventarioPDF
 );
 
+// ✅ REFACTORED: Migrado a inventarioResumenController.js
 router.get(
   "/inventario/producto-detalle/:id",
   authenticate,
   authorizeAdmin,
-  adminController.getProductoDetalleInventario
+  inventarioResumenController.getProductoDetalleInventario
 );
 
 // router.post(
