@@ -43,6 +43,7 @@ const medidasAdminController = require("../controllers/medidasAdminController");
 const tamanosAdminController = require("../controllers/tamanosAdminController");
 const dashboardAdminController = require("../controllers/dashboardAdminController");
 const reportesVentasController = require("../controllers/reportesVentasController");
+const authAdminController = require("../controllers/authAdminController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -65,7 +66,8 @@ const {
 /**
  * Rutas de autenticación de admin (públicas)
  */
-router.post("/login", adminController.loginAdmin);
+// ✅ REFACTORED: Migrado a authAdminController.js
+router.post("/login", authAdminController.loginAdmin);
 
 /**
  * Rutas protegidas de admin (requieren autenticación y rol admin)
@@ -80,11 +82,12 @@ router.post(
 );
 
 // Admin authentication verification endpoint
+// ✅ REFACTORED: Migrado a authAdminController.js
 router.get(
   "/verify",
   authenticate,
   authorizeAdmin,
-  adminController.verifyAdmin
+  authAdminController.verifyAdmin
 );
 
 /**

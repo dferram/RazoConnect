@@ -3712,10 +3712,10 @@ const getAgenteAdminColumnsInfo = async () => {
 };
 
 /**
- * Login de administrador
- * POST /api/admin/login
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use authAdminController.loginAdmin instead
  */
-const loginAdmin = async (req, res) => {
+const loginAdmin_MIGRATED = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -5793,10 +5793,10 @@ const getMedidas_MIGRATED = async (req, res) => {
 
 
 /**
- * Verificar token de admin
- * GET /api/admin/verify
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use authAdminController.verifyAdmin instead
  */
-const verifyAdmin = async (req, res) => {
+const verifyAdmin_MIGRATED = async (req, res) => {
   try {
     // El middleware ya validó el token y agregó req.user
     const adminId = req.user.id;
@@ -5976,10 +5976,10 @@ const getAdminProfile = async (req, res) => {
 };
 
 /**
- * Renovar token de admin
- * POST /api/admin/refresh-token
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use authAdminController.refreshAdminToken instead
  */
-const refreshAdminToken = async (req, res) => {
+const refreshAdminToken_MIGRATED = async (req, res) => {
   try {
     // El middleware authenticate ya verificó el token actual
     const adminId = req.user.id;
@@ -17233,9 +17233,9 @@ const searchVariantesMovimientos = async (req, res) => {
 };
 
 module.exports = {
-  loginAdmin,
-  verifyAdmin,
-  refreshAdminToken,
+  // loginAdmin, // ⚠️ MIGRADO a authAdminController.js
+  // verifyAdmin, // ⚠️ MIGRADO a authAdminController.js
+  // refreshAdminToken, // ⚠️ MIGRADO a authAdminController.js
   // getDashboardStats, // ⚠️ MIGRADO a dashboardAdminController.js
   // getAllPedidos, // ⚠️ MIGRADO a pedidosAdminController.js
   // updatePedidoEstatus, // ⚠️ MIGRADO a pedidosStatusController.js
