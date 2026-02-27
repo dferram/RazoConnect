@@ -5178,10 +5178,10 @@ const getAgenteClientes_MIGRATED = async (req, res) => {
 };
 
 /**
- * Desvincular un cliente de su agente asignado
- * PUT /api/admin/clientes/:id/desvincular
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use desvincularClienteController.desvincularClienteDeAgente instead
  */
-const desvincularClienteDeAgente = async (req, res) => {
+const desvincularClienteDeAgente_MIGRATED = async (req, res) => {
   try {
     const clienteId = parseInt(req.params.id, 10);
 
@@ -17308,7 +17308,7 @@ module.exports = {
   // getAllClientes, // ⚠️ MIGRADO a clientesAdminController.js
   // getClienteDetalle, // ⚠️ MIGRADO a clientesAdminController.js
   // actualizarEstadoCliente, // ⚠️ MIGRADO a clientesAdminController.js
-  desvincularClienteDeAgente,
+  // desvincularClienteDeAgente, // ⚠️ MIGRADO a desvincularClienteController.js
   // actualizarCreditoCliente, // ⚠️ MIGRADO a clientesAdminController.js
   // getClienteCreditoInfo, // ⚠️ MIGRADO a clientesAdminController.js
   // getAllProveedores, // ⚠️ MIGRADO a proveedoresAdminController.js

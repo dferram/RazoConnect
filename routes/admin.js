@@ -54,6 +54,7 @@ const tiposProductoController = require("../controllers/tiposProductoController"
 const detallesProductoController = require("../controllers/detallesProductoController");
 const variantesPendientesController = require("../controllers/variantesPendientesController");
 const toggleVisibilidadController = require("../controllers/toggleVisibilidadController");
+const desvincularClienteController = require("../controllers/desvincularClienteController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -996,11 +997,12 @@ router.put(
   authorizeAdmin,
   clientesAdminController.actualizarEstadoCliente
 );
+// ✅ REFACTORED: Migrado a desvincularClienteController.js
 router.put(
   "/clientes/:id/desvincular",
   authenticate,
   authorizeAdmin,
-  adminController.desvincularClienteDeAgente
+  desvincularClienteController.desvincularClienteDeAgente
 );
 router.put(
   "/clientes/:id/reset-password",
