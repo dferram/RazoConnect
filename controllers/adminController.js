@@ -410,7 +410,11 @@ const registrarAbonoCxC_MIGRATED = async (req, res) => {
   }
 };
 
-const getCuentasPorPagar = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxpAdminController.getCuentasPorPagar instead
+ */
+const getCuentasPorPagar_MIGRATED = async (req, res) => {
   try {
     const estatus = (req.query.estatus || "").toString().trim().toUpperCase();
     const modo = (req.query.modo || "").toString().trim().toLowerCase();
@@ -509,7 +513,11 @@ const getCuentasPorPagar = async (req, res) => {
   }
 };
 
-const registrarPagoCuentaPorPagar = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxpAdminController.registrarPagoCuentaPorPagar instead
+ */
+const registrarPagoCuentaPorPagar_MIGRATED = async (req, res) => {
   const client = await db.pool.connect();
 
   try {
@@ -691,7 +699,11 @@ const registrarPagoCuentaPorPagar = async (req, res) => {
   }
 };
 
-const getResumenEstadoCuentaProveedores = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxpAdminController.getResumenEstadoCuentaProveedores instead
+ */
+const getResumenEstadoCuentaProveedores_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
 
@@ -729,7 +741,11 @@ const getResumenEstadoCuentaProveedores = async (req, res) => {
   }
 };
 
-const getEstadoCuentaProveedorMovimientos = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxpAdminController.getEstadoCuentaProveedorMovimientos instead
+ */
+const getEstadoCuentaProveedorMovimientos_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const proveedorId = Number.parseInt(req.params.id, 10);
@@ -881,7 +897,11 @@ const getEstadoCuentaProveedorMovimientos = async (req, res) => {
   }
 };
 
-const getProductosRecibidosPorCxp = async (req, res) => {
+/**
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use cxpAdminController.getProductosRecibidosPorCxp instead
+ */
+const getProductosRecibidosPorCxp_MIGRATED = async (req, res) => {
   try {
     const cxpId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(cxpId) || cxpId <= 0) {
@@ -2865,16 +2885,6 @@ const recepcionarMercancia = async (req, res) => {
 };
 
 /**
- * Movimientos (Kardex) global con filtros
- * GET /api/admin/movimientos
- * Query params: varianteId, search, tipo (ENTRADA|SALIDA), fechaInicio, fechaFin
- */
-const getMovimientosInventario = async (req, res) => {
-  try {
-    const { tenant_id } = req.tenant;
-    const where = [`mi.tenant_id = $1`];
-    const values = [tenant_id];
-
     const varianteIdRaw = req.query.varianteId;
     if (varianteIdRaw !== undefined && varianteIdRaw !== null && varianteIdRaw !== "") {
       const varianteId = Number.parseInt(varianteIdRaw, 10);
@@ -3308,10 +3318,10 @@ const getTiposAjusteInventario = async (req, res) => {
 };
 
 /**
- * Historial (Kardex) de movimientos por variante
- * GET /api/admin/inventario/:varianteId/historial
+ * ⚠️ FUNCIÓN MIGRADA A NUEVO CONTROLADOR
+ * @deprecated Use movimientosInventarioController.getHistorialInventarioVariante instead
  */
-const getHistorialInventarioVariante = async (req, res) => {
+const getHistorialInventarioVariante_MIGRATED = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const varianteId = Number.parseInt(req.params.varianteId, 10);
@@ -17237,8 +17247,8 @@ module.exports = {
   // confirmarPedido, // ⚠️ MIGRADO a pedidosAdminController.js
   updateCostoEnvio,
   // getPedidoDetalle, // ⚠️ MIGRADO a pedidosAdminController.js
-  getMovimientosInventario,
-  getHistorialInventarioVariante,
+  // getMovimientosInventario, // ⚠️ MIGRADO a movimientosInventarioController.js
+  // getHistorialInventarioVariante, // ⚠️ MIGRADO a movimientosInventarioController.js
   recepcionarMercancia,
   ajustarInventario,
   getInventarioResumen,
@@ -17309,17 +17319,17 @@ module.exports = {
   recepcionMasivaOrdenCompra,
   cerrarSesionRecepcion,
   recibirItemOrdenCompra,
-  getMovimientosInventario,
+  // getMovimientosInventario, // ⚠️ MIGRADO a movimientosInventarioController.js
   getMisVentas,
   getPedidoAllocation,
   getReporteVentasPorAdmin,
-  getCuentasPorPagar,
-  registrarPagoCuentaPorPagar,
+  // getCuentasPorPagar, // ⚠️ MIGRADO a cxpAdminController.js
+  // registrarPagoCuentaPorPagar, // ⚠️ MIGRADO a cxpAdminController.js
   // getCxcSummary, // ⚠️ MIGRADO a cxcAdminController.js
   // registrarAbonoCxC, // ⚠️ MIGRADO a cxcAdminController.js
-  getResumenEstadoCuentaProveedores,
-  getEstadoCuentaProveedorMovimientos,
-  getProductosRecibidosPorCxp,
+  // getResumenEstadoCuentaProveedores, // ⚠️ MIGRADO a cxpAdminController.js
+  // getEstadoCuentaProveedorMovimientos, // ⚠️ MIGRADO a cxpAdminController.js
+  // getProductosRecibidosPorCxp, // ⚠️ MIGRADO a cxpAdminController.js
   subirEvidenciaRecepcionOC,
   subirImagenProducto,
   subirImagenesProductoMultiple,

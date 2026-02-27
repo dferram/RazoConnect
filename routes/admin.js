@@ -37,6 +37,8 @@ const cxcAdminController = require("../controllers/cxcAdminController");
 const agentesAdminController = require("../controllers/agentesAdminController");
 const comisionesAdminController = require("../controllers/comisionesAdminController");
 const pedidosAdminController = require("../controllers/pedidosAdminController");
+const cxpAdminController = require("../controllers/cxpAdminController");
+const movimientosInventarioController = require("../controllers/movimientosInventarioController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -636,18 +638,20 @@ router.get(
 //   adminController.ajustarInventario
 // );
 
+// ✅ REFACTORED: Migrado a movimientosInventarioController.js
 router.get(
   "/inventario/:varianteId/historial",
   authenticate,
   authorizeAdmin,
-  adminController.getHistorialInventarioVariante
+  movimientosInventarioController.getHistorialInventarioVariante
 );
 
+// ✅ REFACTORED: Migrado a movimientosInventarioController.js
 router.get(
   "/movimientos",
   authenticate,
   authorizeAdmin,
-  adminController.getMovimientosInventario
+  movimientosInventarioController.getMovimientosInventario
 );
 
 // Búsqueda de variantes con autocompletado para movimientos
@@ -752,11 +756,12 @@ router.get(
   cxpController.getCxPKPIs
 );
 
+// ✅ REFACTORED: Migrado a cxpAdminController.js
 router.get(
   "/cuentas-por-pagar",
   authenticate,
   authorizeAdmin,
-  cxpController.getCuentasPorPagar
+  cxpAdminController.getCuentasPorPagar
 );
 
 router.get(
@@ -766,12 +771,13 @@ router.get(
   cxpController.getCxPDetalle
 );
 
+// ✅ REFACTORED: Migrado a cxpAdminController.js
 router.post(
   "/cuentas-por-pagar/:id/pagar",
   authenticate,
   authorizeAdmin,
   uploadComprobante.single("comprobante"),
-  cxpController.registrarPago
+  cxpAdminController.registrarPagoCuentaPorPagar
 );
 
 router.get(
@@ -891,25 +897,28 @@ router.post(
   cxcAdminController.registrarAbonoCxC
 );
 
+// ✅ REFACTORED: Migrado a cxpAdminController.js
 router.get(
   "/estado-cuenta/resumen",
   authenticate,
   authorizeAdmin,
-  adminController.getResumenEstadoCuentaProveedores
+  cxpAdminController.getResumenEstadoCuentaProveedores
 );
 
+// ✅ REFACTORED: Migrado a cxpAdminController.js
 router.get(
   "/estado-cuenta/proveedores/:id/movimientos",
   authenticate,
   authorizeAdmin,
-  adminController.getEstadoCuentaProveedorMovimientos
+  cxpAdminController.getEstadoCuentaProveedorMovimientos
 );
 
+// ✅ REFACTORED: Migrado a cxpAdminController.js
 router.get(
   "/estado-cuenta/cxp/:id/productos",
   authenticate,
   authorizeAdmin,
-  adminController.getProductosRecibidosPorCxp
+  cxpAdminController.getProductosRecibidosPorCxp
 );
 
 /**
