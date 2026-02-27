@@ -58,6 +58,7 @@ const desvincularClienteController = require("../controllers/desvincularClienteC
 const imagenesProductoController = require("../controllers/imagenesProductoController");
 const administradoresController = require("../controllers/administradoresController");
 const solicitudesProveedorController = require("../controllers/solicitudesProveedorController");
+const gestionOrdenCompraController = require("../controllers/gestionOrdenCompraController");
 const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
 const fifoRecalculationController = require("../controllers/fifoRecalculationController");
 const reasignarOrdenController = require("../controllers/reasignarOrdenController");
@@ -562,11 +563,12 @@ router.post(
   imagenesProductoController.subirImagenesVarianteMultiple
 );
 
+// ✅ REFACTORED: Migrado a imagenesProductoController.js
 router.put(
   "/variantes/:id/orden-imagenes",
   authenticate,
   authorizeAdmin,
-  adminController.actualizarOrdenImagenesVariante
+  imagenesProductoController.actualizarOrdenImagenesVariante
 );
 // ✅ REFACTORED: Migrado a tamanosAdminController.js
 router.get(
@@ -1241,23 +1243,26 @@ router.get(
   authorizeAdmin,
   adminController.getOrdenCompraReporteDetallado
 );
+// ✅ REFACTORED: Migrado a gestionOrdenCompraController.js
 router.get(
   "/productos/variantes-proveedor/:proveedorId",
   authenticate,
   authorizeAdmin,
-  adminController.getVariantesProveedor
+  gestionOrdenCompraController.getVariantesProveedor
 );
+// ✅ REFACTORED: Migrado a gestionOrdenCompraController.js
 router.post(
   "/ordenes-compra/:id/agregar-producto",
   authenticate,
   authorizeAdmin,
-  adminController.agregarProductoAOrdenCompra
+  gestionOrdenCompraController.agregarProductoAOrdenCompra
 );
+// ✅ REFACTORED: Migrado a gestionOrdenCompraController.js
 router.delete(
   "/ordenes-compra/:id/quitar-producto/:detalleId",
   authenticate,
   authorizeAdmin,
-  adminController.quitarProductoDeOrdenCompra
+  gestionOrdenCompraController.quitarProductoDeOrdenCompra
 );
 router.post(
   "/ordenes-compra/:id/confirmar",

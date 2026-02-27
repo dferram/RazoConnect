@@ -557,10 +557,118 @@ const subirImagenesVarianteMultiple = async (req, res) => {
   }
 };
 
+/**
+ * Actualizar orden de imágenes de una variante
+ * PUT /api/admin/variantes/:id/orden-imagenes
+ */
+const actualizarOrdenImagenesVariante = async (req, res) => {
+  const { id } = req.params;
+  const varianteId = Number.parseInt(id, 10);
+
+  if (!Number.isInteger(varianteId) || varianteId <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: "ID de variante inválido",
+    });
+  }
+
+  const { ordenImagenes } = req.body || {};
+  if (!Array.isArray(ordenImagenes)) {
+    return res.status(400).json({
+      success: false,
+      message: "ordenImagenes debe ser un arreglo",
+    });
+  }
+
+  const client = await db.pool.connect();
+  let transactionStarted = false;
+
+  try {
+    await client.query("BEGIN");
+    transactionStarted = true;
+
+    const varianteResult = await client.query(
+      "SELECT varianteid FROM producto_variantes WHERE varianteid = $1",
+      [varianteId]
+    );
+
+    if (!varianteResult.rows.length) {
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+      return res.status(404).json({
+        success: false,
+        message: "Variante no encontrada",
+      });
+    }
+
+    const existingImgs = await client.query(
+      `SELECT url_imagen
+       FROM producto_variante_imagenes
+       WHERE varianteid = $1`,
+      [varianteId]
+    );
+
+    const existingUrls = new Set(
+      (existingImgs.rows || [])
+        .map((r) => (r.url_imagen || "").toString().trim())
+        .filter(Boolean)
+    );
+
+    const desired = ordenImagenes
+      .map((u) => (u || "").toString().trim())
+      .filter(Boolean);
+
+    const filteredDesired = desired.filter((u) => existingUrls.has(u));
+    const missing = Array.from(existingUrls).filter(
+      (u) => !filteredDesired.includes(u)
+    );
+    const finalOrder = [...filteredDesired, ...missing];
+
+    let orden = 0;
+    for (const url of finalOrder) {
+      orden += 1;
+      await client.query(
+        `UPDATE producto_variante_imagenes
+         SET orden = $1
+         WHERE varianteid = $2 AND url_imagen = $3`,
+        [orden, varianteId, url]
+      );
+    }
+
+    const portadaUrl = finalOrder.length ? finalOrder[0] : null;
+
+    await client.query("COMMIT");
+    transactionStarted = false;
+
+    return res.json({
+      success: true,
+      message: "Orden de imágenes actualizado correctamente",
+      data: {
+        varianteId,
+        portadaUrl,
+      },
+    });
+  } catch (error) {
+    if (transactionStarted) {
+      await client.query("ROLLBACK");
+    }
+
+    console.error("❌ Error al actualizar orden de imágenes de variante:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al actualizar el orden de imágenes",
+      error: error.message,
+    });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   subirImagenProducto,
   subirImagenesProductoMultiple,
   eliminarImagenProducto,
   getImagenesVariante,
-  subirImagenesVarianteMultiple
+  subirImagenesVarianteMultiple,
+  actualizarOrdenImagenesVariante
 };
