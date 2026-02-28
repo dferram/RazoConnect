@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const authController = require("../controllers/authController");
+const clienteAuthController = require("../controllers/auth/clienteAuthController");
+const agenteAuthController = require("../controllers/auth/agenteAuthController");
+const adminAuthController = require("../controllers/auth/adminAuthController");
+const profileController = require("../controllers/auth/profileController");
 const agentesController = require("../controllers/agentesController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 const passport = require("passport");
@@ -22,7 +25,7 @@ const {
  * @body    { Nombre, Apellido, Email, Password, Telefono }
  * @security Rate limited: 3 registros por hora por IP
  */
-router.post("/registro/cliente", registerLimiter, authController.registroCliente);
+router.post("/registro/cliente", registerLimiter, clienteAuthController.registroCliente);
 
 /**
  * @route   POST /api/registro/agente
@@ -31,7 +34,7 @@ router.post("/registro/cliente", registerLimiter, authController.registroCliente
  * @body    { Nombre, Apellido, Email, Password, CodigoAgente }
  * @security Rate limited: 3 registros por hora por IP
  */
-router.post("/registro/agente", registerLimiter, authController.registroAgente);
+router.post("/registro/agente", registerLimiter, agenteAuthController.registroAgente);
 
 /**
  * @route   POST /api/login
@@ -40,14 +43,14 @@ router.post("/registro/agente", registerLimiter, authController.registroAgente);
  * @body    { Email, Password }
  * @security Rate limited: 5 intentos cada 15 minutos por IP
  */
-router.post("/login", authLimiter, authController.login);
+router.post("/login", authLimiter, clienteAuthController.login);
 
 /**
  * @route   GET /api/clientes/verify
  * @desc    Verificar token de cliente
  * @access  Private (requiere token de cliente)
  */
-router.get("/clientes/verify", authenticate, authController.verifyCliente);
+router.get("/clientes/verify", authenticate, clienteAuthController.verifyCliente);
 
 /**
  * @route   POST /api/auth/forgot-password
@@ -55,7 +58,7 @@ router.get("/clientes/verify", authenticate, authController.verifyCliente);
  * @access  Public
  * @security Rate limited: 3 intentos por hora por IP
  */
-router.post("/auth/forgot-password", passwordResetLimiter, authController.forgotPassword);
+router.post("/auth/forgot-password", passwordResetLimiter, clienteAuthController.forgotPassword);
 
 /**
  * @route   POST /api/auth/reset-password
@@ -63,7 +66,7 @@ router.post("/auth/forgot-password", passwordResetLimiter, authController.forgot
  * @access  Public
  * @security Rate limited: 3 intentos por hora por IP
  */
-router.post("/auth/reset-password", passwordResetLimiter, authController.resetPassword);
+router.post("/auth/reset-password", passwordResetLimiter, clienteAuthController.resetPassword);
 
 /**
  * @route   GET /api/auth/me
@@ -71,7 +74,7 @@ router.post("/auth/reset-password", passwordResetLimiter, authController.resetPa
  * @access  Private (requiere token válido)
  * @returns { nombre, email, rol, iniciales, tipo }
  */
-router.get("/auth/me", authenticate, authController.getCurrentUser);
+router.get("/auth/me", authenticate, profileController.getCurrentUser);
 
 router.get(
   "/auth/google",
@@ -87,7 +90,7 @@ router.get(
     session: false,
     failureRedirect: "/login.html",
   }),
-  authController.googleCallback
+  profileController.googleCallback
 );
 
 /**
@@ -97,7 +100,7 @@ router.get(
  * @body    { Nombre, Apellido, Email, Password, Rol?, adminKey }
  * @security Rate limited: 3 intentos por hora por IP
  */
-router.post("/auth/registro-admin", registerLimiter, authController.registroAdmin);
+router.post("/auth/registro-admin", registerLimiter, adminAuthController.registroAdmin);
 
 // Rutas privadas para agentes
 router.post(
