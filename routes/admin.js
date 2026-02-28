@@ -94,11 +94,15 @@ const {
   verifySuperAdmin,
 } = require("../middlewares/authMiddleware");
 
+// Rate limiter para proteger login de admin contra ataques de fuerza bruta
+const { authLimiter } = require("../middlewares/rateLimiter");
+
 /**
  * Rutas de autenticación de admin (públicas)
  */
 // ✅ REFACTORED: Migrado a authAdminController.js
-router.post("/login", authAdminController.loginAdmin);
+// 🔒 SECURITY: Rate limited a 10 intentos cada 15 minutos
+router.post("/login", authLimiter, authAdminController.loginAdmin);
 
 /**
  * Rutas protegidas de admin (requieren autenticación y rol admin)

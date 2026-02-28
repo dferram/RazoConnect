@@ -62,7 +62,7 @@ const {
   preventSQLInjection 
 } = require("./middlewares/inputValidator");
 const { 
-  apiLimiter 
+  globalLimiter 
 } = require("./middlewares/rateLimiter");
 
 // Inicializar la aplicación Express
@@ -89,11 +89,51 @@ app.use(preventParameterPollution);
 // Previene ataques DoS mediante payloads masivos
 app.use(limitPayloadSize('10mb'));
 
-// 4. CORS CONFIGURADO (mantener configuración existente)
-app.use(cors({
-  origin: true,
-  credentials: true
-})); // Habilitar CORS con credenciales
+// 4. CORS CONFIGURADO CON WHITELIST ESTRICTA
+// Lista blanca de orígenes permitidos
+const allowedOrigins = [
+  // Entornos de desarrollo local
+  'http://localhost:3000',
+  'http://localhost:8080',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:8080',
+  'http://127.0.0.1:5500', // Live Server
+  
+  // Producción Azure
+  process.env.FRONTEND_BASE_URL, // URL configurada en .env
+  'https://razoconnect-api.azurewebsites.net',
+  
+  // Dominios personalizados de producción
+  'https://razo.com.mx',
+  'https://www.razo.com.mx',
+  'https://fashionrazo.com.mx',
+  'https://www.fashionrazo.com.mx'
+].filter(Boolean); // Filtrar valores undefined/null
+
+// Configuración de CORS con validación estricta
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Permitir requests sin origin (ej: Postman, herramientas de desarrollo)
+    // SOLO en desarrollo - en producción esto debería ser más restrictivo
+    if (!origin && !isProduction) {
+      console.log('⚠️ [CORS] Request sin origin permitido (modo desarrollo)');
+      return callback(null, true);
+    }
+    
+    // Validar si el origin está en la whitelist
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log(`✅ [CORS] Origin permitido: ${origin}`);
+      callback(null, true);
+    } else {
+      console.error(`❌ [CORS] Origin bloqueado: ${origin}`);
+      callback(new Error('Bloqueado por política de CORS'));
+    }
+  },
+  credentials: true, // Habilitar cookies y headers de autenticación
+  optionsSuccessStatus: 200 // Compatibilidad con navegadores legacy
+};
+
+app.use(cors(corsOptions));
 
 // 5. PARSEO DE JSON Y URL-ENCODED
 app.use(express.json({ limit: '10mb' })); // Parsear JSON con límite de tamaño
@@ -107,9 +147,10 @@ app.use(sanitizeInputs);
 // Capa adicional de protección (las queries parametrizadas son la defensa principal)
 app.use(preventSQLInjection);
 
-// 8. RATE LIMITING GLOBAL PARA APIS
+// 8. RATE LIMITING GLOBAL DISTRIBUIDO CON REDIS
 // Protege contra ataques de fuerza bruta y DDoS
-app.use('/api', apiLimiter);
+// 300 peticiones por 15 minutos (distribuido entre todas las instancias)
+app.use('/api', globalLimiter);
 
 // ============================================================================
 // CONFIGURACIÓN DE SESIONES CON PERSISTENCIA EN POSTGRESQL Y DOMINIO DINÁMICO

@@ -1,172 +1,209 @@
 /**
- * MIDDLEWARE DE RATE LIMITING
+ * MIDDLEWARE DE RATE LIMITING DISTRIBUIDO CON AZURE REDIS
  * 
  * Protege contra ataques de fuerza bruta y DDoS limitando el número de peticiones
  * que un cliente puede hacer en un período de tiempo determinado.
  * 
  * OWASP: Previene ataques automatizados y abuso de recursos
  * 
- * Implementación sin dependencias externas usando memoria en proceso
- * Para producción con múltiples instancias, considerar Redis
+ * Configuración estricta con Azure Cache for Redis (TLS obligatorio)
  */
 
-// Store para tracking de peticiones por IP
-const requestStore = new Map();
+const { createClient } = require('redis');
+const { rateLimit } = require('express-rate-limit');
+const { RedisStore } = require('rate-limit-redis');
 
-/**
- * Limpia entradas expiradas del store cada 5 minutos
- * Previene memory leaks en aplicaciones de larga duración
- */
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, data] of requestStore.entries()) {
-    if (now > data.resetTime) {
-      requestStore.delete(key);
-    }
+// ============================================================================
+// CONFIGURACIÓN ESTRICTA DE AZURE REDIS CON TLS
+// ============================================================================
+
+// Crear cliente de Redis con credenciales de Azure
+const redisClient = createClient({
+  password: process.env.REDIS_PASSWORD,
+  socket: {
+    host: process.env.REDIS_HOST,
+    port: process.env.REDIS_PORT || 6380,
+    tls: true // OBLIGATORIO PARA AZURE
   }
-}, 5 * 60 * 1000); // Limpieza cada 5 minutos
+});
+
+// Manejo de errores (NO crashea la app, solo logea)
+redisClient.on('error', (err) => {
+  console.error('❌ [REDIS] Error en Redis:', err);
+});
+
+redisClient.on('connect', () => {
+  console.log('✅ [REDIS] Conectado a Azure Redis exitosamente');
+});
+
+redisClient.on('ready', () => {
+  console.log('✅ [REDIS] Azure Redis listo para usar');
+});
+
+redisClient.on('reconnecting', () => {
+  console.log('🔄 [REDIS] Reintentando conexión a Azure Redis...');
+});
+
+redisClient.on('end', () => {
+  console.log('⚠️  [REDIS] Conexión a Azure Redis cerrada');
+});
+
+// Conectar al servidor Redis
+redisClient.connect().catch((err) => {
+  console.error('❌ [REDIS] Error crítico al conectar:', err);
+});
+
+// ============================================================================
+// RATE LIMITERS DISTRIBUIDOS
+// ============================================================================
 
 /**
- * Crea un rate limiter configurable
- * 
- * @param {Object} options - Opciones de configuración
- * @param {number} options.windowMs - Ventana de tiempo en milisegundos (default: 15 minutos)
- * @param {number} options.max - Máximo de peticiones permitidas en la ventana (default: 100)
- * @param {string} options.message - Mensaje personalizado de error
- * @param {number} options.statusCode - Código HTTP de respuesta (default: 429)
- * @param {boolean} options.skipSuccessfulRequests - No contar peticiones exitosas (default: false)
- * @param {Function} options.keyGenerator - Función para generar la key de identificación
- * 
- * @returns {Function} Middleware de Express
+ * Rate Limiter Global para todas las rutas /api
+ * 300 peticiones por 15 minutos
  */
-const createRateLimiter = (options = {}) => {
-  const {
-    windowMs = 15 * 60 * 1000, // 15 minutos por defecto
-    max = 100, // 100 peticiones por defecto
-    message = 'Demasiadas peticiones desde esta IP, por favor intenta de nuevo más tarde.',
-    statusCode = 429,
-    skipSuccessfulRequests = false,
-    keyGenerator = (req) => {
-      // Usar IP real considerando proxies (Azure, Cloudflare, etc.)
-      return req.ip || 
-             req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
-             req.headers['x-real-ip'] || 
-             req.connection.remoteAddress || 
-             'unknown';
-    }
-  } = options;
-
-  return (req, res, next) => {
-    const key = keyGenerator(req);
-    const now = Date.now();
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 300, // 300 peticiones por ventana
+  standardHeaders: true, // Retornar info en headers `RateLimit-*`
+  legacyHeaders: false, // Deshabilitar headers `X-RateLimit-*`
+  
+  // Usar RedisStore con Azure Redis (sin fallback)
+  store: new RedisStore({
+    sendCommand: (...args) => redisClient.sendCommand(args),
+    prefix: 'rl:global:', // Prefijo para keys de Redis
+  }),
+  
+  // Mensaje de error personalizado
+  handler: (req, res) => {
+    const clientIp = req.ip || 'unknown';
+    console.warn(`⚠️  [RATE LIMIT GLOBAL] IP bloqueada: ${clientIp}`);
     
-    // Obtener o crear registro para esta key
-    let record = requestStore.get(key);
-    
-    if (!record || now > record.resetTime) {
-      // Crear nuevo registro o resetear si expiró
-      record = {
-        count: 0,
-        resetTime: now + windowMs,
-        firstRequest: now
-      };
-      requestStore.set(key, record);
-    }
-    
-    // Incrementar contador
-    record.count++;
-    
-    // Headers informativos para el cliente (OWASP recomendado)
-    res.setHeader('X-RateLimit-Limit', max);
-    res.setHeader('X-RateLimit-Remaining', Math.max(0, max - record.count));
-    res.setHeader('X-RateLimit-Reset', new Date(record.resetTime).toISOString());
-    
-    // Verificar si excedió el límite
-    if (record.count > max) {
-      const retryAfter = Math.ceil((record.resetTime - now) / 1000);
-      res.setHeader('Retry-After', retryAfter);
-      
-      // Log de seguridad para monitoreo
-      console.warn(`⚠️  [RATE LIMIT] IP bloqueada temporalmente: ${key} - ${record.count} peticiones en ${Math.ceil((now - record.firstRequest) / 1000)}s`);
-      
-      return res.status(statusCode).json({
-        success: false,
-        message,
-        retryAfter: `${retryAfter} segundos`,
-        limit: max,
-        windowMs: windowMs / 1000 / 60 + ' minutos'
-      });
-    }
-    
-    // Si skipSuccessfulRequests está activo, decrementar en respuestas exitosas
-    if (skipSuccessfulRequests) {
-      const originalSend = res.send;
-      res.send = function(data) {
-        if (res.statusCode < 400) {
-          record.count = Math.max(0, record.count - 1);
-        }
-        return originalSend.call(this, data);
-      };
-    }
-    
-    next();
-  };
-};
+    res.status(429).json({
+      success: false,
+      error: 'Demasiadas peticiones. Por favor, intenta de nuevo en 15 minutos.',
+      retryAfter: '15 minutos'
+    });
+  },
+  
+  skipSuccessfulRequests: false,
+  skipFailedRequests: false,
+});
 
 /**
- * RATE LIMITERS PRECONFIGURADOS
- * Configuraciones específicas según tipo de endpoint
+ * Rate Limiter Estricto para Autenticación
+ * 10 peticiones por 15 minutos
+ * Previene ataques de fuerza bruta en login
  */
-
-// Rate limiter estricto para autenticación (previene fuerza bruta)
-const authLimiter = createRateLimiter({
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // Solo 5 intentos de login por IP cada 15 minutos
-  message: 'Demasiados intentos de inicio de sesión. Por favor, espera 15 minutos antes de intentar nuevamente.',
-  skipSuccessfulRequests: true // No penalizar logins exitosos
+  max: 10, // Solo 10 intentos de login por IP cada 15 minutos
+  standardHeaders: true,
+  legacyHeaders: false,
+  
+  // Usar RedisStore con Azure Redis (sin fallback)
+  store: new RedisStore({
+    sendCommand: (...args) => redisClient.sendCommand(args),
+    prefix: 'rl:auth:', // Prefijo diferente para auth
+  }),
+  
+  handler: (req, res) => {
+    const clientIp = req.ip || 'unknown';
+    console.warn(`🚨 [RATE LIMIT AUTH] Intento de fuerza bruta detectado desde IP: ${clientIp}`);
+    
+    res.status(429).json({
+      error: 'Demasiados intentos de acceso. Por favor, intenta de nuevo en 15 minutos.'
+    });
+  },
+  
+  // NO penalizar logins exitosos
+  skipSuccessfulRequests: true,
 });
 
-// Rate limiter para registro de usuarios
-const registerLimiter = createRateLimiter({
+// ============================================================================
+// RATE LIMITERS LEGACY (Mantener compatibilidad con código existente)
+// ============================================================================
+
+const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
-  max: 3, // Solo 3 registros por IP cada hora
-  message: 'Demasiados intentos de registro. Por favor, espera antes de crear otra cuenta.'
+  max: 3,
+  store: new RedisStore({
+    sendCommand: (...args) => redisClient.sendCommand(args),
+    prefix: 'rl:register:',
+  }),
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'Demasiados intentos de registro. Por favor, espera antes de crear otra cuenta.'
+    });
+  }
 });
 
-// Rate limiter para recuperación de contraseña
-const passwordResetLimiter = createRateLimiter({
+const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
-  max: 3, // Solo 3 intentos por hora
-  message: 'Demasiadas solicitudes de recuperación de contraseña. Por favor, espera antes de intentar nuevamente.'
+  max: 3,
+  store: new RedisStore({
+    sendCommand: (...args) => redisClient.sendCommand(args),
+    prefix: 'rl:password:',
+  }),
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'Demasiadas solicitudes de recuperación de contraseña. Por favor, espera antes de intentar nuevamente.'
+    });
+  }
 });
 
-// Rate limiter general para APIs públicas
-const apiLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // 100 peticiones por IP cada 15 minutos
-  message: 'Demasiadas peticiones. Por favor, reduce la frecuencia de tus solicitudes.'
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  store: new RedisStore({
+    sendCommand: (...args) => redisClient.sendCommand(args),
+    prefix: 'rl:api:',
+  }),
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'Demasiadas peticiones. Por favor, reduce la frecuencia de tus solicitudes.'
+    });
+  }
 });
 
-// Rate limiter moderado para operaciones de carrito/checkout
-const checkoutLimiter = createRateLimiter({
-  windowMs: 10 * 60 * 1000, // 10 minutos
-  max: 30, // 30 operaciones cada 10 minutos
-  message: 'Demasiadas operaciones de carrito. Por favor, espera un momento antes de continuar.'
+const checkoutLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+  store: new RedisStore({
+    sendCommand: (...args) => redisClient.sendCommand(args),
+    prefix: 'rl:checkout:',
+  }),
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'Demasiadas operaciones de carrito. Por favor, espera un momento antes de continuar.'
+    });
+  }
 });
 
-// Rate limiter para endpoints administrativos
-const adminLimiter = createRateLimiter({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 200, // Límite más alto para admins legítimos
-  message: 'Límite de peticiones administrativas excedido. Por favor, espera antes de continuar.'
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  store: new RedisStore({
+    sendCommand: (...args) => redisClient.sendCommand(args),
+    prefix: 'rl:admin:',
+  }),
+  handler: (req, res) => {
+    res.status(429).json({
+      error: 'Límite de peticiones administrativas excedido. Por favor, espera antes de continuar.'
+    });
+  }
 });
+
+// ============================================================================
+// EXPORTAR LIMITERS Y UTILIDADES
+// ============================================================================
 
 module.exports = {
-  createRateLimiter,
+  globalLimiter,
   authLimiter,
   registerLimiter,
   passwordResetLimiter,
   apiLimiter,
   checkoutLimiter,
-  adminLimiter
+  adminLimiter,
+  redisClient // Exportar para uso en otros módulos si es necesario
 };
