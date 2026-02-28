@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const authController = require("../controllers/authController");
+const adminAuthController = require("../controllers/auth/adminAuthController");
 const bitacoraController = require("../controllers/bitacoraController");
 const changeRequestController = require("../controllers/changeRequestController");
 const cloudinaryController = require("../controllers/cloudinaryController");
@@ -215,7 +215,7 @@ router.post(
   "/crear-admin",
   authenticate,
   authorizeSuperAdmin,
-  authController.crearAdmin
+  adminAuthController.crearAdmin
 );
 
 router.post(
@@ -1036,7 +1036,7 @@ router.put(
   "/clientes/:id/reset-password",
   authenticate,
   authorizeAdmin,
-  authController.adminResetPassword
+  adminAuthController.adminResetPassword
 );
 // ✅ REFACTORED: Migrado a clientesAdminController.js
 router.get(
