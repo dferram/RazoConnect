@@ -34,7 +34,6 @@ async function notificarRestockFavoritos(client, varianteId, stockNuevo, tenantI
       return;
     }
 
-    console.log(`🔔 [RESTOCK] Producto ${varianteId} vuelve a tener stock. Notificando a ${favoritosResult.rows.length} cliente(s)...`);
 
     for (const favorito of favoritosResult.rows) {
       const titulo = '¡Tu producto favorito está disponible!';
@@ -65,10 +64,8 @@ async function notificarRestockFavoritos(client, varianteId, stockNuevo, tenantI
         [favorito.cliente_id, favorito.variante_id, tenantId]
       );
 
-      console.log(`   ✅ Notificación enviada a cliente ${favorito.cliente_id}`);
     }
 
-    console.log(`🎉 [RESTOCK] ${favoritosResult.rows.length} notificación(es) de restock enviada(s) exitosamente`);
 
   } catch (error) {
     console.error('❌ [RESTOCK] Error al notificar favoritos:', error);
@@ -205,10 +202,8 @@ async function registrarMovimiento(
     }
   }
 
-  console.log(`✅ [inventoryService] Movimiento registrado: ${delta > 0 ? 'ENTRADA' : 'SALIDA'} de ${Math.abs(delta)} unidades - Variante ${id} (${stockAnterior} → ${stockNuevo})`);
 
   if (delta > 0 && stockAnterior <= 0 && stockNuevo > 0) {
-    console.log(`🔔 [RESTOCK TRIGGER] Producto pasó de sin stock (${stockAnterior}) a con stock (${stockNuevo}). Verificando favoritos...`);
     await notificarRestockFavoritos(client, id, stockNuevo, tenantId);
   }
 

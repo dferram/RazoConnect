@@ -199,9 +199,6 @@ const validateSecretStrength = (varName, value) => {
  * Imprime reporte de seguridad en consola
  */
 const runSecurityAudit = () => {
-  console.log('\n🔒 ════════════════════════════════════════════════════════════');
-  console.log('🔒 AUDITORÍA DE SEGURIDAD - VARIABLES DE ENTORNO');
-  console.log('🔒 ════════════════════════════════════════════════════════════\n');
   
   const validation = validateEnvironmentVariables();
   
@@ -218,7 +215,6 @@ const runSecurityAudit = () => {
       throw new Error('Variables de entorno críticas faltantes. Revisa la configuración.');
     }
   } else {
-    console.log('✅ Todas las variables críticas están configuradas\n');
   }
   
   // Reportar advertencias
@@ -240,7 +236,6 @@ const runSecurityAudit = () => {
   }
   
   // Validar fortaleza de secretos críticos
-  console.log('🔐 VALIDACIÓN DE FORTALEZA DE SECRETOS:');
   const secretVars = ['JWT_SECRET', 'SESSION_SECRET', 'DB_PASSWORD'];
   
   secretVars.forEach(varName => {
@@ -248,14 +243,9 @@ const runSecurityAudit = () => {
     if (value) {
       const result = validateSecretStrength(varName, value);
       const icon = result.valid ? '✅' : '❌';
-      console.log(`   ${icon} ${varName}: ${result.message}`);
     }
   });
   
-  console.log('\n🔒 ════════════════════════════════════════════════════════════');
-  console.log(`🔒 ENTORNO: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔒 ESTADO: ${validation.valid && validation.weak.length === 0 ? 'SEGURO ✅' : 'REQUIERE ATENCIÓN ⚠️'}`);
-  console.log('🔒 ════════════════════════════════════════════════════════════\n');
   
   return validation;
 };

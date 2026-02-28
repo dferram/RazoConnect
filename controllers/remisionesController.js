@@ -101,7 +101,6 @@ exports.generarRemision = async (req, res) => {
       }
 
       // DEBUG: Log del stock real detectado
-      console.log(`[DEBUG] Stock real detectado para ID ${detalle.varianteid} (SKU: ${detalle.sku}): ${detalle.stock_real_variante} piezas`);
 
       const cantidadDisponible = detalle.cantidadpaquetes - detalle.ya_surtido;
       
@@ -130,7 +129,6 @@ exports.generarRemision = async (req, res) => {
       
       if (stockRealPiezas <= 0) {
         // Si el stock real es 0, este producto debe ir a backorder automáticamente
-        console.log(`⚠️ [REMISIÓN] SKU ${detalle.sku}: Stock real es 0. Moviendo a BACKORDER automáticamente.`);
         
         itemsBackorder.push({
           detalle_pedido_id: item.detalle_pedido_id,
@@ -161,7 +159,6 @@ exports.generarRemision = async (req, res) => {
         const paquetesBackorder = item.cantidad_paquetes - paquetesSurtibles;
         const piezasBackorder = paquetesBackorder * piezasPorPaquete;
         
-        console.log(`⚠️ [REMISIÓN] SKU ${detalle.sku}: Stock insuficiente. Surtiendo ${paquetesSurtibles} paquetes (${piezasRealmenteSurtidas} pzs), ${paquetesBackorder} paquetes (${piezasBackorder} pzs) a BACKORDER.`);
         
         if (paquetesSurtibles > 0) {
           const subtotalSurtido = precioUnitario * piezasRealmenteSurtidas;
@@ -195,7 +192,6 @@ exports.generarRemision = async (req, res) => {
       }
       
       // Stock suficiente: proceder normalmente
-      console.log(`✅ [REMISIÓN] SKU ${detalle.sku}: Stock suficiente (${stockRealPiezas} pzs disponibles, ${piezasSurtidas} pzs solicitadas).`);
 
       itemsValidados.push({
         detalle_pedido_id: item.detalle_pedido_id,
@@ -308,10 +304,6 @@ exports.generarRemision = async (req, res) => {
 
       if (stockUpdateResult.rows.length > 0) {
         const stockInfo = stockUpdateResult.rows[0];
-        console.log(`📦 [STOCK DEDUCTION + RESERVE RELEASE] Variante ${item.variante_id}`);
-        console.log(`   Stock físico descontado: ${item.piezas_surtidas} piezas`);
-        console.log(`   Reserva liberada: ${item.piezas_surtidas} piezas`);
-        console.log(`   Nuevo stock: ${stockInfo.cantidad}, Reservado: ${stockInfo.cantidad_reservada}`);
         
         // Registrar en log de auditoría
         await client.query(
@@ -335,7 +327,6 @@ exports.generarRemision = async (req, res) => {
           ]
         );
       } else {
-        console.log(`📦 [STOCK DEDUCTION] Descontadas ${item.piezas_surtidas} piezas de variante ${item.variante_id} del Admin ${adminIdStock}`);
       }
 
       // 6.6. Registrar movimiento en Kardex
@@ -445,11 +436,6 @@ exports.generarRemision = async (req, res) => {
           [nuevoSaldo, creditoInfo.credito_id]
         );
 
-        console.log(`💳 [CONVERSIÓN RESERVA → CARGO] Pedido #${pedido_id}`);
-        console.log(`   Saldo con reserva: $${saldoActual.toFixed(2)}`);
-        console.log(`   Reserva del pedido: -$${montoTotalPedido.toFixed(2)}`);
-        console.log(`   Cargo de remisión: +$${montoRemision.toFixed(2)}`);
-        console.log(`   Nuevo saldo: $${nuevoSaldo.toFixed(2)}`);
 
         // Registrar movimiento de AJUSTE (quitar reserva)
         await client.query(
@@ -510,7 +496,6 @@ exports.generarRemision = async (req, res) => {
           ]
         );
 
-        console.log(`✅ [CXC CREADO] Registro en cuentas_por_cobrar por $${montoRemision.toFixed(2)}`);
       }
     }
 

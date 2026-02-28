@@ -40,7 +40,6 @@ const recalcularTodosPedidos = async (req, res) => {
     const { tenant_id } = req.tenant;
     const adminId = req.user?.userId || null;
     
-    console.log(`\n🔄 [FIFO RECALCULATION] Iniciando recálculo masivo para tenant ${tenant_id}`);
     
     await client.query("BEGIN");
     
@@ -59,7 +58,6 @@ const recalcularTodosPedidos = async (req, res) => {
     
     const { rows: pedidos } = await client.query(pedidosQuery, [tenant_id]);
     
-    console.log(`📊 [FIFO] Encontrados ${pedidos.length} pedidos activos para recalcular`);
     
     let pedidosActualizados = 0;
     let detallesActualizados = 0;
@@ -68,7 +66,6 @@ const recalcularTodosPedidos = async (req, res) => {
     // PASO 2: Procesar cada pedido cronológicamente
     for (const pedido of pedidos) {
       try {
-        console.log(`\n🔍 [FIFO] Procesando Pedido #${pedido.pedidoid} (${pedido.fechapedido})`);
         
         // Obtener detalles del pedido
         const detallesQuery = `
@@ -101,9 +98,6 @@ const recalcularTodosPedidos = async (req, res) => {
           const piezasPorPaquete = parseInt(detalle.piezas_por_paquete, 10) || 1;
           const cantidadRequerida = parseInt(detalle.cantidadpaquetes, 10);
           
-          console.log(`   📦 ${detalle.nombreproducto} (SKU: ${detalle.sku})`);
-          console.log(`      Cantidad: ${cantidadRequerida} paquetes x ${piezasPorPaquete} piezas`);
-          console.log(`      Estado actual: ${detalle.esbackorder ? 'BACKORDER' : 'SURTIDO'}`);
           
           // Calcular allocation status con FIFO
           const fifoResult = await SmartStockService.calculateAllocationStatus({
@@ -116,8 +110,6 @@ const recalcularTodosPedidos = async (req, res) => {
             piezasPorPaquete: piezasPorPaquete
           });
           
-          console.log(`      FIFO Result: ${fifoResult.estatus.toUpperCase()}`);
-          console.log(`      Surtible: ${fifoResult.cantidadSurtible}/${cantidadRequerida} paquetes`);
           
           // Determinar nuevo estado
           const nuevoEsBackorder = fifoResult.cantidadSurtible === 0;
@@ -140,9 +132,7 @@ const recalcularTodosPedidos = async (req, res) => {
             );
             
             detallesActualizados++;
-            console.log(`      ✅ Actualizado: Surtido=${nuevaCantidadSurtida}, Backorder=${nuevaCantidadBackorder}`);
           } else {
-            console.log(`      ℹ️ Sin cambios necesarios`);
           }
           
           // Actualizar flags del pedido
@@ -172,7 +162,6 @@ const recalcularTodosPedidos = async (req, res) => {
             [nuevoEstatusPedido, pedidoCompletamenteSurtido, pedido.pedidoid]
           );
           
-          console.log(`   ✅ Pedido actualizado: ${pedido.estatus} → ${nuevoEstatusPedido}`);
           pedidosActualizados++;
         }
         
@@ -187,11 +176,6 @@ const recalcularTodosPedidos = async (req, res) => {
     
     await client.query("COMMIT");
     
-    console.log(`\n✅ [FIFO RECALCULATION] Completado`);
-    console.log(`   Pedidos procesados: ${pedidos.length}`);
-    console.log(`   Pedidos actualizados: ${pedidosActualizados}`);
-    console.log(`   Detalles actualizados: ${detallesActualizados}`);
-    console.log(`   Errores: ${errores.length}`);
     
     return res.status(200).json({
       success: true,
@@ -246,7 +230,6 @@ const recalcularPedidoEspecifico = async (req, res) => {
       });
     }
     
-    console.log(`\n🔄 [FIFO] Recalculando Pedido #${pedidoId}`);
     
     await client.query("BEGIN");
     

@@ -160,7 +160,6 @@ async function getStock({ varianteId, userId, userRole, tenantId }) {
       );
       
       const stock = rows.length > 0 ? parseInt(rows[0].stock, 10) : 0;
-      console.log(`✅ [SmartStock] Super Admin - Variante ${varianteId}: ${stock} unidades (GLOBAL)`);
       return stock;
     } catch (error) {
       console.error('[SmartStockService] Error al leer stock global:', error);
@@ -179,7 +178,6 @@ async function getStock({ varianteId, userId, userRole, tenantId }) {
       );
       
       const stock = rows.length > 0 ? parseInt(rows[0].stock, 10) : 0;
-      console.log(`✅ [SmartStock] Admin ${context.adminId} - Variante ${varianteId}: ${stock} unidades (LOCAL)`);
       return stock;
     } catch (error) {
       console.error('[SmartStockService] Error al leer stock de admin:', error);
@@ -198,7 +196,6 @@ async function getStock({ varianteId, userId, userRole, tenantId }) {
       );
       
       const stock = rows.length > 0 ? parseInt(rows[0].stock_total, 10) || 0 : 0;
-      console.log(`✅ [SmartStock] Cliente sin admin - Variante ${varianteId}: ${stock} unidades (STOCK AGREGADO)`);
       return stock;
     } catch (error) {
       console.error('[SmartStockService] Error al leer stock agregado:', error);
@@ -242,7 +239,6 @@ async function getBulkStock({ varianteIds, userId, userRole, tenantId }) {
         stockMap.set(parseInt(row.varianteid, 10), parseInt(row.stock, 10));
       });
       
-      console.log(`✅ [SmartStock] Super Admin - Bulk: ${rows.length} variantes (GLOBAL)`);
       return stockMap;
     } catch (error) {
       console.error('[SmartStockService] Error al leer stock global bulk:', error);
@@ -271,7 +267,6 @@ async function getBulkStock({ varianteIds, userId, userRole, tenantId }) {
         }
       });
       
-      console.log(`✅ [SmartStock] Admin ${context.adminId} - Bulk: ${rows.length} variantes (LOCAL)`);
       return stockMap;
     } catch (error) {
       console.error('[SmartStockService] Error al leer stock de admin bulk:', error);
@@ -301,7 +296,6 @@ async function getBulkStock({ varianteIds, userId, userRole, tenantId }) {
         }
       });
       
-      console.log(`✅ [SmartStock] Cliente sin admin - Bulk: ${rows.length} variantes (STOCK AGREGADO)`);
       return stockMap;
     } catch (error) {
       console.error('[SmartStockService] Error al leer stock agregado bulk:', error);
@@ -367,7 +361,6 @@ async function adjustStock({
       }
 
       const newStock = parseInt(rows[0].stock, 10);
-      console.log(`✅ [SmartStock] Super Admin ajustó variante ${varianteId}: ${cantidad > 0 ? '+' : ''}${cantidad} → ${newStock} (GLOBAL)`);
       
       return { 
         success: true, 
@@ -426,7 +419,6 @@ async function adjustStock({
         }
       }
 
-      console.log(`✅ [SmartStock] Admin ${context.adminId} ajustó variante ${varianteId}: ${cantidad > 0 ? '+' : ''}${cantidad} → ${newStock} (LOCAL)`);
       
       return { 
         success: true, 
@@ -600,7 +592,6 @@ async function calculateAllocationStatus({
       stockFisico = stockRows.length > 0 ? parseInt(stockRows[0].stock, 10) : 0;
     }
 
-    console.log(`🔍 [FIFO] Variante ${varianteId} - Stock físico: ${stockFisico} piezas`);
 
     // PASO 2: OBTENER "DEUDA" DE PEDIDOS ANTERIORES
     // Consultar todos los pedidos activos MÁS ANTIGUOS que el actual
@@ -647,7 +638,6 @@ async function calculateAllocationStatus({
     const deudaPreviaEnPiezas = parseInt(deudaRows[0]?.total_piezas_anteriores || 0, 10);
     const numPedidosAnteriores = parseInt(deudaRows[0]?.num_pedidos_anteriores || 0, 10);
 
-    console.log(`📊 [FIFO] Deuda previa: ${deudaPreviaEnPiezas} piezas (${numPedidosAnteriores} pedidos anteriores)`);
 
     // PASO 2.5: OBTENER CANTIDAD RESERVADA (HARD-RESERVE)
     let cantidadReservada = 0;
@@ -670,7 +660,6 @@ async function calculateAllocationStatus({
       cantidadReservada = reservaRows.length > 0 ? parseInt(reservaRows[0].reservada_total, 10) : 0;
     }
     
-    console.log(`🔒 [HARD-RESERVE] Variante ${varianteId} - Reservas activas: ${cantidadReservada} piezas`);
 
     // PASO 3: CÁLCULO FIFO CON HARD-RESERVE
     // Stock disponible = Stock físico - Reservas activas - Deuda previa
@@ -679,11 +668,6 @@ async function calculateAllocationStatus({
       0
     );
     
-    console.log(`📊 [DISPONIBILIDAD REAL]`);
-    console.log(`   Stock físico: ${stockFisico}`);
-    console.log(`   Reservas activas: ${cantidadReservada}`);
-    console.log(`   Deuda FIFO previa: ${deudaPreviaEnPiezas}`);
-    console.log(`   Disponible para este pedido: ${stockDisponibleParaEstePedido}`);
     
     // Convertir a paquetes
     const paquetesDisponibles = Math.floor(stockDisponibleParaEstePedido / piezasPorPaq);
@@ -702,7 +686,6 @@ async function calculateAllocationStatus({
       estatus = 'backorder';
     }
 
-    console.log(`✅ [FIFO] Resultado: ${estatus.toUpperCase()} - Surtible: ${cantidadSurtible}/${cantidadReq} paquetes`);
 
     return {
       estatus,
@@ -756,7 +739,6 @@ async function allocateStockAutomatically({
   estrategia = 'DESC' // DESC = admin con más stock primero (evita fragmentación)
 }) {
   try {
-    console.log(`\n🔍 [AutoAllocation] Iniciando para Variante ${varianteId}: ${cantidadRequerida} piezas requeridas`);
 
     // VALIDACIÓN DE PARÁMETROS
     if (!varianteId || !cantidadRequerida || !tenantId) {
@@ -797,7 +779,6 @@ async function allocateStockAutomatically({
 
     const { rows: adminsConStock } = await db.query(query, [varianteId, tenantId]);
 
-    console.log(`📊 [AutoAllocation] Encontrados ${adminsConStock.length} admins con stock disponible`);
 
     if (adminsConStock.length === 0) {
       return {
@@ -830,7 +811,6 @@ async function allocateStockAutomatically({
 
       cantidadRestante -= cantidadDeEsteAdmin;
 
-      console.log(`   ✅ Admin ${admin.admin_id} (${admin.admin_nombre}): ${cantidadDeEsteAdmin} piezas asignadas`);
     }
 
     // PASO 3: Verificar si se pudo cumplir la demanda
@@ -838,11 +818,6 @@ async function allocateStockAutomatically({
     const success = totalAsignado >= cantidadReq;
     const faltante = Math.max(cantidadReq - totalAsignado, 0);
 
-    if (success) {
-      console.log(`✅ [AutoAllocation] ÉXITO: ${totalAsignado} piezas asignadas desde ${allocations.length} admin(s)`);
-    } else {
-      console.log(`⚠️ [AutoAllocation] PARCIAL: Solo ${totalAsignado}/${cantidadReq} disponibles (faltan ${faltante})`);
-    }
 
     return {
       success,
@@ -902,7 +877,6 @@ async function adjustStockMultiAdmin({
   const dbClient = client || db;
   const results = [];
 
-  console.log(`\n💰 [MultiAdmin] Procesando ${allocations.length} allocations para Variante ${varianteId}`);
 
   try {
     for (const alloc of allocations) {
@@ -947,7 +921,6 @@ async function adjustStockMultiAdmin({
         cantidadDescontada: cantidad
       });
 
-      console.log(`   ✅ Admin ${adminId}: -${cantidad} piezas → Stock restante: ${newStock}`);
     }
 
     const allSuccess = results.every(r => r.success);
@@ -956,7 +929,6 @@ async function adjustStockMultiAdmin({
       .reduce((sum, r) => sum + r.cantidadDescontada, 0);
 
     if (allSuccess) {
-      console.log(`✅ [MultiAdmin] ÉXITO: ${totalDescontado} piezas descontadas de ${results.length} admin(s)`);
     } else {
       console.warn(`⚠️ [MultiAdmin] PARCIAL: Algunos admins fallaron`);
     }
@@ -1000,8 +972,6 @@ async function reallocateStockForVariant(varianteId, tenantId) {
   try {
     await client.query('BEGIN');
     
-    console.log(`\n🔄 [REALLOCATION] Iniciando para Variante ${varianteId}`);
-    
     // PASO 1: Obtener stock físico disponible
     const { rows: stockRows } = await client.query(
       `SELECT COALESCE(SUM(cantidad), 0) as stock_total
@@ -1011,7 +981,6 @@ async function reallocateStockForVariant(varianteId, tenantId) {
     );
     
     const stockFisico = parseInt(stockRows[0]?.stock_total || 0, 10);
-    console.log(`📦 [REALLOCATION] Stock físico total: ${stockFisico} piezas`);
     
     // PASO 2: Obtener TODOS los pedidos pendientes con esta variante
     // ORDEN CRÍTICO: VIPs primero (por fecha), luego FIFO normal
@@ -1037,7 +1006,6 @@ async function reallocateStockForVariant(varianteId, tenantId) {
       [varianteId, tenantId]
     );
     
-    console.log(`📋 [REALLOCATION] ${pedidosPendientes.length} detalles de pedido a procesar`);
     
     if (pedidosPendientes.length === 0) {
       await client.query('COMMIT');
@@ -1081,11 +1049,6 @@ async function reallocateStockForVariant(varianteId, tenantId) {
         
         cambios.push(cambio);
         
-        const emoji = nuevoEstatus ? '🔴' : '🟢';
-        const prioTag = detalle.es_prioritario ? '⭐ VIP' : '';
-        console.log(
-          `   ${emoji} Pedido #${detalle.pedidoid} ${prioTag}: ${cambio.estadoAnterior} → ${cambio.estadoNuevo}`
-        );
       }
       
       // Descontar del stock restante solo si fue surtido
@@ -1129,8 +1092,6 @@ async function reallocateStockForVariant(varianteId, tenantId) {
     }
     
     await client.query('COMMIT');
-    
-    console.log(`✅ [REALLOCATION] Completada: ${cambios.length} cambios en ${pedidosAfectados.length} pedidos`);
     
     return {
       success: true,

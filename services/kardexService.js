@@ -108,18 +108,6 @@ class KardexService {
 
       const movimiento = insertResult.rows[0];
 
-      // 5. Logging para auditoría
-      console.log(`📊 [KARDEX] Movimiento registrado:`, {
-        movimiento_id: movimiento.movimiento_id,
-        variante_id: varianteId,
-        tipo,
-        cantidad: cantidadNumerica,
-        stock_previo: stockPrevio,
-        stock_posterior: stockPosterior,
-        motivo,
-        referencia: `${referenciaTipo}-${referenciaId}`
-      });
-
       if (!useExternalTransaction) {
         await dbClient.query('COMMIT');
       }
@@ -159,7 +147,6 @@ class KardexService {
       
       await client.query('COMMIT');
       
-      console.log(`📊 [KARDEX] Lote de ${resultados.length} movimientos registrados exitosamente`);
       
       return resultados;
       

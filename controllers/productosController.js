@@ -500,7 +500,6 @@ const obtenerProductos = async (req, res) => {
           userRole: req.user.roles || ['cliente'],
           tenantId: req.tenant.tenant_id
         });
-        console.log(`✅ [ProductosController] Stock obtenido para ${varianteIds.length} variantes (Usuario: ${req.user.id})`);
       } catch (stockError) {
         console.error('[ProductosController] Error al obtener stock dinámico:', stockError);
         // Fallback: usar stock de BD si falla el servicio
@@ -969,7 +968,6 @@ const obtenerProductoPorId = async (req, res) => {
           userRole: req.user.roles || ['cliente'],
           tenantId: req.tenant.tenant_id
         });
-        console.log(`✅ [ProductosController] Stock detalle obtenido para producto ${id}`);
       } catch (stockError) {
         console.error('[ProductosController] Error al obtener stock detalle:', stockError);
       }
@@ -1288,11 +1286,6 @@ const obtenerAgentesPublicos = async (req, res) => {
 const buscarProductosAutocomplete = async (req, res) => {
   try {
     // Logging detallado para diagnosticar problemas de tenant
-    console.log('🔍 [SEARCH DEBUG] Búsqueda de productos iniciada');
-    console.log('   Path:', req.path);
-    console.log('   Query:', req.query);
-    console.log('   Tenant:', req.tenant ? `${req.tenant.nombre_cliente} (ID: ${req.tenant.tenant_id})` : 'UNDEFINED');
-    console.log('   Headers:', req.headers.host);
 
     if (!req.tenant || !req.tenant.tenant_id) {
       console.error('❌ [SEARCH ERROR] req.tenant no está disponible');
@@ -1328,10 +1321,6 @@ const buscarProductosAutocomplete = async (req, res) => {
     const searchTerm = q.trim();
     const proveedorIdNum = proveedorID ? parseInt(proveedorID, 10) : null;
     
-    console.log(`🔍 Buscando productos con término: "${searchTerm}" para tenant_id: ${tenant_id}`);
-    if (proveedorIdNum) {
-      console.log(`   🏢 Filtrado por proveedor ID: ${proveedorIdNum}`);
-    }
 
     // Construir query dinámicamente según si hay filtro de proveedor
     let whereClause = `
@@ -1399,7 +1388,6 @@ const buscarProductosAutocomplete = async (req, res) => {
 
     const result = await db.query(query, queryParams);
 
-    console.log(`✅ Búsqueda completada: ${result.rows.length} productos encontrados`);
 
     const productos = result.rows.map((row) => ({
       productoId: row.productoid,

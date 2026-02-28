@@ -39,8 +39,6 @@ async function recalcularPedidosPosteriores({
   const dbClient = client || db;
   
   try {
-    console.log(`\n🔄 [FIFO RECALC] Recalculando pedidos posteriores a ${fechaReferencia}`);
-    console.log(`   Variante: ${varianteId}, Tenant: ${tenantId}, Admin: ${adminId || 'GLOBAL'}`);
     
     // Obtener todos los pedidos activos POSTERIORES a la fecha de referencia
     const queryParams = [varianteId, fechaReferencia, tenantId];
@@ -69,7 +67,6 @@ async function recalcularPedidosPosteriores({
     const { rows: pedidos } = await dbClient.query(pedidosQuery, queryParams);
     
     if (pedidos.length === 0) {
-      console.log(`   ℹ️ No hay pedidos posteriores para recalcular`);
       return {
         success: true,
         pedidosRecalculados: 0,
@@ -77,7 +74,6 @@ async function recalcularPedidosPosteriores({
       };
     }
     
-    console.log(`   📊 Encontrados ${pedidos.length} detalles de pedidos para recalcular`);
     
     let pedidosActualizados = 0;
     const cambios = [];
@@ -137,11 +133,9 @@ async function recalcularPedidosPosteriores({
           }
         });
         
-        console.log(`   ✅ Pedido #${pedido.pedidoid} actualizado: ${estadoAnterior.cantidadSurtida}→${nuevaCantidadSurtida} surtido, ${estadoAnterior.cantidadBackorder}→${nuevaCantidadBackorder} backorder`);
       }
     }
     
-    console.log(`   ✅ Recálculo completado: ${pedidosActualizados} detalles actualizados`);
     
     return {
       success: true,
@@ -171,7 +165,6 @@ async function recalcularPedidosPosteriores({
  */
 async function onPedidoCancelado({ pedidoId, tenantId, client }) {
   try {
-    console.log(`\n🔄 [FIFO] Hook: Pedido #${pedidoId} cancelado - Recalculando pedidos posteriores`);
     
     // Obtener la fecha del pedido cancelado y sus variantes
     const { rows: pedidoInfo } = await client.query(
@@ -185,7 +178,6 @@ async function onPedidoCancelado({ pedidoId, tenantId, client }) {
     );
     
     if (pedidoInfo.length === 0) {
-      console.log(`   ⚠️ No se encontró información del pedido ${pedidoId}`);
       return { success: false };
     }
     
@@ -194,8 +186,6 @@ async function onPedidoCancelado({ pedidoId, tenantId, client }) {
     
     // Obtener variantes únicas del pedido
     const variantesUnicas = [...new Set(pedidoInfo.map(p => p.varianteid))];
-    
-    console.log(`   📦 Recalculando ${variantesUnicas.length} variantes afectadas`);
     
     // Recalcular cada variante
     for (const varianteId of variantesUnicas) {
@@ -208,7 +198,6 @@ async function onPedidoCancelado({ pedidoId, tenantId, client }) {
       });
     }
     
-    console.log(`   ✅ Recálculo post-cancelación completado`);
     return { success: true };
     
   } catch (error) {
@@ -228,7 +217,6 @@ async function onPedidoCancelado({ pedidoId, tenantId, client }) {
  */
 async function onPedidoEntregado({ pedidoId, tenantId, client }) {
   try {
-    console.log(`\n🔄 [FIFO] Hook: Pedido #${pedidoId} entregado - Recalculando backorders posteriores`);
     
     // Obtener la fecha del pedido entregado y sus variantes
     const { rows: pedidoInfo } = await client.query(
@@ -243,17 +231,14 @@ async function onPedidoEntregado({ pedidoId, tenantId, client }) {
     );
     
     if (pedidoInfo.length === 0) {
-      console.log(`   ⚠️ No se encontró información del pedido ${pedidoId}`);
       return { success: false };
     }
     
     const fechaPedido = pedidoInfo[0].fechapedido;
-    const adminId = pedidoInfo[0].admin_responsable_id;
+    const adminId = pedidoInfo[0].admin_responsable_id || null;
     
     // Obtener variantes únicas del pedido
     const variantesUnicas = [...new Set(pedidoInfo.map(p => p.varianteid))];
-    
-    console.log(`   📦 Recalculando ${variantesUnicas.length} variantes afectadas`);
     
     // Recalcular cada variante
     for (const varianteId of variantesUnicas) {
@@ -266,7 +251,6 @@ async function onPedidoEntregado({ pedidoId, tenantId, client }) {
       });
     }
     
-    console.log(`   ✅ Recálculo post-entrega completado`);
     return { success: true };
     
   } catch (error) {
@@ -286,7 +270,6 @@ async function onPedidoEntregado({ pedidoId, tenantId, client }) {
  */
 async function validarConsistenciaFIFO({ tenantId, varianteId = null }) {
   try {
-    console.log(`\n🔍 [FIFO VALIDATION] Validando consistencia FIFO`);
     
     let varianteFilter = '';
     const queryParams = [tenantId];
@@ -341,12 +324,6 @@ async function validarConsistenciaFIFO({ tenantId, varianteId = null }) {
     const { rows: inconsistencias } = await db.query(inconsistenciasQuery, queryParams);
     
     if (inconsistencias.length > 0) {
-      console.log(`   ⚠️ Encontradas ${inconsistencias.length} inconsistencias FIFO`);
-      
-      for (const inc of inconsistencias) {
-        console.log(`   ❌ ${inc.nombreproducto} (${inc.sku}): ${inc.total_surtido} surtido > ${inc.stock_disponible} disponible`);
-      }
-      
       return {
         valido: false,
         inconsistencias: inconsistencias.map(inc => ({
@@ -362,7 +339,6 @@ async function validarConsistenciaFIFO({ tenantId, varianteId = null }) {
       };
     }
     
-    console.log(`   ✅ Validación FIFO exitosa - No se encontraron inconsistencias`);
     
     return {
       valido: true,

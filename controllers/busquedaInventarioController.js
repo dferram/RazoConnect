@@ -77,7 +77,6 @@ const buscarProductosAjuste = async (req, res) => {
 
     const result = await db.query(query, [searchPattern, tenant_id]);
     
-    console.log(`🔍 [BÚSQUEDA AJUSTE] Resultados encontrados: ${result.rows.length}`);
 
     const varianteIds = result.rows.map(row => row.varianteid);
     const productoIds = [...new Set(result.rows.map(row => row.productoid))];
@@ -120,12 +119,6 @@ const buscarProductosAjuste = async (req, res) => {
       result.rows.forEach(row => {
         const stock = stockMap.get(row.varianteid) || 0;
         const tamanos = tamanosPorProducto.get(row.productoid) || [];
-        console.log(`   📦 ${row.nombreproducto} - ${row.sku}`);
-        console.log(`      Color: ${row.color_nombre || 'Sin color'}`);
-        console.log(`      Dimensiones: ${row.dimensiones || 'N/A'}`);
-        console.log(`      Stock disponible: ${stock} piezas`);
-        console.log(`      Paquetes disponibles: ${tamanos.map(t => `${t.cantidad} pzs`).join(', ') || 'Ninguno'}`);
-        console.log(`      Imagen final: ${row.imagen_url ? '✅ SÍ' : '❌ NO'}`);
       });
     }
 
@@ -178,8 +171,6 @@ const buscarProductosAjuste = async (req, res) => {
 
 const buscarProductosCompra = async (req, res) => {
   try {
-    console.log("\n=== INICIO buscarProductosCompra ===");
-    console.log("req.query:", JSON.stringify(req.query, null, 2));
     
     // Validación defensiva: verificar que req.tenant existe
     if (!req.tenant || !req.tenant.tenant_id) {
@@ -191,7 +182,6 @@ const buscarProductosCompra = async (req, res) => {
     }
     
     const { tenant_id } = req.tenant;
-    console.log("tenant_id:", tenant_id);
     
     const qRaw = (req.query.q || "").toString().trim();
     const allRaw = (req.query.all || "").toString().trim().toLowerCase();
@@ -281,10 +271,6 @@ const buscarProductosCompra = async (req, res) => {
 
     const limit = all ? 5000 : 50;
 
-    console.log("\n=== QUERY PARAMS ===");
-    console.log("whereParts:", whereParts);
-    console.log("params:", params);
-    console.log("limit:", limit);
 
     const sqlQuery = `SELECT
          pv.varianteid,
@@ -334,13 +320,9 @@ const buscarProductosCompra = async (req, res) => {
        ORDER BY p.nombreproducto ASC, pv.varianteid ASC
        LIMIT ${limit}`;
 
-    console.log("\n=== SQL QUERY ===");
-    console.log(sqlQuery);
 
     const result = await db.query(sqlQuery, params);
     
-    console.log("\n=== QUERY RESULT ===");
-    console.log("Rows returned:", result.rows?.length || 0);
 
     const resultados = (result.rows || []).map((row) => {
       const nombreProducto = (row.nombreproducto || "").toString().trim();

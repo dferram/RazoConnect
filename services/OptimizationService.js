@@ -194,9 +194,6 @@ class OptimizationService {
 
       await client.query('COMMIT');
 
-      console.log(`✅ [OptimizationService] Grupo consolidado creado: ${grupoId} con ${updateResult.rowCount} órdenes`);
-      console.log(`   📋 Órdenes agrupadas: ${ordenesIds.join(', ')}`);
-      console.log(`   🏢 Proveedor ID: ${proveedor_id}`);
 
       return {
         grupoId,

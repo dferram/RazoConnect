@@ -590,10 +590,6 @@ async function aprobarDevolucion(req, res) {
     const items = itemsQuery.rows;
     const adminResponsable = devolucion.admin_responsable_id || adminId;
 
-    console.log(`\n🔄 [RMA] Procesando aprobación de devolución ${devolucionId}`);
-    console.log(`   Cliente: ${devolucion.cliente_nombre} ${devolucion.cliente_apellido}`);
-    console.log(`   Monto: $${devolucion.monto_total}`);
-    console.log(`   Items: ${items.length}`);
 
     // PASO 3: PROCESAR INVENTARIO
     for (const item of items) {
@@ -615,7 +611,6 @@ async function aprobarDevolucion(req, res) {
       const reservaActiva = parseInt(reservaCheck.rows[0]?.reserva_total || 0, 10);
       
       if (reservaActiva > 0) {
-        console.log(`   🔓 [DEVOLUCION] Detectada reserva residual de ${reservaActiva} piezas - liberando`);
         
         // Liberar reserva residual (no debería ocurrir en flujo normal)
         await client.query(
@@ -631,7 +626,6 @@ async function aprobarDevolucion(req, res) {
 
       if (condicion_producto === 'SELLADO') {
         // Producto en buen estado: Regresar a stock vendible
-        console.log(`   ✅ Reintegrando ${piezas_totales} piezas de ${sku} a stock vendible`);
         
         const ajusteResult = await SmartStockService.adjustStock({
           varianteId: variante_id,
@@ -648,7 +642,6 @@ async function aprobarDevolucion(req, res) {
         }
       } else {
         // Producto dañado/abierto: Registrar como merma
-        console.log(`   ⚠️ Registrando ${piezas_totales} piezas de ${sku} como MERMA (${condicion_producto})`);
         
         await client.query(
           `INSERT INTO inventario_mermas 
@@ -671,7 +664,6 @@ async function aprobarDevolucion(req, res) {
 
     if (devolucion.es_credito) {
       // CASO A: Pedido a crédito - Generar Nota de Crédito
-      console.log(`   💳 Generando Nota de Crédito por $${montoDevolucion}`);
       
       await client.query(
         `INSERT INTO cuentas_por_cobrar 
@@ -722,7 +714,6 @@ async function aprobarDevolucion(req, res) {
 
     } else if (devolucion.pagado) {
       // CASO B: Pedido pagado - Crear Saldo a Favor
-      console.log(`   💰 Creando Saldo a Favor por $${montoDevolucion}`);
       
       // Verificar si ya tiene saldo a favor
       const saldoQuery = await client.query(
@@ -773,7 +764,6 @@ async function aprobarDevolucion(req, res) {
 
     } else {
       // CASO C: Pedido pendiente de pago - Ajustar montos del pedido
-      console.log(`   📝 Ajustando montos del pedido (pendiente de pago)`);
       
       await client.query(
         `UPDATE pedidos
@@ -809,7 +799,6 @@ async function aprobarDevolucion(req, res) {
 
     await client.query('COMMIT');
 
-    console.log(`✅ [RMA] Devolución ${devolucionId} aprobada exitosamente\n`);
 
     // Enviar email al cliente
     try {
@@ -912,7 +901,6 @@ async function rechazarDevolucion(req, res) {
 
     await client.query('COMMIT');
 
-    console.log(`❌ [RMA] Devolución ${devolucionId} rechazada por Admin ${adminId}`);
 
     // Enviar email al cliente
     try {

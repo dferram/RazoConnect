@@ -6,10 +6,6 @@ async function ajustarPedido(req, res) {
   let transactionStarted = false;
 
   try {
-    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🔧 [AJUSTE PEDIDO] Inicio de ajuste');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
     if (!req.tenant || !req.tenant.tenant_id) {
       client.release();
       return res.status(500).json({
@@ -22,10 +18,6 @@ async function ajustarPedido(req, res) {
     const pedidoId = parseInt(req.params.id, 10);
     const { itemsAgregar = [], itemsEliminar = [], itemsModificar = [] } = req.body;
 
-    console.log(`📋 Pedido ID: ${pedidoId}`);
-    console.log(`📦 Items a agregar: ${itemsAgregar.length}`);
-    console.log(`🗑️  Items a eliminar: ${itemsEliminar.length}`);
-    console.log(`✏️  Items a modificar: ${itemsModificar.length}`);
 
     // Validación de datos de entrada
     if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
@@ -250,7 +242,6 @@ async function ajustarPedido(req, res) {
         );
 
         if (nuevoTamanoResult.rows.length === 0) {
-          console.error(`Tamaño ${nuevoTamanoId} no encontrado`);
           continue;
         }
 
@@ -258,16 +249,6 @@ async function ajustarPedido(req, res) {
         const precioBase = parseFloat(detalle.precioofertaunitario || detalle.precio_unitario_variante);
         nuevoPrecioPorPaquete = parseFloat((precioBase * tamanoPiezas).toFixed(2));
         nuevoPrecioUnitario = precioBase;
-
-        console.log(`📦 Cambio de tamaño detectado:`, {
-          detalleId,
-          tamanoAnterior,
-          nuevoTamanoId,
-          piezasAnterior: detalle.tamano_piezas,
-          piezasNuevo: tamanoPiezas,
-          precioAnterior: detalle.precioporpaquete,
-          precioNuevo: nuevoPrecioPorPaquete
-        });
       }
 
       const diferenciaPiezas = diferenciaCantidad * tamanoPiezas;
@@ -283,7 +264,6 @@ async function ajustarPedido(req, res) {
       if (!detalle.esbackorder) {
         if (diferenciaCantidad > 0) {
           const piezasNecesarias = diferenciaPiezas;
-          console.log(`📉 Descontando ${piezasNecesarias} piezas de variante ${detalle.varianteid}`);
           const resultado = await SmartStockService.adjustStock({
             varianteId: detalle.varianteid,
             cantidad: -piezasNecesarias,
@@ -301,10 +281,8 @@ async function ajustarPedido(req, res) {
               message: `Stock insuficiente para ${detalle.nombreproducto} (${detalle.sku}). ${resultado.message || 'No hay suficiente inventario disponible'}`
             });
           }
-          console.log(`✅ Stock ajustado: ${resultado.oldStock} → ${resultado.newStock}`);
         } else if (diferenciaCantidad < 0) {
           const piezasDevolver = Math.abs(diferenciaPiezas);
-          console.log(`📈 Devolviendo ${piezasDevolver} piezas a variante ${detalle.varianteid}`);
           const resultado = await SmartStockService.adjustStock({
             varianteId: detalle.varianteid,
             cantidad: +piezasDevolver,
@@ -316,7 +294,6 @@ async function ajustarPedido(req, res) {
           if (!resultado.success) {
             console.error(`⚠️ Error al devolver stock: ${resultado.message}`);
           } else {
-            console.log(`✅ Stock devuelto: ${resultado.oldStock} → ${resultado.newStock}`);
           }
         }
       }
@@ -396,7 +373,6 @@ async function ajustarPedido(req, res) {
       const tamanoPiezas = parseInt(variante.tamano_piezas, 10) || 1;
       const piezasNecesarias = cantidad * tamanoPiezas;
 
-      console.log(`📦 Agregando producto: ${variante.nombreproducto} - ${piezasNecesarias} piezas`);
 
       // ❌ DESHABILITADO: Stock NO se descuenta al agregar producto
       // ✅ NUEVO FLUJO: El stock se deduce SOLO cuando el pedido cambia a "Confirmado"
@@ -420,7 +396,6 @@ async function ajustarPedido(req, res) {
           message: `Stock insuficiente para ${variante.nombreproducto} (${variante.sku}). ${resultado.message || 'No hay suficiente inventario disponible'}`
         });
       }
-      console.log(`✅ Stock descontado: ${resultado.oldStock} → ${resultado.newStock}`);
       FIN CÓDIGO COMENTADO */
       
       console.log(`ℹ️ [Pedido ${pedidoId}] Stock NO deducido al agregar - se deducirá al confirmar`)

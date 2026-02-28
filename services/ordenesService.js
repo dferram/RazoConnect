@@ -305,7 +305,6 @@ async function generarBackorderProveedor(
     if (ordenAbiertalResult.rows.length > 0) {
       // Consolidar en orden existente
       ordenCompraID = ordenAbiertalResult.rows[0].ordencompraid;
-      console.log(`🔄 [CONSOLIDACIÓN] Backorder consolidado en OC #${ordenCompraID} existente`);
     } else {
       // Crear nueva orden de compra
       esOrdenNueva = true;
@@ -324,7 +323,6 @@ async function generarBackorderProveedor(
         [proveedorID, usuarioCreadorId, tenantId, adminCreadorId]
       );
       ordenCompraID = nuevaOrdenResult.rows[0].ordencompraid;
-      console.log(`✨ [NUEVA OC] Orden de compra #${ordenCompraID} creada para proveedor ${proveedorID}`);
     }
 
     // PASO 3: SMART REORDERING - Normalizar cantidad según regla de empaque
@@ -363,7 +361,6 @@ async function generarBackorderProveedor(
       );
       detalleOrdenID = updateResult.rows[0].detalleoc_id;
       cantidadTotal = updateResult.rows[0].cantidadsolicitada;
-      console.log(`📦 [ACTUALIZADO] Detalle #${detalleOrdenID} actualizado (+${cantidadNormalizada} piezas)`);
     } else {
       // Insertar nuevo detalle con pedido_original_id
       const insertResult = await client.query(
@@ -375,7 +372,6 @@ async function generarBackorderProveedor(
       );
       detalleOrdenID = insertResult.rows[0].detalleoc_id;
       cantidadTotal = insertResult.rows[0].cantidadsolicitada;
-      console.log(`➕ [NUEVO DETALLE] Detalle #${detalleOrdenID} creado (Pedido #${pedidoOrigenId})`);
     }
 
     return {
@@ -470,7 +466,6 @@ async function generarBackordersAgrupados(
       if (ordenAbiertalResult.rows.length > 0) {
         // Consolidar en orden existente
         ordenCompraID = ordenAbiertalResult.rows[0].ordencompraid;
-        console.log(`🔄 [CONSOLIDACIÓN AGRUPADA] Backorders consolidados en OC #${ordenCompraID} para proveedor ${proveedorID}`);
       } else {
         // Crear nueva orden de compra
         esOrdenNueva = true;
@@ -489,7 +484,6 @@ async function generarBackordersAgrupados(
           [proveedorID, usuarioCreadorId, tenantId, adminCreadorId]
         );
         ordenCompraID = nuevaOrdenResult.rows[0].ordencompraid;
-        console.log(`✨ [NUEVA OC AGRUPADA] Orden #${ordenCompraID} creada para proveedor ${proveedorID}`);
       }
       
       const detallesInsertados = [];

@@ -42,13 +42,11 @@ function enableTenantVerification() {
     return originalQuery.call(this, text, params);
   };
   
-  console.log('🔍 Tenant Verification ENABLED - Monitoreando queries sin filtro de tenant_id');
 }
 
 function disableTenantVerification() {
   const db = require('../db');
   db.query = originalQuery;
-  console.log('🔍 Tenant Verification DISABLED');
 }
 
 function getQueryLog() {
@@ -61,28 +59,17 @@ function clearQueryLog() {
 
 function printSuspiciousQueries() {
   if (queryLog.length === 0) {
-    console.log('✅ No se detectaron queries sospechosas sin filtro de tenant_id');
     return;
   }
   
-  console.log('\n⚠️  QUERIES SOSPECHOSAS DETECTADAS:');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  
   queryLog.forEach((log, index) => {
-    console.log(`\n${index + 1}. ${log.timestamp}`);
-    console.log(`   Query: ${log.query}`);
-    console.log(`   Params:`, log.params);
   });
-  
-  console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 }
 
 // Middleware Express para verificar tenant en cada request
 function tenantVerificationMiddleware(req, res, next) {
   if (!req.tenant || !req.tenant.tenant_id) {
-    console.warn('⚠️  Request sin tenant detectado:', req.method, req.path);
   } else {
-    console.log(`✅ Request con tenant_id: ${req.tenant.tenant_id} (${req.tenant.nombre_cliente})`);
   }
   next();
 }

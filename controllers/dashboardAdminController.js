@@ -18,14 +18,12 @@ const db = require('../db');
 const getDashboardStats = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
-    console.log('📊 [Dashboard Stats] Tenant ID:', tenant_id);
 
     // Obtener total de pedidos
     const pedidosResult = await db.query(
       `SELECT COUNT(*) as total FROM pedidos WHERE tenant_id = $1`,
       [tenant_id]
     );
-    console.log('📦 Total Pedidos:', pedidosResult.rows[0]);
 
     // Obtener pedidos pendientes (no confirmados, no entregados, no cancelados)
     const pedidosPendientesResult = await db.query(
@@ -34,7 +32,6 @@ const getDashboardStats = async (req, res) => {
        AND estatus NOT IN ('Confirmado', 'Entregado', 'Cancelado')`,
       [tenant_id]
     );
-    console.log('⏳ Pedidos Pendientes:', pedidosPendientesResult.rows[0]);
 
     // Obtener pedidos entregados
     const pedidosEntregadosResult = await db.query(
@@ -42,7 +39,6 @@ const getDashboardStats = async (req, res) => {
        WHERE tenant_id = $1 AND estatus = 'Entregado'`,
       [tenant_id]
     );
-    console.log('✅ Pedidos Entregados:', pedidosEntregadosResult.rows[0]);
 
     // Obtener total de clientes activos
     const clientesResult = await db.query(
@@ -50,7 +46,6 @@ const getDashboardStats = async (req, res) => {
        WHERE tenant_id = $1 AND activo = TRUE`,
       [tenant_id]
     );
-    console.log('👥 Clientes Activos:', clientesResult.rows[0]);
 
     // Obtener agentes activos
     const agentesResult = await db.query(
@@ -58,7 +53,6 @@ const getDashboardStats = async (req, res) => {
        WHERE tenant_id = $1 AND activo = TRUE`,
       [tenant_id]
     );
-    console.log('💼 Agentes Activos:', agentesResult.rows[0]);
 
     // Obtener venta total (suma de todos los pedidos no cancelados)
     const ventaTotalResult = await db.query(
@@ -68,7 +62,6 @@ const getDashboardStats = async (req, res) => {
        AND estatus NOT IN ('Cancelado')`,
       [tenant_id]
     );
-    console.log('💵 Venta Total:', ventaTotalResult.rows[0]);
 
     // Calcular utilidad total (precio - costo) de todos los pedidos no cancelados
     const utilidadTotalResult = await db.query(
@@ -82,7 +75,6 @@ const getDashboardStats = async (req, res) => {
        AND ped.estatus NOT IN ('Cancelado')`,
       [tenant_id]
     );
-    console.log('💰 Utilidad Total:', utilidadTotalResult.rows[0]);
 
     // Obtener comisiones pendientes
     const comisionesPendientesResult = await db.query(
@@ -91,7 +83,6 @@ const getDashboardStats = async (req, res) => {
        WHERE tenant_id = $1 AND estatus = 'Pendiente'`,
       [tenant_id]
     );
-    console.log('💳 Comisiones Pendientes:', comisionesPendientesResult.rows[0]);
 
     // ✅ SMART STOCK: Calcular valor de inventario usando stock_admin (por administrador)
     const userId = req.user?.id;
@@ -114,7 +105,6 @@ const getDashboardStats = async (req, res) => {
          AND pv.stock > 0`,
         [tenant_id]
       );
-      console.log('📦 [Dashboard] Super Admin - Valor Inventario GLOBAL:', valorInventarioResult.rows[0]);
     } else {
       // Admin regular: Ver valor de inventario de SU STOCK (stock_admin)
       valorInventarioResult = await db.query(
@@ -130,7 +120,6 @@ const getDashboardStats = async (req, res) => {
          AND sa.cantidad > 0`,
         [tenant_id, userId]
       );
-      console.log(`📦 [Dashboard] Admin ${userId} - Valor Inventario LOCAL:`, valorInventarioResult.rows[0]);
     }
 
     const responseData = {
@@ -147,7 +136,6 @@ const getDashboardStats = async (req, res) => {
       isSuperAdmin // ✅ Indicar al frontend si es Super Admin
     };
 
-    console.log('📤 Response Data:', responseData);
 
     res.json({
       success: true,

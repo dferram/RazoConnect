@@ -291,10 +291,6 @@ const crearPedido = async (req, res) => {
     }
 
     // 🔍 DIAGNOSTIC: Log raw query results to detect duplicates
-    console.log(`\n🛒 [CART ITEMS] Retrieved ${itemsResult.rows.length} rows from database`);
-    itemsResult.rows.forEach((row, idx) => {
-      console.log(`   Row ${idx + 1}: ItemID=${row.itemid}, VarianteID=${row.varianteid}, TamanoID=${row.tamanoid}, Cantidad=${row.cantidad}`);
-    });
 
     // 🚨 CRITICAL FIX: Deduplicate items by ItemID to prevent double insertion
     // This prevents the bug where the same cart item appears twice due to JOIN issues
@@ -317,7 +313,6 @@ const crearPedido = async (req, res) => {
       };
     });
 
-    console.log(`✅ [CART ITEMS] After deduplication: ${items.length} unique items`);
 
     // Validar que todos los items tengan tamano_valor válido
     const itemsInvalidos = items.filter(item => !item.tamano_valor || item.tamano_valor <= 0);
@@ -381,7 +376,6 @@ const crearPedido = async (req, res) => {
             userRole: req.user.roles || ['cliente'],
             tenantId: tenant_id
           });
-          console.log(`✅ [SmartStock] Stock obtenido para ${masterVarianteIds.length} variantes maestras (Cliente: ${clienteId})`);
         } catch (stockError) {
           console.error('[PedidosController] Error al obtener stock dinámico:', stockError);
           // Si falla SmartStock, rechazar pedido (seguro)
@@ -396,7 +390,6 @@ const crearPedido = async (req, res) => {
       }
 
       // CRITICAL: Log stock source verification
-      console.log('🔍 [STOCK AUDIT] Stock dinámico cargado según rol del cliente:');
       masterVariantsResult.rows.forEach(row => {
         const stockValue = stockMapBulk.get(row.varianteid) || 0;
         if (stockValue < 0) {
@@ -404,7 +397,6 @@ const crearPedido = async (req, res) => {
         } else if (stockValue === 0) {
           console.warn(`⚠️ [STOCK WARNING] Variante ${row.varianteid} tiene stock CERO`);
         }
-        console.log(`  - Variante ID ${row.varianteid} (Producto ${row.productoid}): ${stockValue} piezas`);
       });
 
       masterVariantsMap = new Map(
@@ -453,9 +445,6 @@ const crearPedido = async (req, res) => {
       const stockActual = masterInfo && typeof masterInfo.stock === "number" ? masterInfo.stock : 0;
 
       // CRITICAL: Log stock calculation for each item
-      console.log(`📦 [ITEM ${index + 1}] ${item.nombreproducto} (SKU: ${item.sku})`);
-      console.log(`   Stock físico disponible: ${stockActual} piezas`);
-      console.log(`   Cantidad solicitada: ${item.cantidad} paquetes (${item.cantidad * tamanoValor} piezas)`);
 
       // 🚀 FIFO ALLOCATION: Calcular disponibilidad real considerando pedidos anteriores
       const fifoAllocation = await SmartStockService.calculateAllocationStatus({
@@ -468,10 +457,6 @@ const crearPedido = async (req, res) => {
         piezasPorPaquete: tamanoValor
       });
 
-      console.log(`   🔍 [FIFO] Estatus: ${fifoAllocation.estatus.toUpperCase()}`);
-      console.log(`   🔍 [FIFO] Deuda previa: ${fifoAllocation.deudaPrevia} piezas (${fifoAllocation.numPedidosAnteriores} pedidos)`);
-      console.log(`   🔍 [FIFO] Stock disponible para este pedido: ${fifoAllocation.stockDisponible} piezas`);
-      console.log(`   🔍 [FIFO] Puede surtir: ${fifoAllocation.cantidadSurtible}/${item.cantidad} paquetes`);
 
       // Usar el resultado FIFO para crear el split
       const multiploBackorder = multiploPorKey.get(
@@ -681,11 +666,6 @@ const crearPedido = async (req, res) => {
         item.descuentoAplicado = itemCalculado.descuentoAplicado;
       });
 
-      console.log(`✅ [CUPÓN APLICADO] Código: ${cupon.codigo}`);
-      console.log(`   Total bruto: $${calculoConCupon.totalBruto.toFixed(2)}`);
-      console.log(`   Descuento: -$${montoDescuento.toFixed(2)}`);
-      console.log(`   Total final: $${montoTotalFinal.toFixed(2)}`);
-      console.log(`   Factor descuento: ${calculoConCupon.factorDescuento}`);
 
       await client.query(
         "UPDATE cupones SET usos_actuales = usos_actuales + 1 WHERE cuponid = $1",
@@ -978,11 +958,6 @@ const crearPedido = async (req, res) => {
         ]
       );
 
-      console.log(`💳 [CRÉDITO RESERVADO] Pedido #${pedidoId}`);
-      console.log(`   Saldo anterior: $${saldoAnterior.toFixed(2)}`);
-      console.log(`   Monto reservado: $${montoReservar.toFixed(2)}`);
-      console.log(`   Nuevo saldo: $${nuevoSaldo.toFixed(2)}`);
-      console.log(`   ⚠️ CXC NO creado aún - se creará al confirmar remisión`);
 
       return {
         creditoId: info.creditoId,
@@ -1003,11 +978,9 @@ const crearPedido = async (req, res) => {
     let pedidoTieneBackorder = false;
     
     // NUEVO: Iterar sobre itemsParaCalculadora que ya tiene precios prorrateados
-    console.log(`\n🔄 [PROCESSING] Starting loop for ${items.length} items`);
     for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
       const item = items[itemIndex];
       const itemCalculado = itemsParaCalculadora[itemIndex];
-      console.log(`\n📦 [ITEM ${itemIndex + 1}/${items.length}] Processing: ${item.nombreproducto} (ItemID: ${item.itemid})`);
       const tamanoValor =
         item.tamano_valor !== null ? parseInt(item.tamano_valor, 10) : 0;
 
@@ -1056,7 +1029,6 @@ const crearPedido = async (req, res) => {
       const piezasSurtidas = cantidadSurtida * tamanoValor;
       const piezasBackorder = cantidadBackorder * tamanoValor;
 
-      console.log(`   ✅ Split calculado: ${cantidadSurtida} surtido + ${cantidadBackorder} backorder`);
 
       const piezasSolicitadasOriginal = tamanoValor * cantidadRequerida;
       const piezasTotalesCobrar = tamanoValor * split.cantidadTotalCobrar;
@@ -1071,11 +1043,6 @@ const crearPedido = async (req, res) => {
         ? parseFloat((precioPorPaquete * cantidadBackorder).toFixed(2))
         : 0;
       
-      console.log(`💰 [PRECIOS] Item: ${item.sku}`);
-      console.log(`   Precio paquete sin descuento: $${precioPorPaqueteSinDescuento.toFixed(2)}`);
-      console.log(`   Precio paquete CON descuento: $${precioPorPaquete.toFixed(2)}`);
-      console.log(`   Descuento aplicado: $${itemCalculado.descuentoAplicado || 0}`);
-      console.log(`   Subtotal con descuento: $${subtotalConDescuento.toFixed(2)}`);
 
       // PUNTO CLAVE: Si hay backorder, acumular para procesamiento agrupado
       if (cantidadBackorder > 0) {
@@ -1105,9 +1072,7 @@ const crearPedido = async (req, res) => {
 
       // Insertar detalle surtido (SOLO si hay stock real disponible)
       // CRÍTICO: Usar precioPorPaquete CON descuento prorrateado
-      console.log(`   🔍 [SURTIDO CHECK] puedeSerSurtido=${puedeSerSurtido}, cantidadSurtida=${cantidadSurtida}, stock=${stockFinalValidation}`);
       if (puedeSerSurtido) {
-        console.log(`   ✅ [INSERTING SURTIDO] Cantidad: ${split.cantidadSurtida} paquetes`);
         const detalleResult = await client.query(
           `INSERT INTO DetallesDelPedido (
              PedidoID,
@@ -1174,8 +1139,7 @@ const crearPedido = async (req, res) => {
         
         const piezasRealmenteSurtidas = split.cantidadSurtida * tamanoValor;
         if (piezasRealmenteSurtidas > 0) {
-          console.log(`🔒 [HARD-RESERVE] Reservando ${piezasRealmenteSurtidas} piezas de variante ${item.varianteid}`);
-          
+              
           // Determinar admin_id para la reserva
           const adminIdReserva = req.user?.adminId || null;
           
@@ -1198,7 +1162,6 @@ const crearPedido = async (req, res) => {
             }
             
             const stockInfo = reservaResult.rows[0];
-            console.log(`✅ [RESERVA] Stock: ${stockInfo.cantidad}, Reservado: ${stockInfo.cantidad_reservada}, Disponible: ${stockInfo.cantidad - stockInfo.cantidad_reservada}`);
             
             // Registrar en log de auditoría
             await client.query(
@@ -1223,7 +1186,6 @@ const crearPedido = async (req, res) => {
             );
           } else {
             // CASO 2: Cliente sin admin - usar allocation automática
-            console.log(`🔍 [AUTO-ALLOCATION] Buscando admins con stock disponible`);
             
             const allocationResult = await SmartStockService.allocateStockAutomatically({
               varianteId: item.varianteid,
@@ -1251,7 +1213,6 @@ const crearPedido = async (req, res) => {
               
               if (reservaResult.rows.length > 0) {
                 const stockInfo = reservaResult.rows[0];
-                console.log(`✅ [RESERVA] Admin ${allocation.adminId}: ${allocation.cantidad} piezas reservadas`);
                 
                 // Registrar en log
                 await client.query(
@@ -1287,9 +1248,7 @@ const crearPedido = async (req, res) => {
       const cantidadRealBackorder = cantidadRequerida - cantidadSurtida;
       const debeInsertarBackorder = cantidadRealBackorder > 0 && cantidadBackorder > 0;
       
-      console.log(`   🔍 [BACKORDER CHECK] debeInsertarBackorder=${debeInsertarBackorder}, cantidadRealBackorder=${cantidadRealBackorder}, cantidadBackorder=${cantidadBackorder}`);
       if (debeInsertarBackorder) {
-        console.log(`   ✅ [INSERTING BACKORDER] Cantidad CLIENTE: ${cantidadRealBackorder} paquetes (OC proveedor: ${split.cantidadBackorderAjustada})`);
         const piezasBackorderReal = cantidadRealBackorder * tamanoValor;
         const detalleBackorderResult = await client.query(
           `INSERT INTO DetallesDelPedido (
@@ -2314,7 +2273,6 @@ const cancelarPedido = async (req, res) => {
     let piezasRestauradas = 0;
     let backordersCancelados = 0;
 
-    console.log(`[Cancelar Pedido] Procesando ${detallesQuery.rows.length} ítems del pedido ${id}`);
 
     // ============================================
     // HARD-RESERVE: Liberar reservas al cancelar
@@ -2333,7 +2291,6 @@ const cancelarPedido = async (req, res) => {
       if (!detalle.esbackorder && (detalle.cantidad_surtida_remisiones || 0) === 0) {
         const piezasALiberar = parseInt(detalle.piezastotales, 10);
         
-        console.log(`🔓 [LIBERAR RESERVA] Variante ${detalle.varianteid}: ${piezasALiberar} piezas`);
         
         // Liberar de stock_admin
         const liberarResult = await client.query(
@@ -2371,7 +2328,6 @@ const cancelarPedido = async (req, res) => {
           );
         }
         
-        console.log(`   ✅ Reserva liberada en ${liberarResult.rows.length} admin(s)`);
       }
     }
 
@@ -2403,7 +2359,6 @@ const cancelarPedido = async (req, res) => {
         
         if (piezasBackorderPendientes > 0) {
           backordersCancelados++;
-          console.log(`[Cancelar Pedido] Variante ${varianteid}: Backorder cancelado (${piezasBackorderPendientes} piezas pendientes)`);
         }
 
         // Si había piezas ya surtidas, restaurarlas al stock
@@ -2415,7 +2370,6 @@ const cancelarPedido = async (req, res) => {
             [cantidadsurtida, varianteid, tenant_id]
           );
           piezasRestauradas += cantidadsurtida;
-          console.log(`[Cancelar Pedido] Variante ${varianteid}: Stock restaurado=${cantidadsurtida} piezas (de backorder parcialmente surtido)`);
         }
 
         // Actualizar el detalle para marcar backorder como cancelado
@@ -2440,7 +2394,6 @@ const cancelarPedido = async (req, res) => {
         );
         
         piezasRestauradas += piezastotales;
-        console.log(`[Cancelar Pedido] Variante ${varianteid}: Stock actual=${stockActual}, Restaurando=${piezastotales} piezas`);
       }
     }
 
@@ -2469,7 +2422,6 @@ const cancelarPedido = async (req, res) => {
       );
 
       if (ocQuery.rows.length > 0) {
-        console.log(`[Cancelar Pedido] Encontradas ${ocQuery.rows.length} Órdenes de Compra pendientes asociadas al pedido ${id}`);
 
         // Cancelar cada OC encontrada
         for (const oc of ocQuery.rows) {
@@ -2482,10 +2434,8 @@ const cancelarPedido = async (req, res) => {
           );
 
           ordenesCompraCanceladas++;
-          console.log(`[Cancelar Pedido] OC #${oc.ordencompraid} (${oc.origenoc}) cancelada automáticamente`);
         }
       } else {
-        console.log(`[Cancelar Pedido] No se encontraron Órdenes de Compra pendientes para el pedido ${id}`);
       }
     } catch (ocError) {
       console.error('[Cancelar Pedido] Error al cancelar OCs en cascada:', ocError);
@@ -2637,7 +2587,6 @@ const cancelarPedido = async (req, res) => {
       });
       
       if (recalcResult.success) {
-        console.log(`[Cancelar Pedido] ✅ Recálculo FIFO completado - Pedidos posteriores actualizados`);
       }
     } catch (fifoError) {
       console.warn('[Cancelar Pedido] ⚠️ Error en recálculo FIFO (no crítico):', fifoError.message);
@@ -2646,7 +2595,6 @@ const cancelarPedido = async (req, res) => {
 
     await client.query('COMMIT');
 
-    console.log(`[Cancelar Pedido] Pedido ${id} cancelado exitosamente - Stock: ${itemsEnStock}, Backorder: ${itemsEnBackorder}, Cancelados: ${backordersCancelados}, OCs Canceladas: ${ordenesCompraCanceladas}`);
 
     res.json({
       success: true,
@@ -2697,7 +2645,6 @@ const simulatePriorityImpact = async (req, res) => {
       return res.status(400).json({ message: "ID de pedido inválido" });
     }
 
-    console.log(`🔮 [SIMULATE] Pedido #${pedidoId} - Iniciando simulación`);
 
     const result = await SmartStockService.simulatePriorityImpact(pedidoId, tenant_id);
 
@@ -2778,9 +2725,6 @@ const togglePrioridad = async (req, res) => {
       [nuevoEstado, pedidoId, tenant_id]
     );
 
-    console.log(
-      `⭐ [PRIORIDAD] Pedido #${pedidoId} - Prioridad ${nuevoEstado ? "ACTIVADA" : "DESACTIVADA"}`
-    );
 
     // Get all variants in this order for reallocation
     const variantesResult = await client.query(
@@ -2797,9 +2741,6 @@ const togglePrioridad = async (req, res) => {
 
     // Trigger reallocation for affected variants (async, don't wait)
     if (nuevoEstado && varianteIds.length > 0) {
-      console.log(
-        `🔄 [REALLOCATION] Iniciando reasignación para ${varianteIds.length} variantes...`
-      );
       
       // Run reallocation asynchronously
       setImmediate(async () => {
@@ -2807,7 +2748,6 @@ const togglePrioridad = async (req, res) => {
           for (const varianteId of varianteIds) {
             await SmartStockService.reallocateStockForVariant(varianteId, tenant_id);
           }
-          console.log(`✅ [REALLOCATION] Completada para pedido #${pedidoId}`);
         } catch (error) {
           console.error(`❌ [REALLOCATION] Error para pedido #${pedidoId}:`, error.message);
         }

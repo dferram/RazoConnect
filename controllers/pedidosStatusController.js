@@ -52,7 +52,6 @@ const updatePedidoEstatus = async (req, res) => {
     const pedidoId = parseInt(req.params.id);
     const { estatus, confirmarBackorder } = req.body;
 
-    console.log(`\n🔄 [STATUS CHANGE] Pedido #${pedidoId} → ${estatus}`);
 
     // ========================================
     // VALIDACIONES PREVIAS (Fuera de transacción)
@@ -116,7 +115,6 @@ const updatePedidoEstatus = async (req, res) => {
     const estatusQueRequierenStock = ['Surtido', 'Enviado', 'Entregado'];
     
     if (estatusQueRequierenStock.includes(estatus) && !confirmarBackorder) {
-      console.log(`🔍 [STOCK VALIDATION] Verificando disponibilidad...`);
       
       const detallesResult = await db.query(
         `SELECT 
@@ -147,7 +145,6 @@ const updatePedidoEstatus = async (req, res) => {
         const piezasNecesarias = parseInt(item.piezastotales) || 0;
         const piezasDisponibles = parseInt(item.stock_actual) || 0;
         
-        console.log(`   📦 ${item.sku}: Necesario=${piezasNecesarias} pzas, Disponible=${piezasDisponibles} pzas`);
         
         if (piezasDisponibles < piezasNecesarias) {
           itemsConStockInsuficiente.push({
@@ -180,7 +177,6 @@ const updatePedidoEstatus = async (req, res) => {
         });
       }
 
-      console.log(`✅ [STOCK VALIDATION] Stock validado correctamente`);
     }
 
     // ========================================
@@ -192,7 +188,6 @@ const updatePedidoEstatus = async (req, res) => {
 
       // ✅ PASO 1: Deducir stock y generar CXC si cambia a "Surtido"
       if (estatus === 'Surtido' && estatusActual !== 'Surtido') {
-        console.log(`📦 [TRANSACTION] Deduciendo stock y generando CXC...`);
         logger.logOperation('DEDUCCION_STOCK_INICIO', { pedidoId });
         
         // Obtener información del pedido
@@ -242,11 +237,9 @@ const updatePedidoEstatus = async (req, res) => {
           const piezasTotales = parseInt(item.piezastotales) || 0;
           
           if (piezasTotales <= 0) {
-            console.log(`   ⏭️ Saltando ${item.sku} - cantidad 0`);
             continue;
           }
 
-          console.log(`   📉 Deduciendo ${piezasTotales} piezas de ${item.sku}`);
           
           // Usar SmartStockService para deducir stock
           const resultado = await SmartStockService.adjustStock({
@@ -263,7 +256,6 @@ const updatePedidoEstatus = async (req, res) => {
             throw new Error(`Error al deducir stock de ${item.sku}: ${resultado.message}`);
           }
 
-          console.log(`   ✅ Stock deducido: ${item.sku} - ${piezasTotales} piezas → ${resultado.newStock}`);
           logger.logOperation('STOCK_DEDUCIDO', { 
             sku: item.sku, 
             cantidad: piezasTotales, 
@@ -289,11 +281,9 @@ const updatePedidoEstatus = async (req, res) => {
           logger.logOperation('KARDEX_REGISTRADO', { sku: item.sku });
         }
 
-        console.log(`✅ [TRANSACTION] Stock deducido exitosamente`);
 
         // ✅ PASO 2: Generar CXC si es a crédito
         if (pedido.es_credito) {
-          console.log(`💳 [TRANSACTION] Generando CXC...`);
           logger.logOperation('CXC_INICIO', { pedidoId });
           
           const montoTotal = parseFloat(pedido.montototal);
@@ -353,9 +343,7 @@ const updatePedidoEstatus = async (req, res) => {
           );
 
           logger.logOperation('MOVIMIENTO_CREDITO_REGISTRADO', { creditoId });
-          console.log(`✅ [TRANSACTION] CXC generado: $${montoTotal.toFixed(2)}`);
         } else {
-          console.log(`ℹ️ [TRANSACTION] Pedido no es a crédito, omitiendo CXC`);
         }
       }
 
@@ -373,7 +361,6 @@ const updatePedidoEstatus = async (req, res) => {
       }
 
       logger.logOperation('ESTATUS_ACTUALIZADO', { pedidoId, nuevoEstatus: estatus });
-      console.log(`✅ [TRANSACTION] Estatus actualizado: ${estatusActual} → ${estatus}`);
 
       return {
         success: true,
@@ -406,12 +393,10 @@ const updatePedidoEstatus = async (req, res) => {
         prioridad: 'normal',
         metadata: { pedidoId }
       });
-      console.log(`📧 [NOTIFICATION] Notificación enviada al cliente`);
     } catch (notifError) {
       console.warn(`⚠️ [NOTIFICATION] Error al crear notificación (no crítico):`, notifError.message);
     }
 
-    console.log(`\n✅ [STATUS CHANGE] Pedido #${pedidoId} actualizado exitosamente\n`);
 
     res.json({
       success: true,
