@@ -1,6 +1,5 @@
 const pool = require('../../db');
 const cloudinary = require('../../config/cloudinary');
-const fs = require('fs');
 
 /**
  * POST /api/agente/entregas/confirmar
@@ -65,16 +64,15 @@ exports.confirmarEntrega = async (req, res) => {
     let urlEvidencia = null;
     if (req.file) {
       try {
-        const result = await cloudinary.uploader.upload(req.file.path, {
+        // Convertir buffer a base64 para Cloudinary
+        const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        
+        const result = await cloudinary.uploader.upload(base64Image, {
           folder: 'evidencias_entrega',
-          resource_type: 'image'
+          resource_type: 'image',
+          public_id: `evidencia-${Date.now()}-${Math.round(Math.random() * 1E9)}`
         });
         urlEvidencia = result.secure_url;
-
-        // Eliminar archivo temporal
-        fs.unlink(req.file.path, (err) => {
-          if (err) console.error('Error eliminando archivo temporal:', err);
-        });
       } catch (uploadError) {
         await client.query('ROLLBACK');
         return res.status(500).json({ 
@@ -185,13 +183,6 @@ exports.confirmarEntrega = async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error al confirmar entrega:', error);
-    
-    // Eliminar archivo temporal si existe
-    if (req.file?.path) {
-      fs.unlink(req.file.path, (err) => {
-        if (err) console.error('Error eliminando archivo temporal:', err);
-      });
-    }
 
     res.status(500).json({ 
       success: false,
