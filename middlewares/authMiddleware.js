@@ -49,22 +49,29 @@ const authenticate = async (req, res, next) => {
       });
     }
 
-    const rawUserId =
-      decoded?.userId ?? decoded?.id ?? decoded?.userid ?? decoded?.AdminID ?? decoded?.adminId;
-    const userId = Number.parseInt(rawUserId, 10);
-    if (!Number.isInteger(userId) || userId <= 0) {
+    // Extraer ID del payload normalizado
+    const userId = decoded?.id;
+    
+    if (!userId || !Number.isInteger(Number(userId)) || Number(userId) <= 0) {
       return res.status(401).json({
         success: false,
-        message: "Token inválido (userId)",
+        message: "Token inválido (id de usuario faltante o inválido)",
       });
     }
 
-    const rolesFromToken = Array.isArray(decoded?.roles)
-      ? decoded.roles.map(normalizeRole).filter(Boolean)
-      : [normalizeRole(decoded?.rol)].filter(Boolean);
+    // Normalizar rol del payload
+    const rolFromToken = normalizeRole(decoded?.rol);
+    
+    if (!rolFromToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Token inválido (rol faltante)",
+      });
+    }
 
-    const isAgenteToken = rolesFromToken.includes("agente");
-    const isClienteToken = rolesFromToken.includes("cliente");
+    const isAgenteToken = rolFromToken === "agente";
+    const isClienteToken = rolFromToken === "cliente";
+    const isAdminToken = rolFromToken === "admin" || rolFromToken === "super_admin";
 
     // 1) Si el token declara agente, validar contra agentesdeventas (activo)
     // CRÍTICO: Agentes son globales (no tienen tenant_id), validar solo por ID y estado
@@ -81,17 +88,14 @@ const authenticate = async (req, res, next) => {
         });
       }
 
-      // Preservar todos los roles del token (puede incluir 'admin' para agentes con permisos de admin)
-      const preservedRoles = rolesFromToken.length > 0 ? rolesFromToken : ["agente"];
-
       req.user = {
-        ...decoded,
         id: userId,
-        userId,
-        rol: decoded?.rol || "agente",
-        roles: preservedRoles,
+        userId, // Legacy compatibility
+        rol: "agente",
+        roles: ["agente"], // Legacy compatibility
         email: decoded?.email || agenteResult.rows[0].email || null,
-        codigoAgente: decoded?.codigoAgente || agenteResult.rows[0].codigoagente || null,
+        tenant_id: decoded?.tenant_id || null,
+        codigoAgente: agenteResult.rows[0].codigoagente || null,
       };
 
       return tenantSessionGuard(req, res, next);
@@ -129,11 +133,10 @@ const authenticate = async (req, res, next) => {
       }
 
       req.user = {
-        ...decoded,
         id: userId,
-        userId,
+        userId, // Legacy compatibility
         rol: "cliente",
-        roles: ["cliente"],
+        roles: ["cliente"], // Legacy compatibility
         email: decoded?.email || clienteResult.rows[0].email || null,
         tenant_id: clienteResult.rows[0].tenant_id,
       };
@@ -160,20 +163,14 @@ const authenticate = async (req, res, next) => {
     if (adminResult.rows.length && adminResult.rows[0].activo === true) {
       const dbRol = normalizeRole(adminResult.rows[0].rol);
       const rolFinal = ["superadmin", "super-admin", "super admin"].includes(dbRol)
-        ? "superadmin"
+        ? "super_admin"
         : "admin";
 
-      // Preservar roles del token si existen, sino usar rol de BD
-      const rolesFromToken = Array.isArray(decoded?.roles) && decoded.roles.length > 0
-        ? decoded.roles
-        : [rolFinal];
-
       req.user = {
-        ...decoded,
         id: userId,
-        userId,
-        rol: decoded?.rol || rolFinal,
-        roles: rolesFromToken,
+        userId, // Legacy compatibility
+        rol: rolFinal,
+        roles: [rolFinal], // Legacy compatibility
         email: decoded?.email || adminResult.rows[0].email || null,
         tenant_id: adminResult.rows[0].tenant_id,
       };
@@ -189,19 +186,14 @@ const authenticate = async (req, res, next) => {
     );
 
     if (agenteFallback.rows.length) {
-      // Preservar roles del token (puede incluir 'admin' si es agente con permisos de admin)
-      const rolesFromToken = Array.isArray(decoded?.roles) && decoded.roles.length > 0
-        ? decoded.roles
-        : ["agente"];
-
       req.user = {
-        ...decoded,
         id: userId,
-        userId,
-        rol: decoded?.rol || "agente",
-        roles: rolesFromToken,
+        userId, // Legacy compatibility
+        rol: "agente",
+        roles: ["agente"], // Legacy compatibility
         email: decoded?.email || agenteFallback.rows[0].email || null,
-        codigoAgente: decoded?.codigoAgente || agenteFallback.rows[0].codigoagente || null,
+        tenant_id: decoded?.tenant_id || null,
+        codigoAgente: agenteFallback.rows[0].codigoagente || null,
       };
 
       return tenantSessionGuard(req, res, next);
@@ -265,11 +257,11 @@ const authorizeAdmin = (req, res, next) => {
 
   // Verificar rol principal
   const rol = normalizeRole(req.user.rol);
-  const isAdminByRol = rol === "admin" || rol === "superadmin";
+  const isAdminByRol = rol === "admin" || rol === "super_admin" || rol === "superadmin";
 
   // Verificar array de roles (para agentes con permisos de admin)
   const userRoles = getUserRoles(req);
-  const isAdminByRoles = userRoles.includes("admin") || userRoles.includes("superadmin");
+  const isAdminByRoles = userRoles.includes("admin") || userRoles.includes("super_admin") || userRoles.includes("superadmin");
 
   if (!isAdminByRol && !isAdminByRoles) {
     return res.status(403).json({
@@ -326,7 +318,7 @@ const authorizeAdminOnly = (req, res, next) => {
 const verifySuperAdmin = (req, res, next) => {
   const userRoles = getUserRoles(req);
   const isSuperAdmin = userRoles.some((role) =>
-    ["superadmin", "super-admin", "super admin"].includes(role)
+    ["superadmin", "super-admin", "super admin", "super_admin"].includes(role)
   );
   if (req.user && isSuperAdmin) return next();
   return res.status(403).json({
@@ -360,9 +352,9 @@ const authorizeSuperAdmin = (req, res, next) => {
       ? req.user.roles
       : [req.user.rol].filter(Boolean);
 
-  // Verificar que tenga específicamente el rol 'superadmin' o 'super-admin'
+  // Verificar que tenga específicamente el rol 'superadmin', 'super-admin' o 'super_admin'
   const isSuperAdmin = userRoles.some((role) =>
-    ["superadmin", "super-admin"].includes(role.toLowerCase())
+    ["superadmin", "super-admin", "super_admin"].includes(role.toLowerCase())
   );
 
   if (!isSuperAdmin) {

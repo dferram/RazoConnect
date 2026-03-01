@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const db = require("../../db");
-const { generateToken } = require("../../utils/jwtHelper");
+const { generateAccessToken, generateRefreshToken } = require("../../utils/jwtHelper");
+const { saveRefreshToken } = require("../../config/redisClient");
 const crypto = require("crypto");
 const { sendTemplatedEmail } = require("../../services/emailService");
 const { crearNotificacion } = require("../../services/notificacionesService");
@@ -124,12 +125,23 @@ const registroCliente = async (req, res) => {
       }
     }
 
-    const token = generateToken({
-      userId: nuevoCliente.clienteid,
+    // Generar Access Token (1h) y Refresh Token (30d)
+    const accessToken = generateAccessToken({
+      id: nuevoCliente.clienteid,
       rol: "cliente",
       email: nuevoCliente.email || null,
       tenant_id: tenant_id,
-    }, '365d');
+    });
+
+    const refreshToken = generateRefreshToken({
+      id: nuevoCliente.clienteid,
+      rol: "cliente",
+      email: nuevoCliente.email || null,
+      tenant_id: tenant_id,
+    });
+
+    // Guardar refresh token en Redis (30 días)
+    await saveRefreshToken(nuevoCliente.clienteid, "cliente", refreshToken, 30 * 24 * 60 * 60);
 
     try {
       await crearNotificacion(
@@ -171,7 +183,8 @@ const registroCliente = async (req, res) => {
           numeroCliente: nuevoCliente.numero_cliente,
           fechaDeRegistro: nuevoCliente.fechaderegistro,
         },
-        token,
+        accessToken,
+        refreshToken,
       },
     });
   } catch (error) {
@@ -229,12 +242,23 @@ const login = async (req, res) => {
         });
       }
 
-      const token = generateToken({
-        userId: cliente.clienteid,
+      // Generar Access Token (1h) y Refresh Token (30d)
+      const accessToken = generateAccessToken({
+        id: cliente.clienteid,
         rol: "cliente",
         email: cliente.email || null,
         tenant_id: tenant_id,
-      }, '365d');
+      });
+
+      const refreshToken = generateRefreshToken({
+        id: cliente.clienteid,
+        rol: "cliente",
+        email: cliente.email || null,
+        tenant_id: tenant_id,
+      });
+
+      // Guardar refresh token en Redis (30 días)
+      await saveRefreshToken(cliente.clienteid, "cliente", refreshToken, 30 * 24 * 60 * 60);
 
       return res.status(200).json({
         success: true,
@@ -248,7 +272,8 @@ const login = async (req, res) => {
             email: cliente.email,
             telefono: cliente.telefono,
           },
-          token,
+          accessToken,
+          refreshToken,
         },
       });
     }
@@ -277,15 +302,23 @@ const login = async (req, res) => {
         });
       }
 
-      const token = generateToken({
-        userId: agente.agenteid,
+      // Generar Access Token (1h) y Refresh Token (30d)
+      const accessToken = generateAccessToken({
+        id: agente.agenteid,
         rol: "agente",
-        roles: ["agente"],
         email: agente.email || null,
-        telefono: agente.telefono || null,
-        codigoAgente: agente.codigoagente,
         tenant_id: tenant_id,
-      }, '365d');
+      });
+
+      const refreshToken = generateRefreshToken({
+        id: agente.agenteid,
+        rol: "agente",
+        email: agente.email || null,
+        tenant_id: tenant_id,
+      });
+
+      // Guardar refresh token en Redis (30 días)
+      await saveRefreshToken(agente.agenteid, "agente", refreshToken, 30 * 24 * 60 * 60);
 
       return res.status(200).json({
         success: true,
@@ -301,7 +334,8 @@ const login = async (req, res) => {
             codigoAgente: agente.codigoagente,
             activo: agente.activo,
           },
-          token,
+          accessToken,
+          refreshToken,
         },
       });
     }

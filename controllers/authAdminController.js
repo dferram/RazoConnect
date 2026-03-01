@@ -11,7 +11,8 @@
 
 const db = require('../db');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const { generateAccessToken, generateRefreshToken } = require('../utils/jwtHelper');
+const { saveRefreshToken } = require('../config/redisClient');
 const { registrarLog } = require('../services/loggerService');
 
 let agenteAdminColumnsCache = null;
@@ -202,29 +203,26 @@ const loginAdmin = async (req, res) => {
       });
     }
 
-    const tokenPayload = {
+    // Normalizar rol para super_admin
+    const rolNormalizado = cuenta.rol === 'superadmin' ? 'super_admin' : cuenta.rol;
+
+    // Generar Access Token (1h) y Refresh Token (30d)
+    const accessToken = generateAccessToken({
       id: cuenta.id,
+      rol: rolNormalizado,
       email: cuenta.email,
-      rol: cuenta.rol,
-      tipo: "admin",
-      roles: cuenta.roles,
-      adminSource: cuenta.adminSource,
       tenant_id: tenant_id,
-    };
+    });
 
-    if (cuenta.adminSource === "agent") {
-      tokenPayload.agenteId = cuenta.id;
-      if (cuenta.codigoAgente) {
-        tokenPayload.codigoAgente = cuenta.codigoAgente;
-      }
-    }
+    const refreshToken = generateRefreshToken({
+      id: cuenta.id,
+      rol: rolNormalizado,
+      email: cuenta.email,
+      tenant_id: tenant_id,
+    });
 
-    // Generar token JWT
-    const token = jwt.sign(
-      tokenPayload,
-      process.env.JWT_SECRET,
-      { expiresIn: "30d" } // Token válido por 30 días
-    );
+    // Guardar refresh token en Redis (30 días)
+    await saveRefreshToken(cuenta.id, rolNormalizado, refreshToken, 30 * 24 * 60 * 60);
 
     const nombreCompleto =
       [cuenta.nombre?.trim(), cuenta.apellido?.trim()].filter(Boolean).join(" ").trim() ||
@@ -258,12 +256,13 @@ const loginAdmin = async (req, res) => {
       success: true,
       message: "Login exitoso",
       data: {
-        token,
+        accessToken,
+        refreshToken,
         admin: {
           adminId: cuenta.id,
           nombre: nombreCompleto,
           email: cuenta.email,
-          rol: cuenta.rol,
+          rol: rolNormalizado,
           origen: cuenta.adminSource,
         },
       },

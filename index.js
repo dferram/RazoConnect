@@ -14,6 +14,7 @@ const cors = require("cors");
 const db = require("./db");
 const passport = require("passport");
 const configurePassport = require("./config/passport");
+const { initRedisClient, closeRedisConnection } = require("./config/redisClient");
 
 // Detectar entorno
 const isProduction = process.env.NODE_ENV === 'production';
@@ -114,10 +115,10 @@ const allowedOrigins = [
 const corsOptions = {
   origin: function (origin, callback) {
     // Permitir requests sin origin (ej: Postman, herramientas de desarrollo)
-    // SOLO en desarrollo - en producción esto debería ser más restrictivo
-    if (!origin && !isProduction) {
-      console.log('⚠️ [CORS] Request sin origin permitido (modo desarrollo)');
-      return callback(null, true);
+    // ✅ ASÍ DEBE QUEDAR
+    if (!origin) {
+    // Permitimos peticiones sin origen (navegación directa, Postman, etc.)
+        return callback(null, true);
     }
     
     // Validar si el origin está en la whitelist
@@ -394,7 +395,7 @@ app.get("*", (req, res) => {
 app.use(sanitizeErrors);
 
 // Iniciar el servidor
-app.listen(PORT, async () => {
+const server = app.listen(PORT, async () => {
   console.log(`Servidor RazoConnect corriendo en puerto ${PORT}`);
   console.log(`URL: http://localhost:${PORT}`);
   console.log(`Endpoint de prueba: http://localhost:${PORT}/api`);
@@ -402,8 +403,58 @@ app.listen(PORT, async () => {
   // Probar conexión a la base de datos
   await db.testConnection();
 
+  // Inicializar Redis para gestión de refresh tokens
+  try {
+    await initRedisClient();
+    console.log("✅ [REDIS] Cliente inicializado correctamente");
+  } catch (error) {
+    console.error("❌ [REDIS] Error al inicializar cliente:", error.message);
+    console.warn("⚠️  [REDIS] El sistema continuará sin Redis (tokens de larga duración)");
+  }
+
   scheduleDailyMaintenance();
   console.log("[CRON] Sistema de mantenimiento diario activado.");
 });
+
+// ============================================================================
+// GRACEFUL SHUTDOWN
+// ============================================================================
+// Cerrar conexiones correctamente al detener el servidor
+const gracefulShutdown = async (signal) => {
+  console.log(`\n🛑 [SHUTDOWN] Señal ${signal} recibida, cerrando servidor...`);
+  
+  server.close(async () => {
+    console.log("✅ [SHUTDOWN] Servidor HTTP cerrado");
+    
+    // Cerrar conexión de Redis
+    try {
+      await closeRedisConnection();
+      console.log("✅ [SHUTDOWN] Redis desconectado");
+    } catch (error) {
+      console.error("❌ [SHUTDOWN] Error al cerrar Redis:", error);
+    }
+    
+    // Cerrar pool de PostgreSQL
+    try {
+      await db.end();
+      console.log("✅ [SHUTDOWN] PostgreSQL desconectado");
+    } catch (error) {
+      console.error("❌ [SHUTDOWN] Error al cerrar PostgreSQL:", error);
+    }
+    
+    console.log("👋 [SHUTDOWN] Proceso terminado correctamente");
+    process.exit(0);
+  });
+  
+  // Forzar cierre después de 10 segundos
+  setTimeout(() => {
+    console.error("⚠️  [SHUTDOWN] Forzando cierre después de timeout");
+    process.exit(1);
+  }, 10000);
+};
+
+// Escuchar señales de terminación
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 module.exports = app;
