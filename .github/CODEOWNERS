@@ -1,0 +1,9 @@
+# Propietario global del repositorio
+* @dferram
+
+# Archivos críticos de seguridad requieren revisión explícita
+middlewares/authMiddleware.js @dferram
+middlewares/validators/ @dferram
+utils/jwtHelper.js @dferram
+config/ @dferram
+routes/ @dferram
