@@ -127,6 +127,49 @@
             style="display: none"
           ></div>
 
+          <!-- Paginación -->
+          <div id="paginationContainer" class="catalogo-pagination-wrapper" style="display: none;">
+            <div class="catalogo-pagination">
+              <!-- Información de registros -->
+              <div class="catalogo-pagination__info">
+                Mostrando <strong id="pageStart">1</strong> a <strong id="pageEnd">50</strong> de <strong id="totalRecords">0</strong> productos
+              </div>
+
+              <!-- Controles de paginación -->
+              <div class="catalogo-pagination__controls">
+                <button
+                  id="btnPrevPage"
+                  onclick="cambiarPagina('prev')"
+                  class="catalogo-pagination__btn catalogo-pagination__btn--nav"
+                  disabled
+                >
+                  ←
+                </button>
+
+                <div id="pageNumbers" class="catalogo-pagination__numbers">
+                  <!-- Los números de página se generarán dinámicamente -->
+                </div>
+
+                <button
+                  id="btnNextPage"
+                  onclick="cambiarPagina('next')"
+                  class="catalogo-pagination__btn catalogo-pagination__btn--nav"
+                >
+                  →
+                </button>
+              </div>
+
+              <!-- Botón Mostrar todo -->
+              <button
+                id="btnShowAll"
+                onclick="mostrarTodos()"
+                class="catalogo-pagination__show-all"
+              >
+                <i class="bi bi-grid-3x3-gap-fill"></i> Mostrar todo
+              </button>
+            </div>
+          </div>
+
           <!-- Empty State -->
           <div id="emptyState" class="empty-state" style="display: none">
             <div class="empty-state-icon">📦</div>
@@ -712,19 +755,131 @@
         mostrarProductos();
       }
 
+      // Pagination variables
+      let currentPage = 1;
+      let totalPages = 1;
+      let totalRecords = 0;
+      let showingAll = false;
+
+      // Pagination functions
+      window.cambiarPagina = function(direction) {
+        if (direction === 'prev' && currentPage > 1) {
+          currentPage--;
+        } else if (direction === 'next' && currentPage < totalPages) {
+          currentPage++;
+        }
+        const queryString = construirQueryString();
+        loadProductos(queryString);
+      };
+
+      window.irAPagina = function(page) {
+        currentPage = page;
+        const queryString = construirQueryString();
+        loadProductos(queryString);
+      };
+
+      window.mostrarTodos = function() {
+        showingAll = true;
+        currentPage = 1;
+        const queryString = construirQueryString();
+        loadProductos(queryString);
+      };
+
+      function actualizarPaginacion(pagination) {
+        const paginationContainer = document.getElementById('paginationContainer');
+        const pageStart = document.getElementById('pageStart');
+        const pageEnd = document.getElementById('pageEnd');
+        const totalRecordsEl = document.getElementById('totalRecords');
+        const btnPrevPage = document.getElementById('btnPrevPage');
+        const btnNextPage = document.getElementById('btnNextPage');
+        const pageNumbers = document.getElementById('pageNumbers');
+        const btnShowAll = document.getElementById('btnShowAll');
+
+        if (!pagination || showingAll) {
+          if (paginationContainer) paginationContainer.style.display = 'none';
+          return;
+        }
+
+        totalPages = pagination.totalPages;
+        totalRecords = pagination.total;
+        currentPage = pagination.page;
+
+        const start = ((currentPage - 1) * pagination.limit) + 1;
+        const end = Math.min(currentPage * pagination.limit, totalRecords);
+
+        if (pageStart) pageStart.textContent = start;
+        if (pageEnd) pageEnd.textContent = end;
+        if (totalRecordsEl) totalRecordsEl.textContent = totalRecords;
+
+        if (btnPrevPage) {
+          btnPrevPage.disabled = !pagination.hasPrevPage;
+        }
+        if (btnNextPage) {
+          btnNextPage.disabled = !pagination.hasNextPage;
+        }
+
+        // Generate page numbers
+        if (pageNumbers) {
+          pageNumbers.innerHTML = '';
+          const maxPages = 5;
+          let startPage = Math.max(1, currentPage - 2);
+          let endPage = Math.min(totalPages, startPage + maxPages - 1);
+
+          if (endPage - startPage < maxPages - 1) {
+            startPage = Math.max(1, endPage - maxPages + 1);
+          }
+
+          for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = `catalogo-pagination__btn ${i === currentPage ? 'catalogo-pagination__btn--active' : ''}`;
+            pageBtn.textContent = i;
+            pageBtn.onclick = () => irAPagina(i);
+            pageNumbers.appendChild(pageBtn);
+          }
+        }
+
+        if (btnShowAll) {
+          btnShowAll.style.display = totalRecords > 50 ? 'inline-block' : 'none';
+        }
+
+        if (paginationContainer) {
+          paginationContainer.style.display = totalRecords > 0 ? 'block' : 'none';
+        }
+      }
+
       async function loadProductos(queryString = "") {
         try {
           console.log('📡 [Proveedor-Tienda] Cargando productos con query:', queryString);
           loadingState.style.display = "flex";
           productGrid.style.display = "none";
           emptyState.style.display = "none";
+          
+          const paginationContainer = document.getElementById('paginationContainer');
+          if (paginationContainer) paginationContainer.style.display = 'none';
 
-          const response = await API.getProductos(queryString);
+          // Add pagination params to query string
+          let finalQuery = queryString;
+          const separator = finalQuery && finalQuery.length > 1 ? '&' : '?';
+          if (showingAll) {
+            finalQuery += separator + 'showAll=true';
+          } else {
+            finalQuery += separator + `page=${currentPage}&limit=50`;
+          }
+
+          const response = await API.getProductos(finalQuery);
           console.log('📦 [Proveedor-Tienda] Productos recibidos:', response.data?.data?.productos?.length || 0);
 
           if (response.ok && response.data.success) {
             todosLosProductos = response.data.data.productos;
             loadingState.style.display = "none";
+            
+            // Update pagination if present
+            if (response.data.pagination) {
+              actualizarPaginacion(response.data.pagination);
+            } else {
+              actualizarPaginacion(null);
+            }
+            
             mostrarProductos();
           } else {
             throw new Error(
@@ -876,6 +1031,147 @@
         aside {
           position: static !important;
           margin-bottom: 1.5rem;
+        }
+      }
+
+      /* ========================================
+         PAGINACIÓN MINIMALISTA
+         ======================================== */
+      .catalogo-pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        margin: 2.5rem;
+        position: relative;
+        left: 15%;
+      }
+
+      .catalogo-pagination {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        max-width: 600px;
+        padding: 0 1rem;
+      }
+
+      .catalogo-pagination__info {
+        font-size: 0.875rem;
+        color: #6b7280;
+        text-align: center;
+      }
+
+      .catalogo-pagination__info strong {
+        color: #F97316;
+        font-weight: 600;
+      }
+
+      .catalogo-pagination__controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .catalogo-pagination__btn {
+        min-width: 36px;
+        height: 36px;
+        padding: 0;
+        border: 1px solid #e5e7eb;
+        background: white;
+        color: #6b7280;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .catalogo-pagination__btn:hover:not(:disabled) {
+        border-color: #F97316;
+        color: #F97316;
+        background: #fff7ed;
+      }
+
+      .catalogo-pagination__btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .catalogo-pagination__btn--nav {
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+
+      .catalogo-pagination__btn--active {
+        background: #F97316;
+        color: white;
+        border-color: #F97316;
+      }
+
+      .catalogo-pagination__btn--active:hover {
+        background: #ea580c;
+        border-color: #ea580c;
+      }
+
+      .catalogo-pagination__numbers {
+        display: flex;
+        gap: 0.25rem;
+      }
+
+      .catalogo-pagination__show-all {
+        margin-top: 0.5rem;
+        padding: 0.5rem 1.25rem;
+        background: white;
+        border: 1.5px solid #F97316;
+        color: #F97316;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .catalogo-pagination__show-all:hover {
+        background: #F97316;
+        color: white;
+      }
+
+      .catalogo-pagination__show-all i {
+        font-size: 1rem;
+      }
+
+      @media (max-width: 768px) {
+        .catalogo-pagination {
+          padding: 0 0.5rem;
+          gap: 0.75rem;
+        }
+
+        .catalogo-pagination__controls {
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        .catalogo-pagination__btn {
+          min-width: 32px;
+          height: 32px;
+          font-size: 0.8125rem;
+        }
+
+        .catalogo-pagination__info {
+          font-size: 0.8125rem;
+        }
+
+        .catalogo-pagination__show-all {
+          font-size: 0.8125rem;
+          padding: 0.4rem 1rem;
         }
       }
     </style>

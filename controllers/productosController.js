@@ -1,5 +1,6 @@
 const db = require("../db");
 const SmartStockService = require("../services/SmartStockService");
+const { getPaginationParams, buildPaginationMeta } = require("../utils/pagination");
 
 /**
  * Obtener proveedores con productos activos
@@ -178,8 +179,12 @@ const obtenerProductos = async (req, res) => {
       tipo,
       oferta,
       sort,
-      limit,
+      showAll,
     } = req.query;
+
+    // Paginación: si showAll=true, no paginar
+    const usePagination = showAll !== 'true';
+    const { limit, offset, page } = usePagination ? getPaginationParams(req.query) : { limit: null, offset: 0, page: 1 };
 
     const filtros = [];
     const valores = [];
@@ -436,19 +441,70 @@ const obtenerProductos = async (req, res) => {
       ) stats ON stats.productoid = p.productoid
       ${whereClauseFinal}
       ORDER BY ${sort === "newest" ? "p.productoid DESC" : "p.productoid DESC"}
-      ${limit ? `LIMIT ${parseInt(limit, 10)}` : ""}
     `;
+
+    // Count total for pagination
+    let total = 0;
+    if (usePagination) {
+      try {
+        const { filtrosLocal, valoresLocal } = buildFiltros("cantidadempaque");
+        const whereClauseFinal = buildWhereClause(filtrosLocal);
+        const countQuery = `
+          SELECT COUNT(DISTINCT p.productoid) as count
+          FROM productos p
+          LEFT JOIN categorias c ON p.categoriaid = c.categoriaid
+          LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
+          ${whereClauseFinal}
+        `;
+        const countResult = await db.query(countQuery, valoresLocal);
+        total = parseInt(countResult.rows[0].count, 10);
+      } catch (countError) {
+        if (countError && countError.code === "42703") {
+          const { filtrosLocal, valoresLocal } = buildFiltros("piezasporpaquete");
+          const whereClauseFinal = buildWhereClause(filtrosLocal);
+          const countQuery = `
+            SELECT COUNT(DISTINCT p.productoid) as count
+            FROM productos p
+            LEFT JOIN categorias c ON p.categoriaid = c.categoriaid
+            LEFT JOIN proveedor_reglas_empaque pre ON pre.reglaid = p.reglaid
+            ${whereClauseFinal}
+          `;
+          const countResult = await db.query(countQuery, valoresLocal);
+          total = parseInt(countResult.rows[0].count, 10);
+        } else {
+          throw countError;
+        }
+      }
+    }
 
     let result;
     try {
       const { filtrosLocal, valoresLocal } = buildFiltros("cantidadempaque");
       const whereClauseFinal = buildWhereClause(filtrosLocal);
-      result = await db.query(buildQuery("cantidadempaque", whereClauseFinal), valoresLocal);
+      let query = buildQuery("cantidadempaque", whereClauseFinal);
+      
+      // Add pagination if enabled
+      if (usePagination) {
+        const paramIndex = valoresLocal.length + 1;
+        query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+        valoresLocal.push(limit, offset);
+      }
+      
+      result = await db.query(query, valoresLocal);
     } catch (dbError) {
       if (dbError && dbError.code === "42703") {
         const { filtrosLocal, valoresLocal } = buildFiltros("piezasporpaquete");
         const whereClauseFinal = buildWhereClause(filtrosLocal);
-        result = await db.query(buildQuery("piezasporpaquete", whereClauseFinal), valoresLocal);
+        let query = buildQuery("piezasporpaquete", whereClauseFinal);
+        
+        // Add pagination if enabled
+        if (usePagination) {
+          const paramIndex = valoresLocal.length + 1;
+          query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+          valoresLocal.push(limit, offset);
+        }
+        
+        result = await db.query(query, valoresLocal);
       } else {
         throw dbError;
       }
@@ -784,14 +840,21 @@ const obtenerProductos = async (req, res) => {
       };
     });
 
-    res.status(200).json({
+    const response = {
       success: true,
       message: "Productos obtenidos exitosamente",
       data: {
         productos,
         total: productos.length,
       },
-    });
+    };
+
+    // Add pagination metadata if using pagination
+    if (usePagination) {
+      response.pagination = buildPaginationMeta(total, page, limit);
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     console.error("Error al obtener productos:", error);
     res.status(500).json({
