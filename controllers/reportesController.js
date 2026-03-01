@@ -221,7 +221,10 @@ const getValuacionInventario = async (req, res) => {
         AND p.tenant_id = $1
       `;
       result = await db.query(query, [tenant_id]);
-      console.log(`📊 [Valuación] Super Admin - Inventario GLOBAL`);
+      logger.info('Valuación Super Admin - Inventario GLOBAL', {
+        requestId: req.requestId,
+        tenantId: tenant_id
+      });
     } else {
       // ✅ Admin regular: Ver valuación de SU inventario (stock_admin)
       const query = `
@@ -236,7 +239,11 @@ const getValuacionInventario = async (req, res) => {
         AND sa.admin_id = $2
       `;
       result = await db.query(query, [tenant_id, userId]);
-      console.log(`📊 [Valuación] Admin ${userId} - Inventario LOCAL`);
+      logger.info('Valuación Admin - Inventario LOCAL', {
+        userId,
+        requestId: req.requestId,
+        tenantId: tenant_id
+      });
     }
 
     const row = result.rows[0] || {};
@@ -245,7 +252,12 @@ const getValuacionInventario = async (req, res) => {
     const valorVenta =
       row.valor_venta !== undefined ? parseFloat(row.valor_venta) : 0;
 
-    console.log(`📊 [Valuación] Resultado: Venta=$${valorVenta}, Costo=$${valorCosto}`);
+    logger.info('Valuación calculada', {
+      valorVenta,
+      valorCosto,
+      requestId: req.requestId,
+      tenantId: tenant_id
+    });
 
     return res.json({
       success: true,

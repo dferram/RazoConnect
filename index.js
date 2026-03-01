@@ -15,6 +15,9 @@ const db = require("./db");
 const passport = require("passport");
 const configurePassport = require("./config/passport");
 const { initRedisClient, closeRedisConnection } = require("./config/redisClient");
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+const logger = require('./utils/logger');
 
 // Detectar entorno
 const isProduction = process.env.NODE_ENV === 'production';
@@ -238,15 +241,19 @@ app.get('/tienda-no-encontrada.html', (req, res) => {
 // HEALTH CHECK — Azure App Service probe
 // ============================================================================
 app.get('/api/health', async (req, res) => {
+  const { getPoolMetrics } = require('./db');
+  
   const health = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: Math.floor(process.uptime()),
     environment: process.env.NODE_ENV || 'development',
+    version: process.env.npm_package_version || '1.0.0',
     services: {
       database: 'unknown',
       redis: 'unknown'
-    }
+    },
+    pool: getPoolMetrics()
   };
 
   try {
@@ -352,7 +359,7 @@ app.use((req, res, next) => {
     console.log('Path solicitado:', req.path);
     console.log('Tenant folder:', tenantFolder);
     console.log('Buscando en:', path.join(tenantPath, req.path));
-    console.log('Path absoluto completo:', path.resolve(tenantPath, req.path.substring(1)));
+    // Path absoluto completo: path.resolve(tenantPath, req.path.substring(1))
   }
   
   // AISLAMIENTO TOTAL: Cada tenant sirve SOLO sus propios archivos
@@ -373,6 +380,27 @@ app.use((req, res, next) => {
 });
 
 // ============================================================================
+// API DOCUMENTATION — Swagger UI
+// Solo disponible en desarrollo y staging, NO en producción pública
+// ============================================================================
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'RazoConnect API Docs',
+    customCss: '.swagger-ui .topbar { display: none }',
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  }));
+  console.log('📚 Swagger UI disponible en /api/docs');
+}
+
+// Endpoint JSON del spec (siempre disponible para herramientas)
+app.get('/api/docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.json(swaggerSpec);
+});
+
+// ============================================================================
 // ENDPOINTS DE UTILIDAD
 // ============================================================================
 
@@ -384,24 +412,6 @@ app.get("/api", (req, res) => {
     status: "running",
     timestamp: new Date().toISOString(),
   });
-});
-
-// Endpoint para verificar la conexión a la base de datos
-app.get("/api/health", async (req, res) => {
-  try {
-    const result = await db.query("SELECT NOW()");
-    res.json({
-      status: "healthy",
-      database: "connected",
-      timestamp: result.rows[0].now,
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: "unhealthy",
-      database: "disconnected",
-      error: error.message,
-    });
-  }
 });
 
 // ============================================================================
@@ -459,9 +469,7 @@ app.use(sanitizeErrors);
 
 // Iniciar el servidor
 const server = app.listen(PORT, async () => {
-  console.log(`Servidor RazoConnect corriendo en puerto ${PORT}`);
-  console.log(`URL: http://localhost:${PORT}`);
-  console.log(`Endpoint de prueba: http://localhost:${PORT}/api`);
+  logger.info('Servidor iniciado', { port: PORT });
 
   // Probar conexión a la base de datos
   await db.testConnection();
@@ -469,14 +477,14 @@ const server = app.listen(PORT, async () => {
   // Inicializar Redis para gestión de refresh tokens
   try {
     await initRedisClient();
-    console.log("✅ [REDIS] Cliente inicializado correctamente");
+    logger.info('Redis cliente inicializado');
   } catch (error) {
-    console.error("❌ [REDIS] Error al inicializar cliente:", error.message);
-    console.warn("⚠️  [REDIS] El sistema continuará sin Redis (tokens de larga duración)");
+    logger.error('Redis inicialización fallida', { error: error.message });
+    logger.warn('Sistema continuará sin Redis');
   }
 
   scheduleDailyMaintenance();
-  console.log("[CRON] Sistema de mantenimiento diario activado.");
+  logger.info('Sistema de mantenimiento diario activado');
 });
 
 // ============================================================================
@@ -484,34 +492,34 @@ const server = app.listen(PORT, async () => {
 // ============================================================================
 // Cerrar conexiones correctamente al detener el servidor
 const gracefulShutdown = async (signal) => {
-  console.log(`\n🛑 [SHUTDOWN] Señal ${signal} recibida, cerrando servidor...`);
+  logger.info('Shutdown iniciado', { signal });
   
   server.close(async () => {
-    console.log("[SHUTDOWN] Servidor HTTP cerrado");
+    logger.info('Servidor HTTP cerrado');
     
     // Cerrar conexión de Redis
     try {
       await closeRedisConnection();
-      console.log("[SHUTDOWN] Redis desconectado");
+      logger.info('Redis desconectado');
     } catch (error) {
-      console.error("[SHUTDOWN] Error al cerrar Redis:", error);
+      logger.error('Error al cerrar Redis', { error: error.message });
     }
     
     // Cerrar pool de PostgreSQL
     try {
       await db.pool.end();
-      console.log("[SHUTDOWN] PostgreSQL desconectado");
+      logger.info('PostgreSQL desconectado');
     } catch (error) {
-      console.error("[SHUTDOWN] Error al cerrar PostgreSQL:", error);
+      logger.error('Error al cerrar PostgreSQL', { error: error.message });
     }
     
-    console.log("[SHUTDOWN] Proceso terminado correctamente");
+    logger.info('Proceso terminado correctamente');
     process.exit(0);
   });
   
   // Forzar cierre después de 10 segundos
   setTimeout(() => {
-    console.error("⚠️  [SHUTDOWN] Forzando cierre después de timeout");
+    logger.error('Forzando cierre después de timeout');
     process.exit(1);
   }, 10000);
 };

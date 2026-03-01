@@ -107,6 +107,47 @@ const {
 const { authLimiter, heavyOperationLimiter } = require("../middlewares/rateLimiter");
 
 /**
+ * @swagger
+ * /api/admin/login:
+ *   post:
+ *     summary: Login de administrador
+ *     tags: [Admin - Autenticación]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 format: password
+ *     responses:
+ *       200:
+ *         description: Login exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         description: Credenciales inválidas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       429:
+ *         description: Demasiados intentos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+/**
  * Rutas de autenticación de admin (públicas)
  */
 // ✅ REFACTORED: Migrado a authAdminController.js
@@ -117,7 +158,33 @@ router.post("/login", authLimiter, loginAdminSchema, validate, authAdminControll
  * Rutas protegidas de admin (requieren autenticación y rol admin)
  */
 
-// Cloudinary signature generation
+/**
+ * @swagger
+ * /api/admin/cloudinary/signature:
+ *   post:
+ *     summary: Generar firma para upload a Cloudinary
+ *     tags: [Admin - Utilidades]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Firma generada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 signature:
+ *                   type: string
+ *                 timestamp:
+ *                   type: integer
+ *       401:
+ *         description: No autenticado o no es admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.post(
   "/cloudinary/signature",
   authenticate,
@@ -125,8 +192,34 @@ router.post(
   cloudinaryController.generarFirmaUpload
 );
 
-// Admin authentication verification endpoint
-// ✅ REFACTORED: Migrado a authAdminController.js
+/**
+ * @swagger
+ * /api/admin/verify:
+ *   get:
+ *     summary: Verificar autenticación de administrador
+ *     tags: [Admin - Autenticación]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Admin verificado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 admin:
+ *                   type: object
+ *       401:
+ *         description: No autenticado o no es admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.get(
   "/verify",
   authenticate,
@@ -292,6 +385,56 @@ router.get(
   dashboardAdminController.getDashboardStats
 );
 
+/**
+ * @swagger
+ * /api/admin/pedidos:
+ *   get:
+ *     summary: Listar pedidos del tenant
+ *     tags: [Admin - Pedidos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Número de página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Resultados por página
+ *       - in: query
+ *         name: estatus
+ *         schema:
+ *           type: string
+ *           enum: [Pendiente, En proceso, Enviado, Entregado, Cancelado]
+ *         description: Filtrar por estatus
+ *     responses:
+ *       200:
+ *         description: Lista de pedidos paginada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 pagination:
+ *                   $ref: '#/components/schemas/PaginationMeta'
+ *       401:
+ *         description: No autorizado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 /**
  * Gestión de pedidos
  */

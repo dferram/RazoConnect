@@ -732,7 +732,12 @@ async function obtenerInventarioParaPDF(req, res) {
                     userRole: userRoles,
                     tenantId: tenant_id
                 });
-                console.log(`✅ [InventarioController] Stock obtenido para ${varianteIds.length} variantes (Usuario: ${userId})`);
+                logger.info('Stock obtenido para variantes', {
+                    count: varianteIds.length,
+                    userId,
+                    requestId: req.requestId,
+                    tenantId: tenant_id
+                });
             } catch (stockError) {
                 logger.error('[InventarioController] Error al obtener stock dinámico:', {
       error: stockError.message,
@@ -794,10 +799,17 @@ async function obtenerInventarioParaPDF(req, res) {
                     item.stock_distribucion = [];
                 }
             }
-            console.log(`📊 [InventarioController] Distribución de stock agregada para Super Admin`);
+            logger.info('Distribución de stock agregada para Super Admin', {
+                requestId: req.requestId,
+                tenantId: tenant_id
+            });
         }
 
-        console.log(`📊 [InventarioController] Inventario filtrado: ${inventarioConStock.length} variantes con stock`);
+        logger.info('Inventario filtrado para PDF', {
+            count: inventarioConStock.length,
+            requestId: req.requestId,
+            tenantId: tenant_id
+        });
 
         return res.json({
             success: true,

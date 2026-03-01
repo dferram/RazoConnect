@@ -22,86 +22,447 @@ const {
 } = require("../middlewares/rateLimiter");
 
 /**
- * @route   POST /api/registro/cliente
- * @desc    Registrar un nuevo cliente
- * @access  Public
- * @body    { Nombre, Apellido, Email, Password, Telefono }
- * @security Rate limited: 3 registros por hora por IP
+ * @swagger
+ * /api/registro/cliente:
+ *   post:
+ *     summary: Registrar un nuevo cliente
+ *     tags: [Autenticación]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [Nombre, Apellido, Email, Password, Telefono]
+ *             properties:
+ *               Nombre:
+ *                 type: string
+ *                 example: Juan
+ *               Apellido:
+ *                 type: string
+ *                 example: Pérez
+ *               Email:
+ *                 type: string
+ *                 format: email
+ *                 example: juan@ejemplo.com
+ *               Password:
+ *                 type: string
+ *                 format: password
+ *                 example: Password123!
+ *               Telefono:
+ *                 type: string
+ *                 example: "5512345678"
+ *     responses:
+ *       201:
+ *         description: Cliente registrado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Datos inválidos o email ya registrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/registro/cliente", registerLimiter, registroClienteSchema, validate, clienteAuthController.registroCliente);
 
 /**
- * @route   POST /api/registro/agente
- * @desc    Registrar un nuevo agente de ventas
- * @access  Public
- * @body    { Nombre, Apellido, Email, Password, CodigoAgente }
- * @security Rate limited: 3 registros por hora por IP
+ * @swagger
+ * /api/registro/agente:
+ *   post:
+ *     summary: Registrar un nuevo agente de ventas
+ *     tags: [Autenticación]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [Nombre, Apellido, Email, Password, CodigoAgente]
+ *             properties:
+ *               Nombre:
+ *                 type: string
+ *                 example: María
+ *               Apellido:
+ *                 type: string
+ *                 example: García
+ *               Email:
+ *                 type: string
+ *                 format: email
+ *                 example: maria@ejemplo.com
+ *               Password:
+ *                 type: string
+ *                 format: password
+ *                 example: Password123!
+ *               CodigoAgente:
+ *                 type: string
+ *                 example: AG-001
+ *     responses:
+ *       201:
+ *         description: Agente registrado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Datos inválidos o código de agente inválido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/registro/agente", registerLimiter, agenteAuthController.registroAgente);
 
 /**
- * @route   POST /api/login
- * @desc    Iniciar sesión (cliente o agente)
- * @access  Public
- * @body    { Email, Password }
- * @security Rate limited: 5 intentos cada 15 minutos por IP
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login de cliente
+ *     tags: [Autenticación]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: cliente@ejemplo.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: "MiPassword123"
+ *     responses:
+ *       200:
+ *         description: Login exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 token:
+ *                   type: string
+ *                 refreshToken:
+ *                   type: string
+ *       401:
+ *         description: Credenciales inválidas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/login", authLimiter, loginAgenteSchema, validate, clienteAuthController.login);
 
 /**
- * @route   GET /api/clientes/verify
- * @desc    Verificar token de cliente
- * @access  Private (requiere token de cliente)
+ * @swagger
+ * /api/clientes/verify:
+ *   get:
+ *     summary: Verificar token de cliente
+ *     tags: [Autenticación]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Token válido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 usuario:
+ *                   type: object
+ *       401:
+ *         description: Token inválido o expirado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get("/clientes/verify", authenticate, clienteAuthController.verifyCliente);
 
 /**
- * @route   POST /api/auth/forgot-password
- * @desc    Solicitar recuperación de contraseña
- * @access  Public
- * @security Rate limited: 3 intentos por hora por IP
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Solicitar recuperación de contraseña
+ *     tags: [Autenticación]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: usuario@ejemplo.com
+ *     responses:
+ *       200:
+ *         description: Email de recuperación enviado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Email no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/auth/forgot-password", passwordResetLimiter, clienteAuthController.forgotPassword);
 
 /**
- * @route   POST /api/auth/reset-password
- * @desc    Restablecer contraseña con token
- * @access  Public
- * @security Rate limited: 3 intentos por hora por IP
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Restablecer contraseña con token
+ *     tags: [Autenticación]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token, newPassword]
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *                 example: NuevaPassword123!
+ *     responses:
+ *       200:
+ *         description: Contraseña restablecida exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Token inválido o expirado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/auth/reset-password", passwordResetLimiter, clienteAuthController.resetPassword);
 
 /**
- * @route   POST /api/auth/refresh
- * @desc    Renovar Access Token usando Refresh Token
- * @access  Public (requiere refresh token válido)
- * @body    { refreshToken }
- * @returns { accessToken }
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Renovar Access Token usando Refresh Token
+ *     tags: [Autenticación]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [refreshToken]
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *     responses:
+ *       200:
+ *         description: Access token renovado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 accessToken:
+ *                   type: string
+ *       401:
+ *         description: Refresh token inválido o expirado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/auth/refresh", tokenController.refreshAccessToken);
 
 /**
- * @route   POST /api/auth/logout
- * @desc    Cerrar sesión (invalidar Refresh Token)
- * @access  Public/Private (puede usar token o enviar id/rol en body)
- * @body    { id?, rol? } o usa req.user si está autenticado
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Cerrar sesión (invalidar Refresh Token)
+ *     tags: [Autenticación]
+ *     security: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: integer
+ *                 example: 123
+ *               rol:
+ *                 type: string
+ *                 enum: [cliente, agente, admin, super_admin]
+ *                 example: cliente
+ *     responses:
+ *       200:
+ *         description: Sesión cerrada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/auth/logout", tokenController.logout);
 
 /**
- * @route   GET /api/auth/session-status
- * @desc    Verificar si existe una sesión activa
- * @access  Public
- * @query   { userId, rol }
- * @returns { hasActiveSession: boolean }
+ * @swagger
+ * /api/auth/session-status:
+ *   get:
+ *     summary: Verificar si existe una sesión activa
+ *     tags: [Autenticación]
+ *     security: []
+ *     parameters:
+ *       - in: query
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         example: 123
+ *       - in: query
+ *         name: rol
+ *         required: true
+ *         schema:
+ *           type: string
+ *           enum: [cliente, agente, admin, super_admin]
+ *         example: cliente
+ *     responses:
+ *       200:
+ *         description: Estado de sesión obtenido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 hasActiveSession:
+ *                   type: boolean
+ *                   example: true
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get("/auth/session-status", tokenController.checkSessionStatus);
 
 /**
- * @route   GET /api/auth/me
- * @desc    Obtener información del usuario actual (admin, agente o cliente)
- * @access  Private (requiere token válido)
- * @returns { nombre, email, rol, iniciales, tipo }
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Obtener información del usuario actual
+ *     tags: [Autenticación]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Información del usuario obtenida
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 nombre:
+ *                   type: string
+ *                   example: Juan Pérez
+ *                 email:
+ *                   type: string
+ *                   example: juan@ejemplo.com
+ *                 rol:
+ *                   type: string
+ *                   example: cliente
+ *                 iniciales:
+ *                   type: string
+ *                   example: JP
+ *                 tipo:
+ *                   type: string
+ *                   example: cliente
+ *       401:
+ *         description: No autenticado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get("/auth/me", authenticate, profileController.getCurrentUser);
 
@@ -123,15 +484,103 @@ router.get(
 );
 
 /**
- * @route   POST /api/auth/registro-admin
- * @desc    Registrar un nuevo administrador (protegido por SUPER_ADMIN_KEY)
- * @access  Public (requiere adminKey en el body)
- * @body    { Nombre, Apellido, Email, Password, Rol?, adminKey }
- * @security Rate limited: 3 intentos por hora por IP
+ * @swagger
+ * /api/auth/registro-admin:
+ *   post:
+ *     summary: Registrar un nuevo administrador
+ *     description: Requiere SUPER_ADMIN_KEY en el body para autorización
+ *     tags: [Autenticación]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [Nombre, Apellido, Email, Password, adminKey]
+ *             properties:
+ *               Nombre:
+ *                 type: string
+ *                 example: Carlos
+ *               Apellido:
+ *                 type: string
+ *                 example: Admin
+ *               Email:
+ *                 type: string
+ *                 format: email
+ *                 example: admin@ejemplo.com
+ *               Password:
+ *                 type: string
+ *                 format: password
+ *                 example: AdminPass123!
+ *               Rol:
+ *                 type: string
+ *                 enum: [admin, superadmin]
+ *                 example: admin
+ *               adminKey:
+ *                 type: string
+ *                 example: super-secret-key
+ *     responses:
+ *       201:
+ *         description: Administrador registrado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       400:
+ *         description: Datos inválidos o adminKey incorrecta
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/auth/registro-admin", registerLimiter, adminAuthController.registroAdmin);
 
-// Rutas privadas para agentes
+/**
+ * @swagger
+ * /api/agentes/vincular-cliente:
+ *   post:
+ *     summary: Vincular un cliente a un agente
+ *     tags: [Autenticación]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [clienteId]
+ *             properties:
+ *               clienteId:
+ *                 type: integer
+ *                 example: 45
+ *     responses:
+ *       200:
+ *         description: Cliente vinculado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         description: No autenticado o no es agente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.post(
   "/agentes/vincular-cliente",
   authenticate,
@@ -139,6 +588,42 @@ router.post(
   agentesController.vincularCliente
 );
 
+/**
+ * @swagger
+ * /api/agentes/mis-clientes:
+ *   get:
+ *     summary: Obtener lista de clientes del agente
+ *     tags: [Autenticación]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de clientes obtenida
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 clientes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       401:
+ *         description: No autenticado o no es agente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.get(
   "/agentes/mis-clientes",
   authenticate,
@@ -153,6 +638,42 @@ router.get(
   agentesController.obtenerClientesDelAgente
 );
 
+/**
+ * @swagger
+ * /api/agentes/clientes-disponibles:
+ *   get:
+ *     summary: Obtener clientes disponibles para vincular
+ *     tags: [Autenticación]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de clientes disponibles
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 clientes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       401:
+ *         description: No autenticado o no es agente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.get(
   "/agentes/clientes-disponibles",
   authenticate,
@@ -160,6 +681,42 @@ router.get(
   agentesController.obtenerClientesDisponibles
 );
 
+/**
+ * @swagger
+ * /api/agente/pedidos:
+ *   get:
+ *     summary: Obtener pedidos del agente
+ *     tags: [Autenticación]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de pedidos del agente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 pedidos:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       401:
+ *         description: No autenticado o no es agente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.get(
   "/agente/pedidos",
   authenticate,
@@ -167,6 +724,54 @@ router.get(
   agentesController.obtenerPedidosDelAgente
 );
 
+/**
+ * @swagger
+ * /api/agente/pedidos/{id}:
+ *   get:
+ *     summary: Obtener detalle de un pedido específico
+ *     tags: [Autenticación]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del pedido
+ *         example: 123
+ *     responses:
+ *       200:
+ *         description: Detalle del pedido obtenido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 pedido:
+ *                   type: object
+ *       401:
+ *         description: No autenticado o no es agente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Pedido no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.get(
   "/agente/pedidos/:id",
   authenticate,
@@ -174,6 +779,58 @@ router.get(
   agentesController.obtenerPedidoDetalleAgente
 );
 
+/**
+ * @swagger
+ * /api/agente/pedidos/{id}/estatus:
+ *   put:
+ *     summary: Actualizar estatus de un pedido
+ *     tags: [Autenticación]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del pedido
+ *         example: 123
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               estatus:
+ *                 type: string
+ *                 example: Entregado
+ *     responses:
+ *       200:
+ *         description: Estatus actualizado exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuccessResponse'
+ *       401:
+ *         description: No autenticado o no es agente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Pedido no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.put(
   "/agente/pedidos/:id/estatus",
   authenticate,
@@ -195,6 +852,40 @@ router.post(
   agentesController.solicitarConfirmacionPedidoAgente
 );
 
+/**
+ * @swagger
+ * /api/agente/dashboard-stats:
+ *   get:
+ *     summary: Obtener estadísticas del dashboard del agente
+ *     tags: [Autenticación]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Estadísticas obtenidas exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 stats:
+ *                   type: object
+ *       401:
+ *         description: No autenticado o no es agente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
 router.get(
   "/agente/dashboard-stats",
   authenticate,

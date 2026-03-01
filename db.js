@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const logger = require('./utils/logger');
 require('dotenv').config();
 
 // Configuración del pool de conexiones a PostgreSQL
@@ -23,11 +24,11 @@ const pool = new Pool({
 });
 
 pool.on('connect', () => {
-  console.log('✅ Conectado a la base de datos PostgreSQL en Azure');
+  logger.info('PostgreSQL pool conectado');
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Error inesperado en el cliente de PostgreSQL:', err.message);
+  logger.error('PostgreSQL pool error', { error: err.message });
   // NO matar el servidor - el pool manejará la reconexión automáticamente
   // Solo logear el error para debugging
 });
@@ -37,16 +38,27 @@ const testConnection = async () => {
     const client = await pool.connect();
     // Opcional: Imprimir la versión para confirmar que es Azure
     const res = await client.query('SELECT version()');
-    console.log('✅ Prueba de conexión exitosa:', res.rows[0].version);
+    logger.info('PostgreSQL conexión verificada', { version: res.rows[0].version });
     client.release();
   } catch (err) {
-    console.error('❌ Error al conectar a PostgreSQL:', err.message);
+    logger.error('PostgreSQL conexión fallida', { error: err.message });
   }
 };
+
+/**
+ * Retorna métricas actuales del pool de conexiones
+ * Útil para monitoreo y health checks
+ */
+const getPoolMetrics = () => ({
+  total: pool.totalCount,       // Conexiones totales creadas
+  idle: pool.idleCount,         // Conexiones disponibles en espera
+  waiting: pool.waitingCount,   // Queries esperando una conexión libre
+});
 
 module.exports = {
   pool,
   query: (text, params) => pool.query(text, params),
   getClient: () => pool.connect(),
-  testConnection
+  testConnection,
+  getPoolMetrics,
 };
