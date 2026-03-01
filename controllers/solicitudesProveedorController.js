@@ -82,8 +82,7 @@ const getSolicitudesPendientesProveedor = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al obtener solicitudes pendientes",
-      error: error.message,
+      message: "Error al obtener solicitudes pendientes"
     });
   }
 };

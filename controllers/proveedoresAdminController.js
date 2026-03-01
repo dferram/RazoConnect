@@ -81,8 +81,7 @@ const getAllProveedores = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener proveedores",
-      error: error.message
+      message: "Error al obtener proveedores"
     });
   }
 };
@@ -128,8 +127,7 @@ const getProveedorById = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener proveedor",
-      error: error.message,
+      message: "Error al obtener proveedor"
     });
   }
 };
@@ -252,8 +250,7 @@ const crearProveedor = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al crear proveedor",
-      error: error.message,
+      message: "Error al crear proveedor"
     });
   } finally {
     client.release();
@@ -413,8 +410,7 @@ const actualizarProveedor = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al actualizar proveedor",
-      error: error.message,
+      message: "Error al actualizar proveedor"
     });
   } finally {
     client.release();

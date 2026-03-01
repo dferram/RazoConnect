@@ -386,7 +386,7 @@ const crearOrdenCompra = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: error.message || "Error al crear la orden de compra",
+      message: "Error al crear la orden de compra"
     });
   }
 };

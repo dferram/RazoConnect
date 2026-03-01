@@ -110,8 +110,8 @@ const agruparOrdenes = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
-      message: 'Error al agrupar órdenes de compra',
-      error: error.message
+      success: false,
+      message: 'Error al agrupar órdenes de compra'
     });
   } finally {
     client.release();
@@ -249,8 +249,8 @@ const getGrupoDetalle = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
-      message: 'Error al obtener detalles del grupo',
-      error: error.message
+      success: false,
+      message: 'Error al obtener detalles del grupo'
     });
   }
 };
@@ -311,8 +311,8 @@ const getAllGrupos = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
-      message: 'Error al obtener grupos',
-      error: error.message
+      success: false,
+      message: 'Error al obtener grupos'
     });
   }
 };
@@ -371,8 +371,8 @@ const desagruparOrdenes = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
-      message: 'Error al eliminar grupo',
-      error: error.message
+      success: false,
+      message: 'Error al eliminar grupo'
     });
   } finally {
     client.release();
@@ -475,8 +475,8 @@ const agregarOrdenesAGrupo = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
-      message: 'Error al agregar órdenes al grupo',
-      error: error.message
+      success: false,
+      message: 'Error al agregar órdenes al grupo'
     });
   } finally {
     client.release();
@@ -570,8 +570,8 @@ const getGrupoConsolidado = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
-      message: 'Error al obtener productos consolidados',
-      error: error.message
+      success: false,
+      message: 'Error al obtener productos consolidados'
     });
   }
 };

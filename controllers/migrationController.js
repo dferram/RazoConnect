@@ -106,8 +106,7 @@ const sincronizarImagenesPorColor = async (req, res) => {
     
     return res.status(500).json({
       success: false,
-      message: "Error al sincronizar imágenes por color",
-      error: error.message
+      message: "Error al sincronizar imágenes por color"
     });
   } finally {
     client.release();

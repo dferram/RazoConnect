@@ -515,7 +515,7 @@ const recibirInventario = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: error.message || "Error al recibir el inventario",
+      message: "Error al recibir el inventario"
     });
   }
 };

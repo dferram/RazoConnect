@@ -68,14 +68,12 @@ async function getOrdenesCompraReportes(req, res) {
     });
   } catch (error) {
     logger.error('Error al obtener órdenes para reportes:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
-      message: 'Error al obtener órdenes de compra',
-      error: error.message
+      message: 'Error al obtener órdenes de compra'
     });
   }
 }
@@ -248,14 +246,12 @@ async function getOrdenCompraReporteDetallado(req, res) {
     });
   } catch (error) {
     logger.error('Error al obtener detalle de orden:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
-      message: 'Error al obtener detalle de la orden',
-      error: error.message
+      message: 'Error al obtener detalle de la orden'
     });
   }
 }

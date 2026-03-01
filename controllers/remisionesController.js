@@ -598,8 +598,8 @@ exports.generarRemision = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({ 
-      error: 'Error al generar remisión',
-      detalle: error.message 
+      success: false,
+      message: 'Error al generar remisión'
     });
   } finally {
     client.release();
@@ -667,8 +667,8 @@ exports.obtenerRemision = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({ 
-      error: 'Error al obtener remisión',
-      detalle: error.message 
+      success: false,
+      message: 'Error al obtener remisión'
     });
   }
 };
@@ -777,8 +777,8 @@ exports.listarRemisiones = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({ 
-      error: 'Error al listar remisiones',
-      detalle: error.message 
+      success: false,
+      message: 'Error al listar remisiones'
     });
   }
 };
@@ -894,8 +894,8 @@ exports.cancelarRemision = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({ 
-      error: 'Error al cancelar remisión',
-      detalle: error.message 
+      success: false,
+      message: 'Error al cancelar remisión'
     });
   } finally {
     client.release();
@@ -951,8 +951,8 @@ exports.obtenerItemsPendientesSurtir = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({ 
-      error: 'Error al obtener items pendientes',
-      detalle: error.message 
+      success: false,
+      message: 'Error al obtener items pendientes'
     });
   }
 };

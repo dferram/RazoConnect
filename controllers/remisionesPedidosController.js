@@ -138,8 +138,7 @@ const obtenerRemisionPedido = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener datos de remisión",
-      error: error.message,
+      message: "Error al obtener datos de remisión"
     });
   }
 };

@@ -76,7 +76,7 @@ const obtenerNotificaciones = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener notificaciones:', {
-      error: error,
+      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
@@ -146,7 +146,7 @@ const marcarTodasLeidasStaff = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al marcar todas como leídas (staff):', {
-      error: error,
+      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
@@ -214,7 +214,7 @@ const obtenerConteoNoLeidasStaff = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener conteo de notificaciones staff:', {
-      error: error,
+      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
@@ -297,7 +297,7 @@ const obtenerNotificacionesStaff = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener notificaciones staff:', {
-      error: error,
+      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
@@ -338,8 +338,8 @@ const marcarComoLeida = async (req, res) => {
       data: result.rows[0],
     });
   } catch (error) {
-    logger.error('Error al marcar notificación:', {
-      error: error,
+    logger.error('Error al marcar notificación como leída:', {
+      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
@@ -375,7 +375,7 @@ const marcarTodasLeidas = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al marcar todas como leídas:', {
-      error: error,
+      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
@@ -415,7 +415,7 @@ const eliminarNotificacion = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al eliminar notificación:', {
-      error: error,
+      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });

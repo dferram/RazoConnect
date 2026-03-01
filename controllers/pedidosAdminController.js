@@ -202,8 +202,7 @@ const getAllPedidos = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener pedidos",
-      error: error.message
+      message: "Error al obtener pedidos"
     });
   }
 };
@@ -386,13 +385,12 @@ const getPedidoDetalle = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener detalle del pedido:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
       success: false,
-      message: "Error en el servidor",
+      message: "Error en el servidor"
     });
   }
 };
@@ -497,7 +495,6 @@ const confirmarPedido = async (req, res) => {
           return res.status(400).json({
             success: false,
             message: `No se pudo confirmar: Stock insuficiente para el producto ${ref}`,
-            error: invError.message,
             code: invError.code,
           });
         }
@@ -505,7 +502,6 @@ const confirmarPedido = async (req, res) => {
         return res.status(500).json({
           success: false,
           message: `No se pudo confirmar: Error al descontar inventario para ${ref}`,
-          error: invError.message,
           code: invError.code,
         });
       }
@@ -530,15 +526,12 @@ const confirmarPedido = async (req, res) => {
     }
 
     logger.error('Error confirmando pedido:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
-      message: "Error al confirmar el pedido",
-      error: error.message,
-      code: error.code,
+      message: "Error al confirmar el pedido"
     });
   } finally {
     client.release();

@@ -397,8 +397,7 @@ async function generarPDFOrdenCompra(req, res) {
         if (!res.headersSent) {
             res.status(500).json({ 
                 success: false,
-                error: 'Error al generar el PDF',
-                message: error.message
+                message: 'Error al generar el PDF'
             });
         }
     }

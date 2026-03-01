@@ -160,8 +160,7 @@ const obtenerTiposProductoPublicos = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al obtener los tipos de producto",
-      error: error.message,
+      message: "Error al obtener los tipos de producto"
     });
   }
 };

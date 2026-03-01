@@ -258,7 +258,7 @@ async function obtenerCuentaAdmin(req, res) {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Administrador no encontrado" });
+      return res.status(404).json({ success: false, message: "Administrador no encontrado" });
     }
 
     res.json(result.rows[0]);
@@ -268,7 +268,7 @@ async function obtenerCuentaAdmin(req, res) {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: "Error al obtener información de cuenta" });
+    res.status(500).json({ success: false, message: "Error al obtener información de cuenta" });
   }
 }
 
@@ -290,7 +290,7 @@ async function actualizarCuentaAdmin(req, res) {
 
     if (result.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Administrador no encontrado" });
+      return res.status(404).json({ success: false, message: "Administrador no encontrado" });
     }
 
     await registrarLog(
@@ -304,6 +304,7 @@ async function actualizarCuentaAdmin(req, res) {
     await client.query("COMMIT");
 
     res.json({
+      success: true,
       message: "Información bancaria actualizada exitosamente",
       cuenta: result.rows[0],
     });
@@ -314,7 +315,7 @@ async function actualizarCuentaAdmin(req, res) {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: "Error al actualizar información bancaria" });
+    res.status(500).json({ success: false, message: "Error al actualizar información bancaria" });
   } finally {
     client.release();
   }
@@ -332,7 +333,7 @@ async function obtenerCuentaAgente(req, res) {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: "Agente no encontrado" });
+      return res.status(404).json({ success: false, message: "Agente no encontrado" });
     }
 
     res.json(result.rows[0]);
@@ -342,7 +343,7 @@ async function obtenerCuentaAgente(req, res) {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: "Error al obtener información de cuenta" });
+    res.status(500).json({ success: false, message: "Error al obtener información de cuenta" });
   }
 }
 
@@ -364,7 +365,7 @@ async function actualizarCuentaAgente(req, res) {
 
     if (result.rows.length === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Agente no encontrado" });
+      return res.status(404).json({ success: false, message: "Agente no encontrado" });
     }
 
     await registrarLog(
@@ -388,7 +389,7 @@ async function actualizarCuentaAgente(req, res) {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: "Error al actualizar información bancaria" });
+    res.status(500).json({ success: false, message: "Error al actualizar información bancaria" });
   } finally {
     client.release();
   }

@@ -67,8 +67,7 @@ exports.updateCategoryLanding = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: 'Error al actualizar categoría',
-      error: error.message
+      message: 'Error al actualizar categoría'
     });
   } finally {
     client.release();
@@ -136,8 +135,7 @@ exports.updateProveedorLanding = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: 'Error al actualizar proveedor',
-      error: error.message
+      message: 'Error al actualizar proveedor'
     });
   } finally {
     client.release();
@@ -197,8 +195,7 @@ exports.getPublicLandingItems = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: 'Error al obtener items de landing',
-      error: error.message
+      message: 'Error al obtener items de landing'
     });
   }
 };

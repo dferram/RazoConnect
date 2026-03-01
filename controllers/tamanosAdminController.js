@@ -56,8 +56,7 @@ const getTamanosPaquetes = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener los tamaños de paquetes",
-      error: error.message
+      message: "Error al obtener los tamaños de paquetes"
     });
   }
 };
@@ -107,8 +106,7 @@ const getTamanosDisponiblesProducto = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener los tamaños disponibles",
-      error: error.message
+      message: "Error al obtener los tamaños disponibles"
     });
   }
 };

@@ -43,14 +43,12 @@ const getTiposProductoAdmin = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener tipos de producto (admin):', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
-      message: "Error al obtener los tipos de producto",
-      error: error.message,
+      message: "Error al obtener los tipos de producto"
     });
   }
 };
@@ -107,14 +105,12 @@ const crearTipoProductoAdmin = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al crear tipo de producto (admin):', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
-      message: "Error al crear el tipo de producto",
-      error: error.message,
+      message: "Error al crear el tipo de producto"
     });
   }
 };

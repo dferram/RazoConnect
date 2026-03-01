@@ -436,7 +436,7 @@ const crearProducto = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: error.message || "Error al crear el producto",
+      message: "Error al crear el producto"
     });
   } finally {
     client.release();
@@ -560,7 +560,7 @@ const actualizarProducto = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: error.message || "Error al actualizar el producto",
+      message: "Error al actualizar el producto"
     });
   } finally {
     client.release();

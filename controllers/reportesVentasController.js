@@ -85,8 +85,7 @@ const getMisVentas = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: 'Error al obtener ventas',
-      error: error.message
+      message: 'Error al obtener ventas'
     });
   }
 };
@@ -164,8 +163,7 @@ const getPedidoAllocation = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: 'Error al obtener allocation del pedido',
-      error: error.message
+      message: 'Error al obtener allocation del pedido'
     });
   }
 };
@@ -234,14 +232,12 @@ const getReporteVentasPorAdmin = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error en getReporteVentasPorAdmin:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
       success: false,
-      message: 'Error al generar reporte',
-      error: error.message
+      message: 'Error al generar reporte'
     });
   }
 };

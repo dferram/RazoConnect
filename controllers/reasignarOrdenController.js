@@ -147,8 +147,7 @@ const reasignarOrdenCompra = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al reasignar orden de compra",
-      error: error.message
+      message: "Error al reasignar orden de compra"
     });
   } finally {
     client.release();

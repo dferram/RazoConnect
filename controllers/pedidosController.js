@@ -1857,8 +1857,7 @@ const obtenerPedidos = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener los pedidos",
-      error: error.message,
+      message: "Error al obtener los pedidos"
     });
   }
 };
@@ -2072,8 +2071,7 @@ const obtenerPedidoPorId = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener el pedido",
-      error: error.message,
+      message: "Error al obtener el pedido"
     });
   }
 };
@@ -2239,8 +2237,7 @@ const obtenerDatosPago = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al procesar la solicitud de pago",
-      error: error.message,
+      message: "Error al procesar la solicitud de pago"
     });
   }
 };
@@ -2678,9 +2675,7 @@ const cancelarPedido = async (req, res) => {
     
     res.status(500).json({ 
       success: false,
-      error: 'Error al cancelar pedido',
-      detalle: error.message,
-      codigo: error.code || 'UNKNOWN'
+      message: 'Error al cancelar pedido'
     });
   } finally {
     client.release();
@@ -2729,7 +2724,6 @@ const simulatePriorityImpact = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error al simular el impacto de prioridad",
-      error: error.message,
       impactedOrders: []
     });
   }
@@ -2835,8 +2829,8 @@ const togglePrioridad = async (req, res) => {
       pedidoId: req.params.id
     });
     res.status(500).json({
-      message: "Error al cambiar la prioridad del pedido",
-      error: error.message,
+      success: false,
+      message: "Error al cambiar la prioridad del pedido"
     });
   } finally {
     client.release();
