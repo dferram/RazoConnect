@@ -2,6 +2,15 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const adminAuthController = require("../controllers/auth/adminAuthController");
+const { 
+  loginAdminSchema, 
+  crearAgenteSchema, 
+  crearOrdenCompraSchema, 
+  recibirInventarioSchema, 
+  ajusteInventarioSchema, 
+  abonoSchema 
+} = require("../middlewares/validators/schemas");
+const validate = require("../middlewares/validate");
 const bitacoraController = require("../controllers/bitacoraController");
 const changeRequestController = require("../controllers/changeRequestController");
 const cloudinaryController = require("../controllers/cloudinaryController");
@@ -102,7 +111,7 @@ const { authLimiter } = require("../middlewares/rateLimiter");
  */
 // ✅ REFACTORED: Migrado a authAdminController.js
 // 🔒 SECURITY: Rate limited a 10 intentos cada 15 minutos
-router.post("/login", authLimiter, authAdminController.loginAdmin);
+router.post("/login", authLimiter, loginAdminSchema, validate, authAdminController.loginAdmin);
 
 /**
  * Rutas protegidas de admin (requieren autenticación y rol admin)
@@ -691,6 +700,8 @@ router.post(
   "/inventario/ajuste",
   authenticate,
   authorizeAdmin,
+  ajusteInventarioSchema,
+  validate,
   ajustesInventarioController.ajustarInventario
 );
 
@@ -760,6 +771,8 @@ router.post(
   "/agentes",
   authenticate,
   authorizeAdmin,
+  crearAgenteSchema,
+  validate,
   agentesAdminController.crearAgente
 );
 // ✅ REFACTORED: Migrado a agentesAdminController.js
@@ -954,6 +967,8 @@ router.post(
   "/registrar-abono",
   authenticate,
   authorizeAdminOrAgente,
+  abonoSchema,
+  validate,
   cxcAdminController.registrarAbonoCxC
 );
 
@@ -1317,6 +1332,8 @@ router.post(
   "/ordenes-compra",
   authenticate,
   authorizeAdmin,
+  crearOrdenCompraSchema,
+  validate,
   ordenesCompraController.crearOrdenCompra
 );
 // ✅ REFACTORED: Migrado a itemsOrdenCompraController.js
@@ -1351,6 +1368,8 @@ router.post(
   "/ordenes-compra/recibir",
   authenticate,
   authorizeAdmin,
+  recibirInventarioSchema,
+  validate,
   recepcionInventarioController.recibirInventario
 );
 

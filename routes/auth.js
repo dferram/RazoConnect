@@ -8,6 +8,8 @@ const profileController = require("../controllers/auth/profileController");
 const agentesController = require("../controllers/agentesController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 const passport = require("passport");
+const { registroClienteSchema, loginAgenteSchema } = require("../middlewares/validators/schemas");
+const validate = require("../middlewares/validate");
 
 // ============================================================================
 // RATE LIMITERS DE SEGURIDAD
@@ -26,7 +28,7 @@ const {
  * @body    { Nombre, Apellido, Email, Password, Telefono }
  * @security Rate limited: 3 registros por hora por IP
  */
-router.post("/registro/cliente", registerLimiter, clienteAuthController.registroCliente);
+router.post("/registro/cliente", registerLimiter, registroClienteSchema, validate, clienteAuthController.registroCliente);
 
 /**
  * @route   POST /api/registro/agente
@@ -44,7 +46,7 @@ router.post("/registro/agente", registerLimiter, agenteAuthController.registroAg
  * @body    { Email, Password }
  * @security Rate limited: 5 intentos cada 15 minutos por IP
  */
-router.post("/login", authLimiter, clienteAuthController.login);
+router.post("/login", authLimiter, loginAgenteSchema, validate, clienteAuthController.login);
 
 /**
  * @route   GET /api/clientes/verify

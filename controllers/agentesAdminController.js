@@ -214,13 +214,6 @@ const crearAgente = async (req, res) => {
     const { nombre, apellido, email, password, telefono, porcentaje_comision } = req.body;
     const { tenant_id } = req.tenant;
 
-    if (!nombre || !apellido || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Nombre, apellido, email y contraseña son obligatorios"
-      });
-    }
-
     const emailCheck = await db.query(
       "SELECT agenteid FROM agentesdeventas WHERE email = $1 AND tenant_id = $2",
       [email, tenant_id]

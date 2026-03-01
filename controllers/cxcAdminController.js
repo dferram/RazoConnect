@@ -148,13 +148,6 @@ const registrarAbonoCxC = async (req, res) => {
       });
     }
 
-    if (!Number.isFinite(monto) || monto <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Monto inválido",
-      });
-    }
-
     const allowedMetodos = new Set(["efectivo", "transferencia"]);
     const metodoPago = allowedMetodos.has(metodoPagoRaw)
       ? metodoPagoRaw

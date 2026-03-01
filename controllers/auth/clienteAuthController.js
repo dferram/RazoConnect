@@ -16,40 +16,6 @@ const registroCliente = async (req, res) => {
   try {
     let { Nombre, Apellido, Email, Password, Telefono, numero_cliente } = req.body;
 
-    Email = Email && Email.trim() !== "" ? Email.trim() : null;
-    Telefono = Telefono && Telefono.trim() !== "" ? Telefono.trim() : null;
-
-    const errors = [];
-    if (!Nombre || Nombre.trim() === "") errors.push("El nombre es requerido");
-    if (!Apellido || Apellido.trim() === "") errors.push("El apellido es requerido");
-    if (!Password || Password.trim() === "") errors.push("La contraseña es requerida");
-    if (Password && Password.length < 6) errors.push("La contraseña debe tener al menos 6 caracteres");
-
-    if (!Email && !Telefono) {
-      errors.push("Debes proporcionar al menos un medio de contacto (correo o teléfono)");
-    }
-
-    if (Email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(Email)) {
-        errors.push("El formato del correo electrónico es inválido");
-      }
-    }
-
-    if (Telefono) {
-      if (Telefono.length < 10 || !/^\d+$/.test(Telefono)) {
-        errors.push("El teléfono debe contener al menos 10 dígitos numéricos");
-      }
-    }
-
-    if (errors.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Error de validación",
-        errors,
-      });
-    }
-
     const { tenant_id } = req.tenant;
 
     if (numero_cliente && numero_cliente.trim() !== "") {

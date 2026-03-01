@@ -47,13 +47,6 @@ const ajustarInventario = async (req, res) => {
       cantidadCambio,
     } = req.body;
 
-    if (!varianteId) {
-      return res.status(400).json({
-        success: false,
-        message: "varianteId es requerido",
-      });
-    }
-
     const tipoMov = (tipoMovimiento || "").toString().trim().toUpperCase();
     const motivoNormalizado = (motivo || "").toString().trim();
 

@@ -63,14 +63,6 @@ const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validar campos requeridos
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Email y contraseña son requeridos",
-      });
-    }
-
     // CRITICAL SECURITY: Validar tenant_id del request
     if (!req.tenant || !req.tenant.tenant_id) {
       return res.status(400).json({

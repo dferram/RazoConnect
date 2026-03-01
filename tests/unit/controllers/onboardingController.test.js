@@ -35,6 +35,12 @@ describe('onboardingController', () => {
       const req = mockReq({ body: { nombre_cliente: 'Solo esto' } });
       const res = mockRes();
 
+      const mockClient = {
+        query: jest.fn(),
+        release: jest.fn()
+      };
+      db.pool.connect.mockResolvedValue(mockClient);
+
       await crearTenant(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);

@@ -40,7 +40,9 @@ describe('Admin Auth Integration Tests', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toMatch(/email|requerido/i);
+      expect(response.body.message).toBe('Datos de entrada inválidos');
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors.some(e => e.field === 'email')).toBe(true);
     });
 
     it('debe retornar 400 cuando falta el campo password', async () => {
@@ -52,7 +54,9 @@ describe('Admin Auth Integration Tests', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toMatch(/password|contraseña|requerido/i);
+      expect(response.body.message).toBe('Datos de entrada inválidos');
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors.some(e => e.field === 'password')).toBe(true);
     });
 
     it('debe retornar 400 cuando falta el tenant', async () => {
@@ -73,9 +77,11 @@ describe('Admin Auth Integration Tests', () => {
     });
 
     it('debe retornar 401 cuando el email no existe en la base de datos', async () => {
+      // Mock para buscar admin - no encontrado
+      db.query.mockResolvedValueOnce({ rows: [] });
       // Mock para verificar columnas de agentes
       db.query.mockResolvedValueOnce({ rows: [{ column_name: 'esadmin' }, { column_name: 'adminrol' }] });
-      // Mock para buscar admin - no encontrado
+      // Mock para buscar agente - no encontrado
       db.query.mockResolvedValueOnce({ rows: [] });
 
       const response = await request(app)
@@ -94,15 +100,13 @@ describe('Admin Auth Integration Tests', () => {
       const mockAdmin = {
         adminid: 1,
         email: 'admin@test.com',
-        password: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', // hash of "correctpassword"
+        passwordhash: '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', // hash of "correctpassword"
         nombre: 'Admin',
         apellido: 'Test',
         rol: 'admin',
         tenant_id: 1
       };
 
-      // Mock para verificar columnas de agentes
-      db.query.mockResolvedValueOnce({ rows: [{ column_name: 'esadmin' }, { column_name: 'adminrol' }] });
       // Mock para buscar admin
       db.query.mockResolvedValueOnce({ rows: [mockAdmin] });
 
