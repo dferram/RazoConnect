@@ -42,20 +42,10 @@ async function cargarProductosPedido(pedidoId) {
   tablaEl.style.display = 'none';
 
   try {
-    const token = localStorage.getItem('razoconnect_admin_token');
     const url = `${API_BASE_URL}/admin/pedidos/${pedidoId}/detalle`;
     console.log('📡 URL de petición:', url);
     
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) throw new Error('Error al cargar pedido');
-
-    const data = await response.json();
+    const data = await ApiClient.get(url);
     console.log('📦 Datos recibidos:', data);
     
     if (data.success && data.data) {
@@ -88,15 +78,13 @@ async function cargarProductosPedido(pedidoId) {
     }
   } catch (error) {
     console.error('Error:', error);
-    showToast('Error al cargar productos del pedido', 'error');
+    UI.handleApiError(error);
   } finally {
     loadingEl.style.display = 'none';
   }
 }
 
 async function cargarPaquetesDisponibles() {
-  const token = localStorage.getItem('razoconnect_admin_token');
-  
   // Cargar paquetes específicos para cada producto
   for (let item of productosActualesPedido) {
     if (!item.productoId || !item.precioUnitario || item.precioUnitario <= 0) {
@@ -106,20 +94,7 @@ async function cargarPaquetesDisponibles() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/productos/${item.productoId}/tamanos-disponibles`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        console.error(`Error al cargar paquetes para producto ${item.productoId}:`, response.status);
-        item.paquetesDisponibles = [];
-        continue;
-      }
-      
-      const result = await response.json();
+      const result = await ApiClient.get(`${API_BASE_URL}/admin/productos/${item.productoId}/tamanos-disponibles`);
       
       if (result.success && Array.isArray(result.data)) {
         item.paquetesDisponibles = result.data.map(t => ({
@@ -375,19 +350,7 @@ async function buscarProductos(query) {
   resultadosEl.style.display = 'block';
 
   try {
-    const token = localStorage.getItem('razoconnect_admin_token');
-    const response = await fetch(`${API_BASE_URL}/admin/productos/buscar?q=${encodeURIComponent(query)}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
+    const data = await ApiClient.get(`${API_BASE_URL}/admin/productos/buscar?q=${encodeURIComponent(query)}`);
     
     if (data.success && data.data && data.data.length > 0) {
       mostrarResultadosBusqueda(data.data);
@@ -796,15 +759,9 @@ async function aplicarAjustePedido() {
   if (!confirmacion.isConfirmed) return;
 
   const btnAplicar = document.getElementById('btnAplicarAjuste');
-  const btnText = document.getElementById('btnAplicarAjusteText');
-  const btnSpinner = document.getElementById('btnAplicarAjusteSpinner');
+  const restoreBtn = UI.setButtonLoading(btnAplicar, 'Aplicando cambios...');
 
   try {
-    btnAplicar.disabled = true;
-    btnText.style.display = 'none';
-    btnSpinner.style.display = 'block';
-
-    const token = localStorage.getItem('razoconnect_admin_token');
     const payload = {
       itemsEliminar: itemsParaEliminar,
       itemsModificar: itemsParaModificar,
@@ -815,18 +772,9 @@ async function aplicarAjustePedido() {
       }))
     };
 
-    const response = await fetch(`${API_BASE_URL}/admin/pedidos/${pedidoAjusteActual}/ajustar`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    });
+    const data = await ApiClient.put(`${API_BASE_URL}/admin/pedidos/${pedidoAjusteActual}/ajustar`, payload);
 
-    const data = await response.json();
-
-    if (response.ok && data.success) {
+    if (data.success) {
       await Swal.fire({
         icon: 'success',
         title: 'Pedido ajustado exitosamente',
@@ -857,15 +805,8 @@ async function aplicarAjustePedido() {
     }
   } catch (error) {
     console.error('Error:', error);
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: error.message || 'Error al aplicar los ajustes',
-      confirmButtonColor: '#F97316'
-    });
+    UI.handleApiError(error);
   } finally {
-    btnAplicar.disabled = false;
-    btnText.style.display = 'inline';
-    btnSpinner.style.display = 'none';
+    restoreBtn();
   }
 }
