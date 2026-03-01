@@ -1,6 +1,13 @@
 // API Configuration
 const API_BASE_URL = `${window.location.origin}/api`;
 
+// ============================================================================
+// INTEGRACIÓN CON AUTH MANAGER (Sistema Access + Refresh Tokens)
+// ============================================================================
+// Si AuthManager está disponible, usar sus funciones
+// Si no, usar funciones legacy para compatibilidad
+const useAuthManager = typeof window.AuthManager !== 'undefined';
+
 const ADMIN_TOKEN_KEY = "razoconnect_admin_token";
 const ADMIN_DATA_KEY = "razoconnect_admin";
 const AGENT_TOKEN_KEY = "razoconnect_agent_token";
@@ -8,14 +15,23 @@ const AGENT_DATA_KEY = "razoconnect_agent";
 
 // Utility function to get JWT token from localStorage
 const getToken = () => {
+  if (useAuthManager) {
+    return AuthManager.getAccessToken('cliente');
+  }
   return localStorage.getItem("razoconnect_token");
 };
 
 const getAdminToken = () => {
+  if (useAuthManager) {
+    return AuthManager.getAccessToken('admin');
+  }
   return localStorage.getItem(ADMIN_TOKEN_KEY);
 };
 
 const getAgentToken = () => {
+  if (useAuthManager) {
+    return AuthManager.getAccessToken('agente');
+  }
   return localStorage.getItem(AGENT_TOKEN_KEY);
 };
 
@@ -230,6 +246,12 @@ if (typeof window !== 'undefined') {
 
 // API call wrapper con manejo automático de token y sesión expirada
 const apiCall = async (endpoint, options = {}) => {
+  // Si AuthManager está disponible, usar su apiCall con silent refresh
+  if (useAuthManager && !options.legacyMode) {
+    return AuthManager.apiCall(endpoint, options);
+  }
+  
+  // Modo legacy (mantener para compatibilidad)
   const token = getEffectiveToken();
   const isPublicEndpoint = options.public === true;
 
@@ -692,6 +714,12 @@ const API = {
  * Used by admin pages for direct fetch calls
  */
 const fetchWithAuth = async (url, options = {}) => {
+  // Si AuthManager está disponible, usar su fetchWithAuth con silent refresh
+  if (useAuthManager && !options.legacyMode) {
+    return AuthManager.fetchWithAuth(url, options);
+  }
+  
+  // Modo legacy (mantener para compatibilidad)
   const token = getEffectiveToken();
   
   const config = {
