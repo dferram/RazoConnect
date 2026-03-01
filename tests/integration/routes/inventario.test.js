@@ -58,18 +58,7 @@ describe('Inventario — Integration Tests', () => {
       expect(response.status).toBe(401);
     });
 
-    it.skip('debe validar campos requeridos (requiere schema middleware)', async () => {
-      // TODO: Verificar si el schema middleware está configurado en la ruta
-      const response = await request(app)
-        .post('/api/admin/inventario/ajuste')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          tipoMovimiento: 'ENTRADA',
-          cantidad: 5
-        });
-
-      expect([400, 403]).toContain(response.status);
-    });
+    it.todo('debe validar campos requeridos - Requiere mock de DB para authenticate middleware. El schema ajusteInventarioSchema está configurado en la ruta (línea 710 de routes/admin.js), pero el test necesita que authenticate pase primero, lo cual requiere mockear db.query para validar el usuario admin.');
   });
 
   describe('POST /api/admin/ordenes-compra', () => {
@@ -81,17 +70,7 @@ describe('Inventario — Integration Tests', () => {
       expect(response.status).toBe(401);
     });
 
-    it.skip('debe validar campos requeridos (requiere schema middleware)', async () => {
-      // TODO: Verificar configuración de schema middleware
-      const response = await request(app)
-        .post('/api/admin/ordenes-compra')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          proveedorId: 1
-        });
-
-      expect([400, 500]).toContain(response.status);
-    });
+    it.todo('debe validar campos requeridos - Requiere mock de DB para authenticate middleware. El schema crearOrdenCompraSchema está configurado en la ruta (línea 1342 de routes/admin.js), pero el test necesita que authenticate pase primero, lo cual requiere mockear db.query para validar el usuario admin.');
   });
 
   describe('POST /api/admin/registrar-abono', () => {
@@ -107,33 +86,8 @@ describe('Inventario — Integration Tests', () => {
       expect(response.status).toBe(401);
     });
 
-    it.skip('debe retornar 400 cuando monto es cero (requiere JWT mock completo)', async () => {
-      // TODO: Configurar mock completo de JWT con tenant_id y user.tipo
-      const response = await request(app)
-        .post('/api/admin/registrar-abono')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          creditoId: 1,
-          monto: 0,
-          metodoPago: 'efectivo'
-        });
+    it.todo('debe retornar 400 cuando monto es cero - Requiere mock completo de authenticate middleware. El schema abonoSchema está configurado en la ruta (línea 977 de routes/admin.js), pero authenticate requiere múltiples queries de DB (validar admin en tabla administradores, verificar tenant_id, etc.) que no están mockeadas en este test.');
 
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-    });
-
-    it.skip('debe retornar 400 cuando no se proporciona creditoId ni clienteId (requiere JWT mock completo)', async () => {
-      // TODO: Configurar mock completo de JWT con tenant_id y user.tipo
-      const response = await request(app)
-        .post('/api/admin/registrar-abono')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({
-          monto: 500,
-          metodoPago: 'efectivo'
-        });
-
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-    });
+    it.todo('debe retornar 400 cuando no se proporciona creditoId ni clienteId - Requiere mock completo de authenticate middleware. El schema abonoSchema está configurado en la ruta (línea 977 de routes/admin.js), pero authenticate requiere múltiples queries de DB (validar admin en tabla administradores, verificar tenant_id, etc.) que no están mockeadas en este test.');
   });
 });

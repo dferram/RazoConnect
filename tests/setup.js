@@ -18,11 +18,14 @@ jest.mock('../config/redisClient', () => ({
   }))
 }));
 
-// Mock de rate limiter
+// Mock de rate limiter — ACTUALIZADO con todos los limiters del Sprint 13
 jest.mock('../middlewares/rateLimiter', () => ({
   authLimiter: (req, res, next) => next(),
   registerLimiter: (req, res, next) => next(),
-  passwordResetLimiter: (req, res, next) => next()
+  passwordResetLimiter: (req, res, next) => next(),
+  globalLimiter: (req, res, next) => next(),
+  tenantRateLimiter: (req, res, next) => next(),
+  heavyOperationLimiter: (req, res, next) => next(),
 }));
 
 // Mock de secrets validator
