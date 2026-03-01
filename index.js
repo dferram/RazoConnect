@@ -196,6 +196,17 @@ app.use(passport.initialize());
 app.use(passport.session()); // CRÍTICO: Habilitar persistencia de sesión con Passport
 
 // ============================================================================
+// REQUEST ID MIDDLEWARE — Para tracking de logs
+// ============================================================================
+const crypto = require('crypto');
+
+app.use((req, res, next) => {
+  req.requestId = crypto.randomUUID();
+  res.setHeader('X-Request-Id', req.requestId);
+  next();
+});
+
+// ============================================================================
 // SECCIÓN CRÍTICA: RUTAS DE EXCEPCIÓN (ANTES DEL TENANT GUARD)
 // ============================================================================
 

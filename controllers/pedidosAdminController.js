@@ -11,6 +11,7 @@
 
 const db = require('../db');
 const inventoryService = require('../services/inventoryService');
+const { getPaginationParams, buildPaginationMeta } = require('../utils/pagination');
 
 /**
  * Obtener todos los pedidos (para gestión admin)
@@ -20,6 +21,7 @@ const getAllPedidos = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const { estatus, clienteId, agenteId, fechaInicio, fechaFin } = req.query;
+    const { limit, offset, page } = getPaginationParams(req.query);
 
     let query = `
       SELECT 
@@ -80,7 +82,13 @@ const getAllPedidos = async (req, res) => {
       paramIndex++;
     }
 
-    query += ` ORDER BY p.FechaPedido DESC`;
+    // Count total records for pagination
+    const countQuery = query.replace(/SELECT .+ FROM/, 'SELECT COUNT(*) FROM').replace(/LEFT JOIN .+/g, '').split('ORDER BY')[0];
+    const countResult = await db.query(countQuery, params);
+    const total = parseInt(countResult.rows[0].count, 10);
+
+    query += ` ORDER BY p.FechaPedido DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit, offset);
 
     const result = await db.query(query, params);
 
@@ -177,13 +185,12 @@ const getAllPedidos = async (req, res) => {
 
     res.json({
       success: true,
-      data: {
-        pedidos: pedidos,
-        integridad: {
-          total: pedidos.length,
-          conDiscrepancia: pedidosConDiscrepancia.length,
-          validos: pedidos.length - pedidosConDiscrepancia.length
-        }
+      data: pedidos,
+      pagination: buildPaginationMeta(total, page, limit),
+      integridad: {
+        total: pedidos.length,
+        conDiscrepancia: pedidosConDiscrepancia.length,
+        validos: pedidos.length - pedidosConDiscrepancia.length
       }
     });
   } catch (error) {

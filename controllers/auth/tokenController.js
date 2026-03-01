@@ -23,6 +23,7 @@ const {
   blacklistAccessToken
 } = require('../../config/redisClient');
 const db = require('../../db');
+const logger = require('../../utils/logger');
 
 /**
  * Renovar Access Token usando Refresh Token
@@ -118,7 +119,11 @@ const refreshAccessToken = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('❌ [TOKEN REFRESH] Error:', error);
+    logger.error('Error al renovar token', {
+      error: error.message,
+      stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al renovar token',
@@ -185,7 +190,11 @@ const logout = async (req, res) => {
       message: 'Sesión cerrada exitosamente',
     });
   } catch (error) {
-    console.error('❌ [LOGOUT] Error:', error);
+    logger.error('Error al cerrar sesión', {
+      error: error.message,
+      userId: req.body.id || req.user?.id,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al cerrar sesión',
@@ -219,7 +228,10 @@ const checkSessionStatus = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('❌ [SESSION STATUS] Error:', error);
+    logger.error('Error al verificar estado de sesión', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al verificar estado de sesión',

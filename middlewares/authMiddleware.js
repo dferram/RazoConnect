@@ -2,6 +2,7 @@ const { verifyToken } = require("../utils/jwtHelper");
 const db = require("../db");
 const tenantSessionGuard = require("./tenantSessionGuard");
 const { isTokenBlacklisted } = require("../config/redisClient");
+const logger = require("../utils/logger");
 
 function normalizeRole(role) {
   return (role || "").toString().trim().toLowerCase();
@@ -42,7 +43,11 @@ const authenticate = async (req, res, next) => {
     try {
       decoded = verifyToken(token);
     } catch (verifyError) {
-      console.error(`❌ [AUTH] Token verification failed - Path: ${req.path}`, verifyError.message);
+      logger.error('Token verification failed', {
+        path: req.path,
+        error: verifyError.message,
+        requestId: req.requestId
+      });
       return res.status(401).json({
         success: false,
         message: "Token inválido o expirado",
@@ -118,11 +123,13 @@ const authenticate = async (req, res, next) => {
       const tenantIdFromToken = decoded?.tenant_id || req.tenant?.tenant_id;
       
       if (!tenantIdFromToken) {
-        console.error(
-          `❌ [AUTH] Cliente token sin tenant_id - UserID: ${userId}, Path: ${req.path}\n` +
-          `   Token tenant_id: ${decoded?.tenant_id}\n` +
-          `   Req.tenant: ${req.tenant?.tenant_id}`
-        );
+        logger.error('Cliente token sin tenant_id', {
+          userId,
+          path: req.path,
+          tokenTenantId: decoded?.tenant_id,
+          reqTenantId: req.tenant?.tenant_id,
+          requestId: req.requestId
+        });
         return res.status(401).json({
           success: false,
           message: "Token de cliente sin tenant_id válido",
@@ -135,9 +142,12 @@ const authenticate = async (req, res, next) => {
       );
 
       if (!clienteResult.rows.length) {
-        console.error(
-          `❌ [AUTH] Cliente no encontrado o inactivo - UserID: ${userId}, TenantID: ${tenantIdFromToken}, Path: ${req.path}`
-        );
+        logger.error('Cliente no encontrado o inactivo', {
+          userId,
+          tenantId: tenantIdFromToken,
+          path: req.path,
+          requestId: req.requestId
+        });
         return res.status(401).json({
           success: false,
           message: "Cliente no autorizado o inactivo",
