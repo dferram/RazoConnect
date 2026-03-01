@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "build": "npm install --production",
-    "test": "echo \"No test specified\" && exit 0"
+    "test": "jest --testEnvironment=node --detectOpenHandles",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [
     "ecommerce",
@@ -58,6 +60,8 @@
     "sharp": "^0.34.5"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "jest": "^30.2.0",
+    "nodemon": "^3.0.1",
+    "supertest": "^7.2.2"
   }
 }
