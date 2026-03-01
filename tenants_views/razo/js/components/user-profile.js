@@ -61,13 +61,44 @@
    * @returns {Promise<Object>} Datos del usuario
    */
   async function fetchUserProfile() {
+    const apiUrl = getApiBaseUrl();
+
+    // Usar AuthManager si está disponible
+    if (typeof window.AuthManager !== 'undefined') {
+      try {
+        // Detectar contexto
+        const path = window.location.pathname.toLowerCase();
+        let context = 'cliente';
+        
+        if (path.includes('/agente')) {
+          context = 'agente';
+        } else if (path.startsWith('/admin')) {
+          context = 'admin';
+        }
+
+        const response = await AuthManager.fetchWithAuth(`${apiUrl}/auth/me`, {
+          method: 'GET',
+          context: context
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || "Error al obtener perfil");
+        }
+
+        const data = await response.json();
+        return data.data;
+      } catch (error) {
+        throw error;
+      }
+    }
+
+    // Fallback a método legacy
     const { token, tipo } = getAuthToken();
 
     if (!token) {
       throw new Error("No hay token de autenticación");
     }
-
-    const apiUrl = getApiBaseUrl();
 
     const response = await fetch(`${apiUrl}/auth/me`, {
       method: "GET",

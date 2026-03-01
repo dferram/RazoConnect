@@ -134,9 +134,40 @@
   /**
    * Maneja el logout
    */
-  function handleLogout() {
-    localStorage.removeItem("razoconnect_admin_token");
-    localStorage.removeItem("razoconnect_admin");
+  async function handleLogout() {
+    try {
+      // Usar AuthManager.logout si está disponible
+      if (typeof window.AuthManager !== 'undefined' && typeof AuthManager.logout === 'function') {
+        await AuthManager.logout('admin');
+      }
+      
+      // Limpiar todos los tokens manualmente (legacy + nuevos)
+      const keysToRemove = [
+        'razoconnect_admin_token',
+        'razoconnect_admin',
+        'razoconnect_admin_access_token',
+        'razoconnect_admin_refresh_token',
+        'razoconnect_token',
+        'razoconnect_user',
+        'razoconnect_access_token',
+        'razoconnect_refresh_token',
+        'razoconnect_agent_token',
+        'razoconnect_agent',
+        'razoconnect_agent_access_token',
+        'razoconnect_agent_refresh_token',
+      ];
+      
+      keysToRemove.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch (err) {
+          console.error(`Error removing ${key}:`, err);
+        }
+      });
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
+    
     window.location.href = "/login.html";
   }
 

@@ -200,7 +200,7 @@ const getValuacionInventario = async (req, res) => {
     const { tenant_id } = req.tenant;
     const userId = req.user?.id;
     const userRol = req.user?.rol?.toLowerCase();
-    const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin' || userRol === 'developer';
+    const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin' || userRol === 'super_admin' || userRol === 'developer';
 
     let result;
 

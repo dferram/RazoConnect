@@ -28,17 +28,27 @@
   <body data-sidebar="admin" data-page-title="Panel de control">
     <div class="admin-layout">
       <!-- Sidebar -->
-      <div id="sidebar-container"></div>
+      <div id="admin-sidebar-container"></div>
 
       <!-- Main Content -->
       <main class="admin-main">
         <div id="admin-header-container"></div>
 
         <div class="admin-content">
+          <!-- Título con Mes Actual -->
+          <div style="margin-bottom: 1.5rem;">
+            <h1 style="font-size: 1.75rem; font-weight: 600; color: #1f2937; margin: 0;">
+              Panel de Control - <span id="mesActual" style="color: #F97316;">Cargando...</span>
+            </h1>
+            <p style="color: #6b7280; margin-top: 0.5rem; font-size: 0.875rem;">
+              Estadísticas del mes en curso
+            </p>
+          </div>
+
           <!-- Instructional Banner -->
           <div id="instructionalBanner" class="instructional-banner">
             <p>
-              💡 <strong>Panel de Control:</strong> Aquí puedes ver un resumen general de tu negocio. Las estadísticas se actualizan en tiempo real y muestran pedidos, ingresos, clientes activos y valor del inventario.
+              💡 <strong>Panel de Control:</strong> Aquí puedes ver un resumen del mes actual. Las estadísticas muestran pedidos, ingresos, clientes activos y valor del inventario.
             </p>
             <button class="instructional-banner-close" title="Cerrar">
               ×
@@ -51,9 +61,9 @@
               <div class="admin-stat-header">
                 <div class="admin-stat-content">
                   <h3>Total Pedidos</h3>
-                  <div class="admin-stat-value" id="totalPedidos">0</div>
-                  <div class="admin-stat-change positive">
-                    ↑ <span id="pedidosCambio">0%</span> vs mes anterior
+                  <div class="admin-stat-value" id="totalPedidos" title="0" style="cursor: help;">0</div>
+                  <div class="admin-stat-change" id="pedidosCambioContainer">
+                    <span id="pedidosCambio">0 vs mes anterior</span>
                   </div>
                 </div>
                 <div class="admin-stat-icon orange">📦</div>
@@ -64,9 +74,9 @@
               <div class="admin-stat-header">
                 <div class="admin-stat-content">
                   <h3>Ingresos Totales</h3>
-                  <div class="admin-stat-value" id="ingresosTotales">$0</div>
-                  <div class="admin-stat-change positive">
-                    ↑ <span id="ingresosCambio">0%</span> vs mes anterior
+                  <div class="admin-stat-value" id="ingresosTotales" title="$0" style="cursor: help;">$0</div>
+                  <div class="admin-stat-change" id="ingresosCambioContainer">
+                    <span id="ingresosCambio">$0 vs mes anterior</span>
                   </div>
                 </div>
                 <div class="admin-stat-icon turquoise">💰</div>
@@ -103,11 +113,11 @@
               <div class="admin-stat-header">
                 <div class="admin-stat-content">
                   <h3>Valor inventario (venta)</h3>
-                  <div class="admin-stat-value" id="valorInventarioVenta">
-                    $0.00
+                  <div class="admin-stat-value" id="valorInventarioVenta" title="$0" style="cursor: help;">
+                    $0
                   </div>
                   <div class="admin-stat-change neutral">
-                    A costo: <strong id="valorInventarioCosto">$0.00</strong>
+                    A costo: <strong id="valorInventarioCosto" title="$0" style="cursor: help;">$0</strong>
                   </div>
                 </div>
                 <div class="admin-stat-icon red">🏷️</div>
@@ -199,6 +209,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth-manager.js"></script>
     <script src="js/api.js"></script>
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -225,51 +236,73 @@
             if (data.success) {
               const stats = data.data;
 
-              // Total pedidos
-              document.getElementById("totalPedidos").textContent =
-                stats.totalPedidos || "0";
-              document.getElementById(
-                "pedidosCambio"
-              ).textContent = `${stats.pedidosPendientes} pendientes`;
+              // Actualizar mes actual en el título
+              if (stats.mesActual) {
+                document.getElementById("mesActual").textContent = stats.mesActual;
+              }
 
-              // Ingresos totales (utilidad)
-              document.getElementById("ingresosTotales").textContent =
-                formatCurrency(stats.ingresosTotales);
-              document.getElementById("ingresosCambio").textContent =
-                formatCurrency(stats.comisionesPendientes) + " en comisiones";
+              // Total pedidos (compacto con tooltip)
+              const totalPedidosEl = document.getElementById("totalPedidos");
+              totalPedidosEl.textContent = formatCompactNumber(stats.totalPedidos);
+              totalPedidosEl.title = `${stats.totalPedidos} pedidos`;
+              
+              const cambioPedidos = calcularCambio(stats.totalPedidos, stats.pedidosMesAnterior);
+              const pedidosCambioContainer = document.getElementById("pedidosCambioContainer");
+              pedidosCambioContainer.className = `admin-stat-change ${cambioPedidos.esPositivo ? 'positive' : 'negative'}`;
+              document.getElementById("pedidosCambio").textContent = 
+                `${cambioPedidos.esPositivo ? '↑' : '↓'} ${cambioPedidos.porcentaje.toFixed(1)}% vs mes anterior`;
+
+              // Ingresos totales (compacto con tooltip)
+              const ingresosTotalesEl = document.getElementById("ingresosTotales");
+              ingresosTotalesEl.textContent = formatCompactNumber(stats.ingresosTotales, true);
+              ingresosTotalesEl.title = formatCurrency(stats.ingresosTotales);
+              
+              const cambioIngresos = calcularCambio(stats.ingresosTotales, stats.utilidadMesAnterior);
+              const ingresosCambioContainer = document.getElementById("ingresosCambioContainer");
+              ingresosCambioContainer.className = `admin-stat-change ${cambioIngresos.esPositivo ? 'positive' : 'negative'}`;
+              document.getElementById("ingresosCambio").textContent = 
+                `${cambioIngresos.esPositivo ? '↑' : '↓'} ${cambioIngresos.porcentaje.toFixed(1)}% vs mes anterior`;
 
               // Clientes activos
               document.getElementById("clientesActivos").textContent =
-                stats.clientesActivos || "0";
-              document.getElementById(
-                "clientesCambio"
-              ).textContent = `Total registrados`;
+                formatCompactNumber(stats.clientesActivos);
+              document.getElementById("clientesActivos").title = `${stats.clientesActivos} clientes`;
+              document.getElementById("clientesCambio").textContent = `Total registrados`;
 
               // Agentes activos
               document.getElementById("agentesActivos").textContent =
-                stats.agentesActivos || "0";
-              document.getElementById(
-                "agentesCambio"
-              ).textContent = `Total activos`;
+                formatCompactNumber(stats.agentesActivos);
+              document.getElementById("agentesActivos").title = `${stats.agentesActivos} agentes`;
+              document.getElementById("agentesCambio").textContent = `Total activos`;
 
-              // Venta Total
-              document.getElementById("ventaTotal").textContent =
-                formatCurrency(stats.ventaTotal);
+              // Valor inventario (compacto con tooltip)
+              const valorVentaEl = document.getElementById("valorInventarioVenta");
+              valorVentaEl.textContent = formatCompactNumber(stats.valorInventarioVenta, true);
+              valorVentaEl.title = formatCurrency(stats.valorInventarioVenta);
+              
+              const valorCostoEl = document.getElementById("valorInventarioCosto");
+              valorCostoEl.textContent = formatCompactNumber(stats.valorInventarioCosto, true);
+              valorCostoEl.title = formatCurrency(stats.valorInventarioCosto);
+
+              // Venta Total (compacto con tooltip)
+              const ventaTotalEl = document.getElementById("ventaTotal");
+              if (ventaTotalEl) {
+                ventaTotalEl.textContent = formatCompactNumber(stats.ventaTotal, true);
+                ventaTotalEl.title = formatCurrency(stats.ventaTotal);
+              }
 
               // Pedidos Pendientes
-              document.getElementById("pedidosPendientesCount").textContent =
-                stats.pedidosPendientes || "0";
+              const pedidosPendientesEl = document.getElementById("pedidosPendientesCount");
+              if (pedidosPendientesEl) {
+                pedidosPendientesEl.textContent = formatCompactNumber(stats.pedidosPendientes);
+                pedidosPendientesEl.title = `${stats.pedidosPendientes} pedidos pendientes`;
+              }
 
               // Pedidos Entregados
-              document.getElementById("pedidosEntregados").textContent =
-                stats.pedidosEntregados || "0";
-
-              // Alerta de stock bajo
-              if (stats.productosStockBajo > 0) {
-                showToast(
-                  `⚠️ ${stats.productosStockBajo} productos con stock bajo`,
-                  "warning"
-                );
+              const pedidosEntregadosEl = document.getElementById("pedidosEntregados");
+              if (pedidosEntregadosEl) {
+                pedidosEntregadosEl.textContent = formatCompactNumber(stats.pedidosEntregados);
+                pedidosEntregadosEl.title = `${stats.pedidosEntregados} pedidos entregados`;
               }
             }
           }
@@ -278,12 +311,29 @@
         }
       }
 
-      // Format currency helper
+      // Format currency helper (exacto)
       function formatCurrency(amount) {
         return new Intl.NumberFormat("es-MX", {
           style: "currency",
           currency: "MXN",
         }).format(amount || 0);
+      }
+
+      // Format compact number (K, M, etc.)
+      function formatCompactNumber(number, isCurrency = false) {
+        const options = { notation: "compact", maximumFractionDigits: 1 };
+        if (isCurrency) {
+          options.style = "currency";
+          options.currency = "MXN";
+        }
+        return new Intl.NumberFormat('es-MX', options).format(number || 0);
+      }
+
+      // Calcular cambio porcentual
+      function calcularCambio(actual, anterior) {
+        if (!anterior || anterior === 0) return { porcentaje: 0, esPositivo: actual > 0 };
+        const cambio = ((actual - anterior) / anterior) * 100;
+        return { porcentaje: Math.abs(cambio), esPositivo: cambio >= 0 };
       }
 
       function getPedidoStatusBadgeClass(estatus) {
@@ -462,11 +512,11 @@
     </script>
 
     <!-- Sidebar & Header Loaders -->
+    <script src="js/token-validator.js"></script>
     <script src="js/layout.js" defer></script>
     <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/components/admin-sidebar-loader.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
-    <script src="js/admin-dashboard.js" defer></script>
     <script src="js/instructional-banner.js"></script>
   </body>
 </html>

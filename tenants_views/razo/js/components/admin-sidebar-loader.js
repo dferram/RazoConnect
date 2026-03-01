@@ -82,13 +82,12 @@
   }
 
   function setupRoleBasedVisibility() {
-    const user = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
+    const userDataRaw = localStorage.getItem('razoconnect_admin');
+    const user = JSON.parse(userDataRaw || '{}');
     
-    // Soportar tanto array de roles como string de rol
     const roles = user.roles || [];
     const rolString = (user.rol || user.role || '').toString().toLowerCase().trim();
     
-    // Verificar si es super admin en cualquier formato
     const isSuperAdmin = 
       roles.includes('super_admin') || 
       roles.includes('superadmin') ||
@@ -96,21 +95,18 @@
       rolString === 'super admin' ||
       rolString === 'super_admin';
 
-    console.log('🔍 Verificación de rol:', { 
-      roles, 
-      rolString, 
-      isSuperAdmin,
-      userData: user 
-    });
+    const superAdminSections = document.querySelectorAll('[data-role="super_admin"]');
 
     if (!isSuperAdmin) {
-      const superAdminSections = document.querySelectorAll('[data-role="super_admin"]');
       superAdminSections.forEach(section => {
-        section.style.display = 'none';
+        section.style.setProperty('display', 'none', 'important');
       });
-      console.log('🚫 Secciones de Super Admin ocultadas');
     } else {
-      console.log('✅ Usuario es Super Admin - todas las secciones visibles');
+      superAdminSections.forEach(section => {
+        section.style.setProperty('display', 'block', 'important');
+        section.style.visibility = 'visible';
+        section.style.opacity = '1';
+      });
     }
   }
 

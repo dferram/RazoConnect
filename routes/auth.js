@@ -3,6 +3,7 @@ const router = express.Router();
 const clienteAuthController = require("../controllers/auth/clienteAuthController");
 const agenteAuthController = require("../controllers/auth/agenteAuthController");
 const adminAuthController = require("../controllers/auth/adminAuthController");
+const tokenController = require("../controllers/auth/tokenController");
 const profileController = require("../controllers/auth/profileController");
 const agentesController = require("../controllers/agentesController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
@@ -67,6 +68,32 @@ router.post("/auth/forgot-password", passwordResetLimiter, clienteAuthController
  * @security Rate limited: 3 intentos por hora por IP
  */
 router.post("/auth/reset-password", passwordResetLimiter, clienteAuthController.resetPassword);
+
+/**
+ * @route   POST /api/auth/refresh
+ * @desc    Renovar Access Token usando Refresh Token
+ * @access  Public (requiere refresh token válido)
+ * @body    { refreshToken }
+ * @returns { accessToken }
+ */
+router.post("/auth/refresh", tokenController.refreshAccessToken);
+
+/**
+ * @route   POST /api/auth/logout
+ * @desc    Cerrar sesión (invalidar Refresh Token)
+ * @access  Public/Private (puede usar token o enviar id/rol en body)
+ * @body    { id?, rol? } o usa req.user si está autenticado
+ */
+router.post("/auth/logout", tokenController.logout);
+
+/**
+ * @route   GET /api/auth/session-status
+ * @desc    Verificar si existe una sesión activa
+ * @access  Public
+ * @query   { userId, rol }
+ * @returns { hasActiveSession: boolean }
+ */
+router.get("/auth/session-status", tokenController.checkSessionStatus);
 
 /**
  * @route   GET /api/auth/me

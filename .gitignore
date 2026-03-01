@@ -94,9 +94,15 @@ backup/*.dump
 backup/*.backup
 *.sql.gz
 *.dump.gz
+*.sql.bak
+*.dump.bak
 
 # IMPORTANTE: Mantener backup.sql en el repo como schema de referencia
 !backup/backup.sql
+
+# Excluir backups con timestamps o versiones
+backup/backup[0-9]*.sql
+backup/backup_*.sql
 
 # ============================================
 # UPLOADS Y ARCHIVOS DE USUARIO

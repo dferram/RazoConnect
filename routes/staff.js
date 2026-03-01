@@ -8,21 +8,21 @@ const { authenticate, authorize } = require("../middlewares/authMiddleware");
 router.get(
   "/notificaciones",
   authenticate,
-  authorize(["admin", "superadmin", "agente"]),
+  authorize(["admin", "superadmin", "super_admin", "agente"]),
   notificacionesController.obtenerNotificacionesStaff
 );
 
 router.get(
   "/notificaciones/unread-count",
   authenticate,
-  authorize(["admin", "superadmin", "agente"]),
+  authorize(["admin", "superadmin", "super_admin", "agente"]),
   notificacionesController.obtenerConteoNoLeidasStaff
 );
 
 router.post(
   "/notificaciones/marcar-todas-leidas",
   authenticate,
-  authorize(["admin", "superadmin", "agente"]),
+  authorize(["admin", "superadmin", "super_admin", "agente"]),
   notificacionesController.marcarTodasLeidasStaff
 );
 

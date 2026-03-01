@@ -169,7 +169,7 @@ const obtenerConteoNoLeidasStaff = async (req, res) => {
         : [req.user.rol].filter(Boolean);
 
     const isAdmin = roles.some((r) =>
-      ["admin", "superadmin"].includes(String(r).toLowerCase())
+      ["admin", "super_admin", "superadmin"].includes(String(r).toLowerCase())
     );
     const isAgente = roles.some((r) => String(r).toLowerCase() === "agente");
 
@@ -233,7 +233,7 @@ const obtenerNotificacionesStaff = async (req, res) => {
         ? req.user.roles
         : [req.user.rol].filter(Boolean);
 
-    const isAdmin = roles.some((r) => ["admin", "superadmin"].includes(String(r).toLowerCase()));
+    const isAdmin = roles.some((r) => ["admin", "super_admin", "superadmin"].includes(String(r).toLowerCase()));
     const isAgente = roles.some((r) => String(r).toLowerCase() === "agente");
 
     let column = null;

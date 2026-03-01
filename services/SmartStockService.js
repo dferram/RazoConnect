@@ -31,6 +31,7 @@ async function determineUserContext({ userId, userRole, tenantId }) {
   const isSuperAdmin = roles.some(r => 
     r === 'superadmin' || 
     r === 'super-admin' || 
+    r === 'super_admin' ||
     r === 'developer'
   );
   

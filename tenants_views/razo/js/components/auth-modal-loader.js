@@ -202,22 +202,20 @@
         console.log('📦 Estructura de data:', JSON.stringify(response.data, null, 2));
 
         if (response.ok && response.data.success) {
-          // MISIÓN 2: Búsqueda profunda del token en todas las variantes posibles
-          let token = response.data.token || response.data.access_token;
+          // Búsqueda del token en estructura nueva del backend
+          let token = null;
+          let usuario = null;
           
-          // Buscar en data.data si existe
-          if (!token && response.data.data) {
-            token = response.data.data.token || response.data.data.access_token;
+          // Prioridad 1: Estructura nueva (data.data.accessToken)
+          if (response.data.data) {
+            token = response.data.data.accessToken || response.data.data.token;
+            usuario = response.data.data.usuario || response.data.data.cliente;
           }
           
-          // Buscar en body si existe
-          if (!token && response.body) {
-            token = response.body.token || response.body.access_token;
-          }
-          
-          // Buscar en data.cliente si existe
-          if (!token && response.data.cliente) {
-            token = response.data.cliente.token;
+          // Prioridad 2: Estructura legacy (data.token)
+          if (!token) {
+            token = response.data.token || response.data.access_token;
+            usuario = response.data.cliente || response.data.usuario;
           }
           
           console.log('🔍 Token encontrado:', token ? `Sí (${token.substring(0, 20)}...)` : 'NO');
@@ -259,7 +257,7 @@
           });
 
           localStorage.setItem('razoconnect_token', token);
-          localStorage.setItem('razoconnect_user', JSON.stringify(response.data.cliente));
+          localStorage.setItem('razoconnect_user', JSON.stringify(usuario));
           
           showToast('Sesión iniciada correctamente', 'success');
           
@@ -382,12 +380,19 @@
           console.log('📦 Respuesta Auto-Login:', loginResponse);
           
           if (loginResponse.ok && loginResponse.data.success) {
-            // MISIÓN 2: Buscar token en todas las estructuras posibles (auto-login)
-            const token = loginResponse.data.token || 
-                         (loginResponse.data.data && loginResponse.data.data.token) || 
-                         loginResponse.data.access_token || 
-                         (loginResponse.body && loginResponse.body.token) ||
-                         (loginResponse.data.cliente && loginResponse.data.cliente.token);
+            // Buscar token en estructura nueva del backend
+            let token = null;
+            let usuario = null;
+            
+            if (loginResponse.data.data) {
+              token = loginResponse.data.data.accessToken || loginResponse.data.data.token;
+              usuario = loginResponse.data.data.usuario || loginResponse.data.data.cliente;
+            }
+            
+            if (!token) {
+              token = loginResponse.data.token || loginResponse.data.access_token;
+              usuario = loginResponse.data.cliente || loginResponse.data.usuario;
+            }
             
             if (!token || typeof token !== 'string' || token.split('.').length !== 3) {
               console.error('❌ Token malformado en auto-login:', token);
@@ -400,7 +405,7 @@
 
             console.log('✅ Auto-login exitoso con token válido');
             localStorage.setItem('razoconnect_token', token);
-            localStorage.setItem('razoconnect_user', JSON.stringify(loginResponse.data.cliente));
+            localStorage.setItem('razoconnect_user', JSON.stringify(usuario));
             
             showToast('Bienvenido a RazoConnect', 'success');
             

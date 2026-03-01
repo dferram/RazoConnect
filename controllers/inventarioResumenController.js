@@ -22,7 +22,7 @@ const getInventarioResumen = async (req, res) => {
     const userId = req.user?.id;
     const userRoles = req.user?.roles || [req.user?.rol];
     const userRol = req.user?.rol?.toLowerCase();
-    const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin';
+    const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin' || userRol === 'super_admin';
 
     const { stock, categoria, proveedor, admin_id, search, tipo_ingreso, fecha_desde, fecha_hasta } = req.query;
     

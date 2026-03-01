@@ -75,7 +75,6 @@
 
       // MISIÓN 1: NO hacer fetch redundante - auth-guard ya validó la sesión
       // Simplemente usar los datos de localStorage que auth-guard refrescó
-      console.log("✅ Usando datos de sesión validados por auth-guard:", adminData.nombre);
     } catch (criticalError) {
       // MISIÓN 1: Último recurso - intentar renderizar con datos básicos
       console.error("❌ Error crítico en initializeHeader:", criticalError);
@@ -86,7 +85,6 @@
         if (!adminData) {
           throw new Error("No hay datos de respaldo");
         }
-        console.log("🔄 Recuperación exitosa desde localStorage");
       } catch (recoveryError) {
         console.error("❌ No se pudo recuperar datos, redirigiendo al login");
         window.location.replace("/login.html");
@@ -101,7 +99,6 @@
     const rolTexto = isSuperAdmin ? "Super Admin" : "Administrador";
     
     // Sin restricciones de rol - Admin y SuperAdmin tienen acceso a todas las páginas
-    console.log('✅ Usuario autenticado:', nombre, '| Rol:', rolTexto);
 
     // Llenar datos en el Header
     const headerUserName = document.getElementById("headerUserName");
@@ -172,11 +169,33 @@
       linkLogout.className = "dropdown-item text-danger";
       linkLogout.id = "btnLogout";
       linkLogout.innerHTML = `<i class="bi bi-box-arrow-right"></i> Cerrar Sesión`;
-      linkLogout.addEventListener("click", (e) => {
+      linkLogout.addEventListener("click", async (e) => {
         e.preventDefault();
-        localStorage.removeItem("razoconnect_admin");
-        localStorage.removeItem("razoconnect_admin_token");
-        window.location.replace("/login.html");
+        
+        try {
+          // Usar AuthManager.logout si está disponible
+          if (typeof window.AuthManager !== 'undefined' && typeof AuthManager.logout === 'function') {
+            await AuthManager.logout('admin');
+          }
+          
+          // Limpiar todos los tokens manualmente
+          const keysToRemove = [
+            'razoconnect_admin_token',
+            'razoconnect_admin',
+            'razoconnect_admin_access_token',
+            'razoconnect_admin_refresh_token',
+            'razoconnect_token',
+            'razoconnect_user',
+            'razoconnect_agent_token',
+            'razoconnect_agent',
+          ];
+          
+          keysToRemove.forEach(key => localStorage.removeItem(key));
+        } catch (error) {
+          console.error("Error al cerrar sesión:", error);
+        }
+        
+        window.location.href = "/login.html";
       });
 
       itemsFragment.appendChild(divider2);
@@ -220,16 +239,27 @@
 
   async function loadNotificationCount() {
     try {
-      const token = localStorage.getItem('razoconnect_admin_token');
-      if (!token) return;
+      let response;
+      
+      if (typeof window.AuthManager !== 'undefined') {
+        // Usar AuthManager con silent refresh
+        response = await AuthManager.fetchWithAuth('/api/staff/notificaciones/unread-count', {
+          method: 'GET',
+          context: 'admin'
+        });
+      } else {
+        // Fallback a método legacy
+        const token = localStorage.getItem('razoconnect_admin_token');
+        if (!token) return;
 
-      const response = await fetch('/api/staff/notificaciones/unread-count', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+        response = await fetch('/api/staff/notificaciones/unread-count', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
 
       if (!response.ok) return;
 

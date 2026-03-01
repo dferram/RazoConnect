@@ -127,6 +127,7 @@
       </div>
     </div>
 
+    <script src="js/auth-manager.js"></script>
     <script src="js/api.js"></script>
     <script>
       const loginForm = document.getElementById("loginForm");
@@ -215,7 +216,18 @@
             const { token, user } = event.data;
 
             if (token) {
+              // LEGACY: Mantener para compatibilidad temporal
               localStorage.setItem("razoconnect_token", token);
+              
+              // NUEVO: Si el backend ya devuelve accessToken y refreshToken
+              if (event.data.accessToken && event.data.refreshToken) {
+                AuthManager.saveTokens(
+                  event.data.accessToken,
+                  event.data.refreshToken,
+                  user,
+                  'cliente'
+                );
+              }
             }
 
             if (user) {
@@ -254,8 +266,12 @@
           avatarUrl,
         };
 
+        // LEGACY: Mantener para compatibilidad
         localStorage.setItem("razoconnect_token", googleToken);
         localStorage.setItem("razoconnect_user", JSON.stringify(usuario));
+        
+        // NUEVO: Si el backend devuelve tokens separados en el futuro
+        // AuthManager.saveTokens(accessToken, refreshToken, usuario, 'cliente');
 
         showToast("Inicio de sesión con Google exitoso", "success");
 
@@ -379,17 +395,18 @@
             const adminData = await adminResponse.json();
 
             if (adminResponse.ok && adminData.success) {
-              localStorage.setItem(
-                "razoconnect_admin_token",
-                adminData.data.token
-              );
-              localStorage.setItem(
-                "razoconnect_admin",
-                JSON.stringify(adminData.data.admin)
-              );
+              const { accessToken, refreshToken, usuario } = adminData.data;
+              
+              // Guardar tokens usando AuthManager
+              if (accessToken && refreshToken && usuario) {
+                AuthManager.saveTokens(accessToken, refreshToken, usuario, 'admin');
+              } else {
+                console.error('Respuesta de login incompleta:', adminData.data);
+                throw new Error('Respuesta de login incompleta');
+              }
 
               // Verificar si es agente para redirigir al panel de agente
-              const adminInfo = adminData.data.admin || {};
+              const adminInfo = usuario || {};
               const adminRol = adminInfo.rol;
               const origen = adminInfo.origen;
               const esAgente =
@@ -444,19 +461,21 @@
                 };
 
                 if (rol === "agente") {
-                  // AGENTE: Guardar en token separado (razoconnect_agent_token)
-                  localStorage.setItem(
-                    "razoconnect_agent_token",
-                    clientData.data.token
-                  );
-                  localStorage.setItem(
-                    "razoconnect_agent",
-                    JSON.stringify({
-                      ...usuario,
-                      rol: "agente",
-                      esAgente: true,
-                    })
-                  );
+                  const { accessToken, refreshToken, token } = clientData.data;
+                  const agenteData = {
+                    ...usuario,
+                    rol: "agente",
+                    esAgente: true,
+                  };
+                  
+                  // NUEVO: Usar AuthManager si hay accessToken y refreshToken
+                  if (accessToken && refreshToken) {
+                    AuthManager.saveTokens(accessToken, refreshToken, agenteData, 'agente');
+                  } else {
+                    // LEGACY: Mantener compatibilidad
+                    localStorage.setItem("razoconnect_agent_token", token);
+                    localStorage.setItem("razoconnect_agent", JSON.stringify(agenteData));
+                  }
 
                   showToast("¡Bienvenido Agente!", "success");
                   setTimeout(() => {
@@ -464,15 +483,16 @@
                     window.location.href = "/agente-dashboard.html";
                   }, 500);
                 } else {
-                  // CLIENTE: Guardar como token normal
-                  localStorage.setItem(
-                    "razoconnect_token",
-                    clientData.data.token
-                  );
-                  localStorage.setItem(
-                    "razoconnect_user",
-                    JSON.stringify(usuario)
-                  );
+                  const { accessToken, refreshToken, token } = clientData.data;
+                  
+                  // NUEVO: Usar AuthManager si hay accessToken y refreshToken
+                  if (accessToken && refreshToken) {
+                    AuthManager.saveTokens(accessToken, refreshToken, usuario, 'cliente');
+                  } else {
+                    // LEGACY: Mantener compatibilidad
+                    localStorage.setItem("razoconnect_token", token);
+                    localStorage.setItem("razoconnect_user", JSON.stringify(usuario));
+                  }
 
                   showToast("¡Bienvenido!", "success");
                   setTimeout(() => {

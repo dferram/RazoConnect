@@ -19,25 +19,45 @@ const getDashboardStats = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
 
-    // Obtener total de pedidos
+    // Fechas del mes actual y mes anterior
+    const now = new Date();
+    const primerDiaMesActual = new Date(now.getFullYear(), now.getMonth(), 1);
+    const primerDiaMesAnterior = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const ultimoDiaMesAnterior = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+    // Obtener total de pedidos del mes actual
     const pedidosResult = await db.query(
-      `SELECT COUNT(*) as total FROM pedidos WHERE tenant_id = $1`,
-      [tenant_id]
+      `SELECT COUNT(*) as total FROM pedidos 
+       WHERE tenant_id = $1 
+       AND fechapedido >= $2`,
+      [tenant_id, primerDiaMesActual]
     );
 
-    // Obtener pedidos pendientes (no confirmados, no entregados, no cancelados)
+    // Pedidos del mes anterior para comparativa
+    const pedidosMesAnteriorResult = await db.query(
+      `SELECT COUNT(*) as total FROM pedidos 
+       WHERE tenant_id = $1 
+       AND fechapedido >= $2 
+       AND fechapedido <= $3`,
+      [tenant_id, primerDiaMesAnterior, ultimoDiaMesAnterior]
+    );
+
+    // Obtener pedidos pendientes del mes actual
     const pedidosPendientesResult = await db.query(
       `SELECT COUNT(*) as total FROM pedidos 
        WHERE tenant_id = $1 
+       AND fechapedido >= $2
        AND estatus NOT IN ('Confirmado', 'Entregado', 'Cancelado')`,
-      [tenant_id]
+      [tenant_id, primerDiaMesActual]
     );
 
-    // Obtener pedidos entregados
+    // Obtener pedidos entregados del mes actual
     const pedidosEntregadosResult = await db.query(
       `SELECT COUNT(*) as total FROM pedidos 
-       WHERE tenant_id = $1 AND estatus = 'Entregado'`,
-      [tenant_id]
+       WHERE tenant_id = $1 
+       AND fechapedido >= $2
+       AND estatus = 'Entregado'`,
+      [tenant_id, primerDiaMesActual]
     );
 
     // Obtener total de clientes activos
@@ -54,16 +74,28 @@ const getDashboardStats = async (req, res) => {
       [tenant_id]
     );
 
-    // Obtener venta total (suma de todos los pedidos no cancelados)
+    // Obtener venta total del mes actual (suma de pedidos no cancelados)
     const ventaTotalResult = await db.query(
       `SELECT COALESCE(SUM(montototal), 0) as total 
        FROM pedidos 
        WHERE tenant_id = $1 
+       AND fechapedido >= $2
        AND estatus NOT IN ('Cancelado')`,
-      [tenant_id]
+      [tenant_id, primerDiaMesActual]
     );
 
-    // Calcular utilidad total (precio - costo) de todos los pedidos no cancelados
+    // Venta del mes anterior para comparativa
+    const ventaMesAnteriorResult = await db.query(
+      `SELECT COALESCE(SUM(montototal), 0) as total 
+       FROM pedidos 
+       WHERE tenant_id = $1 
+       AND fechapedido >= $2 
+       AND fechapedido <= $3
+       AND estatus NOT IN ('Cancelado')`,
+      [tenant_id, primerDiaMesAnterior, ultimoDiaMesAnterior]
+    );
+
+    // Calcular utilidad total del mes actual (precio - costo)
     const utilidadTotalResult = await db.query(
       `SELECT COALESCE(SUM(
         (dp.preciounitario - pv.costounitario) * dp.piezastotales
@@ -72,8 +104,24 @@ const getDashboardStats = async (req, res) => {
        INNER JOIN pedidos ped ON dp.pedidoid = ped.pedidoid
        INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
        WHERE ped.tenant_id = $1 
+       AND ped.fechapedido >= $2
        AND ped.estatus NOT IN ('Cancelado')`,
-      [tenant_id]
+      [tenant_id, primerDiaMesActual]
+    );
+
+    // Utilidad del mes anterior para comparativa
+    const utilidadMesAnteriorResult = await db.query(
+      `SELECT COALESCE(SUM(
+        (dp.preciounitario - pv.costounitario) * dp.piezastotales
+       ), 0) as utilidad
+       FROM detallesdelpedido dp
+       INNER JOIN pedidos ped ON dp.pedidoid = ped.pedidoid
+       INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
+       WHERE ped.tenant_id = $1 
+       AND ped.fechapedido >= $2 
+       AND ped.fechapedido <= $3
+       AND ped.estatus NOT IN ('Cancelado')`,
+      [tenant_id, primerDiaMesAnterior, ultimoDiaMesAnterior]
     );
 
     // Obtener comisiones pendientes
@@ -88,7 +136,7 @@ const getDashboardStats = async (req, res) => {
     const userId = req.user?.id;
     const userRoles = req.user?.roles || [req.user?.rol];
     const userRol = req.user?.rol?.toLowerCase();
-    const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin' || userRol === 'developer';
+    const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin' || userRol === 'super_admin' || userRol === 'developer';
 
     let valorInventarioResult;
     
@@ -122,18 +170,35 @@ const getDashboardStats = async (req, res) => {
       );
     }
 
+    // Calcular cambios porcentuales
+    const totalPedidosMesActual = parseInt(pedidosResult.rows[0].total);
+    const totalPedidosMesAnterior = parseInt(pedidosMesAnteriorResult.rows[0].total);
+    const ventaMesActual = parseFloat(ventaTotalResult.rows[0].total);
+    const ventaMesAnterior = parseFloat(ventaMesAnteriorResult.rows[0].total);
+    const utilidadMesActual = parseFloat(utilidadTotalResult.rows[0].utilidad);
+    const utilidadMesAnterior = parseFloat(utilidadMesAnteriorResult.rows[0].utilidad);
+
     const responseData = {
-      totalPedidos: parseInt(pedidosResult.rows[0].total),
+      // Datos del mes actual
+      totalPedidos: totalPedidosMesActual,
       pedidosPendientes: parseInt(pedidosPendientesResult.rows[0].total),
       pedidosEntregados: parseInt(pedidosEntregadosResult.rows[0].total),
       clientesActivos: parseInt(clientesResult.rows[0].total),
       agentesActivos: parseInt(agentesResult.rows[0].total),
-      ventaTotal: parseFloat(ventaTotalResult.rows[0].total),
-      ingresosTotales: parseFloat(utilidadTotalResult.rows[0].utilidad),
+      ventaTotal: ventaMesActual,
+      ingresosTotales: utilidadMesActual,
       comisionesPendientes: parseFloat(comisionesPendientesResult.rows[0].total),
       valorInventarioVenta: parseFloat(valorInventarioResult.rows[0].valor_venta || 0),
       valorInventarioCosto: parseFloat(valorInventarioResult.rows[0].valor_costo || 0),
-      isSuperAdmin // ✅ Indicar al frontend si es Super Admin
+      
+      // Comparativas vs mes anterior
+      pedidosMesAnterior: totalPedidosMesAnterior,
+      ventaMesAnterior: ventaMesAnterior,
+      utilidadMesAnterior: utilidadMesAnterior,
+      
+      // Metadata
+      mesActual: now.toLocaleString('es-MX', { month: 'long', year: 'numeric' }),
+      isSuperAdmin
     };
 
 

@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const db = require("../../db");
-const { generateToken } = require("../../utils/jwtHelper");
+const { generateAccessToken, generateRefreshToken } = require("../../utils/jwtHelper");
+const { saveRefreshToken } = require("../../config/redisClient");
 const { validateAgenteRegistro, cleanPhone } = require("../../utils/validator");
 const { generateCodigoAgente } = require("../../utils/agentCode");
 
@@ -74,15 +75,23 @@ const registroAgente = async (req, res) => {
 
     const nuevoAgente = result.rows[0];
 
-    const token = generateToken({
-      userId: nuevoAgente.agenteid,
+    // Generar Access Token (1h) y Refresh Token (30d)
+    const accessToken = generateAccessToken({
+      id: nuevoAgente.agenteid,
       rol: "agente",
-      roles: ["agente"],
       email: nuevoAgente.email || null,
-      telefono: nuevoAgente.telefono || null,
-      codigoAgente: nuevoAgente.codigoagente,
       tenant_id: tenant_id,
     });
+
+    const refreshToken = generateRefreshToken({
+      id: nuevoAgente.agenteid,
+      rol: "agente",
+      email: nuevoAgente.email || null,
+      tenant_id: tenant_id,
+    });
+
+    // Guardar refresh token en Redis (30 días)
+    await saveRefreshToken(nuevoAgente.agenteid, "agente", refreshToken, 30 * 24 * 60 * 60);
 
     res.status(201).json({
       success: true,
@@ -97,7 +106,8 @@ const registroAgente = async (req, res) => {
           codigoAgente: nuevoAgente.codigoagente,
           activo: nuevoAgente.activo,
         },
-        token,
+        accessToken,
+        refreshToken,
       },
     });
   } catch (error) {

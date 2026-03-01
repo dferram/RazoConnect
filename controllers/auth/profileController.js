@@ -15,13 +15,14 @@ const getCurrentUser = async (req, res) => {
       });
     }
 
-    const { userId, id, rol, tipo, roles } = req.user;
+    const { userId, id, rol } = req.user;
     let userData = {};
 
     const efectiveUserId = userId || id;
-    const userRole = tipo || rol || (Array.isArray(roles) ? roles[0] : null);
+    const userRole = rol; // Usar directamente el rol normalizado del middleware
 
     switch (userRole) {
+      case "super_admin":
       case "admin":
         const adminQuery = `
           SELECT 
