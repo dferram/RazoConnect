@@ -247,8 +247,6 @@ const loginAdmin = async (req, res) => {
         adminSource: cuenta.adminSource,
         tenant_id: tenant_id
       };
-      
-      console.log(`🔐 [LOGIN ADMIN] Sesión persistida para ${cuenta.email} (Tenant: ${tenant_id})`);
     }
 
     // Preparar datos de respuesta (estructura normalizada)

@@ -128,7 +128,6 @@ const saveRefreshToken = async (userId, rol, refreshToken, ttl = 30 * 24 * 60 * 
     
     await client.setEx(key, ttl, refreshToken);
     
-    console.log(`✅ [REDIS] Refresh token guardado - Key: ${key}, TTL: ${ttl}s`);
     return true;
   } catch (error) {
     console.error('❌ [REDIS] Error al guardar refresh token:', error);
@@ -148,12 +147,6 @@ const getRefreshToken = async (userId, rol) => {
     const key = `refresh_token:${rol}:${userId}`;
     
     const token = await client.get(key);
-    
-    if (token) {
-      console.log(`✅ [REDIS] Refresh token encontrado - Key: ${key}`);
-    } else {
-      console.log(`⚠️  [REDIS] Refresh token no encontrado - Key: ${key}`);
-    }
     
     return token;
   } catch (error) {
@@ -175,13 +168,7 @@ const deleteRefreshToken = async (userId, rol) => {
     
     const result = await client.del(key);
     
-    if (result > 0) {
-      console.log(`✅ [REDIS] Refresh token eliminado - Key: ${key}`);
-      return true;
-    } else {
-      console.log(`⚠️  [REDIS] Refresh token no existía - Key: ${key}`);
-      return false;
-    }
+    return result > 0;
   } catch (error) {
     console.error('❌ [REDIS] Error al eliminar refresh token:', error);
     throw error;
@@ -207,6 +194,42 @@ const refreshTokenExists = async (userId, rol) => {
   }
 };
 
+/**
+ * Agrega un access token a la blacklist (logout)
+ * @param {string} tokenId - JTI del token o hash único
+ * @param {number} ttlSeconds - TTL en segundos (tiempo restante del token)
+ */
+const blacklistAccessToken = async (tokenId, ttlSeconds) => {
+  try {
+    const client = await getRedisClient();
+    const key = `blacklist:${tokenId}`;
+    // Mínimo 1 segundo, máximo el TTL real del token
+    const safeTtl = Math.max(1, Math.min(ttlSeconds, 3600));
+    await client.setEx(key, safeTtl, '1');
+    return true;
+  } catch (error) {
+    console.error('[REDIS] Error al agregar token a blacklist:', error);
+    return false; // No lanzar error — logout no debe fallar por esto
+  }
+};
+
+/**
+ * Verifica si un access token está en la blacklist
+ * @param {string} tokenId - JTI del token o hash único
+ * @returns {Promise<boolean>} true si está blacklisteado
+ */
+const isTokenBlacklisted = async (tokenId) => {
+  try {
+    const client = await getRedisClient();
+    const key = `blacklist:${tokenId}`;
+    const exists = await client.exists(key);
+    return exists === 1;
+  } catch (error) {
+    console.error('[REDIS] Error al verificar blacklist:', error);
+    return false; // En caso de error, NO bloquear — fail open para no romper el sistema
+  }
+};
+
 module.exports = {
   initRedisClient,
   getRedisClient,
@@ -216,4 +239,6 @@ module.exports = {
   getRefreshToken,
   deleteRefreshToken,
   refreshTokenExists,
+  blacklistAccessToken,
+  isTokenBlacklisted,
 };

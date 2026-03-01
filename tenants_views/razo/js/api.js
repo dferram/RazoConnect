@@ -279,7 +279,7 @@ if (typeof window !== 'undefined') {
 // API call wrapper con manejo automático de token y sesión expirada
 const apiCall = async (endpoint, options = {}) => {
   // Si AuthManager está disponible, usar su apiCall con silent refresh
-  if (useAuthManager && !options.legacyMode) {
+  if (useAuthManager) {
     return AuthManager.apiCall(endpoint, options);
   }
   
@@ -747,7 +747,7 @@ const API = {
  */
 const fetchWithAuth = async (url, options = {}) => {
   // Si AuthManager está disponible, usar su fetchWithAuth con silent refresh
-  if (useAuthManager && !options.legacyMode) {
+  if (useAuthManager) {
     return AuthManager.fetchWithAuth(url, options);
   }
   

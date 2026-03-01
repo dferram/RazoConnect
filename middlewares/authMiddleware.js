@@ -1,6 +1,7 @@
 const { verifyToken } = require("../utils/jwtHelper");
 const db = require("../db");
 const tenantSessionGuard = require("./tenantSessionGuard");
+const { isTokenBlacklisted } = require("../config/redisClient");
 
 function normalizeRole(role) {
   return (role || "").toString().trim().toLowerCase();
@@ -47,6 +48,17 @@ const authenticate = async (req, res, next) => {
         message: "Token inválido o expirado",
         error: verifyError.message,
       });
+    }
+
+    // Verificar si el token está en la blacklist (logout)
+    if (decoded.jti) {
+      const blacklisted = await isTokenBlacklisted(decoded.jti);
+      if (blacklisted) {
+        return res.status(401).json({
+          success: false,
+          message: 'Sesión inválida. Por favor inicia sesión nuevamente.'
+        });
+      }
     }
 
     // Extraer ID del payload normalizado

@@ -13,12 +13,14 @@ const {
   verifyRefreshToken, 
   generateAccessToken,
   generateRefreshToken,
-  normalizePayload
+  normalizePayload,
+  verifyAccessToken
 } = require('../../utils/jwtHelper');
 const { 
   getRefreshToken, 
   deleteRefreshToken,
-  saveRefreshToken 
+  saveRefreshToken,
+  blacklistAccessToken
 } = require('../../config/redisClient');
 const db = require('../../db');
 
@@ -108,8 +110,6 @@ const refreshAccessToken = async (req, res) => {
       email,
     });
 
-    console.log(`✅ [TOKEN REFRESH] Access token renovado - User: ${id}, Rol: ${rol}`);
-
     return res.json({
       success: true,
       message: 'Access token renovado exitosamente',
@@ -149,12 +149,26 @@ const logout = async (req, res) => {
     userRol = userRol.toLowerCase().trim();
 
     // Eliminar refresh token de Redis
-    const deleted = await deleteRefreshToken(userId, userRol);
+    await deleteRefreshToken(userId, userRol);
 
-    if (deleted) {
-      console.log(`✅ [LOGOUT] Sesión cerrada - User: ${userId}, Rol: ${userRol}`);
-    } else {
-      console.log(`⚠️  [LOGOUT] No había sesión activa - User: ${userId}, Rol: ${userRol}`);
+    // Blacklist del access token si está presente
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const accessToken = authHeader.split(' ')[1];
+      try {
+        const decoded = verifyAccessToken(accessToken);
+        
+        if (decoded && decoded.jti) {
+          const now = Math.floor(Date.now() / 1000);
+          const ttlRemaining = decoded.exp ? (decoded.exp - now) : 3600;
+          
+          if (ttlRemaining > 0) {
+            await blacklistAccessToken(decoded.jti, ttlRemaining);
+          }
+        }
+      } catch {
+        // Si el token ya expiró o es inválido, no hay nada que blacklistear
+      }
     }
 
     // Destruir sesión de Express si existe

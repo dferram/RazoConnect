@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 const resolveJwtSecret = () => {
   const secret = process.env.JWT_SECRET;
@@ -46,9 +47,11 @@ const normalizePayload = (data) => {
 const generateAccessToken = (payload) => {
   const normalizedPayload = normalizePayload(payload);
   
-  return jwt.sign(normalizedPayload, resolveJwtSecret(), {
-    expiresIn: process.env.JWT_EXPIRES_IN || "1h",
-  });
+  return jwt.sign(
+    { ...normalizedPayload, jti: crypto.randomUUID() },
+    resolveJwtSecret(),
+    { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
+  );
 };
 
 /**
