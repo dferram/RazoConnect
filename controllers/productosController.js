@@ -66,8 +66,7 @@ const obtenerProveedoresPublicos = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener los proveedores",
-      error: error.message,
+      message: "Error al obtener los proveedores"
     });
   }
 };
@@ -112,8 +111,7 @@ const obtenerTiposProducto = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al obtener los tipos de producto",
-      error: error.message,
+      message: "Error al obtener los tipos de producto"
     });
   }
 };
@@ -880,8 +878,7 @@ const obtenerProductos = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener los productos",
-      error: error.message,
+      message: "Error al obtener los productos"
     });
   }
 };
@@ -928,8 +925,7 @@ const obtenerDimensiones = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener las dimensiones",
-      error: error.message,
+      message: "Error al obtener las dimensiones"
     });
   }
 };
@@ -1263,8 +1259,7 @@ const obtenerProductoPorId = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener el producto",
-      error: error.message,
+      message: "Error al obtener el producto"
     });
   }
 };
@@ -1320,8 +1315,7 @@ const obtenerCategorias = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener las categorías",
-      error: error.message,
+      message: "Error al obtener las categorías"
     });
   }
 };
@@ -1377,8 +1371,7 @@ const obtenerAgentesPublicos = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener la lista de agentes",
-      error: error.message,
+      message: "Error al obtener la lista de agentes"
     });
   }
 };
@@ -1521,9 +1514,7 @@ const buscarProductosAutocomplete = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al buscar productos",
-      error: error.message,
-      stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+      message: "Error al buscar productos"
     });
   }
 };
@@ -1581,8 +1572,7 @@ const obtenerVariantesProducto = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: 'Error al obtener variantes del producto',
-      error: error.message
+      message: 'Error al obtener variantes del producto'
     });
   }
 };

@@ -9,7 +9,7 @@ const crearSesionAuditoria = async (req, res) => {
     const adminId = req.user.adminId;
 
     if (!nombre || nombre.trim() === '') {
-      return res.status(400).json({ error: 'El nombre de la sesión es requerido' });
+      return res.status(400).json({ success: false, message: 'El nombre de la sesión es requerido' });
     }
 
     const sesion = await inventoryAuditService.crearSesionAuditoria(
@@ -28,7 +28,7 @@ const crearSesionAuditoria = async (req, res) => {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: 'Error al crear sesión de auditoría' });
+    res.status(500).json({ success: false, message: 'Error al crear sesión de auditoría' });
   }
 };
 
@@ -46,7 +46,7 @@ const obtenerSesionesAuditoria = async (req, res) => {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: 'Error al obtener sesiones de auditoría' });
+    res.status(500).json({ success: false, message: 'Error al obtener sesiones de auditoría' });
   }
 };
 
@@ -67,7 +67,7 @@ const obtenerSesionDetalle = async (req, res) => {
       );
 
       if (!sesionResult.rows[0]) {
-        return res.status(404).json({ error: 'Sesión no encontrada' });
+        return res.status(404).json({ success: false, message: 'Sesión no encontrada' });
       }
 
       const conteos = await inventoryAuditService.obtenerConteosConReconciliacion(
@@ -89,7 +89,7 @@ const obtenerSesionDetalle = async (req, res) => {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: 'Error al obtener detalle de sesión' });
+    res.status(500).json({ success: false, message: 'Error al obtener detalle de sesión' });
   }
 };
 
@@ -101,11 +101,11 @@ const registrarConteo = async (req, res) => {
     const adminId = req.user.adminId;
 
     if (!sku || cantidadFisica === undefined || cantidadFisica === null) {
-      return res.status(400).json({ error: 'SKU y cantidad física son requeridos' });
+      return res.status(400).json({ success: false, message: 'SKU y cantidad física son requeridos' });
     }
 
     if (cantidadFisica < 0) {
-      return res.status(400).json({ error: 'La cantidad física no puede ser negativa' });
+      return res.status(400).json({ success: false, message: 'La cantidad física no puede ser negativa' });
     }
 
     const client = await db.pool.connect();
@@ -117,7 +117,7 @@ const registrarConteo = async (req, res) => {
       );
 
       if (!varianteResult.rows[0]) {
-        return res.status(404).json({ error: `SKU "${sku}" no encontrado` });
+        return res.status(404).json({ success: false, message: `SKU "${sku}" no encontrado` });
       }
 
       const varianteId = varianteResult.rows[0].varianteid;
@@ -152,7 +152,7 @@ const registrarConteo = async (req, res) => {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: error.message || 'Error al registrar conteo' });
+    res.status(500).json({ success: false, message: 'Error al registrar conteo' });
   }
 };
 
@@ -174,7 +174,7 @@ const obtenerStockTeorico = async (req, res) => {
       );
 
       if (!varianteResult.rows[0]) {
-        return res.status(404).json({ error: `SKU "${sku}" no encontrado` });
+        return res.status(404).json({ success: false, message: `SKU "${sku}" no encontrado` });
       }
 
       const variante = varianteResult.rows[0];
@@ -202,7 +202,7 @@ const obtenerStockTeorico = async (req, res) => {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: 'Error al obtener stock teórico' });
+    res.status(500).json({ success: false, message: 'Error al obtener stock teórico' });
   }
 };
 
@@ -241,7 +241,7 @@ const obtenerReconciliacion = async (req, res) => {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: 'Error al obtener reconciliación' });
+    res.status(500).json({ success: false, message: 'Error al obtener reconciliación' });
   }
 };
 
@@ -253,7 +253,7 @@ const agregarComentario = async (req, res) => {
     const adminId = req.user.adminId;
 
     if (!comentario || comentario.trim() === '') {
-      return res.status(400).json({ error: 'El comentario es requerido' });
+      return res.status(400).json({ success: false, message: 'El comentario es requerido' });
     }
 
     const client = await db.pool.connect();
@@ -268,7 +268,7 @@ const agregarComentario = async (req, res) => {
 
       if (!conteoResult.rows[0]) {
         await client.query('ROLLBACK');
-        return res.status(404).json({ error: 'Conteo no encontrado' });
+        return res.status(404).json({ success: false, message: 'Conteo no encontrado' });
       }
 
       await client.query(
@@ -293,7 +293,7 @@ const agregarComentario = async (req, res) => {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: 'Error al agregar comentario' });
+    res.status(500).json({ success: false, message: 'Error al agregar comentario' });
   }
 };
 
@@ -308,7 +308,8 @@ const cerrarYSincronizarAuditoria = async (req, res) => {
 
     if (!isSuperAdmin) {
       return res.status(403).json({ 
-        error: 'Solo Super Admins pueden cerrar y sincronizar auditorías' 
+        success: false,
+        message: 'Solo Super Admins pueden cerrar y sincronizar auditorías' 
       });
     }
 
@@ -329,7 +330,7 @@ const cerrarYSincronizarAuditoria = async (req, res) => {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: error.message || 'Error al cerrar y sincronizar auditoría' });
+    res.status(500).json({ success: false, message: 'Error al cerrar y sincronizar auditoría' });
   }
 };
 
@@ -352,7 +353,7 @@ const generarReporteAuditoria = async (req, res) => {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: error.message || 'Error al generar reporte' });
+    res.status(500).json({ success: false, message: 'Error al generar reporte' });
   }
 };
 
@@ -376,7 +377,7 @@ const calcularStockTeoricoMasivo = async (req, res) => {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    res.status(500).json({ error: 'Error al calcular stock teórico masivo' });
+    res.status(500).json({ success: false, message: 'Error al calcular stock teórico masivo' });
   }
 };
 

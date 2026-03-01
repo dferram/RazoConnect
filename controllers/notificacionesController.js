@@ -76,14 +76,13 @@ const obtenerNotificaciones = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener notificaciones:', {
-      error: error.message,
+      error: error,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
       success: false,
       message: "Error al obtener notificaciones",
-      error: error.message,
     });
   }
 };
@@ -147,14 +146,13 @@ const marcarTodasLeidasStaff = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al marcar todas como leídas (staff):', {
-      error: error.message,
+      error: error,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
       message: "Error al marcar todas como leídas",
-      error: error.message,
     });
   }
 };
@@ -216,14 +214,13 @@ const obtenerConteoNoLeidasStaff = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener conteo de notificaciones staff:', {
-      error: error.message,
+      error: error,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
       message: "Error al obtener conteo de notificaciones",
-      error: error.message,
     });
   }
 };
@@ -300,14 +297,13 @@ const obtenerNotificacionesStaff = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener notificaciones staff:', {
-      error: error.message,
+      error: error,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
       message: "Error al obtener notificaciones",
-      error: error.message,
     });
   }
 };
@@ -343,14 +339,13 @@ const marcarComoLeida = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al marcar notificación:', {
-      error: error.message,
+      error: error,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
       success: false,
       message: "Error al marcar notificación",
-      error: error.message,
     });
   }
 };
@@ -380,14 +375,13 @@ const marcarTodasLeidas = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al marcar todas como leídas:', {
-      error: error.message,
+      error: error,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
       success: false,
       message: "Error al marcar todas como leídas",
-      error: error.message,
     });
   }
 };
@@ -421,14 +415,13 @@ const eliminarNotificacion = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al eliminar notificación:', {
-      error: error.message,
+      error: error,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
       success: false,
       message: "Error al eliminar notificación",
-      error: error.message,
     });
   }
 };

@@ -14,20 +14,23 @@ const registrarAjusteInventario = async (req, res) => {
 
         if (!sku || !tipo || !cantidad || !motivo) {
             return res.status(400).json({ 
-                error: 'Faltan campos requeridos: sku, tipo, cantidad, motivo' 
+                success: false,
+                message: 'Faltan campos requeridos: sku, tipo, cantidad, motivo' 
             });
         }
 
         if (!['MERMA', 'ADICION'].includes(tipo)) {
             return res.status(400).json({ 
-                error: 'Tipo inválido. Debe ser MERMA o ADICION' 
+                success: false,
+                message: 'Tipo inválido. Debe ser MERMA o ADICION' 
             });
         }
 
         const cantidadNum = parseInt(cantidad);
         if (isNaN(cantidadNum) || cantidadNum <= 0) {
             return res.status(400).json({ 
-                error: 'La cantidad debe ser un número positivo' 
+                success: false,
+                message: 'La cantidad debe ser un número positivo' 
             });
         }
 
@@ -44,7 +47,8 @@ const registrarAjusteInventario = async (req, res) => {
         if (varianteQuery.rows.length === 0) {
             await client.query('ROLLBACK');
             return res.status(404).json({ 
-                error: 'Producto no encontrado o inactivo' 
+                success: false,
+                message: 'Producto no encontrado o inactivo' 
             });
         }
 
@@ -87,7 +91,8 @@ const registrarAjusteInventario = async (req, res) => {
             if (!resultado.success) {
                 await client.query('ROLLBACK');
                 return res.status(400).json({ 
-                    error: resultado.message,
+                    success: false,
+                    message: resultado.message,
                     stockActual: stockPrevio
                 });
             }
@@ -99,7 +104,8 @@ const registrarAjusteInventario = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
             return res.status(400).json({ 
-                error: stockError.message || 'Error al ajustar el inventario',
+                success: false,
+                message: 'Error al ajustar el inventario',
                 stockActual: stockPrevio
             });
         }
@@ -156,8 +162,8 @@ const registrarAjusteInventario = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
         res.status(500).json({ 
-            error: 'Error al registrar ajuste de inventario',
-            detalle: error.message 
+            success: false,
+            message: 'Error al registrar ajuste de inventario'
         });
     } finally {
         client.release();
@@ -289,8 +295,8 @@ const obtenerHistorialMovimientos = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
         res.status(500).json({ 
-            error: 'Error al obtener historial de movimientos',
-            detalle: error.message 
+            success: false,
+            message: 'Error al obtener historial de movimientos'
         });
     }
 };
@@ -327,8 +333,8 @@ const obtenerMotivosAjuste = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
         res.status(500).json({ 
-            error: 'Error al obtener motivos de ajuste',
-            detalle: error.message 
+            success: false,
+            message: 'Error al obtener motivos de ajuste'
         });
     }
 };
@@ -419,8 +425,8 @@ const obtenerEstadisticasAjustes = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
         res.status(500).json({ 
-            error: 'Error al obtener estadísticas de ajustes',
-            detalle: error.message 
+            success: false,
+            message: 'Error al obtener estadísticas de ajustes'
         });
     }
 };
@@ -433,7 +439,8 @@ const buscarProductoPorSKU = async (req, res) => {
 
         if (!sku) {
             return res.status(400).json({ 
-                error: 'El parámetro SKU es requerido' 
+                success: false,
+                message: 'El parámetro SKU es requerido' 
             });
         }
 
@@ -460,7 +467,8 @@ const buscarProductoPorSKU = async (req, res) => {
 
         if (productoQuery.rows.length === 0) {
             return res.status(404).json({ 
-                error: 'No se encontraron productos con ese SKU' 
+                success: false,
+                message: 'No se encontraron productos con ese SKU' 
             });
         }
 
@@ -476,8 +484,8 @@ const buscarProductoPorSKU = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
         res.status(500).json({ 
-            error: 'Error al buscar producto',
-            detalle: error.message 
+            success: false,
+            message: 'Error al buscar producto'
         });
     }
 };
@@ -545,8 +553,8 @@ const buscarProductosAutocompletado = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
         res.status(500).json({ 
-            error: 'Error al buscar productos',
-            detalle: error.message 
+            success: false,
+            message: 'Error al buscar productos'
         });
     }
 };
@@ -562,7 +570,8 @@ const getVariantesProducto = async (req, res) => {
 
         if (!productoId) {
             return res.status(400).json({ 
-                error: 'El ID del producto es requerido' 
+                success: false,
+                message: 'El ID del producto es requerido' 
             });
         }
 
@@ -597,7 +606,8 @@ const getVariantesProducto = async (req, res) => {
 
         if (result.rows.length === 0) {
             return res.status(404).json({ 
-                error: 'No se encontraron variantes para este producto' 
+                success: false,
+                message: 'No se encontraron variantes para este producto' 
             });
         }
 
@@ -615,8 +625,8 @@ const getVariantesProducto = async (req, res) => {
       tenantId: req.tenant?.tenant_id
     });
         res.status(500).json({ 
-            error: 'Error al obtener variantes',
-            detalle: error.message 
+            success: false,
+            message: 'Error al obtener variantes'
         });
     }
 };

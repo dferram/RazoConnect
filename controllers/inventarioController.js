@@ -115,8 +115,8 @@ async function exportarEntradasAlmacen(req, res) {
       tenantId: req.tenant?.tenant_id
     });
         res.status(500).json({
-            message: 'Error al generar el reporte de entradas',
-            error: error.message
+            success: false,
+            message: 'Error al generar el reporte de entradas'
         });
     } finally {
         client.release();
@@ -177,8 +177,8 @@ async function getOrdenesPendientes(req, res) {
       tenantId: req.tenant?.tenant_id
     });
         res.status(500).json({
-            message: 'Error al obtener órdenes pendientes',
-            error: error.message
+            success: false,
+            message: 'Error al obtener órdenes pendientes'
         });
     } finally {
         client.release();
@@ -253,8 +253,7 @@ async function crearSesionInventario(req, res) {
         
         res.status(500).json({
             success: false,
-            message: 'Error al crear la sesión de inventario',
-            error: error.message
+            message: 'Error al crear la sesión de inventario'
         });
     } finally {
         client.release();
@@ -370,8 +369,7 @@ async function listarSesionesInventario(req, res) {
     });
         res.status(500).json({
             success: false,
-            message: 'Error al obtener las sesiones de inventario',
-            error: error.message
+            message: 'Error al obtener las sesiones de inventario'
         });
     } finally {
         client.release();
@@ -461,8 +459,7 @@ async function obtenerSesionInventario(req, res) {
     });
         res.status(500).json({
             success: false,
-            message: 'Error al obtener la sesión de inventario',
-            error: error.message
+            message: 'Error al obtener la sesión de inventario'
         });
     } finally {
         client.release();
@@ -559,8 +556,7 @@ async function asignarAgenteASesion(req, res) {
     });
         res.status(500).json({
             success: false,
-            message: 'Error al asignar el agente a la sesión',
-            error: error.message
+            message: 'Error al asignar el agente a la sesión'
         });
     } finally {
         client.release();
@@ -610,8 +606,7 @@ async function obtenerAgentesDisponibles(req, res) {
     });
         res.status(500).json({
             success: false,
-            message: 'Error al obtener la lista de agentes',
-            error: error.message
+            message: 'Error al obtener la lista de agentes'
         });
     } finally {
         client.release();
@@ -693,8 +688,7 @@ async function actualizarEstatusSesion(req, res) {
     });
         res.status(500).json({
             success: false,
-            message: 'Error al actualizar el estatus de la sesión',
-            error: error.message
+            message: 'Error al actualizar el estatus de la sesión'
         });
     } finally {
         client.release();
@@ -818,8 +812,7 @@ async function obtenerInventarioParaPDF(req, res) {
     });
         return res.status(500).json({
             success: false,
-            message: 'Error al obtener inventario',
-            error: error.message
+            message: 'Error al obtener inventario'
         });
     }
 }

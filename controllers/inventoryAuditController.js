@@ -104,8 +104,7 @@ const crearSesion = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al crear sesión",
-      error: error.message,
+      message: "Error al crear sesión"
     });
   }
 };
@@ -151,10 +150,18 @@ const listarSesiones = async (req, res) => {
       // Agente: Solo sesiones asignadas a él
       whereClause += ` AND si.agente_asignado_id = $3`;
       queryParams.push(userId);
-      console.log(`📋 [listarSesiones] Agente ${userId} - Filtrando solo sesiones asignadas`);
+      logger.info(`[listarSesiones] Agente ${userId} - Filtrando solo sesiones asignadas`, {
+        userId,
+        requestId: req.requestId,
+        tenantId: req.tenant?.tenant_id
+      });
     } else if (isAdmin || isSuperAdmin) {
       // Admin o Super Admin: Pueden ver TODAS las sesiones del tenant
-      console.log(`📋 [listarSesiones] Admin/SuperAdmin ${userId} - Mostrando todas las sesiones del tenant`);
+      logger.info(`[listarSesiones] Admin/SuperAdmin ${userId} - Mostrando todas las sesiones del tenant`, {
+        userId,
+        requestId: req.requestId,
+        tenantId: req.tenant?.tenant_id
+      });
     }
     
     const result = await db.query(
@@ -200,8 +207,7 @@ const listarSesiones = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al listar sesiones",
-      error: error.message,
+      message: "Error al listar sesiones"
     });
   }
 };
@@ -261,8 +267,7 @@ const buscarProductos = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al buscar productos",
-      error: error.message,
+      message: "Error al buscar productos"
     });
   }
 };
@@ -318,8 +323,7 @@ const getVariantePorSku = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al buscar SKU",
-      error: error.message,
+      message: "Error al buscar SKU"
     });
   }
 };
@@ -417,7 +421,13 @@ const registrarConteo = async (req, res) => {
       // Agente: Solo puede registrar conteos en sesiones asignadas a él
       if (sesion.agente_asignado_id !== usuarioId) {
         await client.query("ROLLBACK");
-        console.warn(`⚠️ [ACCESO DENEGADO] Agente ${usuarioId} intentó registrar conteo en sesión ${sesionId} asignada a agente ${sesion.agente_asignado_id}`);
+        logger.warn(`[ACCESO DENEGADO] Agente ${usuarioId} intentó registrar conteo en sesión ${sesionId} asignada a agente ${sesion.agente_asignado_id}`, {
+          userId: usuarioId,
+          sesionId,
+          agenteAsignado: sesion.agente_asignado_id,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
         return res.status(403).json({
           success: false,
           message: 'No tienes permiso para registrar conteos en esta sesión. Solo puedes trabajar en sesiones asignadas a ti.'
@@ -467,7 +477,13 @@ const registrarConteo = async (req, res) => {
     
     if (!existing.rows.length) {
       // CASO 1: Primer conteo de este producto en esta sesión (CONTEO A)
-      console.log(`📝 [CONTEO A] ${usuarioIdentificador} registra primer conteo de variante ${varianteId} en sesión ${sesionId}`);
+      logger.info(`[CONTEO A] ${usuarioIdentificador} registra primer conteo de variante ${varianteId} en sesión ${sesionId}`, {
+        usuarioIdentificador,
+        varianteId,
+        sesionId,
+        requestId: req.requestId,
+        tenantId: req.tenant?.tenant_id
+      });
       
       const inserted = await client.query(
         `INSERT INTO toma_inventario_conteos (sesionid, varianteid, conteo_a, usuario_a_id, usuario_a_tipo, estatus_fila, tenant_id)
@@ -509,7 +525,13 @@ const registrarConteo = async (req, res) => {
 
       if (esElMismoUsuario) {
         await client.query("ROLLBACK");
-        console.warn(`❌ [CONTEO CIEGO VIOLADO] ${usuarioIdentificador} intentó hacer Conteo B de variante ${varianteId} en sesión ${sesionId}, pero ya hizo el Conteo A`);
+        logger.warn(`[CONTEO CIEGO VIOLADO] ${usuarioIdentificador} intentó hacer Conteo B de variante ${varianteId} en sesión ${sesionId}, pero ya hizo el Conteo A`, {
+          usuarioIdentificador,
+          varianteId,
+          sesionId,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
         
         // Mensaje personalizado según el rol del usuario
         const mensajeError = isAgente 
@@ -518,19 +540,19 @@ const registrarConteo = async (req, res) => {
         
         return res.status(403).json({
           success: false,
-          message: mensajeError,
-          debug: {
-            sesionId,
-            varianteId,
-            usuarioActual: usuarioIdentificador,
-            usuarioConteoA: usuarioAIdentificador,
-            conteoAExistente: row.conteo_a
-          }
+          message: mensajeError
         });
       }
 
       // CASO 2B: Usuario diferente registra Conteo B (validación ciega)
-      console.log(`✅ [CONTEO B] ${usuarioIdentificador} registra segundo conteo de variante ${varianteId} en sesión ${sesionId} (Conteo A fue hecho por ${usuarioAIdentificador})`);
+      logger.info(`[CONTEO B] ${usuarioIdentificador} registra segundo conteo de variante ${varianteId} en sesión ${sesionId} (Conteo A fue hecho por ${usuarioAIdentificador})`, {
+        usuarioIdentificador,
+        usuarioAIdentificador,
+        varianteId,
+        sesionId,
+        requestId: req.requestId,
+        tenantId: req.tenant?.tenant_id
+      });
       
       const conteoA = Number.parseInt(row.conteo_a, 10);
       const igual = Number.isInteger(conteoA) && conteoA === cantidad;
@@ -557,9 +579,21 @@ const registrarConteo = async (req, res) => {
       row = updated.rows[0];
       
       if (igual) {
-        console.log(`🎯 [VALIDADO] Conteo A (${conteoA}) y Conteo B (${cantidad}) coinciden para variante ${varianteId}`);
+        logger.info(`[VALIDADO] Conteo A (${conteoA}) y Conteo B (${cantidad}) coinciden para variante ${varianteId}`, {
+          conteoA,
+          conteoB: cantidad,
+          varianteId,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
       } else {
-        console.log(`⚠️ [CONFLICTO] Conteo A (${conteoA}) y Conteo B (${cantidad}) NO coinciden para variante ${varianteId}`);
+        logger.warn(`[CONFLICTO] Conteo A (${conteoA}) y Conteo B (${cantidad}) NO coinciden para variante ${varianteId}`, {
+          conteoA,
+          conteoB: cantidad,
+          varianteId,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
       }
     }
 
@@ -610,9 +644,7 @@ const registrarConteo = async (req, res) => {
     const status = error && Number.isInteger(error.status) ? error.status : 500;
     return res.status(status).json({
       success: false,
-      message: error.message || "Error al registrar conteo",
-      error: error.message,
-      code: error.code,
+      message: error.message || "Error al registrar conteo"
     });
   } finally {
     client.release();
@@ -667,7 +699,13 @@ const getDashboardSesion = async (req, res) => {
     // MISIÓN 4: Validación 403 - Agentes solo pueden ver sus sesiones asignadas
     if (isAgent && !isAdmin && !isSuperAdmin) {
       if (sesion.agente_asignado_id !== userId) {
-        console.warn(`⚠️ [ACCESO DENEGADO] Agente ${userId} intentó acceder a sesión ${sesionId} asignada a agente ${sesion.agente_asignado_id}`);
+        logger.warn(`[ACCESO DENEGADO] Agente ${userId} intentó acceder a sesión ${sesionId} asignada a agente ${sesion.agente_asignado_id}`, {
+          userId,
+          sesionId,
+          agenteAsignado: sesion.agente_asignado_id,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
         return res.status(403).json({
           success: false,
           message: 'No tienes permiso para acceder a esta sesión de inventario. Solo puedes ver sesiones asignadas a ti.'
@@ -765,8 +803,7 @@ const getDashboardSesion = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al cargar dashboard",
-      error: error.message,
+      message: "Error al cargar dashboard"
     });
   }
 };
@@ -978,7 +1015,13 @@ const aplicarSesion = async (req, res) => {
     // COMMIT: Solo se ejecuta si todo lo anterior fue exitoso
     await client.query("COMMIT");
     
-    console.log(`✅ [Auditoría] Sesión #${sesionId} aplicada exitosamente. Estatus: ${estatusFinal}. Movimientos: ${movimientosGenerados}`);
+    logger.info(`[Auditoría] Sesión #${sesionId} aplicada exitosamente. Estatus: ${estatusFinal}. Movimientos: ${movimientosGenerados}`, {
+      sesionId,
+      estatusFinal,
+      movimientosGenerados,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
 
     const message = noAplicadas.length > 0
       ? `Auditoría aplicada parcialmente: ${aplicadas.length} producto(s) actualizado(s), ${noAplicadas.length} ítem(s) no aplicado(s) registrados`
@@ -1013,9 +1056,7 @@ const aplicarSesion = async (req, res) => {
     const status = error && Number.isInteger(error.status) ? error.status : 500;
     return res.status(status).json({
       success: false,
-      message: error.message || "Error al aplicar auditoría",
-      error: error.message,
-      code: error.code,
+      message: error.message || "Error al aplicar auditoría"
     });
   } finally {
     client.release();
@@ -1111,8 +1152,7 @@ const diagnosticoSesiones = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al ejecutar diagnóstico",
-      error: error.message,
+      message: "Error al ejecutar diagnóstico"
     });
   }
 };
@@ -1174,7 +1214,13 @@ const getSesionDetalle = async (req, res) => {
     // Validación de acceso: Agentes solo pueden ver sus sesiones asignadas
     if (isAgent && !isAdmin && !isSuperAdmin) {
       if (sesion.agente_asignado_id !== userId) {
-        console.warn(`⚠️ [ACCESO DENEGADO] Agente ${userId} intentó acceder a sesión ${sesionId} asignada a agente ${sesion.agente_asignado_id}`);
+        logger.warn(`[ACCESO DENEGADO] Agente ${userId} intentó acceder a sesión ${sesionId} asignada a agente ${sesion.agente_asignado_id}`, {
+          userId,
+          sesionId,
+          agenteAsignado: sesion.agente_asignado_id,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
         return res.status(403).json({
           success: false,
           message: 'No tienes permiso para acceder a esta sesión de inventario. Solo puedes ver sesiones asignadas a ti.'
@@ -1203,8 +1249,7 @@ const getSesionDetalle = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al obtener detalles de la sesión",
-      error: error.message,
+      message: "Error al obtener detalles de la sesión"
     });
   }
 };
@@ -1289,8 +1334,7 @@ const asignarAgenteASesion = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al asignar agente",
-      error: error.message,
+      message: "Error al asignar agente"
     });
   }
 };
@@ -1329,8 +1373,7 @@ const obtenerAgentesDisponibles = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al obtener agentes",
-      error: error.message,
+      message: "Error al obtener agentes"
     });
   }
 };
@@ -1429,7 +1472,12 @@ const finalizarSesion = async (req, res) => {
 
     const sesionCerrada = updateResult.rows[0];
 
-    console.log(`✅ [SESIÓN CERRADA] Sesión #${sesionId} cerrada exitosamente. Stats: ${stats.validados} validados, ${stats.conflictos} conflictos, ${stats.pendientes} pendientes`);
+    logger.info(`[SESIÓN CERRADA] Sesión #${sesionId} cerrada exitosamente. Stats: ${stats.validados} validados, ${stats.conflictos} conflictos, ${stats.pendientes} pendientes`, {
+      sesionId,
+      stats,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
 
     return res.json({
       success: true,
@@ -1461,9 +1509,7 @@ const finalizarSesion = async (req, res) => {
     const status = error && Number.isInteger(error.status) ? error.status : 500;
     return res.status(status).json({
       success: false,
-      message: error.message || "Error al cerrar sesión",
-      error: error.message,
-      code: error.code,
+      message: error.message || "Error al cerrar sesión"
     });
   } finally {
     client.release();

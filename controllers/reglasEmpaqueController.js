@@ -501,8 +501,7 @@ const saveReglasEmpaqueMultiples = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al guardar reglas de empaque",
-      error: error.message,
+      message: "Error al guardar reglas de empaque"
     });
   } finally {
     client.release();
@@ -790,8 +789,7 @@ const saveReglaEmpaque = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al guardar regla de empaque",
-      error: error.message,
+      message: "Error al guardar regla de empaque"
     });
   }
   finally {

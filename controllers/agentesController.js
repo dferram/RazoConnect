@@ -60,14 +60,12 @@ const obtenerClientesDisponibles = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener clientes disponibles para agente:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
-      message: "Error al obtener los clientes disponibles",
-      error: error.message,
+      message: "Error al obtener los clientes disponibles"
     });
   }
 };
@@ -144,14 +142,12 @@ const solicitarConfirmacionPedidoAgente = async (req, res) => {
       });
     }
     logger.error('Error al registrar solicitud de confirmación de pedido por agente:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
-      message: "Error al registrar la solicitud de confirmación",
-      error: error.message,
+      message: "Error al registrar la solicitud de confirmación"
     });
   }
 };
@@ -255,14 +251,12 @@ const vincularCliente = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al vincular cliente a agente:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
-      message: "Error al vincular el cliente",
-      error: error.message,
+      message: "Error al vincular el cliente"
     });
   }
 };
@@ -321,14 +315,12 @@ const obtenerClientesDelAgente = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener clientes del agente:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
-      message: "Error al obtener los clientes del agente",
-      error: error.message,
+      message: "Error al obtener los clientes del agente"
     });
   }
 };
@@ -407,14 +399,12 @@ const obtenerDashboardStats = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener estadísticas de dashboard del agente:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener estadísticas",
-      error: error.message,
+      message: "Error al obtener estadísticas"
     });
   }
 };
@@ -482,14 +472,12 @@ const obtenerPedidosDelAgente = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener pedidos del agente:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener los pedidos",
-      error: error.message,
+      message: "Error al obtener los pedidos"
     });
   }
 };
@@ -661,14 +649,12 @@ const obtenerPedidoDetalleAgente = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener detalle del pedido del agente:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener el detalle del pedido",
-      error: error.message,
+      message: "Error al obtener el detalle del pedido"
     });
   }
 };
@@ -761,7 +747,6 @@ const actualizarEstatusPedidoAgente = async (req, res) => {
       });
     } catch (logError) {
       logger.error('Error al registrar log de cambio de estatus de pedido por agente:', {
-      error: logError.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
@@ -778,14 +763,12 @@ const actualizarEstatusPedidoAgente = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al actualizar estatus del pedido por agente:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
-      message: "Error al actualizar el estatus del pedido",
-      error: error.message,
+      message: "Error al actualizar el estatus del pedido"
     });
   }
 };
@@ -912,14 +895,12 @@ const solicitarCambioEstatusPedidoAgente = async (req, res) => {
       });
     }
     logger.error('Error al registrar solicitud de cambio de estatus de pedido por agente:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
-      message: "Error al registrar la solicitud de cambio de estatus",
-      error: error.message,
+      message: "Error al registrar la solicitud de cambio de estatus"
     });
   }
 };
@@ -967,14 +948,12 @@ const obtenerComisionesDelAgente = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener comisiones del agente:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener las comisiones",
-      error: error.message,
+      message: "Error al obtener las comisiones"
     });
   }
 };
@@ -1046,8 +1025,7 @@ const getCxCAgente = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al obtener las cuentas por cobrar",
-      error: error.message,
+      message: "Error al obtener las cuentas por cobrar"
     });
   }
 };

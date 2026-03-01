@@ -263,8 +263,6 @@ const crearProducto = async (req, res) => {
     await client.query("BEGIN");
     transactionStarted = true;
 
-    console.log(`\n📦 [CREAR PRODUCTO] Iniciando creación: ${nombre}`);
-
     const proveedorIdRawEffective =
       proveedorIdRaw ??
       req.body?.proveedorid_default ??
@@ -415,8 +413,6 @@ const crearProducto = async (req, res) => {
 
     const productoId = productoResult.rows[0].productoid;
 
-    console.log(`✅ [CREAR PRODUCTO] Producto maestro creado: ID ${productoId}, SKU ${skuMaestroFinal}`);
-
     await client.query("COMMIT");
     transactionStarted = false;
 
@@ -471,8 +467,6 @@ const actualizarProducto = async (req, res) => {
   try {
     await client.query("BEGIN");
     transactionStarted = true;
-
-    console.log(`\n📝 [ACTUALIZAR PRODUCTO] ID: ${productoId}`);
 
     const productoExiste = await client.query(
       "SELECT ProductoID FROM Productos WHERE ProductoID = $1 AND tenant_id = $2",
@@ -546,8 +540,6 @@ const actualizarProducto = async (req, res) => {
 
     await client.query("COMMIT");
     transactionStarted = false;
-
-    console.log(`✅ [ACTUALIZAR PRODUCTO] Producto ${productoId} actualizado`);
 
     res.json({
       success: true,

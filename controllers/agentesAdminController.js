@@ -253,8 +253,6 @@ const crearAgente = async (req, res) => {
       ]
     );
 
-    console.log(`✅ [AGENTE] Creado: ${result.rows[0].nombre} ${result.rows[0].apellido} (ID: ${result.rows[0].agenteid})`);
-
     res.status(201).json({
       success: true,
       message: "Agente creado exitosamente",
@@ -350,8 +348,6 @@ const actualizarAgente = async (req, res) => {
       });
     }
 
-    console.log(`✅ [AGENTE] Actualizado: ${result.rows[0].nombre} ${result.rows[0].apellido} (ID: ${agenteId})`);
-
     res.json({
       success: true,
       message: "Agente actualizado exitosamente",
@@ -405,8 +401,6 @@ const desactivarAgente = async (req, res) => {
         message: "Agente no encontrado"
       });
     }
-
-    console.log(`✅ [AGENTE] Desactivado: ${result.rows[0].nombre} ${result.rows[0].apellido} (ID: ${agenteId})`);
 
     res.json({
       success: true,

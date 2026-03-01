@@ -118,14 +118,12 @@ const obtenerSugerencias = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error al obtener sugerencias de compra:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     return res.status(500).json({
       success: false,
-      message: "Error en el servidor",
-      error: error.message,
+      message: "Error en el servidor"
     });
   }
 };

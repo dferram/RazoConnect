@@ -28,8 +28,6 @@ const exportarInventarioPDF = async (req, res) => {
 
     const { categoria, proveedor, admin_id, search } = req.query;
     
-    console.log('📄 [exportarInventarioPDF] Filtros recibidos:', { categoria, proveedor, admin_id, search });
-
     const whereClauses = [`p.tenant_id = $1`];
     const params = [tenant_id];
     let paramIndex = 2;
@@ -96,7 +94,6 @@ const exportarInventarioPDF = async (req, res) => {
       ORDER BY p.nombreproducto, pv.sku
     `;
 
-    console.log('📋 [exportarInventarioPDF] Query construido con filtros');
     const result = await db.query(query, params);
 
     // Obtener información del administrador responsable del inventario
@@ -168,8 +165,6 @@ const exportarInventarioPDF = async (req, res) => {
         ubicacion: row.ubicacion
       }))
       .filter(item => item.stock > 0);
-
-    console.log(`📄 [exportarInventarioPDF] ${datosConStock.length} variantes con stock para PDF`);
 
     res.json({
       success: true,
