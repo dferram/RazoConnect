@@ -222,6 +222,48 @@ app.get('/tienda-no-encontrada.html', (req, res) => {
 });
 
 // ============================================================================
+// HEALTH CHECK — Azure App Service probe
+// ============================================================================
+app.get('/api/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
+    environment: process.env.NODE_ENV || 'development',
+    services: {
+      database: 'unknown',
+      redis: 'unknown'
+    }
+  };
+
+  try {
+    // Verificar base de datos con query mínima
+    await db.query('SELECT 1');
+    health.services.database = 'ok';
+  } catch (err) {
+    health.services.database = 'error';
+    health.status = 'degraded';
+  }
+
+  try {
+    // Verificar Redis si está disponible
+    const redisClient = require('./config/redisClient').getRedisClient();
+    if (redisClient) {
+      await redisClient.ping();
+      health.services.redis = 'ok';
+    } else {
+      health.services.redis = 'not_configured';
+    }
+  } catch (err) {
+    health.services.redis = 'error';
+    health.status = 'degraded';
+  }
+
+  const httpStatus = health.status === 'ok' ? 200 : 503;
+  return res.status(httpStatus).json(health);
+});
+
+// ============================================================================
 // MIDDLEWARE DE SEGURIDAD: TENANT GUARD
 // ============================================================================
 // IMPORTANTE: Este middleware se ejecuta ANTES de:

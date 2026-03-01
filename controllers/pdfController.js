@@ -608,9 +608,7 @@ async function generarPDFPedido(req, res) {
         if (!res.headersSent) {
             res.status(500).json({ 
                 success: false,
-                error: 'Error al generar el PDF',
-                message: error.message,
-                details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+                message: "Error al generar el PDF"
             });
         }
     }

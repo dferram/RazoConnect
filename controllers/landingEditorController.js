@@ -172,8 +172,7 @@ exports.uploadImage = async (req, res) => {
     console.error('Error uploading image:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error al subir imagen',
-      error: error.message
+      message: 'Error al subir imagen'
     });
   }
 };
@@ -670,8 +669,7 @@ exports.getPublicLandingItems = async (req, res) => {
     console.error('Error fetching public landing items:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error al obtener items de landing',
-      error: error.message
+      message: 'Error al obtener items de landing'
     });
   }
 };

@@ -119,6 +119,31 @@ describe('SmartStockService', () => {
       expect(result.cantidadBackorder).toBe(5);
       expect(result.estatus).toBe('parcial');
     });
+
+    it('debe considerar la deuda de pedidos anteriores en el cálculo FIFO', async () => {
+      // Stock físico = 10, deuda previa = 8 piezas, se piden 5 piezas
+      // Disponible real = 10 - 8 = 2 → surtible = 2, backorder = 3
+      db.query
+        .mockResolvedValueOnce({ rows: [{ stock: 10 }] }) // Stock físico
+        .mockResolvedValueOnce({ rows: [{ total_piezas_anteriores: 8, num_pedidos_anteriores: 2 }] }) // Deuda previa
+        .mockResolvedValueOnce({ rows: [{ reservada: 0 }] }); // Reservas
+
+      const result = await SmartStockService.calculateAllocationStatus({
+        varianteId: 1,
+        cantidadRequerida: 5,
+        orderDate: new Date(),
+        adminId: 1,
+        tenantId: 1,
+        piezasPorPaquete: 1
+      });
+
+      expect(result.stockFisico).toBe(10);
+      expect(result.deudaPrevia).toBe(8);
+      expect(result.stockDisponible).toBe(2);
+      expect(result.cantidadSurtible).toBe(2);
+      expect(result.cantidadBackorder).toBe(3);
+      expect(result.estatus).toBe('parcial');
+    });
   });
 
   describe('allocateStockAutomatically', () => {

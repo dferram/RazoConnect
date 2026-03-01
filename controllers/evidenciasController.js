@@ -147,8 +147,7 @@ const subirEvidenciaEntrega = async (req, res) => {
     console.error("Error al subir evidencia de entrega:", error);
     res.status(500).json({
       success: false,
-      message: "Error al subir evidencia de entrega",
-      error: error.message,
+      message: "Error al subir evidencia de entrega"
     });
   }
 };

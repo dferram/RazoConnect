@@ -45,8 +45,7 @@ const getAllAdministradores = async (req, res) => {
     console.error("Error al obtener administradores:", error);
     res.status(500).json({
       success: false,
-      message: "Error al obtener administradores",
-      error: error.message
+      message: "Error al obtener administradores"
     });
   }
 };

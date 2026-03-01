@@ -87,8 +87,7 @@ const obtenerBitacora = async (req, res) => {
     console.error('Error al obtener bitácora:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener la bitácora',
-      error: error.message
+      message: "Error al obtener bitácora"
     });
   }
 };
@@ -191,8 +190,7 @@ const obtenerActividad = async (req, res) => {
     console.error("Error al obtener actividad:", error);
     return res.status(500).json({
       success: false,
-      message: "Error al obtener historial de actividad",
-      error: error.message,
+      message: "Error al obtener historial de actividad"
     });
   }
 };
@@ -228,8 +226,7 @@ const obtenerUsuariosActividad = async (req, res) => {
     console.error("Error al obtener usuarios de actividad:", error);
     return res.status(500).json({
       success: false,
-      message: "Error al obtener usuarios",
-      error: error.message,
+      message: "Error al obtener usuarios"
     });
   }
 };
@@ -254,8 +251,7 @@ const obtenerEntidadesActividad = async (req, res) => {
     console.error("Error al obtener entidades de actividad:", error);
     return res.status(500).json({
       success: false,
-      message: "Error al obtener entidades",
-      error: error.message,
+      message: "Error al obtener entidades"
     });
   }
 };
@@ -284,8 +280,7 @@ const obtenerEstadisticas = async (req, res) => {
     console.error('Error al obtener estadísticas:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al obtener estadísticas',
-      error: error.message
+      message: 'Error al obtener estadísticas'
     });
   }
 };

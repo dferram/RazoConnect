@@ -218,11 +218,12 @@ const validarRecepcionCompra = async (req, res) => {
     }
     console.error("Error en validarRecepcionCompra:", error);
     const status = error && Number.isInteger(error.status) ? error.status : 500;
+    const isBusinessError = status < 500;
+    
     return res.status(status).json({
       success: false,
-      message: error.message || "Error al validar recepción",
-      error: error.message,
-      code: error.code,
+      message: isBusinessError ? (error.message || "Error de validación") : "Error en el servidor",
+      ...(isBusinessError && error.code ? { code: error.code } : {})
     });
   } finally {
     client.release();
