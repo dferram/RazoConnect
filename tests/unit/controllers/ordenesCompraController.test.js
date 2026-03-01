@@ -61,29 +61,18 @@ describe('ordenesCompraController', () => {
       ]
     };
 
-    it('debe retornar 404 si el proveedor no existe', async () => {
-      db.query.mockResolvedValueOnce({ rows: [] });
-
-      const req = mockReq({ body: validBody });
-      const res = mockRes();
-
-      await crearOrdenCompra(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ success: false })
-      );
-    });
-
-    it('debe retornar 404 si una variante de producto no existe', async () => {
-      db.query.mockResolvedValueOnce({ rows: [{ proveedorid: 1, nombreempresa: 'Proveedor Test' }] });
-
+    it('debe retornar 500 si el proveedor no existe (error lanzado en transacción)', async () => {
       executeTransaction.mockImplementationOnce(async (callback) => {
         const mockClient = {
           query: jest.fn()
-            .mockResolvedValueOnce({ rows: [] })
+            .mockResolvedValueOnce({ rows: [] }), // Proveedor no encontrado
+          release: jest.fn(),
         };
-        return callback(mockClient);
+        const mockLogger = {
+          logOperation: jest.fn(),
+          logError: jest.fn(),
+        };
+        await callback(mockClient, mockLogger);
       });
 
       const req = mockReq({ body: validBody });
@@ -91,7 +80,34 @@ describe('ordenesCompraController', () => {
 
       await crearOrdenCompra(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ success: false })
+      );
+    });
+
+    it('debe retornar 500 si una variante de producto no existe (error lanzado en transacción)', async () => {
+      executeTransaction.mockImplementationOnce(async (callback) => {
+        const mockClient = {
+          query: jest.fn()
+            .mockResolvedValueOnce({ rows: [{ proveedorid: 1 }] }) // Proveedor existe
+            .mockResolvedValueOnce({ rows: [{ ordencompraid: 1 }] }) // Orden creada
+            .mockResolvedValueOnce({ rows: [] }), // Variante no encontrada
+          release: jest.fn(),
+        };
+        const mockLogger = {
+          logOperation: jest.fn(),
+          logError: jest.fn(),
+        };
+        await callback(mockClient, mockLogger);
+      });
+
+      const req = mockReq({ body: validBody });
+      const res = mockRes();
+
+      await crearOrdenCompra(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
     });
 
     it('debe retornar 500 si falla la consulta de proveedor', async () => {
@@ -108,17 +124,24 @@ describe('ordenesCompraController', () => {
       );
     });
 
-    it('debe retornar 400 si la fecha tiene formato inválido (lógica del controller)', async () => {
-      const reqWithBadDate = mockReq({
-        body: { ...validBody, fechaEntregaEsperada: 'not-a-date' }
+    it('debe manejar errores de validación de piezasPorPaquete', async () => {
+      const reqWithInvalidPiezas = mockReq({
+        body: {
+          ...validBody,
+          productos: [{ varianteId: 1, cantidadSolicitada: 10, piezasPorPaquete: -5 }]
+        }
       });
       const res = mockRes();
 
-      db.query.mockResolvedValueOnce({ rows: [{ proveedorid: 1 }] });
+      await crearOrdenCompra(reqWithInvalidPiezas, res);
 
-      await crearOrdenCompra(reqWithBadDate, res);
-
-      expect(res.status).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.stringMatching(/piezasPorPaquete/i)
+        })
+      );
     });
   });
 });

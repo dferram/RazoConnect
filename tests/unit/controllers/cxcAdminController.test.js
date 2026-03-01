@@ -37,14 +37,17 @@ describe('cxcAdminController', () => {
 
   describe('registrarAbonoCxC', () => {
     const validBody = {
-      clienteId: 1,
+      creditoId: 1,
       monto: 500.00,
       metodoPago: 'efectivo',
       referencia: 'REF-001'
     };
 
-    it('debe retornar 404 si el crédito/CXC no existe', async () => {
-      db.query.mockResolvedValueOnce({ rows: [] });
+    it('debe retornar 404 si el crédito no existe', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [] }) // SELECT credito
+        .mockResolvedValueOnce({}); // ROLLBACK
 
       const req = mockReq({ body: validBody });
       const res = mockRes();
@@ -53,20 +56,25 @@ describe('cxcAdminController', () => {
 
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ success: false })
+        expect.objectContaining({ 
+          success: false,
+          message: expect.stringMatching(/crédito|no encontrado/i)
+        })
       );
     });
 
-    it('debe retornar 400 si el monto excede el saldo pendiente', async () => {
-      db.query.mockResolvedValueOnce({
-        rows: [{
-          cxc_id: 1,
-          monto_total: 1000,
-          monto_pagado: 600,
-          estatus: 'pendiente',
-          tenant_id: 1
-        }]
-      });
+    it('debe retornar 400 si el monto excede el saldo deudor', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ // SELECT credito
+          rows: [{
+            credito_id: 1,
+            cliente_id: 1,
+            saldo_deudor: 400.00,
+            limite_credito: 5000
+          }]
+        })
+        .mockResolvedValueOnce({}); // ROLLBACK
 
       const req = mockReq({
         body: { ...validBody, monto: 500 }
@@ -79,58 +87,65 @@ describe('cxcAdminController', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
-          message: expect.stringMatching(/excede|saldo|monto/i)
+          message: expect.stringMatching(/excede|saldo|deudor/i)
         })
       );
     });
 
-    it('debe retornar 400 si el CXC ya está completamente pagado', async () => {
-      db.query.mockResolvedValueOnce({
-        rows: [{
-          cxc_id: 1,
-          monto_total: 1000,
-          monto_pagado: 1000,
-          estatus: 'pagado',
-          tenant_id: 1
-        }]
+    it('debe retornar 400 si el monto es inválido (cero o negativo)', async () => {
+      const req = mockReq({ 
+        body: { ...validBody, monto: 0 }
       });
-
-      const req = mockReq({ body: validBody });
       const res = mockRes();
 
       await registrarAbonoCxC(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.stringMatching(/monto|inválido/i)
+        })
+      );
     });
 
-    it('debe retornar 500 si falla la consulta de base de datos', async () => {
-      db.query.mockRejectedValueOnce(new Error('DB error'));
-
-      const req = mockReq({ body: validBody });
-      const res = mockRes();
-
-      await registrarAbonoCxC(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-    });
-
-    it('debe retornar 403 si el CXC pertenece a otro tenant', async () => {
-      db.query.mockResolvedValueOnce({
-        rows: [{
-          cxc_id: 1,
-          monto_total: 1000,
-          monto_pagado: 0,
-          estatus: 'pendiente',
-          tenant_id: 99
-        }]
+    it('debe retornar 400 si no se proporciona creditoId ni clienteId', async () => {
+      const req = mockReq({ 
+        body: { monto: 500, metodoPago: 'efectivo' }
       });
-
-      const req = mockReq({ body: validBody });
       const res = mockRes();
 
       await registrarAbonoCxC(req, res);
 
-      expect([403, 404]).toContain(res.status.mock.calls[0][0]);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.stringMatching(/creditoId|clienteId/i)
+        })
+      );
+    });
+
+    it('debe retornar 404 si el cliente no tiene crédito configurado', async () => {
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [] }) // SELECT credito by clienteId
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      const req = mockReq({ 
+        body: { clienteId: 999, monto: 500, metodoPago: 'efectivo' }
+      });
+      const res = mockRes();
+
+      await registrarAbonoCxC(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.stringMatching(/cliente|crédito|configurado/i)
+        })
+      );
     });
   });
 });

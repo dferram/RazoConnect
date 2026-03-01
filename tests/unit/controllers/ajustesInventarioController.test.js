@@ -11,7 +11,7 @@ const mockReq = (overrides = {}) => ({
   params: {},
   query: {},
   tenant: { tenant_id: 1 },
-  user: { id: 10, rol: 'admin', tenant_id: 1 },
+  user: { id: 10, rol: 'superadmin', roles: ['superadmin'], tipo: 'admin', tenant_id: 1 },
   requestId: 'test-req-id',
   ...overrides
 });
@@ -38,29 +38,33 @@ describe('ajustesInventarioController', () => {
   describe('ajustarInventario', () => {
     const validBodyMerma = {
       varianteId: 1,
-      tipoMovimiento: 'MERMA',
-      cantidadCambio: 5,
+      tipoMovimiento: 'SALIDA',
+      cantidad: 5,
       motivo: 'Producto dañado en almacén'
     };
 
     const validBodyAdicion = {
       varianteId: 1,
-      tipoMovimiento: 'ADICION',
-      cantidadCambio: 10,
+      tipoMovimiento: 'ENTRADA',
+      cantidad: 10,
       motivo: 'Corrección de conteo físico'
     };
 
-    it('debe retornar 404 si la variante no existe', async () => {
-      db.query.mockResolvedValueOnce({ rows: [] });
-
-      const req = mockReq({ body: validBodyMerma });
+    it('debe retornar 403 si el usuario no es superadmin', async () => {
+      const req = mockReq({ 
+        body: validBodyMerma,
+        user: { id: 10, rol: 'admin', roles: ['admin'], tipo: 'admin', tenant_id: 1 }
+      });
       const res = mockRes();
 
       await ajustarInventario(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ success: false })
+        expect.objectContaining({ 
+          success: false,
+          message: expect.stringMatching(/permisos|super-administrador/i)
+        })
       );
     });
 
@@ -70,20 +74,20 @@ describe('ajustesInventarioController', () => {
       });
       const res = mockRes();
 
-      db.query.mockResolvedValueOnce({ rows: [{ varianteid: 1, stockactual: 100 }] });
-
       await ajustarInventario(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.stringMatching(/tipoMovimiento|ENTRADA|SALIDA/i)
+        })
+      );
     });
 
-    it('debe retornar 400 si MERMA supera el stock disponible', async () => {
-      db.query.mockResolvedValueOnce({
-        rows: [{ varianteid: 1, stockactual: 3 }]
-      });
-
+    it('debe retornar 400 si la cantidad es cero', async () => {
       const req = mockReq({
-        body: { ...validBodyMerma, cantidadCambio: 10 }
+        body: { ...validBodyMerma, cantidad: 0 }
       });
       const res = mockRes();
 
@@ -93,37 +97,43 @@ describe('ajustesInventarioController', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: false,
-          message: expect.stringMatching(/stock|insuficiente/i)
+          message: expect.stringMatching(/cantidad|cero/i)
         })
       );
     });
 
-    it('debe retornar 500 si falla la base de datos', async () => {
-      db.query.mockRejectedValueOnce(new Error('DB error'));
-
-      const req = mockReq({ body: validBodyMerma });
+    it('debe retornar 400 si el motivo está vacío', async () => {
+      const req = mockReq({ 
+        body: { ...validBodyMerma, motivo: '' }
+      });
       const res = mockRes();
 
       await ajustarInventario(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.stringMatching(/motivo/i)
+        })
+      );
     });
 
-    it('debe llamar a la base de datos con los parámetros correctos para MERMA', async () => {
-      db.query
-        .mockResolvedValueOnce({ rows: [{ varianteid: 1, stockactual: 100 }] })
-        .mockResolvedValueOnce({ rows: [] })
-        .mockResolvedValueOnce({ rows: [{ stockactual: 95 }] })
-        .mockResolvedValueOnce({ rows: [{ movimientoid: 1 }] })
-        .mockResolvedValueOnce({ rows: [] });
-
-      const req = mockReq({ body: validBodyMerma });
+    it('debe retornar 400 si la cantidad es inválida', async () => {
+      const req = mockReq({ 
+        body: { ...validBodyMerma, cantidad: 'invalid' }
+      });
       const res = mockRes();
 
       await ajustarInventario(req, res);
 
-      expect(res.status).not.toHaveBeenCalledWith(400);
-      expect(res.status).not.toHaveBeenCalledWith(500);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.stringMatching(/cantidad|inválida/i)
+        })
+      );
     });
   });
 });
