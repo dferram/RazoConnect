@@ -57,17 +57,7 @@ const buscarProductos = async (query) => {
     const resultsContainer = document.getElementById('autocomplete-results');
     
     try {
-        const response = await fetch(`${API_BASE_URL}/inventario/productos/autocompletado?q=${encodeURIComponent(query)}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || 'Error al buscar productos');
-        }
+        const data = await ApiClient.get(`${API_BASE_URL}/inventario/productos/autocompletado?q=${encodeURIComponent(query)}`);
 
         if (data.productos.length === 0) {
             resultsContainer.innerHTML = `
@@ -84,7 +74,7 @@ const buscarProductos = async (query) => {
         console.error('Error al buscar productos:', error);
         resultsContainer.innerHTML = `
             <div class="autocomplete-no-results text-danger">
-                <i class="bi bi-exclamation-triangle"></i> Error al buscar
+                <i class="bi bi-exclamation-triangle"></i> ${error.message || 'Error al buscar'}
             </div>
         `;
     }
@@ -132,18 +122,7 @@ const abrirModalVariantes = async (productoId) => {
     modalVariantes.show();
     
     try {
-        const response = await fetch(`${API_BASE_URL}/inventario/productos/${productoId}/variantes`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || 'Error al cargar variantes');
-        }
-
+        const data = await ApiClient.get(`${API_BASE_URL}/inventario/productos/${productoId}/variantes`);
         mostrarVariantes(data.variantes);
 
     } catch (error) {
@@ -275,18 +254,7 @@ const cargarMotivos = async () => {
     }
 
     try {
-        const response = await fetch(`${API_BASE_URL}/inventario/motivos-ajuste?tipo=${tipo}`, {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
-            }
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || 'Error al cargar motivos');
-        }
-
+        const data = await ApiClient.get(`${API_BASE_URL}/inventario/motivos-ajuste?tipo=${tipo}`);
         motivosCache[tipo] = data.motivos;
         renderizarMotivos(data.motivos, tipo);
 
@@ -312,11 +280,7 @@ const registrarAjuste = async (e) => {
     e.preventDefault();
 
     if (!varianteSeleccionada) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Variante No Seleccionada',
-            text: 'Por favor busca y selecciona una variante antes de continuar'
-        });
+        UI.warning('Variante No Seleccionada', 'Por favor busca y selecciona una variante antes de continuar');
         return;
     }
 
@@ -358,30 +322,16 @@ const registrarAjuste = async (e) => {
     }
 
     const btnRegistrar = document.getElementById('btn-registrar');
-    btnRegistrar.disabled = true;
-    btnRegistrar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Registrando...';
+    const restoreBtn = UI.setButtonLoading(btnRegistrar, 'Registrando...');
 
     try {
-        const response = await fetch(`${API_BASE_URL}/inventario/ajuste`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
-            },
-            body: JSON.stringify({
-                sku: varianteSeleccionada.sku,
-                tipo,
-                cantidad,
-                motivo,
-                observaciones: observaciones || null
-            })
+        const data = await ApiClient.post(`${API_BASE_URL}/inventario/ajuste`, {
+            sku: varianteSeleccionada.sku,
+            tipo,
+            cantidad,
+            motivo,
+            observaciones: observaciones || null
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || 'Error al registrar ajuste');
-        }
 
         await Swal.fire({
             icon: 'success',
@@ -404,14 +354,9 @@ const registrarAjuste = async (e) => {
 
     } catch (error) {
         console.error('Error al registrar ajuste:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message
-        });
+        UI.handleApiError(error);
     } finally {
-        btnRegistrar.disabled = false;
-        btnRegistrar.innerHTML = '<i class="bi bi-check-circle"></i> Registrar Ajuste';
+        restoreBtn();
     }
 };
 
