@@ -75,7 +75,6 @@
 
       // MISIÓN 1: NO hacer fetch redundante - auth-guard ya validó la sesión
       // Simplemente usar los datos de localStorage que auth-guard refrescó
-      console.log("✅ Usando datos de sesión validados por auth-guard:", adminData.nombre);
     } catch (criticalError) {
       // MISIÓN 1: Último recurso - intentar renderizar con datos básicos
       console.error("❌ Error crítico en initializeHeader:", criticalError);
@@ -86,7 +85,6 @@
         if (!adminData) {
           throw new Error("No hay datos de respaldo");
         }
-        console.log("🔄 Recuperación exitosa desde localStorage");
       } catch (recoveryError) {
         console.error("❌ No se pudo recuperar datos, redirigiendo al login");
         window.location.replace("/login.html");
@@ -101,7 +99,6 @@
     const rolTexto = isSuperAdmin ? "Super Admin" : "Administrador";
     
     // Sin restricciones de rol - Admin y SuperAdmin tienen acceso a todas las páginas
-    console.log('✅ Usuario autenticado:', nombre, '| Rol:', rolTexto);
 
     // Llenar datos en el Header
     const headerUserName = document.getElementById("headerUserName");

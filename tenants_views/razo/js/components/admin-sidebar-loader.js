@@ -82,11 +82,19 @@
   }
 
   function setupRoleBasedVisibility() {
-    const user = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
+    const userDataRaw = localStorage.getItem('razoconnect_admin');
+    const user = JSON.parse(userDataRaw || '{}');
+    
+    // TEMPORAL: Logging para diagnóstico
+    console.log('[SIDEBAR DEBUG] user.rol:', user.rol);
+    console.log('[SIDEBAR DEBUG] user.role:', user.role);
+    console.log('[SIDEBAR DEBUG] user.roles:', user.roles);
     
     // Soportar tanto array de roles como string de rol
     const roles = user.roles || [];
     const rolString = (user.rol || user.role || '').toString().toLowerCase().trim();
+    
+    console.log('[SIDEBAR DEBUG] rolString normalizado:', rolString);
     
     // Verificar si es super admin en cualquier formato
     const isSuperAdmin = 
@@ -96,21 +104,23 @@
       rolString === 'super admin' ||
       rolString === 'super_admin';
 
-    console.log('🔍 Verificación de rol:', { 
-      roles, 
-      rolString, 
-      isSuperAdmin,
-      userData: user 
-    });
+    console.log('[SIDEBAR DEBUG] isSuperAdmin:', isSuperAdmin);
+
+    const superAdminSections = document.querySelectorAll('[data-role="super_admin"]');
+    console.log('[SIDEBAR DEBUG] Secciones encontradas:', superAdminSections.length);
 
     if (!isSuperAdmin) {
-      const superAdminSections = document.querySelectorAll('[data-role="super_admin"]');
       superAdminSections.forEach(section => {
-        section.style.display = 'none';
+        section.style.setProperty('display', 'none', 'important');
       });
-      console.log('🚫 Secciones de Super Admin ocultadas');
+      console.log('[SIDEBAR DEBUG] Secciones OCULTADAS');
     } else {
-      console.log('✅ Usuario es Super Admin - todas las secciones visibles');
+      superAdminSections.forEach(section => {
+        section.style.setProperty('display', 'block', 'important');
+        section.style.visibility = 'visible';
+        section.style.opacity = '1';
+      });
+      console.log('[SIDEBAR DEBUG] Secciones MOSTRADAS con !important');
     }
   }
 
