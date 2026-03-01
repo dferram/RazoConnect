@@ -431,9 +431,9 @@
 
           const data = await response.json();
 
-          if (data.success && data.data.pedidos.length > 0) {
+          if (data.success && data.data && data.data.length > 0) {
             // Mostrar solo los últimos 5 pedidos
-            const recentOrders = data.data.pedidos.slice(0, 5);
+            const recentOrders = data.data.slice(0, 5);
 
             ordersTableBody.innerHTML = recentOrders
               .map((order) => {

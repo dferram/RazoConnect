@@ -173,28 +173,7 @@ console.log(`   - MaxAge: 7 días`);
 console.log(`   - Trust proxy: enabled`);
 console.log(`   - Domain isolation: ENABLED (dynamic per request)`);
 
-// ============================================================================
-// DEBUG LOGGING: SESIÓN Y AUTENTICACIÓN
-// ============================================================================
-// Logging detallado de sesiones para debugging de problemas de autenticación
-if (process.env.NODE_ENV !== 'production') {
-  app.use((req, res, next) => {
-    // Log completo para rutas de autenticación
-    if (req.path.startsWith('/api/auth') || req.path.startsWith('/api/admin') || req.path.startsWith('/developer')) {
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log(`🔐 [SESSION DEBUG] ${req.method} ${req.path}`);
-      console.log(`   SessionID: ${req.sessionID || 'NONE'}`);
-      console.log(`   User: ${req.user ? JSON.stringify(req.user) : 'None'}`);
-      console.log(`   Session.user: ${req.session?.user ? JSON.stringify(req.session.user) : 'None'}`);
-      console.log(`   Session.userId: ${req.session?.userId || 'None'}`);
-      console.log(`   Session.tenant_id: ${req.session?.tenant_id || 'None'}`);
-      console.log(`   Tenant: ${req.tenant ? `${req.tenant.nombre_cliente} (ID: ${req.tenant.tenant_id})` : 'None'}`);
-      console.log(`   Cookie: ${req.headers.cookie ? 'Present' : 'Missing'}`);
-      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    }
-    next();
-  });
-}
+// Session debug logging disabled - only errors are logged
 
 configurePassport(passport);
 app.use(passport.initialize());
@@ -353,14 +332,7 @@ app.use((req, res, next) => {
   const tenantFolder = req.tenant?.tema || 'razo'; // Default a 'razo' si no hay tema
   const tenantPath = path.join(__dirname, 'tenants_views', tenantFolder);
   
-  // DEBUG: Logging para archivos CSS
-  if (req.path.includes('.css')) {
-    console.log('--- DEBUG ESTÁTICOS ---');
-    console.log('Path solicitado:', req.path);
-    console.log('Tenant folder:', tenantFolder);
-    console.log('Buscando en:', path.join(tenantPath, req.path));
-    // Path absoluto completo: path.resolve(tenantPath, req.path.substring(1))
-  }
+  // Archivos estáticos servidos desde carpeta del tenant
   
   // AISLAMIENTO TOTAL: Cada tenant sirve SOLO sus propios archivos
   // Si un archivo no existe, debe dar error 404, NO cargar del otro tenant
@@ -370,14 +342,7 @@ app.use((req, res, next) => {
 // Servir iconos (favicon y otros) desde la carpeta /icon
 app.use("/icon", express.static(path.join(__dirname, "icon")));
 
-// ============================================================================
-// MIDDLEWARE DE LOGGING
-// ============================================================================
-
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
+// Request logging disabled - only errors are logged
 
 // ============================================================================
 // API DOCUMENTATION — Swagger UI

@@ -15,8 +15,122 @@ const inventoryService = require('../services/inventoryService');
 const { getPaginationParams, buildPaginationMeta } = require('../utils/pagination');
 
 /**
- * Obtener todos los pedidos (para gestión admin)
- * GET /api/admin/pedidos
+ * @swagger
+ * /api/admin/pedidos:
+ *   get:
+ *     summary: Obtener todos los pedidos
+ *     description: Retorna lista paginada de pedidos con validación de integridad financiera
+ *     tags: [Admin - Pedidos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: estatus
+ *         schema:
+ *           type: string
+ *           enum: [Pendiente, Aprobado, Surtido, Parcialmente Surtido, Cancelado, Entregado]
+ *         description: Filtrar por estatus del pedido
+ *       - in: query
+ *         name: clienteId
+ *         schema:
+ *           type: integer
+ *         description: Filtrar por ID de cliente
+ *       - in: query
+ *         name: agenteId
+ *         schema:
+ *           type: integer
+ *         description: Filtrar por ID de agente
+ *       - in: query
+ *         name: fechaInicio
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Fecha inicial del rango (YYYY-MM-DD)
+ *       - in: query
+ *         name: fechaFin
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Fecha final del rango (YYYY-MM-DD)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Número de página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Registros por página
+ *     responses:
+ *       200:
+ *         description: Lista de pedidos obtenida exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       pedidoId:
+ *                         type: integer
+ *                       fechaPedido:
+ *                         type: string
+ *                         format: date-time
+ *                       montoTotal:
+ *                         type: number
+ *                       montoEsperado:
+ *                         type: number
+ *                       tieneDiscrepancia:
+ *                         type: boolean
+ *                       diferencia:
+ *                         type: number
+ *                       estatus:
+ *                         type: string
+ *                       clienteNombre:
+ *                         type: string
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                 integridad:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                     conDiscrepancia:
+ *                       type: integer
+ *                     validos:
+ *                       type: integer
+ *       500:
+ *         description: Error al obtener pedidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                 error:
+ *                   type: string
  */
 const getAllPedidos = async (req, res) => {
   try {
@@ -83,9 +197,38 @@ const getAllPedidos = async (req, res) => {
       paramIndex++;
     }
 
-    // Count total records for pagination
-    const countQuery = query.replace(/SELECT .+ FROM/, 'SELECT COUNT(*) FROM').replace(/LEFT JOIN .+/g, '').split('ORDER BY')[0];
-    const countResult = await db.query(countQuery, params);
+    // Count total records for pagination (use same filters as main query)
+    const countParams = [tenant_id];
+    let countParamIndex = 2;
+    let countQuery = `SELECT COUNT(*) FROM Pedidos p WHERE p.tenant_id = $1`;
+    
+    if (estatus) {
+      countQuery += ` AND p.Estatus = $${countParamIndex}`;
+      countParams.push(estatus);
+      countParamIndex++;
+    }
+    if (clienteId) {
+      countQuery += ` AND p.ClienteID = $${countParamIndex}`;
+      countParams.push(parseInt(clienteId));
+      countParamIndex++;
+    }
+    if (agenteId) {
+      countQuery += ` AND p.AgenteID = $${countParamIndex}`;
+      countParams.push(parseInt(agenteId));
+      countParamIndex++;
+    }
+    if (fechaInicio) {
+      countQuery += ` AND p.FechaPedido >= $${countParamIndex}`;
+      countParams.push(fechaInicio);
+      countParamIndex++;
+    }
+    if (fechaFin) {
+      countQuery += ` AND p.FechaPedido <= $${countParamIndex}`;
+      countParams.push(fechaFin);
+      countParamIndex++;
+    }
+    
+    const countResult = await db.query(countQuery, countParams);
     const total = parseInt(countResult.rows[0].count, 10);
 
     query += ` ORDER BY p.FechaPedido DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
@@ -195,14 +338,17 @@ const getAllPedidos = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('❌ ERROR al obtener pedidos:', error);
     logger.error('Error al obtener pedidos:', {
       error: error.message,
+      stack: error.stack,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener pedidos"
+      message: "Error al obtener pedidos",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

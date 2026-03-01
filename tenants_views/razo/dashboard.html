@@ -994,7 +994,7 @@
           if (response.ok && response.data.success) {
             const pedidos = response.data.data.pedidos;
 
-            if (pedidos.length === 0) {
+            if (pedidos && pedidos.length === 0) {
               loadingPedidos.style.display = "none";
               emptyPedidos.style.display = "block";
             } else {

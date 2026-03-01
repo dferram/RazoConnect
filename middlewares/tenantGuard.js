@@ -33,11 +33,8 @@ async function tenantGuard(req, res, next) {
   const isWhitelisted = WHITELISTED_PATHS.some(whitelisted => path.startsWith(whitelisted));
   
   if (isWhitelisted) {
-    console.log(`[tenantGuard] Ruta en whitelist: ${path} - BYPASS`);
     return next();
   }
-  
-  console.log(`[tenantGuard] Procesando ruta: ${path}`);
 
   try {
     let tenant;
@@ -46,7 +43,6 @@ async function tenantGuard(req, res, next) {
     // PRIORIDAD 1: FORCE_TENANT_ID (para desarrollo/testing con localhost)
     if (process.env.FORCE_TENANT_ID) {
       const forcedTenantId = parseInt(process.env.FORCE_TENANT_ID, 10);
-      console.log(`[tenantGuard] FORCE_TENANT_ID detectado: ${forcedTenantId}`);
       
       const result = await db.query(
         'SELECT tenant_id, nombre_cliente, is_active, tema, dominio FROM tenants WHERE tenant_id = $1',
@@ -65,8 +61,6 @@ async function tenantGuard(req, res, next) {
     else {
       const hostname = req.hostname || req.headers.host?.split(':')[0];
       
-      console.log(`[tenantGuard] Hostname original: ${hostname}`);
-      
       // SEGURIDAD: Redirigir desde URL de Azure a dominio principal
       if (hostname && hostname.includes('azurewebsites.net')) {
         console.warn(`[tenantGuard] ADVERTENCIA: Acceso directo desde Azure detectado: ${hostname}`);
@@ -75,7 +69,6 @@ async function tenantGuard(req, res, next) {
       
       // Normalizar dominio (remover www., convertir a minúsculas)
       const normalizedDomain = normalizeDomain(hostname);
-      console.log(`[tenantGuard] Dominio normalizado: ${normalizedDomain}`);
       
       // Buscar tenant en BD por dominio normalizado
       const result = await db.query(
@@ -102,13 +95,9 @@ async function tenantGuard(req, res, next) {
 
     // Verificar si el tenant está activo
     if (tenant.is_active === false) {
-      console.warn(`[tenantGuard] SUSPENDIDO: Servicio suspendido para tenant: ${tenant.nombre_cliente}`);
       if (path !== '/suspended' && path !== '/suspended.html') {
-        console.log(`[tenantGuard] Redirigiendo a /suspended.html`);
         return res.redirect('/suspended.html');
       }
-      // Si ya está en /suspended o /suspended.html, NO asignar tenant y dejar que la ruta específica maneje
-      console.log(`[tenantGuard] Permitiendo acceso a página de suspensión sin asignar tenant`);
       return next();
     }
 
@@ -126,11 +115,9 @@ async function tenantGuard(req, res, next) {
     // Guardar tenant_id en sesión para futuras validaciones
     if (req.session && !req.session.tenant_id) {
       req.session.tenant_id = tenant.tenant_id;
-      console.log(`[tenantGuard] Tenant ID ${tenant.tenant_id} asignado a sesión ${req.sessionID}`);
     }
 
     req.tenant = tenant;
-    console.log(`[tenantGuard] Tenant detectado: ${tenant.nombre_cliente} (ID: ${tenant.tenant_id}) via ${detectionMethod}`);
     next();
 
   } catch (error) {
