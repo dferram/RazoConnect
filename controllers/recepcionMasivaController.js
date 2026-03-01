@@ -363,7 +363,12 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
             ipOrigen: req.ip || req.connection?.remoteAddress
           }, client);
         } catch (kardexError) {
-          console.error('⚠️ [KARDEX] Error al registrar movimiento de entrada:', kardexError.message);
+          logger.error('Error al registrar movimiento de entrada en Kardex', {
+            error: kardexError.message,
+            sku: detalle.sku,
+            requestId: req.requestId,
+            tenantId: req.tenant?.tenant_id
+          });
         }
       }
 

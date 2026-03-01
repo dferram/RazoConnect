@@ -113,7 +113,12 @@ const subirImagenProducto = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(`❌ Error al subir imagen del producto ${id}:`, error.message);
+    logger.error('Error al subir imagen del producto', {
+      error: error.message,
+      productoId: id,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     
     res.status(500).json({
       success: false,
@@ -227,10 +232,12 @@ const subirImagenesProductoMultiple = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(
-      `❌ Error al subir imágenes múltiples del producto ${id}:`,
-      error.message
-    );
+    logger.error('Error al subir imágenes múltiples del producto', {
+      error: error.message,
+      productoId: id,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
 
     res.status(500).json({
       success: false,

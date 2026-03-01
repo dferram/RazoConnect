@@ -246,10 +246,11 @@ const enviarSolicitudCredito = async (req, res) => {
     }
     
     if (!tenant_id) {
-      console.error("Error: No se pudo determinar tenant_id", {
+      logger.error('No se pudo determinar tenant_id', {
         hasTenant: !!req.tenant,
         hasUser: !!req.user,
-        userTenantId: req.user?.tenant_id
+        userTenantId: req.user?.tenant_id,
+        requestId: req.requestId
       });
       return res.status(500).json({
         success: false,

@@ -2668,7 +2668,7 @@ const cancelarPedido = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    logger.error('Error crítico al cancelar pedido', { // Replace console.error with logger.error
+    logger.error('Error crítico al cancelar pedido', {
       error: error.message,
       pedidoId: req.params.id,
       clienteId: req.user?.id,

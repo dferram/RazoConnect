@@ -345,7 +345,12 @@ exports.generarRemision = async (req, res) => {
           ipOrigen: null
         }, client);
       } catch (kardexError) {
-        console.error('⚠️ [KARDEX] Error al registrar movimiento de salida:', kardexError.message);
+        logger.error('Error al registrar movimiento de salida en Kardex', {
+          error: kardexError.message,
+          varianteId: item.variante_id,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
       }
 
       // 7. Actualizar cantidad surtida en detallesdelpedido

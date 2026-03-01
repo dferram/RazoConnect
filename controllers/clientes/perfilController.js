@@ -77,26 +77,24 @@ async function actualizarPerfil(req, res) {
 
     return res.status(200).json(responseData);
   } catch (error) {
-    logger.error('❌ [DEBUG] ERROR CRÍTICO en actualizarPerfil:', {
+    logger.error('Error crítico en actualizarPerfil', {
       error: error.message,
+      errorName: error.name,
+      errorCode: error.code,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    console.error('❌ [DEBUG] Error name:', error.name);
-    console.error('❌ [DEBUG] Error message:', error.message);
-    console.error('❌ [DEBUG] Error stack:', error.stack);
-    console.error('❌ [DEBUG] Error code:', error.code);
     
     // Intentar hacer ROLLBACK si hay conexión
     if (client) {
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
-        logger.error('❌ [DEBUG] Error en ROLLBACK:', {
-      error: rollbackError.message,
-      requestId: req.requestId,
-      tenantId: req.tenant?.tenant_id
-    });
+        logger.error('Error en ROLLBACK', {
+          error: rollbackError.message,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
       }
     }
 
@@ -124,11 +122,11 @@ async function actualizarPerfil(req, res) {
       try {
         client.release();
       } catch (releaseError) {
-        logger.error('❌ [DEBUG] Error al liberar conexión:', {
-      error: releaseError.message,
-      requestId: req.requestId,
-      tenantId: req.tenant?.tenant_id
-    });
+        logger.error('Error al liberar conexión', {
+          error: releaseError.message,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
       }
     }
   }

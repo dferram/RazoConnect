@@ -284,7 +284,12 @@ const recibirInventario = async (req, res) => {
 
             logger.logOperation('KARDEX_REGISTRADO', { sku: detalle.sku });
           } catch (kardexError) {
-            console.error('⚠️ [KARDEX] Error al registrar:', kardexError.message);
+            logger.error('Error al registrar en Kardex', {
+              error: kardexError.message,
+              sku: detalle.sku,
+              requestId: req.requestId,
+              tenantId: req.tenant?.tenant_id
+            });
             throw kardexError; // Propagar error para rollback
           }
         }

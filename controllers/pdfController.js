@@ -598,16 +598,13 @@ async function generarPDFPedido(req, res) {
         doc.end();
 
     } catch (error) {
-        logger.error('Error generando PDF:', {
-      error: error.message,
-      requestId: req.requestId,
-      tenantId: req.tenant?.tenant_id
-    });
-        console.error('Stack trace:', error.stack);
-        console.error('Error details:', {
-            message: error.message,
+        logger.error('Error generando PDF', {
+            error: error.message,
+            stack: error.stack,
             code: error.code,
-            name: error.name
+            name: error.name,
+            requestId: req.requestId,
+            tenantId: req.tenant?.tenant_id
         });
         
         if (!res.headersSent) {

@@ -409,10 +409,12 @@ const updatePedidoEstatus = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(`\n❌ [STATUS CHANGE] Error crítico:`, {
+    logger.error('Error crítico al cambiar estatus de pedido', {
       pedidoId: req.params.id,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
     });
     
     res.status(500).json({

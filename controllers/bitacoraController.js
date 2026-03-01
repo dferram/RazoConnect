@@ -3,7 +3,6 @@
  * Endpoints para consultar y analizar el historial de movimientos
  */
 
-const logger = require("../services/loggerService");
 const logger = require('../utils/logger');
 
 const safeInt = (value) => {
