@@ -166,44 +166,8 @@ const crearOrdenCompra = async (req, res) => {
     const { proveedorId, fechaEntregaEsperada, productos } = req.body;
     const { tenant_id } = req.tenant;
 
-    // Validaciones previas (fuera de transacción)
-    if (!proveedorId) {
-      return res.status(400).json({
-        success: false,
-        message: "El proveedor es requerido",
-      });
-    }
-
-    if (!fechaEntregaEsperada) {
-      return res.status(400).json({
-        success: false,
-        message: "La fecha de entrega esperada es requerida",
-      });
-    }
-
-    if (!productos || !Array.isArray(productos) || productos.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Debe incluir al menos un producto",
-      });
-    }
-
-    // Validar cada producto
+    // Validar y parsear datos de productos (transformación de datos)
     for (const producto of productos) {
-      if (!producto.varianteId || !producto.cantidadSolicitada) {
-        return res.status(400).json({
-          success: false,
-          message: "Cada producto debe tener varianteId y cantidadSolicitada",
-        });
-      }
-
-      if (producto.cantidadSolicitada <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: "La cantidad solicitada debe ser mayor a 0",
-        });
-      }
-
       const piezasPorPaqueteParsed = Number.parseInt(
         producto.piezasPorPaquete ?? producto.piezasporpaquete ?? 1,
         10

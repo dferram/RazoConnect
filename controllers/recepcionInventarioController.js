@@ -85,39 +85,8 @@ const recibirInventario = async (req, res) => {
     const { tenant_id } = req.tenant;
 
     // ========================================
-    // VALIDACIONES PREVIAS (Fuera de transacción)
+    // PROCESAMIENTO DE DATOS
     // ========================================
-
-    if (!ordenCompraId) {
-      return res.status(400).json({
-        success: false,
-        message: "El ID de la orden de compra es requerido",
-      });
-    }
-
-    if (!productos || !Array.isArray(productos) || productos.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Debe incluir al menos un producto para recibir",
-      });
-    }
-
-    // Validar cada producto
-    for (const producto of productos) {
-      if (!producto.detalleId || producto.cantidadRecibidaAhora === undefined) {
-        return res.status(400).json({
-          success: false,
-          message: "Cada producto debe tener detalleId y cantidadRecibidaAhora",
-        });
-      }
-
-      if (producto.cantidadRecibidaAhora < 0) {
-        return res.status(400).json({
-          success: false,
-          message: "La cantidad recibida no puede ser negativa",
-        });
-      }
-    }
 
     const discrepanciasArray = Array.isArray(discrepancias) ? discrepancias : [];
     const discrepanciasByDetalle = new Map(
