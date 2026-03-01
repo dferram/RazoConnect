@@ -6,7 +6,39 @@ const API_BASE_URL = `${window.location.origin}/api`;
 // ============================================================================
 // Si AuthManager está disponible, usar sus funciones
 // Si no, usar funciones legacy para compatibilidad
-const useAuthManager = typeof window.AuthManager !== 'undefined';
+// NOTA: Verificar disponibilidad de forma segura para evitar errores
+let useAuthManager = false;
+
+// Función para verificar disponibilidad de AuthManager
+function checkAuthManagerAvailability() {
+  useAuthManager = typeof window !== 'undefined' && 
+                   typeof window.AuthManager !== 'undefined' && 
+                   window.AuthManager !== null;
+  return useAuthManager;
+}
+
+// Verificar inmediatamente
+checkAuthManagerAvailability();
+
+// Si no está disponible, intentar nuevamente cuando el DOM esté listo
+if (!useAuthManager && typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuthManagerAvailability();
+      if (useAuthManager) {
+        console.log('✅ [API] AuthManager cargado correctamente');
+      }
+    });
+  } else {
+    // DOM ya está listo, verificar en el próximo tick
+    setTimeout(() => {
+      checkAuthManagerAvailability();
+      if (useAuthManager) {
+        console.log('✅ [API] AuthManager cargado correctamente');
+      }
+    }, 0);
+  }
+}
 
 const ADMIN_TOKEN_KEY = "razoconnect_admin_token";
 const ADMIN_DATA_KEY = "razoconnect_admin";

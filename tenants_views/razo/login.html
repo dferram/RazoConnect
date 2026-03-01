@@ -395,19 +395,18 @@
             const adminData = await adminResponse.json();
 
             if (adminResponse.ok && adminData.success) {
-              const { accessToken, refreshToken, token, admin } = adminData.data;
+              const { accessToken, refreshToken, usuario } = adminData.data;
               
-              // NUEVO: Usar AuthManager si hay accessToken y refreshToken
-              if (accessToken && refreshToken) {
-                AuthManager.saveTokens(accessToken, refreshToken, admin, 'admin');
+              // Guardar tokens usando AuthManager
+              if (accessToken && refreshToken && usuario) {
+                AuthManager.saveTokens(accessToken, refreshToken, usuario, 'admin');
               } else {
-                // LEGACY: Mantener compatibilidad con backend antiguo
-                localStorage.setItem("razoconnect_admin_token", token);
-                localStorage.setItem("razoconnect_admin", JSON.stringify(admin));
+                console.error('Respuesta de login incompleta:', adminData.data);
+                throw new Error('Respuesta de login incompleta');
               }
 
               // Verificar si es agente para redirigir al panel de agente
-              const adminInfo = adminData.data.admin || {};
+              const adminInfo = usuario || {};
               const adminRol = adminInfo.rol;
               const origen = adminInfo.origen;
               const esAgente =

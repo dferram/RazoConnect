@@ -286,7 +286,7 @@ const authorizeAdminOrAgente = (req, res, next) => {
   }
 
   const rol = normalizeRole(req.user.rol);
-  const allowed = rol === "admin" || rol === "superadmin" || rol === "agente";
+  const allowed = rol === "admin" || rol === "superadmin" || rol === "super_admin" || rol === "agente";
   if (!allowed) {
     return res.status(403).json({
       success: false,

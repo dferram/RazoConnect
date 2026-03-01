@@ -251,20 +251,21 @@ const loginAdmin = async (req, res) => {
       console.log(`🔐 [LOGIN ADMIN] Sesión persistida para ${cuenta.email} (Tenant: ${tenant_id})`);
     }
 
-    // Preparar datos de respuesta
+    // Preparar datos de respuesta (estructura normalizada)
     res.json({
       success: true,
       message: "Login exitoso",
       data: {
-        accessToken,
-        refreshToken,
-        admin: {
+        rol: rolNormalizado,
+        usuario: {
           adminId: cuenta.id,
           nombre: nombreCompleto,
           email: cuenta.email,
           rol: rolNormalizado,
           origen: cuenta.adminSource,
         },
+        accessToken,
+        refreshToken,
       },
     });
 

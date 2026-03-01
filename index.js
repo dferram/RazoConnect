@@ -424,25 +424,25 @@ const gracefulShutdown = async (signal) => {
   console.log(`\n🛑 [SHUTDOWN] Señal ${signal} recibida, cerrando servidor...`);
   
   server.close(async () => {
-    console.log("✅ [SHUTDOWN] Servidor HTTP cerrado");
+    console.log("[SHUTDOWN] Servidor HTTP cerrado");
     
     // Cerrar conexión de Redis
     try {
       await closeRedisConnection();
-      console.log("✅ [SHUTDOWN] Redis desconectado");
+      console.log("[SHUTDOWN] Redis desconectado");
     } catch (error) {
-      console.error("❌ [SHUTDOWN] Error al cerrar Redis:", error);
+      console.error("[SHUTDOWN] Error al cerrar Redis:", error);
     }
     
     // Cerrar pool de PostgreSQL
     try {
-      await db.end();
-      console.log("✅ [SHUTDOWN] PostgreSQL desconectado");
+      await db.pool.end();
+      console.log("[SHUTDOWN] PostgreSQL desconectado");
     } catch (error) {
-      console.error("❌ [SHUTDOWN] Error al cerrar PostgreSQL:", error);
+      console.error("[SHUTDOWN] Error al cerrar PostgreSQL:", error);
     }
     
-    console.log("👋 [SHUTDOWN] Proceso terminado correctamente");
+    console.log("[SHUTDOWN] Proceso terminado correctamente");
     process.exit(0);
   });
   
