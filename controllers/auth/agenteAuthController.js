@@ -119,8 +119,7 @@ const registroAgente = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al registrar el agente",
-      error: error.message,
+      message: "Error al registrar el agente"
     });
   }
 };

@@ -522,8 +522,7 @@ const obtenerCarrito = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener el carrito",
-      error: error.message,
+      message: "Error al obtener el carrito"
     });
   }
 };
@@ -760,8 +759,7 @@ const agregarAlCarrito = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al agregar producto al carrito",
-      error: error.message,
+      message: "Error al agregar producto al carrito"
     });
   }
 };
@@ -970,8 +968,7 @@ const actualizarCarrito = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al actualizar cantidad",
-      error: error.message,
+      message: "Error al actualizar cantidad"
     });
   }
 };
@@ -1233,8 +1230,7 @@ const cambiarVarianteItemCarrito = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al cambiar la variante del producto en el carrito",
-      error: error.message,
+      message: "Error al cambiar la variante del producto en el carrito"
     });
   }
 };
@@ -1308,8 +1304,7 @@ const eliminarDelCarrito = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al eliminar producto del carrito",
-      error: error.message,
+      message: "Error al eliminar producto del carrito"
     });
   }
 };

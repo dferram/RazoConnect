@@ -482,8 +482,7 @@ async function registrarPagoManual(req, res) {
     });
         return res.status(500).json({
             success: false,
-            message: 'Error al registrar el pago',
-            error: error.message
+            message: 'Error al registrar el pago'
         });
     } finally {
         client.release();

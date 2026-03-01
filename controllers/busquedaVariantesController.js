@@ -118,8 +118,7 @@ const searchVariantesMovimientos = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: 'Error al buscar variantes',
-      error: error.message
+      message: 'Error al buscar variantes'
     });
   }
 };

@@ -297,8 +297,7 @@ const editarItemsOrdenCompra = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: 'Error al editar la orden de compra',
-      error: error.message
+      message: 'Error al editar la orden de compra'
     });
   } finally {
     client.release();
@@ -391,8 +390,7 @@ const cancelarBackorderVinculado = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: 'Error al cancelar el backorder',
-      error: error.message
+      message: 'Error al cancelar el backorder'
     });
   } finally {
     client.release();
@@ -548,8 +546,7 @@ const registrarAnomaliaEntrada = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: 'Error al registrar la anomalía',
-      error: error.message
+      message: 'Error al registrar la anomalía'
     });
   } finally {
     client.release();

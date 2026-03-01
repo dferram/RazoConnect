@@ -84,8 +84,7 @@ async function obtenerSesionesInventario(req, res) {
     });
         res.status(500).json({
             success: false,
-            message: 'Error al obtener sesiones de inventario',
-            error: error.message
+            message: 'Error al obtener sesiones de inventario'
         });
     }
 }
@@ -392,8 +391,7 @@ async function generarReportePDF(req, res) {
         if (!res.headersSent) {
             res.status(500).json({
                 success: false,
-                message: 'Error al generar reporte PDF',
-                error: error.message
+                message: 'Error al generar reporte PDF'
             });
         }
     }
@@ -481,8 +479,7 @@ async function obtenerDetalleSesion(req, res) {
     });
         res.status(500).json({
             success: false,
-            message: 'Error al obtener detalle de sesión',
-            error: error.message
+            message: 'Error al obtener detalle de sesión'
         });
     }
 }

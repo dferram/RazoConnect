@@ -48,8 +48,7 @@ async function getPagosPendientes(req, res) {
     });
     res.status(500).json({
       success: false,
-      message: 'Error al obtener pagos pendientes',
-      error: error.message
+      message: 'Error al obtener pagos pendientes'
     });
   }
 }
@@ -150,8 +149,7 @@ async function aprobarPago(req, res) {
     });
     res.status(500).json({
       success: false,
-      message: 'Error al aprobar pago',
-      error: error.message
+      message: 'Error al aprobar pago'
     });
   } finally {
     client.release();
@@ -253,8 +251,7 @@ async function rechazarPago(req, res) {
     });
     res.status(500).json({
       success: false,
-      message: 'Error al rechazar pago',
-      error: error.message
+      message: 'Error al rechazar pago'
     });
   } finally {
     client.release();

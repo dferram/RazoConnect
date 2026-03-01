@@ -126,8 +126,7 @@ const refreshAccessToken = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: 'Error al renovar token',
-      error: error.message,
+      message: 'Error al renovar token'
     });
   }
 };
@@ -201,8 +200,7 @@ const logout = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: 'Error al cerrar sesión',
-      error: error.message,
+      message: 'Error al cerrar sesión'
     });
   }
 };
@@ -238,8 +236,7 @@ const checkSessionStatus = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: 'Error al verificar estado de sesión',
-      error: error.message,
+      message: 'Error al verificar estado de sesión'
     });
   }
 };

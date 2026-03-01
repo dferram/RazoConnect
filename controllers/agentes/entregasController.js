@@ -195,8 +195,7 @@ exports.confirmarEntrega = async (req, res) => {
 
     res.status(500).json({ 
       success: false,
-      error: 'Error al confirmar entrega',
-      detalle: error.message 
+      message: 'Error al confirmar entrega'
     });
   } finally {
     client.release();
@@ -264,8 +263,7 @@ exports.obtenerEntregasPendientes = async (req, res) => {
     });
     res.status(500).json({ 
       success: false,
-      error: 'Error al obtener entregas pendientes',
-      detalle: error.message 
+      message: 'Error al obtener entregas pendientes'
     });
   }
 };

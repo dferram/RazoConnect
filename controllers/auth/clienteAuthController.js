@@ -216,8 +216,7 @@ const registroCliente = async (req, res) => {
     
     res.status(500).json({
       success: false,
-      message: "Error al registrar el cliente",
-      error: error.message,
+      message: "Error al registrar el cliente"
     });
   }
 };
@@ -369,8 +368,7 @@ const login = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al iniciar sesión",
-      error: error.message,
+      message: "Error al iniciar sesión"
     });
   }
 };

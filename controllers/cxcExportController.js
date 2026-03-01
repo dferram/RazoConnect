@@ -136,13 +136,12 @@ async function exportarCxC(req, res) {
     } catch (error) {
         await client.query('ROLLBACK');
         logger.error('Error en exportación CxC:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
         res.status(500).json({
-            message: 'Error al generar el reporte de CxC',
-            error: error.message
+            success: false,
+            message: 'Error al generar el reporte de CxC'
         });
     } finally {
         client.release();

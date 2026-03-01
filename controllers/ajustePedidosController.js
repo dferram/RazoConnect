@@ -557,8 +557,7 @@ async function ajustarPedido(req, res) {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al ajustar el pedido",
-      error: error.message
+      message: "Error al ajustar el pedido"
     });
   }
 }

@@ -168,8 +168,7 @@ const buscarProductosAjuste = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al buscar productos",
-      error: error.message
+      message: "Error al buscar productos"
     });
   }
 };
@@ -393,11 +392,7 @@ const buscarProductosCompra = async (req, res) => {
     
     return res.status(500).json({
       success: false,
-      message: "Error al buscar productos",
-      error: error.message,
-      code: error.code,
-      detail: error.detail,
-      hint: error.hint
+      message: "Error al buscar productos"
     });
   }
 };

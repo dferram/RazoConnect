@@ -122,8 +122,7 @@ const subirImagenProducto = async (req, res) => {
     
     res.status(500).json({
       success: false,
-      message: "Error al subir la imagen",
-      error: error.message,
+      message: "Error al subir la imagen"
     });
   }
 };
@@ -241,8 +240,7 @@ const subirImagenesProductoMultiple = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: "Error al subir las imágenes",
-      error: error.message,
+      message: "Error al subir las imágenes"
     });
   }
 };
@@ -313,8 +311,7 @@ const eliminarImagenProducto = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al eliminar la imagen",
-      error: error.message,
+      message: "Error al eliminar la imagen"
     });
   }
 };
@@ -382,8 +379,7 @@ const getImagenesVariante = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al obtener imágenes de la variante",
-      error: error.message,
+      message: "Error al obtener imágenes de la variante"
     });
   }
 };
@@ -568,8 +564,7 @@ const subirImagenesVarianteMultiple = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Error al subir las imágenes",
-      error: error.message,
+      message: "Error al subir las imágenes"
     });
   }
 };
@@ -677,8 +672,7 @@ const actualizarOrdenImagenesVariante = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al actualizar el orden de imágenes",
-      error: error.message,
+      message: "Error al actualizar el orden de imágenes"
     });
   } finally {
     client.release();

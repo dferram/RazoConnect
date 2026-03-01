@@ -182,7 +182,7 @@ async function aprobarSolicitud(req, res) {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-    return res.status(500).json({ success: false, message: error.message || "Error al aprobar solicitud" });
+    return res.status(500).json({ success: false, message: "Error al aprobar solicitud" });
   } finally {
     client.release();
   }

@@ -107,8 +107,7 @@ const getVariantesProveedor = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener variantes del proveedor",
-      error: error.message,
+      message: "Error al obtener variantes del proveedor"
     });
   }
 };
@@ -282,8 +281,7 @@ const agregarProductoAOrdenCompra = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al agregar producto a la orden",
-      error: error.message,
+      message: "Error al agregar producto a la orden"
     });
   } finally {
     client.release();
@@ -415,8 +413,7 @@ const quitarProductoDeOrdenCompra = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al quitar producto de la orden",
-      error: error.message,
+      message: "Error al quitar producto de la orden"
     });
   } finally {
     client.release();

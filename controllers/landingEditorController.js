@@ -43,8 +43,7 @@ exports.getConfig = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: 'Error al obtener configuración de landing',
-      error: error.message
+      message: 'Error al obtener configuración de landing'
     });
   }
 };
@@ -98,7 +97,6 @@ exports.saveDraft = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al guardar borrador',
-      error: error.message
     });
   } finally {
     client.release();
@@ -143,7 +141,6 @@ exports.publishChanges = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al publicar cambios',
-      error: error.message
     });
   } finally {
     client.release();
@@ -276,7 +273,6 @@ exports.getPublicContent = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al obtener contenido de landing',
-      error: error.message
     });
   }
 };
@@ -309,7 +305,6 @@ exports.getCategories = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al obtener categorías',
-      error: error.message
     });
   }
 };
@@ -338,7 +333,6 @@ exports.resetDraft = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al descartar borrador',
-      error: error.message
     });
   }
 };
@@ -386,7 +380,6 @@ exports.getSmartSelectorData = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al obtener datos para selector',
-      error: error.message
     });
   }
 };
@@ -432,7 +425,6 @@ exports.getLandingItems = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al obtener items de landing',
-      error: error.message
     });
   }
 };
@@ -509,7 +501,6 @@ exports.createLandingItem = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al crear item',
-      error: error.message
     });
   }
 };
@@ -571,7 +562,6 @@ exports.updateLandingItem = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al actualizar item',
-      error: error.message
     });
   }
 };
@@ -617,7 +607,6 @@ exports.deleteLandingItem = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al eliminar item',
-      error: error.message
     });
   }
 };
@@ -666,7 +655,6 @@ exports.reorderLandingItems = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al actualizar orden',
-      error: error.message
     });
   } finally {
     client.release();

@@ -342,8 +342,7 @@ const obtenerUsuariosUnicos = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: 'Error al obtener usuarios',
-      error: error.message
+      message: 'Error al obtener usuarios'
     });
   }
 };
@@ -377,8 +376,7 @@ const obtenerEntidadesUnicas = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: 'Error al obtener entidades',
-      error: error.message
+      message: 'Error al obtener entidades'
     });
   }
 };

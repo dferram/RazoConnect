@@ -39,8 +39,7 @@ async function obtenerNotificacionesCliente(req, res) {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener las notificaciones",
-      error: error.message,
+      message: "Error al obtener las notificaciones"
     });
   }
 }
@@ -69,8 +68,7 @@ async function obtenerConteoNotificacionesNoLeidas(req, res) {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al obtener el conteo de notificaciones",
-      error: error.message,
+      message: "Error al obtener el conteo de notificaciones"
     });
   }
 }

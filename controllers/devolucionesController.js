@@ -236,8 +236,8 @@ async function solicitarDevolucion(req, res) {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({ 
-      error: 'Error al procesar la solicitud de devolución',
-      detalle: error.message 
+      success: false,
+      message: 'Error al procesar la solicitud de devolución'
     });
   } finally {
     client.release();
@@ -303,8 +303,8 @@ async function subirEvidencia(req, res) {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({ 
-      error: 'Error al subir la evidencia',
-      detalle: error.message 
+      success: false,
+      message: 'Error al subir la evidencia'
     });
   }
 }
@@ -354,8 +354,8 @@ async function obtenerMisDevoluciones(req, res) {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({ 
-      error: 'Error al obtener las devoluciones',
-      detalle: error.message 
+      success: false,
+      message: 'Error al obtener las devoluciones'
     });
   }
 }
@@ -443,8 +443,8 @@ async function obtenerDetalleDevolucion(req, res) {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({ 
-      error: 'Error al obtener el detalle',
-      detalle: error.message 
+      success: false,
+      message: 'Error al obtener el detalle'
     });
   }
 }
@@ -550,8 +550,8 @@ async function obtenerTodasDevoluciones(req, res) {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({ 
-      error: 'Error al obtener las devoluciones',
-      detalle: error.message 
+      success: false,
+      message: 'Error al obtener las devoluciones'
     });
   }
 }
@@ -865,8 +865,8 @@ async function aprobarDevolucion(req, res) {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({ 
-      error: 'Error al aprobar la devolución',
-      detalle: error.message 
+      success: false,
+      message: 'Error al aprobar la devolución'
     });
   } finally {
     client.release();
@@ -973,8 +973,8 @@ async function rechazarDevolucion(req, res) {
       tenantId: req.tenant?.tenant_id
     });
     res.status(500).json({ 
-      error: 'Error al rechazar la devolución',
-      detalle: error.message 
+      success: false,
+      message: 'Error al rechazar la devolución'
     });
   } finally {
     client.release();

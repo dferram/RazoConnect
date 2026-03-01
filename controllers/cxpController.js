@@ -235,8 +235,8 @@ async function exportarLoteCxP(req, res) {
       tenantId: req.tenant?.tenant_id
     });
         res.status(500).json({
-            message: 'Error al generar el reporte de CxP',
-            error: error.message
+            success: false,
+            message: 'Error al generar el reporte de CxP'
         });
     } finally {
         client.release();

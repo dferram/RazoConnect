@@ -327,8 +327,7 @@ async function aprobarCambios(req, res) {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al aprobar cambios",
-      error: error.message,
+      message: "Error al aprobar cambios"
     });
   }
 }
@@ -570,8 +569,7 @@ async function rechazarCambios(req, res) {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al rechazar cambios",
-      error: error.message,
+      message: "Error al rechazar cambios"
     });
   } finally {
     client.release();
@@ -685,8 +683,7 @@ async function obtenerPendientes(req, res) {
     });
     return res.status(500).json({
       success: false,
-      message: "Error al obtener cambios pendientes",
-      error: error.message,
+      message: "Error al obtener cambios pendientes"
     });
   }
 }

@@ -102,19 +102,14 @@ async function actualizarPerfil(req, res) {
     if (error.code === "23505") {
       return res.status(400).json({
         success: false,
-        message: "El email ya está registrado por otro usuario",
-        error: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        message: "El email ya está registrado por otro usuario"
       });
     }
 
     // Error genérico - GARANTIZAR respuesta JSON válida
     return res.status(500).json({
       success: false,
-      message: "Error al actualizar el perfil",
-      error: error.message || 'Error desconocido',
-      code: error.code || 'UNKNOWN_ERROR',
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      message: "Error al actualizar el perfil"
     });
   } finally {
     // Liberar conexión de BD de forma segura

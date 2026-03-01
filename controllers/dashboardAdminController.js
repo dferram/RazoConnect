@@ -215,8 +215,7 @@ const getDashboardStats = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener estadísticas",
-      error: error.message
+      message: "Error al obtener estadísticas"
     });
   }
 };

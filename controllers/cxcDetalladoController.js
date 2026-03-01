@@ -304,14 +304,12 @@ async function exportarCxCDetallado(req, res) {
 
     } catch (error) {
         logger.error('Error en exportación detallada CxC:', {
-      error: error.message,
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
         res.status(500).json({
             success: false,
-            message: 'Error al generar el reporte detallado',
-            error: error.message
+            message: 'Error al generar el reporte detallado'
         });
     } finally {
         client.release();

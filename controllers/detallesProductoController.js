@@ -381,8 +381,7 @@ const getProductoDetalle = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: "Error en el servidor",
-      error: error.message,
+      message: "Error en el servidor"
     });
   }
 };

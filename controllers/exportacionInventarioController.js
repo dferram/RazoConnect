@@ -187,8 +187,7 @@ const exportarInventarioPDF = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener datos del inventario",
-      error: error.message
+      message: "Error al obtener datos del inventario"
     });
   }
 };

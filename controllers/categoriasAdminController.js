@@ -60,8 +60,7 @@ const getCategorias = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error en el servidor",
-      error: error.message
+      message: "Error en el servidor"
     });
   }
 };
@@ -158,8 +157,7 @@ const crearCategoria = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al crear la categoría",
-      error: error.message,
+      message: "Error al crear la categoría"
     });
   }
 };
@@ -267,8 +265,7 @@ const actualizarCategoria = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al actualizar la categoría",
-      error: error.message,
+      message: "Error al actualizar la categoría"
     });
   }
 };
@@ -327,8 +324,7 @@ const eliminarCategoria = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al eliminar la categoría",
-      error: error.message,
+      message: "Error al eliminar la categoría"
     });
   }
 };

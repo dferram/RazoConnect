@@ -86,8 +86,7 @@ const confirmarOrdenBackorder = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al confirmar orden de backorder",
-      error: error.message,
+      message: "Error al confirmar orden de backorder"
     });
   }
 };
@@ -168,8 +167,7 @@ const cancelarOrdenBackorder = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al cancelar orden de backorder",
-      error: error.message,
+      message: "Error al cancelar orden de backorder"
     });
   }
 };

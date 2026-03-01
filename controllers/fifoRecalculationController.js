@@ -203,8 +203,7 @@ const recalcularTodosPedidos = async (req, res) => {
     
     return res.status(500).json({
       success: false,
-      message: "Error al recalcular pedidos",
-      error: error.message
+      message: "Error al recalcular pedidos"
     });
     
   } finally {
@@ -356,8 +355,7 @@ const recalcularPedidoEspecifico = async (req, res) => {
     
     return res.status(500).json({
       success: false,
-      message: "Error al recalcular pedido",
-      error: error.message
+      message: "Error al recalcular pedido"
     });
     
   } finally {
@@ -455,8 +453,7 @@ const obtenerConflictosAllocation = async (req, res) => {
     
     return res.status(500).json({
       success: false,
-      message: "Error al obtener conflictos",
-      error: error.message
+      message: "Error al obtener conflictos"
     });
   }
 };

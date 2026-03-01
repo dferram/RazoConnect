@@ -73,7 +73,7 @@ const favoritosController = {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-      res.status(500).json({ message: 'Error al gestionar favorito', error: error.message });
+      res.status(500).json({ success: false, message: 'Error al gestionar favorito' });
     } finally {
       client.release();
     }
@@ -158,7 +158,7 @@ const favoritosController = {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-      res.status(500).json({ message: 'Error al obtener favoritos', error: error.message });
+      res.status(500).json({ success: false, message: 'Error al obtener favoritos' });
     }
   },
 
@@ -186,7 +186,7 @@ const favoritosController = {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-      res.status(500).json({ message: 'Error al verificar favorito', error: error.message });
+      res.status(500).json({ success: false, message: 'Error al verificar favorito' });
     }
   },
 
@@ -215,7 +215,7 @@ const favoritosController = {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-      res.status(500).json({ message: 'Error al contar notificaciones', error: error.message });
+      res.status(500).json({ success: false, message: 'Error al contar notificaciones' });
     }
   },
 
@@ -246,7 +246,7 @@ const favoritosController = {
       requestId: req.requestId,
       tenantId: req.tenant?.tenant_id
     });
-      res.status(500).json({ message: 'Error al marcar notificaciones', error: error.message });
+      res.status(500).json({ success: false, message: 'Error al marcar notificaciones' });
     }
   }
 };

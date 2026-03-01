@@ -119,8 +119,7 @@ const registroAdmin = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al registrar el administrador",
-      error: error.message,
+      message: "Error al registrar el administrador"
     });
   }
 };
@@ -330,8 +329,7 @@ const crearAdmin = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al crear el administrador",
-      error: error.message,
+      message: "Error al crear el administrador"
     });
   }
 };
@@ -415,8 +413,7 @@ const adminResetPassword = async (req, res) => {
     });
     return res.status(500).json({
       success: false,
-      message: 'Error al restablecer la contraseña',
-      error: error.message,
+      message: 'Error al restablecer la contraseña'
     });
   }
 };

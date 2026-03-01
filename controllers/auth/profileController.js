@@ -138,8 +138,7 @@ const getCurrentUser = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: "Error al obtener información del usuario",
-      error: error.message,
+      message: "Error al obtener información del usuario"
     });
   }
 };
