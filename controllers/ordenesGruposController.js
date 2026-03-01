@@ -1,4 +1,5 @@
 const { pool } = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Agrupar múltiples órdenes de compra del mismo proveedor
@@ -103,7 +104,11 @@ const agruparOrdenes = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('❌ [ERROR] Error al agrupar órdenes:', error);
+    logger.error('❌ [ERROR] Error al agrupar órdenes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       message: 'Error al agrupar órdenes de compra',
       error: error.message
@@ -238,7 +243,11 @@ const getGrupoDetalle = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [ERROR] Error al obtener grupo:', error);
+    logger.error('❌ [ERROR] Error al obtener grupo:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       message: 'Error al obtener detalles del grupo',
       error: error.message
@@ -296,7 +305,11 @@ const getAllGrupos = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [ERROR] Error al obtener grupos:', error);
+    logger.error('❌ [ERROR] Error al obtener grupos:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       message: 'Error al obtener grupos',
       error: error.message
@@ -352,7 +365,11 @@ const desagruparOrdenes = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('❌ [ERROR] Error al desagrupar:', error);
+    logger.error('❌ [ERROR] Error al desagrupar:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       message: 'Error al eliminar grupo',
       error: error.message
@@ -452,7 +469,11 @@ const agregarOrdenesAGrupo = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('❌ [ERROR] Error al agregar órdenes al grupo:', error);
+    logger.error('❌ [ERROR] Error al agregar órdenes al grupo:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       message: 'Error al agregar órdenes al grupo',
       error: error.message
@@ -543,7 +564,11 @@ const getGrupoConsolidado = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ [ERROR] Error al obtener consolidado:', error);
+    logger.error('❌ [ERROR] Error al obtener consolidado:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       message: 'Error al obtener productos consolidados',
       error: error.message

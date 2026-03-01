@@ -10,6 +10,7 @@
  */
 
 const OptimizationService = require('../services/OptimizationService');
+const logger = require('../utils/logger');
 
 /**
  * Obtener sugerencias de optimización para consolidación de órdenes
@@ -31,7 +32,11 @@ async function getSugerenciasOptimizacion(req, res) {
     });
 
   } catch (error) {
-    console.error('[getSugerenciasOptimizacion] Error:', error);
+    logger.error('[getSugerenciasOptimizacion] Error:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al detectar oportunidades de optimización'
@@ -69,7 +74,11 @@ async function crearGrupoOptimizado(req, res) {
     });
 
   } catch (error) {
-    console.error('[crearGrupoOptimizado] Error:', error);
+    logger.error('[crearGrupoOptimizado] Error:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al crear grupo optimizado'

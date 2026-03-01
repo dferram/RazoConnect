@@ -11,6 +11,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Función auxiliar para crear o actualizar cuenta por pagar de una orden de compra
@@ -253,7 +254,11 @@ const cerrarSesionRecepcion = async (req, res) => {
 
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al cerrar sesión de recepción:", error);
+    logger.error('Error al cerrar sesión de recepción:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al cerrar la sesión de recepción"
@@ -458,7 +463,11 @@ const recibirItemOrdenCompra = async (req, res) => {
     } catch (e) {
       // ignore
     }
-    console.error("Error al recibir item de OC:", error);
+    logger.error('Error al recibir item de OC:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al recibir item de la orden de compra",

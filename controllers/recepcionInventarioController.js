@@ -22,6 +22,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const { executeTransaction, createValidator } = require('../utils/transactionManager');
 const kardexService = require('../services/kardexService');
 const auditService = require('../services/auditService');
@@ -502,7 +503,11 @@ const recibirInventario = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ [RECEPCION] Error crítico:", error);
+    logger.error('❌ [RECEPCION] Error crítico:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: error.message || "Error al recibir el inventario",

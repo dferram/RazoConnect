@@ -1,4 +1,5 @@
 const ExcelJS = require('exceljs');
+const logger = require('../utils/logger');
 const { pool } = require('../db');
 const { format } = require('date-fns');
 const cloudinary = require('../config/cloudinary');
@@ -228,7 +229,11 @@ async function exportarLoteCxP(req, res) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error en exportación CxP:', error);
+        logger.error('Error en exportación CxP:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             message: 'Error al generar el reporte de CxP',
             error: error.message
@@ -310,7 +315,11 @@ async function getCxPKPIs(req, res) {
         });
 
     } catch (error) {
-        console.error('Error obteniendo KPIs CxP:', error);
+        logger.error('Error obteniendo KPIs CxP:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener KPIs'
@@ -438,7 +447,11 @@ async function getCuentasPorPagar(req, res) {
         });
 
     } catch (error) {
-        console.error('Error obteniendo CxP:', error);
+        logger.error('Error obteniendo CxP:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener cuentas por pagar'
@@ -500,7 +513,11 @@ async function getCxPDetalle(req, res) {
         });
 
     } catch (error) {
-        console.error('Error obteniendo detalle CxP:', error);
+        logger.error('Error obteniendo detalle CxP:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener detalle'
@@ -546,7 +563,10 @@ async function registrarPago(req, res) {
         // Validación adicional de seguridad
         if (cxp.tenant_id !== tenant_id) {
             await client.query('ROLLBACK');
-            console.error(`⚠️ INTENTO DE PAGO CROSS-TENANT: CXP ${id} pertenece a tenant ${cxp.tenant_id}, usuario intenta desde tenant ${tenant_id}`);
+            logger.error('⚠️ INTENTO DE PAGO CROSS-TENANT: CXP ${id} pertenece a tenant ${cxp.tenant_id}, usuario intenta desde tenant ${tenant_id}', {
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
             return res.status(403).json({
                 success: false,
                 message: 'No tienes permiso para pagar esta deuda'
@@ -592,7 +612,11 @@ async function registrarPago(req, res) {
                 });
                 comprobanteUrl = result.secure_url;
             } catch (uploadError) {
-                console.error('Error subiendo comprobante:', uploadError);
+                logger.error('Error subiendo comprobante:', {
+      error: uploadError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
             }
         }
 
@@ -640,7 +664,11 @@ async function registrarPago(req, res) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error registrando pago:', error);
+        logger.error('Error registrando pago:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al registrar el pago'

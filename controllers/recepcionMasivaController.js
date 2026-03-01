@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 const recepcionMasivaOrdenCompra = async (req, res) => {
   const client = await db.pool.connect();
@@ -499,7 +500,11 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
     } catch (e) {
       // ignore
     }
-    console.error("Error en recepción masiva:", error);
+    logger.error('Error en recepción masiva:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: error?.message || "Error al procesar la recepción masiva",

@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const logger = require('../../utils/logger');
 const db = require("../../db");
 const { registrarLog } = require("../../services/loggerService");
 const { solicitarCambio, aprobarSolicitudes } = require("../../services/ChangeRequestService");
@@ -15,7 +16,10 @@ const registroAdmin = async (req, res) => {
 
     const superAdminKey = process.env.SUPER_ADMIN_KEY;
     if (!superAdminKey) {
-      console.error("SUPER_ADMIN_KEY no está configurada en .env");
+      logger.error('SUPER_ADMIN_KEY no está configurada en .env', {
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       return res.status(500).json({
         success: false,
         message: "Error de configuración del servidor",
@@ -94,16 +98,25 @@ const registroAdmin = async (req, res) => {
         rol: nuevoAdmin.rol,
         origen: "registro-admin",
       }).catch((err) => {
-        console.error("Error guardando log de CREAR Administrador (registroAdmin):", err);
+        logger.error('Error guardando log de CREAR Administrador (registroAdmin):', {
+      error: err.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       });
     } catch (logError) {
-      console.error(
-        "Error interno al preparar log de CREAR Administrador (registroAdmin):",
-        logError
-      );
+      logger.error('Error interno al preparar log de CREAR Administrador (registroAdmin):', {
+      error: logError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     }
   } catch (error) {
-    console.error("Error en registro de administrador:", error);
+    logger.error('Error en registro de administrador:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al registrar el administrador",
@@ -270,19 +283,25 @@ const crearAdmin = async (req, res) => {
             origen: "crear-admin",
             creadoPor: req.user?.email || null,
           }).catch((err) => {
-            console.error(
-              "Error guardando log de CREAR Administrador (crearAdmin):",
-              err
-            );
+            logger.error('Error guardando log de CREAR Administrador (crearAdmin):', {
+      error: err.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
           });
         } catch (logError) {
-          console.error(
-            "Error interno al preparar log de CREAR Administrador (crearAdmin):",
-            logError
-          );
+          logger.error('Error interno al preparar log de CREAR Administrador (crearAdmin):', {
+      error: logError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         }
       } catch (autoError) {
-        console.error("Error en auto-aprobación de crearAdmin:", autoError);
+        logger.error('Error en auto-aprobación de crearAdmin:', {
+      error: autoError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         return res.status(500).json({
           success: false,
           message:
@@ -304,7 +323,11 @@ const crearAdmin = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Error al crear administrador:", error);
+    logger.error('Error al crear administrador:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al crear el administrador",
@@ -373,7 +396,11 @@ const adminResetPassword = async (req, res) => {
         }
       );
     } catch (logError) {
-      console.error('Error registrando log de reset password:', logError);
+      logger.error('Error registrando log de reset password:', {
+      error: logError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     }
 
     return res.status(200).json({
@@ -381,7 +408,11 @@ const adminResetPassword = async (req, res) => {
       message: 'Contraseña restablecida correctamente',
     });
   } catch (error) {
-    console.error('Error en adminResetPassword:', error);
+    logger.error('Error en adminResetPassword:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al restablecer la contraseña',

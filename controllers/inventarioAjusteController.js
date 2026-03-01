@@ -1,4 +1,5 @@
 const db = require('../db');
+const logger = require('../utils/logger');
 const SmartStockService = require('../services/SmartStockService');
 
 const registrarAjusteInventario = async (req, res) => {
@@ -60,7 +61,11 @@ const registrarAjusteInventario = async (req, res) => {
                 tenantId: tenant_id
             });
         } catch (stockError) {
-            console.error('[InventarioAjusteController] Error al obtener stock:', stockError);
+            logger.error('[InventarioAjusteController] Error al obtener stock:', {
+      error: stockError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         }
 
         // Calcular cantidad de ajuste (MERMA = negativo, ADICION = positivo)
@@ -88,7 +93,11 @@ const registrarAjusteInventario = async (req, res) => {
             }
         } catch (stockError) {
             await client.query('ROLLBACK');
-            console.error('❌ [SmartStock] Error al ajustar inventario:', stockError);
+            logger.error('❌ [SmartStock] Error al ajustar inventario:', {
+      error: stockError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
             return res.status(400).json({ 
                 error: stockError.message || 'Error al ajustar el inventario',
                 stockActual: stockPrevio
@@ -141,7 +150,11 @@ const registrarAjusteInventario = async (req, res) => {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('❌ Error en registrarAjusteInventario:', error);
+        logger.error('❌ Error en registrarAjusteInventario:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({ 
             error: 'Error al registrar ajuste de inventario',
             detalle: error.message 
@@ -270,7 +283,11 @@ const obtenerHistorialMovimientos = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error en obtenerHistorialMovimientos:', error);
+        logger.error('❌ Error en obtenerHistorialMovimientos:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({ 
             error: 'Error al obtener historial de movimientos',
             detalle: error.message 
@@ -304,7 +321,11 @@ const obtenerMotivosAjuste = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error en obtenerMotivosAjuste:', error);
+        logger.error('❌ Error en obtenerMotivosAjuste:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({ 
             error: 'Error al obtener motivos de ajuste',
             detalle: error.message 
@@ -392,7 +413,11 @@ const obtenerEstadisticasAjustes = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error en obtenerEstadisticasAjustes:', error);
+        logger.error('❌ Error en obtenerEstadisticasAjustes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({ 
             error: 'Error al obtener estadísticas de ajustes',
             detalle: error.message 
@@ -445,7 +470,11 @@ const buscarProductoPorSKU = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error en buscarProductoPorSKU:', error);
+        logger.error('❌ Error en buscarProductoPorSKU:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({ 
             error: 'Error al buscar producto',
             detalle: error.message 
@@ -510,7 +539,11 @@ const buscarProductosAutocompletado = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error en buscarProductosAutocompletado:', error);
+        logger.error('❌ Error en buscarProductosAutocompletado:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({ 
             error: 'Error al buscar productos',
             detalle: error.message 
@@ -576,7 +609,11 @@ const getVariantesProducto = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Error en getVariantesProducto:', error);
+        logger.error('❌ Error en getVariantesProducto:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({ 
             error: 'Error al obtener variantes',
             detalle: error.message 

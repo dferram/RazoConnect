@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const bcrypt = require('bcryptjs');
 const { generateAccessToken, generateRefreshToken } = require('../utils/jwtHelper');
 const { saveRefreshToken } = require('../config/redisClient');
@@ -43,7 +44,11 @@ const getAgenteAdminColumnsInfo = async () => {
       );
     }
   } catch (error) {
-    console.error("Error verificando columnas de agentes admin:", error);
+    logger.error('Error verificando columnas de agentes admin:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     agenteAdminColumnsCache = {
       esAdmin: false,
       adminRol: false,
@@ -283,13 +288,25 @@ const loginAdmin = async (req, res) => {
         email: cuenta.email,
         origen: cuenta.adminSource,
       }).catch((err) => {
-        console.error("Error guardando log de LOGIN admin:", err);
+        logger.error('Error guardando log de LOGIN admin:', {
+      error: err.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       });
     } catch (logError) {
-      console.error("Error interno al preparar log de LOGIN admin:", logError);
+      logger.error('Error interno al preparar log de LOGIN admin:', {
+      error: logError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     }
   } catch (error) {
-    console.error("Error en login de admin:", error);
+    logger.error('Error en login de admin:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -377,7 +394,11 @@ const verifyAdmin = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al verificar admin:", error);
+    logger.error('Error al verificar admin:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -400,7 +421,10 @@ const refreshAdminToken = async (req, res) => {
     const originalTenantId = req.user.tenant_id;
     
     if (!originalTenantId) {
-      console.error(`❌ CRITICAL: Admin token refresh attempted for user ${adminId} without tenant_id in token`);
+      logger.error('❌ CRITICAL: Admin token refresh attempted for user ${adminId} without tenant_id in token', {
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       return res.status(401).json({
         success: false,
         message: "Token inválido: falta tenant_id",
@@ -438,7 +462,11 @@ const refreshAdminToken = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error refreshing admin token:", error);
+    logger.error('Error refreshing admin token:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al renovar token",

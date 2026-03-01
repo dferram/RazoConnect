@@ -1,4 +1,5 @@
 const db = require('../db');
+const logger = require('../utils/logger');
 
 const mapDireccionRow = (row) => ({
   direccionId: row.direccionid,
@@ -39,7 +40,11 @@ const obtenerEstados = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error al obtener estados:', error);
+    logger.error('Error al obtener estados:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al obtener los estados',
@@ -92,7 +97,11 @@ const obtenerDirecciones = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener direcciones:', error);
+    logger.error('Error al obtener direcciones:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al obtener las direcciones',
@@ -204,7 +213,11 @@ const crearDireccion = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al crear dirección:', error);
+    logger.error('Error al crear dirección:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al crear la dirección',
@@ -336,7 +349,11 @@ const actualizarDireccion = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al actualizar dirección:', error);
+    logger.error('Error al actualizar dirección:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al actualizar la dirección',

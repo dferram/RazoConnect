@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * ✅ NUEVO: Ver ventas del admin desde pedido_surtido_detalle
@@ -77,7 +78,11 @@ const getMisVentas = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error en getMisVentas:', error);
+    logger.error('Error en getMisVentas:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al obtener ventas',
@@ -152,7 +157,11 @@ const getPedidoAllocation = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error en getPedidoAllocation:', error);
+    logger.error('Error en getPedidoAllocation:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al obtener allocation del pedido',
@@ -224,7 +233,11 @@ const getReporteVentasPorAdmin = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error en getReporteVentasPorAdmin:', error);
+    logger.error('Error en getReporteVentasPorAdmin:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al generar reporte',

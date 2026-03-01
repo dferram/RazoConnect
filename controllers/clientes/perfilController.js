@@ -1,4 +1,5 @@
 const { pool } = require("../../db");
+const logger = require('../../utils/logger');
 const bcrypt = require("bcryptjs");
 
 async function actualizarPerfil(req, res) {
@@ -76,7 +77,11 @@ async function actualizarPerfil(req, res) {
 
     return res.status(200).json(responseData);
   } catch (error) {
-    console.error('❌ [DEBUG] ERROR CRÍTICO en actualizarPerfil:', error);
+    logger.error('❌ [DEBUG] ERROR CRÍTICO en actualizarPerfil:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     console.error('❌ [DEBUG] Error name:', error.name);
     console.error('❌ [DEBUG] Error message:', error.message);
     console.error('❌ [DEBUG] Error stack:', error.stack);
@@ -87,7 +92,11 @@ async function actualizarPerfil(req, res) {
       try {
         await client.query("ROLLBACK");
       } catch (rollbackError) {
-        console.error('❌ [DEBUG] Error en ROLLBACK:', rollbackError);
+        logger.error('❌ [DEBUG] Error en ROLLBACK:', {
+      error: rollbackError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       }
     }
 
@@ -115,7 +124,11 @@ async function actualizarPerfil(req, res) {
       try {
         client.release();
       } catch (releaseError) {
-        console.error('❌ [DEBUG] Error al liberar conexión:', releaseError);
+        logger.error('❌ [DEBUG] Error al liberar conexión:', {
+      error: releaseError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       }
     }
   }
@@ -186,7 +199,11 @@ async function cambiarPassword(req, res) {
       message: "Contraseña actualizada correctamente",
     });
   } catch (error) {
-    console.error("Error cambiando contraseña:", error);
+    logger.error('Error cambiando contraseña:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al cambiar la contraseña",

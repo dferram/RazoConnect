@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener todos los administradores activos
@@ -42,7 +43,11 @@ const getAllAdministradores = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error al obtener administradores:", error);
+    logger.error('Error al obtener administradores:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener administradores"

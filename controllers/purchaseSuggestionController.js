@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 const auditService = require("../services/auditService");
 
 const obtenerSugerencias = async (req, res) => {
@@ -116,7 +117,11 @@ const obtenerSugerencias = async (req, res) => {
       data: response,
     });
   } catch (error) {
-    console.error("Error al obtener sugerencias de compra:", error);
+    logger.error('Error al obtener sugerencias de compra:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -327,7 +332,11 @@ const autoGenerarOrdenes = async (req, res) => {
       ordenesCreadas,
     });
   } catch (error) {
-    console.error("Error al auto-generar órdenes de compra:", error);
+    logger.error('Error al auto-generar órdenes de compra:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -532,7 +541,11 @@ const generarOrdenCompra = async (req, res) => {
       throw error;
     }
   } catch (error) {
-    console.error("Error al generar orden de compra desde sugerencias:", error);
+    logger.error('Error al generar orden de compra desde sugerencias:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error en el servidor",

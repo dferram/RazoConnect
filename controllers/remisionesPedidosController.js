@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener datos para generar remisión PDF
@@ -130,7 +131,11 @@ const obtenerRemisionPedido = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener datos de remisión:", error);
+    logger.error('Error al obtener datos de remisión:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener datos de remisión",

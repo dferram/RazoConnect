@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 
 /**
  * Validar un cupón (Endpoint público)
@@ -127,7 +128,11 @@ const validarCupon = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al validar cupón:", error);
+    logger.error('Error al validar cupón:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al validar el cupón",
@@ -166,7 +171,11 @@ const listarCupones = async (req, res) => {
       data: result.rows,
     });
   } catch (error) {
-    console.error("Error al listar cupones:", error);
+    logger.error('Error al listar cupones:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener los cupones",
@@ -220,7 +229,11 @@ const obtenerCupon = async (req, res) => {
       data: result.rows[0],
     });
   } catch (error) {
-    console.error("Error al obtener cupón:", error);
+    logger.error('Error al obtener cupón:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener el cupón",
@@ -360,7 +373,11 @@ const crearCupon = async (req, res) => {
       data: result.rows[0],
     });
   } catch (error) {
-    console.error("Error al crear cupón:", error);
+    logger.error('Error al crear cupón:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al crear el cupón",
@@ -519,7 +536,11 @@ const actualizarCupon = async (req, res) => {
       data: result.rows[0],
     });
   } catch (error) {
-    console.error("Error al actualizar cupón:", error);
+    logger.error('Error al actualizar cupón:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al actualizar el cupón",
@@ -564,7 +585,11 @@ const desactivarCupon = async (req, res) => {
       data: result.rows[0],
     });
   } catch (error) {
-    console.error("Error al desactivar cupón:", error);
+    logger.error('Error al desactivar cupón:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al desactivar el cupón",
@@ -613,7 +638,11 @@ const listarMisCupones = async (req, res) => {
       data: result.rows,
     });
   } catch (error) {
-    console.error("Error al listar cupones del agente:", error);
+    logger.error('Error al listar cupones del agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener los cupones",

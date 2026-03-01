@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 const getAdministradoresOrdenesCompra = async (req, res) => {
   try {
@@ -37,7 +38,11 @@ const getAdministradoresOrdenesCompra = async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error("Error al obtener administradores de órdenes de compra:", error);
+    logger.error('Error al obtener administradores de órdenes de compra:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener administradores"

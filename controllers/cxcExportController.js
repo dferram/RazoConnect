@@ -1,4 +1,5 @@
 const ExcelJS = require('exceljs');
+const logger = require('../utils/logger');
 const pool = require('../db');
 const { format } = require('date-fns');
 
@@ -134,7 +135,11 @@ async function exportarCxC(req, res) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error en exportación CxC:', error);
+        logger.error('Error en exportación CxC:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             message: 'Error al generar el reporte de CxC',
             error: error.message

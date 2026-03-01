@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 
 /**
  * Obtener notificaciones del cliente autenticado
@@ -74,7 +75,11 @@ const obtenerNotificaciones = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener notificaciones:", error);
+    logger.error('Error al obtener notificaciones:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener notificaciones",
@@ -141,7 +146,11 @@ const marcarTodasLeidasStaff = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al marcar todas como leídas (staff):", error);
+    logger.error('Error al marcar todas como leídas (staff):', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al marcar todas como leídas",
@@ -206,7 +215,11 @@ const obtenerConteoNoLeidasStaff = async (req, res) => {
       count,
     });
   } catch (error) {
-    console.error("Error al obtener conteo de notificaciones staff:", error);
+    logger.error('Error al obtener conteo de notificaciones staff:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener conteo de notificaciones",
@@ -286,7 +299,11 @@ const obtenerNotificacionesStaff = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener notificaciones staff:", error);
+    logger.error('Error al obtener notificaciones staff:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener notificaciones",
@@ -325,7 +342,11 @@ const marcarComoLeida = async (req, res) => {
       data: result.rows[0],
     });
   } catch (error) {
-    console.error("Error al marcar notificación:", error);
+    logger.error('Error al marcar notificación:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al marcar notificación",
@@ -358,7 +379,11 @@ const marcarTodasLeidas = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al marcar todas como leídas:", error);
+    logger.error('Error al marcar todas como leídas:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al marcar todas como leídas",
@@ -395,7 +420,11 @@ const eliminarNotificacion = async (req, res) => {
       message: "Notificación eliminada",
     });
   } catch (error) {
-    console.error("Error al eliminar notificación:", error);
+    logger.error('Error al eliminar notificación:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al eliminar notificación",
@@ -431,7 +460,11 @@ const crearNotificacion = async (clienteId, notificacion) => {
 
     return result.rows[0];
   } catch (error) {
-    console.error("Error al crear notificación:", error);
+    logger.error('Error al crear notificación:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     throw error;
   }
 };

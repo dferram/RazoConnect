@@ -1,4 +1,5 @@
 const PDFDocument = require('pdfkit');
+const logger = require('../utils/logger');
 const db = require('../db');
 const path = require('path');
 const fs = require('fs');
@@ -387,7 +388,11 @@ async function generarPDFOrdenCompra(req, res) {
         doc.end();
 
     } catch (error) {
-        console.error('Error generando PDF de orden de compra:', error);
+        logger.error('Error generando PDF de orden de compra:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         
         if (!res.headersSent) {
             res.status(500).json({ 

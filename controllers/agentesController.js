@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 const { isValidEmail } = require("../utils/validator");
 const { registrarLog } = require("../services/loggerService");
 const { solicitarCambio } = require("../services/ChangeRequestService");
@@ -58,7 +59,11 @@ const obtenerClientesDisponibles = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener clientes disponibles para agente:", error);
+    logger.error('Error al obtener clientes disponibles para agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener los clientes disponibles",
@@ -138,10 +143,11 @@ const solicitarConfirmacionPedidoAgente = async (req, res) => {
           "Ya existe una solicitud pendiente para este registro. Revisa la bitácora.",
       });
     }
-    console.error(
-      "Error al registrar solicitud de confirmación de pedido por agente:",
-      error
-    );
+    logger.error('Error al registrar solicitud de confirmación de pedido por agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al registrar la solicitud de confirmación",
@@ -248,7 +254,11 @@ const vincularCliente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al vincular cliente a agente:", error);
+    logger.error('Error al vincular cliente a agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al vincular el cliente",
@@ -310,7 +320,11 @@ const obtenerClientesDelAgente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener clientes del agente:", error);
+    logger.error('Error al obtener clientes del agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener los clientes del agente",
@@ -392,10 +406,11 @@ const obtenerDashboardStats = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(
-      "Error al obtener estadísticas de dashboard del agente:",
-      error
-    );
+    logger.error('Error al obtener estadísticas de dashboard del agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener estadísticas",
@@ -466,7 +481,11 @@ const obtenerPedidosDelAgente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener pedidos del agente:", error);
+    logger.error('Error al obtener pedidos del agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener los pedidos",
@@ -641,7 +660,11 @@ const obtenerPedidoDetalleAgente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener detalle del pedido del agente:", error);
+    logger.error('Error al obtener detalle del pedido del agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener el detalle del pedido",
@@ -737,10 +760,11 @@ const actualizarEstatusPedidoAgente = async (req, res) => {
         nuevo: { estatus: nuevoEstatus },
       });
     } catch (logError) {
-      console.error(
-        "Error al registrar log de cambio de estatus de pedido por agente:",
-        logError
-      );
+      logger.error('Error al registrar log de cambio de estatus de pedido por agente:', {
+      error: logError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     }
 
     return res.status(200).json({
@@ -753,7 +777,11 @@ const actualizarEstatusPedidoAgente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al actualizar estatus del pedido por agente:", error);
+    logger.error('Error al actualizar estatus del pedido por agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al actualizar el estatus del pedido",
@@ -883,10 +911,11 @@ const solicitarCambioEstatusPedidoAgente = async (req, res) => {
           "Ya existe una solicitud pendiente para este registro. Revisa la bitácora.",
       });
     }
-    console.error(
-      "Error al registrar solicitud de cambio de estatus de pedido por agente:",
-      error
-    );
+    logger.error('Error al registrar solicitud de cambio de estatus de pedido por agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al registrar la solicitud de cambio de estatus",
@@ -937,7 +966,11 @@ const obtenerComisionesDelAgente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener comisiones del agente:", error);
+    logger.error('Error al obtener comisiones del agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener las comisiones",
@@ -1006,7 +1039,11 @@ const getCxCAgente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener CxC del agente:", error);
+    logger.error('Error al obtener CxC del agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener las cuentas por cobrar",

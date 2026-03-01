@@ -1,4 +1,5 @@
 const pool = require('../db');
+const logger = require('../utils/logger');
 const kardexService = require('../services/kardexService');
 
 /**
@@ -576,13 +577,21 @@ exports.generarRemision = async (req, res) => {
         buttonUrl: `${frontendUrl}/dashboard?tab=pedidos&pedido=${pedido_id}&action=pagar`,
         additionalInfo: `<strong>Remisión:</strong> ${folio}<br><strong>Monto a pagar:</strong> $${totalRemision.toFixed(2)}<br><strong>Método de pago:</strong> ${pedido.metodo_pago || 'Por definir'}`
       }).catch(err => {
-        console.error('Error enviando email de pago disponible:', err);
+        logger.error('Error enviando email de pago disponible:', {
+      error: err.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       });
     }
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error al generar remisión:', error);
+    logger.error('Error al generar remisión:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       error: 'Error al generar remisión',
       detalle: error.message 
@@ -647,7 +656,11 @@ exports.obtenerRemision = async (req, res) => {
     res.json(remision);
 
   } catch (error) {
-    console.error('Error al obtener remisión:', error);
+    logger.error('Error al obtener remisión:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       error: 'Error al obtener remisión',
       detalle: error.message 
@@ -753,7 +766,11 @@ exports.listarRemisiones = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al listar remisiones:', error);
+    logger.error('Error al listar remisiones:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       error: 'Error al listar remisiones',
       detalle: error.message 
@@ -866,7 +883,11 @@ exports.cancelarRemision = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error al cancelar remisión:', error);
+    logger.error('Error al cancelar remisión:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       error: 'Error al cancelar remisión',
       detalle: error.message 
@@ -919,7 +940,11 @@ exports.obtenerItemsPendientesSurtir = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener items pendientes:', error);
+    logger.error('Error al obtener items pendientes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       error: 'Error al obtener items pendientes',
       detalle: error.message 

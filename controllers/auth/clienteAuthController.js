@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const logger = require('../../utils/logger');
 const db = require("../../db");
 const { generateAccessToken, generateRefreshToken } = require("../../utils/jwtHelper");
 const { saveRefreshToken } = require("../../config/redisClient");
@@ -121,7 +122,11 @@ const registroCliente = async (req, res) => {
         );
         nuevoCliente.numero_cliente = numeroClienteGenerado;
       } catch (updateError) {
-        console.error("Error al generar numero_cliente automático:", updateError);
+        logger.error('Error al generar numero_cliente automático:', {
+      error: updateError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       }
     }
 
@@ -151,7 +156,11 @@ const registroCliente = async (req, res) => {
         "Gracias por unirte. Tu cuenta ha sido creada exitosamente."
       );
     } catch (notificacionError) {
-      console.error("No se pudo crear la notificación de bienvenida:", notificacionError);
+      logger.error('No se pudo crear la notificación de bienvenida:', {
+      error: notificacionError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     }
 
     if (Email) {
@@ -166,7 +175,11 @@ const registroCliente = async (req, res) => {
           additionalInfo: "Si tienes alguna pregunta o necesitas ayuda, nuestro equipo de soporte está disponible para asistirte."
         });
       } catch (emailError) {
-        console.error("Error enviando correo de bienvenida:", emailError);
+        logger.error('Error enviando correo de bienvenida:', {
+      error: emailError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       }
     }
 
@@ -188,7 +201,11 @@ const registroCliente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en registro de cliente:", error);
+    logger.error('Error en registro de cliente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     
     if (error.code === '23505' && error.constraint && error.constraint.includes('numero_cliente')) {
       return res.status(400).json({
@@ -345,7 +362,11 @@ const login = async (req, res) => {
       message: "Credenciales inválidas",
     });
   } catch (error) {
-    console.error("Error en login:", error);
+    logger.error('Error en login:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al iniciar sesión",
@@ -429,7 +450,11 @@ const verifyCliente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error verifying cliente:", error);
+    logger.error('Error verifying cliente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -510,7 +535,11 @@ const forgotPassword = async (req, res) => {
       buttonUrl: resetLink,
       additionalInfo: `<strong>⏰ Este enlace expira en 1 hora.</strong><br><br>Si no solicitaste este cambio, puedes ignorar este correo de forma segura. Tu contraseña no será modificada.`
     }).catch((err) => {
-      console.error("Error enviando correo de reseteo:", err);
+      logger.error('Error enviando correo de reseteo:', {
+      error: err.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     });
 
     return res.status(200).json({
@@ -519,7 +548,11 @@ const forgotPassword = async (req, res) => {
       message: "Hemos enviado las instrucciones a tu correo electrónico.",
     });
   } catch (error) {
-    console.error("Error en forgot-password:", error);
+    logger.error('Error en forgot-password:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al iniciar proceso de recuperación",
@@ -591,7 +624,11 @@ const resetPassword = async (req, res) => {
       message: "Contraseña actualizada correctamente",
     });
   } catch (error) {
-    console.error("Error en reset-password:", error);
+    logger.error('Error en reset-password:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al restablecer la contraseña",

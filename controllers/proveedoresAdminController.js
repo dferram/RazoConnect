@@ -16,6 +16,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener todos los proveedores
@@ -73,7 +74,11 @@ const getAllProveedores = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener proveedores:", error);
+    logger.error('Error al obtener proveedores:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener proveedores",
@@ -116,7 +121,11 @@ const getProveedorById = async (req, res) => {
       data: result.rows[0],
     });
   } catch (error) {
-    console.error("Error al obtener proveedor:", error);
+    logger.error('Error al obtener proveedor:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener proveedor",
@@ -236,7 +245,11 @@ const crearProveedor = async (req, res) => {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al crear proveedor:", error);
+    logger.error('Error al crear proveedor:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al crear proveedor",
@@ -393,7 +406,11 @@ const actualizarProveedor = async (req, res) => {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al actualizar proveedor:", error);
+    logger.error('Error al actualizar proveedor:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al actualizar proveedor",

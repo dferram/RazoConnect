@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const auditService = require('../services/auditService');
 const { solicitarCambio } = require('../services/ChangeRequestService');
 
@@ -67,7 +68,11 @@ const getAllComisiones = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener comisiones:", error);
+    logger.error('Error al obtener comisiones:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -168,7 +173,11 @@ const pagarComision = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al pagar comisión:", error);
+    logger.error('Error al pagar comisión:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",

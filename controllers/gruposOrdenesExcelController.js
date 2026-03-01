@@ -1,4 +1,5 @@
 const ExcelJS = require('exceljs');
+const logger = require('../utils/logger');
 const db = require('../db');
 
 /**
@@ -190,7 +191,11 @@ async function generarExcelProveedorGrupo(req, res) {
         res.end();
 
     } catch (error) {
-        console.error('❌ Error generando Excel proveedor:', error);
+        logger.error('❌ Error generando Excel proveedor:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({ error: 'Error al generar Excel' });
     }
 }
@@ -457,7 +462,11 @@ async function generarExcelInternoGrupo(req, res) {
         res.end();
 
     } catch (error) {
-        console.error('❌ Error generando Excel interno:', error);
+        logger.error('❌ Error generando Excel interno:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({ error: 'Error al generar Excel' });
     }
 }

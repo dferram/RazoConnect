@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const SmartStockService = require('../services/SmartStockService');
 
 /**
@@ -139,7 +140,11 @@ const getInventarioResumen = async (req, res) => {
           tenantId: tenant_id
         });
       } catch (error) {
-        console.error(`[getInventarioResumen] Error al obtener stock bulk:`, error);
+        logger.error('[getInventarioResumen] Error al obtener stock bulk:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       }
     }
 
@@ -179,7 +184,11 @@ const getInventarioResumen = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener inventario resumido:", error);
+    logger.error('Error al obtener inventario resumido:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -288,7 +297,11 @@ const getProductoDetalleInventario = async (req, res) => {
           tenantId: tenant_id
         });
       } catch (error) {
-        console.error('[getProductoDetalleInventario] Error al obtener stock dinámico:', error);
+        logger.error('[getProductoDetalleInventario] Error al obtener stock dinámico:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       }
     }
 
@@ -345,7 +358,11 @@ const getProductoDetalleInventario = async (req, res) => {
       data: productoDetalle,
     });
   } catch (error) {
-    console.error('[getProductoDetalleInventario] Error:', error);
+    logger.error('[getProductoDetalleInventario] Error:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error en el servidor"

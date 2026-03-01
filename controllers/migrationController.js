@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 
 /**
  * Sincroniza imágenes de variantes por color
@@ -97,7 +98,11 @@ const sincronizarImagenesPorColor = async (req, res) => {
 
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("❌ Error en sincronización de imágenes:", error);
+    logger.error('❌ Error en sincronización de imágenes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     
     return res.status(500).json({
       success: false,

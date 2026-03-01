@@ -16,6 +16,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const { executeTransaction } = require('../utils/transactionManager');
 
 /**
@@ -140,7 +141,11 @@ const getAllOrdenesCompra = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener órdenes de compra:", error);
+    logger.error('Error al obtener órdenes de compra:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener órdenes de compra",
@@ -374,7 +379,11 @@ const crearOrdenCompra = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ [ORDEN COMPRA] Error al crear:", error);
+    logger.error('❌ [ORDEN COMPRA] Error al crear:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: error.message || "Error al crear la orden de compra",

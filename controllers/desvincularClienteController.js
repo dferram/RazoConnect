@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const auditService = require('../services/auditService');
 
 /**
@@ -114,7 +115,11 @@ const desvincularClienteDeAgente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al desvincular cliente:", error);
+    logger.error('Error al desvincular cliente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al desvincular al cliente del agente",

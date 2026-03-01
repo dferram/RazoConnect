@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const inventoryService = require('../services/inventoryService');
 const { getPaginationParams, buildPaginationMeta } = require('../utils/pagination');
 
@@ -194,7 +195,11 @@ const getAllPedidos = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error al obtener pedidos:", error);
+    logger.error('Error al obtener pedidos:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener pedidos",
@@ -380,7 +385,11 @@ const getPedidoDetalle = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener detalle del pedido:", error);
+    logger.error('Error al obtener detalle del pedido:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -520,7 +529,11 @@ const confirmarPedido = async (req, res) => {
       // ignore
     }
 
-    console.error("Error confirmando pedido:", error);
+    logger.error('Error confirmando pedido:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al confirmar el pedido",

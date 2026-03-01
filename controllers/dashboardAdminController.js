@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener estadísticas del dashboard de administrador
@@ -207,7 +208,11 @@ const getDashboardStats = async (req, res) => {
       data: responseData
     });
   } catch (error) {
-    console.error("❌ Error al obtener estadísticas del dashboard:", error);
+    logger.error('❌ Error al obtener estadísticas del dashboard:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener estadísticas",

@@ -1,4 +1,5 @@
 const PDFDocument = require('pdfkit');
+const logger = require('../utils/logger');
 const db = require('../db');
 const path = require('path');
 const fs = require('fs');
@@ -279,7 +280,11 @@ async function generarPDFProveedorGrupo(req, res) {
         doc.end();
 
     } catch (error) {
-        console.error('❌ Error generando PDF proveedor:', error);
+        logger.error('❌ Error generando PDF proveedor:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({ error: 'Error al generar PDF' });
     }
 }
@@ -619,7 +624,11 @@ async function generarPDFInternoGrupo(req, res) {
         doc.end();
 
     } catch (error) {
-        console.error('❌ Error generando PDF interno:', error);
+        logger.error('❌ Error generando PDF interno:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({ error: 'Error al generar PDF' });
     }
 }

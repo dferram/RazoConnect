@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 const { calcularTotalPedido } = require("../utils/calculadoraPedidos");
 const SmartStockService = require("../services/SmartStockService");
 
@@ -318,7 +319,11 @@ const obtenerCarrito = async (req, res) => {
           });
           console.log(`✅ [CarritoController] Stock bulk obtenido para ${masterVarianteIds.length} variantes maestras`);
         } catch (stockError) {
-          console.error('[CarritoController] Error al obtener stock bulk:', stockError);
+          logger.error('[CarritoController] Error al obtener stock bulk:', {
+      error: stockError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         }
       }
       
@@ -510,7 +515,11 @@ const obtenerCarrito = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener carrito:", error);
+    logger.error('Error al obtener carrito:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener el carrito",
@@ -744,7 +753,11 @@ const agregarAlCarrito = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al agregar al carrito:", error);
+    logger.error('Error al agregar al carrito:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al agregar producto al carrito",
@@ -950,7 +963,11 @@ const actualizarCarrito = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al actualizar carrito:", error);
+    logger.error('Error al actualizar carrito:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al actualizar cantidad",
@@ -1209,7 +1226,11 @@ const cambiarVarianteItemCarrito = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al cambiar variante del carrito:", error);
+    logger.error('Error al cambiar variante del carrito:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al cambiar la variante del producto en el carrito",
@@ -1280,7 +1301,11 @@ const eliminarDelCarrito = async (req, res) => {
       message: "Producto eliminado del carrito exitosamente",
     });
   } catch (error) {
-    console.error("Error al eliminar del carrito:", error);
+    logger.error('Error al eliminar del carrito:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al eliminar producto del carrito",

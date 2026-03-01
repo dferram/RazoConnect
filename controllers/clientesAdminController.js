@@ -16,6 +16,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener todos los clientes
@@ -62,7 +63,11 @@ const getAllClientes = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener clientes:", error);
+    logger.error('Error al obtener clientes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -135,7 +140,11 @@ const getClienteDetalle = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener detalle del cliente:", error);
+    logger.error('Error al obtener detalle del cliente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -197,7 +206,11 @@ const actualizarEstadoCliente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al actualizar estado del cliente:", error);
+    logger.error('Error al actualizar estado del cliente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -271,7 +284,11 @@ const actualizarCreditoCliente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al actualizar crédito del cliente:", error);
+    logger.error('Error al actualizar crédito del cliente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -344,7 +361,11 @@ const getClienteCreditoInfo = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener información de crédito:", error);
+    logger.error('Error al obtener información de crédito:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",

@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const SmartStockService = require('../services/SmartStockService');
 
 /**
@@ -146,7 +147,11 @@ const exportarInventarioPDF = async (req, res) => {
           tenantId: tenant_id
         });
       } catch (error) {
-        console.error('[exportarInventarioPDF] Error al obtener stock:', error);
+        logger.error('[exportarInventarioPDF] Error al obtener stock:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       }
     }
 
@@ -180,7 +185,11 @@ const exportarInventarioPDF = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error al exportar inventario para PDF:", error);
+    logger.error('Error al exportar inventario para PDF:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener datos del inventario",

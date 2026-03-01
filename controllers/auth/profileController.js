@@ -1,4 +1,5 @@
 const db = require("../../db");
+const logger = require('../../utils/logger');
 const { generateToken } = require("../../utils/jwtHelper");
 
 /**
@@ -130,7 +131,11 @@ const getCurrentUser = async (req, res) => {
       data: userData,
     });
   } catch (error) {
-    console.error("Error al obtener perfil del usuario:", error);
+    logger.error('Error al obtener perfil del usuario:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener información del usuario",
@@ -216,7 +221,11 @@ const googleCallback = async (req, res) => {
             return;
           }
         } catch (err) {
-          console.error('Error enviando mensaje a la ventana padre:', err);
+          logger.error('Error enviando mensaje a la ventana padre:', {
+      error: err.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         }
 
         try {
@@ -238,7 +247,11 @@ const googleCallback = async (req, res) => {
 
     return res.status(200).send(html);
   } catch (error) {
-    console.error("Error en callback de Google OAuth:", error);
+    logger.error('Error en callback de Google OAuth:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.redirect("/login.html?error=google_auth_internal");
   }
 };

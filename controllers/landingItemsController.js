@@ -4,6 +4,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * PUT /api/admin/categorias/:id/landing
@@ -59,7 +60,11 @@ exports.updateCategoryLanding = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error updating category landing:', error);
+    logger.error('Error updating category landing:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al actualizar categoría',
@@ -124,7 +129,11 @@ exports.updateProveedorLanding = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error updating proveedor landing:', error);
+    logger.error('Error updating proveedor landing:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al actualizar proveedor',
@@ -181,7 +190,11 @@ exports.getPublicLandingItems = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching public landing items:', error);
+    logger.error('Error fetching public landing items:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al obtener items de landing',

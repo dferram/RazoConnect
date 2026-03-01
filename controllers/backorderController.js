@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Confirmar orden de backorder
@@ -78,7 +79,11 @@ const confirmarOrdenBackorder = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al confirmar orden de backorder:", error);
+    logger.error('Error al confirmar orden de backorder:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al confirmar orden de backorder",
@@ -156,7 +161,11 @@ const cancelarOrdenBackorder = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al cancelar orden de backorder:", error);
+    logger.error('Error al cancelar orden de backorder:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al cancelar orden de backorder",

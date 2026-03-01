@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Función auxiliar para notificar a super admins
@@ -56,7 +57,11 @@ async function notifySuperAdmins(client, payload) {
       );
     }
   } catch (error) {
-    console.error('Error al notificar super admins:', error);
+    logger.error('Error al notificar super admins:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
   }
 }
 
@@ -132,7 +137,11 @@ const getReglasEmpaqueProveedor = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener reglas de empaque del proveedor:", error);
+    logger.error('Error al obtener reglas de empaque del proveedor:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener reglas de empaque",
@@ -192,7 +201,11 @@ const getReglasEmpaqueProveedorMultiples = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener reglas de empaque múltiples:", error);
+    logger.error('Error al obtener reglas de empaque múltiples:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener reglas de empaque",
@@ -481,7 +494,11 @@ const saveReglasEmpaqueMultiples = async (req, res) => {
     } catch (e) {
       // ignore
     }
-    console.error("Error al guardar reglas de empaque múltiples:", error);
+    logger.error('Error al guardar reglas de empaque múltiples:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al guardar reglas de empaque",
@@ -766,7 +783,11 @@ const saveReglaEmpaque = async (req, res) => {
     } catch (e) {
       // silencioso
     }
-    console.error("Error al guardar regla de empaque:", error);
+    logger.error('Error al guardar regla de empaque:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al guardar regla de empaque",

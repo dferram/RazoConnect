@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener resumen de cuentas por cobrar
@@ -105,7 +106,11 @@ const getCxcSummary = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener resumen CxC:", error);
+    logger.error('Error al obtener resumen CxC:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener el resumen de cuentas por cobrar",
@@ -250,7 +255,11 @@ const registrarAbonoCxC = async (req, res) => {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al registrar abono CxC:", error);
+    logger.error('Error al registrar abono CxC:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al registrar el abono",

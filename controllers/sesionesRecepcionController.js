@@ -13,6 +13,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Bloquear sesión de recepción de orden de compra
@@ -82,7 +83,11 @@ const bloquearSesionRecepcion = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error al bloquear sesión:', error);
+    logger.error('Error al bloquear sesión:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al bloquear sesión de recepción'
@@ -129,7 +134,11 @@ const desbloquearSesionRecepcion = async (req, res) => {
       message: 'Sesión desbloqueada exitosamente'
     });
   } catch (error) {
-    console.error('Error al desbloquear sesión:', error);
+    logger.error('Error al desbloquear sesión:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al desbloquear sesión'
@@ -188,7 +197,11 @@ const verificarBloqueoSesion = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error al verificar bloqueo:', error);
+    logger.error('Error al verificar bloqueo:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al verificar estado de bloqueo'
@@ -282,7 +295,11 @@ const reasignarSesion = async (req, res) => {
       );
       console.log(`✅ Notificación creada para admin ${nuevoAdminId} sobre reasignación de OC #${ordenCompraId}`);
     } catch (notifError) {
-      console.error('Error creando notificación de reasignación:', notifError);
+      logger.error('Error creando notificación de reasignación:', {
+      error: notifError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     }
 
     res.json({
@@ -294,7 +311,11 @@ const reasignarSesion = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error al reasignar sesión:', error);
+    logger.error('Error al reasignar sesión:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al reasignar sesión'
@@ -349,7 +370,11 @@ const forzarLiberacionSesion = async (req, res) => {
       message: 'Sesión liberada forzosamente por super administrador'
     });
   } catch (error) {
-    console.error('Error al forzar liberación:', error);
+    logger.error('Error al forzar liberación:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al forzar liberación de sesión'

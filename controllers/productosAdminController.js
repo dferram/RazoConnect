@@ -17,6 +17,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Helper: Generar SKU maestro único
@@ -184,7 +185,11 @@ const getAllProductos = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener productos:", error);
+    logger.error('Error al obtener productos:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -428,7 +433,11 @@ const crearProducto = async (req, res) => {
     if (transactionStarted) {
       await client.query("ROLLBACK");
     }
-    console.error("❌ [CREAR PRODUCTO] Error:", error);
+    logger.error('❌ [CREAR PRODUCTO] Error:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: error.message || "Error al crear el producto",
@@ -552,7 +561,11 @@ const actualizarProducto = async (req, res) => {
     if (transactionStarted) {
       await client.query("ROLLBACK");
     }
-    console.error("❌ [ACTUALIZAR PRODUCTO] Error:", error);
+    logger.error('❌ [ACTUALIZAR PRODUCTO] Error:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: error.message || "Error al actualizar el producto",

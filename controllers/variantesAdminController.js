@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const { solicitarCambio, aprobarSolicitudes } = require('../services/ChangeRequestService');
 const auditService = require('../services/auditService');
 const { generarSkuUnico } = require('../utils/skuGenerator');
@@ -235,7 +236,11 @@ const applyGaleriaVarianteAtomic = async ({
       }
     } catch (replicacionError) {
       // No fallar la operación principal si falla la replicación
-      console.error(`[REPLICACION_IMG] Error durante replicación en applyGaleriaVarianteAtomic:`, replicacionError);
+      logger.error('[REPLICACION_IMG] Error durante replicación en applyGaleriaVarianteAtomic:', {
+      error: replicacionError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     }
   }
 
@@ -479,7 +484,11 @@ const crearVariante = async (req, res) => {
           tenantId: req.tenant?.tenant_id || 1
         });
       } catch (auditError) {
-        console.error('Error al registrar auditoría de creación de variante:', auditError);
+        logger.error('Error al registrar auditoría de creación de variante:', {
+      error: auditError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       }
 
       return res.status(201).json({
@@ -767,7 +776,11 @@ const crearVariante = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al crear variante (solicitud de cambio):", error);
+    logger.error('Error al crear variante (solicitud de cambio):', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error en el servidor"
@@ -1049,7 +1062,11 @@ const actualizarVariante = async (req, res) => {
           tenantId: req.tenant?.tenant_id || 1
         });
       } catch (auditError) {
-        console.error('Error al registrar auditoría de actualización de variante:', auditError);
+        logger.error('Error al registrar auditoría de actualización de variante:', {
+      error: auditError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       }
 
       return res.json({
@@ -1362,7 +1379,11 @@ const actualizarVariante = async (req, res) => {
               ]
             );
           } catch (logError) {
-            console.error('Error al registrar cambio en bitácora:', logError);
+            logger.error('Error al registrar cambio en bitácora:', {
+      error: logError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
             // No bloquear la actualización si falla el log
           }
         }
@@ -1436,7 +1457,11 @@ const actualizarVariante = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[generarSolicitudActualizacionVariante] Error:', error);
+    logger.error('[generarSolicitudActualizacionVariante] Error:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor"
@@ -1531,7 +1556,11 @@ const subirEvidenciaEntrega = async (req, res) => {
         client: db
       });
     } catch (fifoError) {
-      console.error('[Evidencia Entrega] Error en recálculo FIFO (no crítico):', fifoError);
+      logger.error('[Evidencia Entrega] Error en recálculo FIFO (no crítico):', {
+      error: fifoError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       // No interrumpir la operación si falla el recálculo
     }
 
@@ -1546,7 +1575,11 @@ const subirEvidenciaEntrega = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al subir evidencia de entrega:", error);
+    logger.error('Error al subir evidencia de entrega:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al subir evidencia de entrega"

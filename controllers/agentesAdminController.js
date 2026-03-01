@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const bcrypt = require('bcryptjs');
 
 /**
@@ -61,7 +62,11 @@ const getAllAgentes = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error al obtener agentes:", error);
+    logger.error('Error al obtener agentes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor"
@@ -126,7 +131,11 @@ const getAgenteDetalle = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error al obtener detalle del agente:", error);
+    logger.error('Error al obtener detalle del agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor"
@@ -184,7 +193,11 @@ const getAgenteClientes = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error al obtener clientes del agente:", error);
+    logger.error('Error al obtener clientes del agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor"
@@ -254,7 +267,11 @@ const crearAgente = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error al crear agente:", error);
+    logger.error('Error al crear agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al crear el agente"
@@ -346,7 +363,11 @@ const actualizarAgente = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error al actualizar agente:", error);
+    logger.error('Error al actualizar agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al actualizar el agente"
@@ -392,7 +413,11 @@ const desactivarAgente = async (req, res) => {
       message: "Agente desactivado exitosamente"
     });
   } catch (error) {
-    console.error("Error al desactivar agente:", error);
+    logger.error('Error al desactivar agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al desactivar el agente"

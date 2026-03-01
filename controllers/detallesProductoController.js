@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener detalle de un producto maestro con sus variantes
@@ -373,7 +374,11 @@ const getProductoDetalle = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener detalle de producto:", error);
+    logger.error('Error al obtener detalle de producto:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error en el servidor",

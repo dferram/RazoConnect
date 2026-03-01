@@ -4,6 +4,7 @@
  */
 
 const cloudinary = require("../config/cloudinary");
+const logger = require('../utils/logger');
 
 /**
  * Genera firma para upload directo a Cloudinary
@@ -44,7 +45,11 @@ const generarFirmaUpload = async (req, res) => {
 
     res.json(response);
   } catch (error) {
-    console.error("❌ Error generando firma Cloudinary:", error);
+    logger.error('❌ Error generando firma Cloudinary:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       error: "Error generando firma de Cloudinary",
       details: error.message,

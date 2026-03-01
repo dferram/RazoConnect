@@ -11,6 +11,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Conteo Ciego: Listar órdenes de compra pendientes/parciales
@@ -69,7 +70,11 @@ const getComprasPendientes = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener compras pendientes:", error);
+    logger.error('Error al obtener compras pendientes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener órdenes de compra pendientes",
@@ -155,7 +160,11 @@ const getCompraDetalleCiego = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener detalle ciego de OC:", error);
+    logger.error('Error al obtener detalle ciego de OC:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener detalle de la orden",

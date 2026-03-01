@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 
 /**
  * Reasignar orden de compra a otro administrador
@@ -139,7 +140,11 @@ const reasignarOrdenCompra = async (req, res) => {
 
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al reasignar orden de compra:", error);
+    logger.error('Error al reasignar orden de compra:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al reasignar orden de compra",

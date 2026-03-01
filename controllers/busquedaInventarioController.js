@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const SmartStockService = require('../services/SmartStockService');
 
 const buscarProductosAjuste = async (req, res) => {
@@ -160,7 +161,11 @@ const buscarProductosAjuste = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error en buscarProductosAjuste:", error);
+    logger.error('Error en buscarProductosAjuste', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al buscar productos",
@@ -174,7 +179,9 @@ const buscarProductosCompra = async (req, res) => {
     
     // Validación defensiva: verificar que req.tenant existe
     if (!req.tenant || !req.tenant.tenant_id) {
-      console.error("ERROR CRÍTICO: req.tenant no está definido o no tiene tenant_id");
+      logger.error('req.tenant no está definido o no tiene tenant_id', {
+        requestId: req.requestId
+      });
       return res.status(500).json({
         success: false,
         message: "Error de configuración del servidor: tenant no detectado"
@@ -367,27 +374,22 @@ const buscarProductosCompra = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.error("❌ ERROR CRÍTICO en buscarProductosCompra");
-    console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.error("Timestamp:", new Date().toISOString());
-    console.error("Tenant ID:", req.tenant?.tenant_id || "NO DETECTADO");
-    console.error("Query params:", JSON.stringify(req.query, null, 2));
-    console.error("\n--- Error de PostgreSQL ---");
-    console.error("Message:", error.message);
-    console.error("Code:", error.code);
-    console.error("Detail:", error.detail);
-    console.error("Hint:", error.hint);
-    console.error("Position:", error.position);
-    console.error("Where:", error.where);
-    console.error("Schema:", error.schema);
-    console.error("Table:", error.table);
-    console.error("Column:", error.column);
-    console.error("DataType:", error.dataType);
-    console.error("Constraint:", error.constraint);
-    console.error("\n--- Stack Trace ---");
-    console.error(error.stack);
-    console.error("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    logger.error('Error crítico en buscarProductosCompra', {
+      error: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+      position: error.position,
+      where: error.where,
+      schema: error.schema,
+      table: error.table,
+      column: error.column,
+      dataType: error.dataType,
+      constraint: error.constraint,
+      tenantId: req.tenant?.tenant_id,
+      queryParams: req.query,
+      requestId: req.requestId
+    });
     
     return res.status(500).json({
       success: false,

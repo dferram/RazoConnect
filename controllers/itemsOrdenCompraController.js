@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Agregar item a una orden de compra existente
@@ -170,7 +171,11 @@ const addItemToOrder = async (req, res) => {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al agregar item a orden:", error);
+    logger.error('Error al agregar item a orden:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al agregar item a la orden",
@@ -280,7 +285,11 @@ const removeItemFromOrder = async (req, res) => {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al eliminar item de orden:", error);
+    logger.error('Error al eliminar item de orden:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al eliminar item de la orden",

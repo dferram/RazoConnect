@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const inventoryService = require('../services/inventoryService');
 const { checkStockBajo } = require('../utils/stockAlerts');
 
@@ -122,7 +123,11 @@ const ajustarInventario = async (req, res) => {
     await client.query("COMMIT");
 
     checkStockBajo(varianteId).catch((err) => {
-      console.error("Error verificando stock bajo tras ajuste:", err);
+      logger.error('Error verificando stock bajo tras ajuste:', {
+      error: err.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     });
 
     res.json({
@@ -144,7 +149,11 @@ const ajustarInventario = async (req, res) => {
     } catch (e) {
       // ignore
     }
-    console.error("Error al ajustar inventario:", error);
+    logger.error('Error al ajustar inventario:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
 
     const status = error && Number.isInteger(error.status) ? error.status : 500;
     res.status(status).json({

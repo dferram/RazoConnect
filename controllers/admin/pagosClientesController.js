@@ -1,4 +1,5 @@
 const db = require('../../db');
+const logger = require('../../utils/logger');
 
 /**
  * CONTROLADOR: Pagos de Clientes (tabla pagos_clientes)
@@ -45,7 +46,11 @@ async function obtenerPagosPendientes(req, res) {
             data: rows
         });
     } catch (error) {
-        console.error('Error obteniendo pagos de clientes pendientes:', error);
+        logger.error('Error obteniendo pagos de clientes pendientes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         return res.status(500).json({
             success: false,
             message: 'Error al obtener pagos pendientes'
@@ -300,7 +305,11 @@ async function gestionarPago(req, res) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error gestionando pago de cliente:', error);
+        logger.error('Error gestionando pago de cliente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         return res.status(500).json({
             success: false,
             message: 'Error al procesar la solicitud'

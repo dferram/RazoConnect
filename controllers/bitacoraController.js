@@ -4,6 +4,7 @@
  */
 
 const logger = require("../services/loggerService");
+const logger = require('../utils/logger');
 
 const safeInt = (value) => {
   const n = Number.parseInt(value, 10);
@@ -84,7 +85,11 @@ const obtenerBitacora = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener bitácora:', error);
+    logger.error('Error al obtener bitácora:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener bitácora"
@@ -187,7 +192,11 @@ const obtenerActividad = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener actividad:", error);
+    logger.error('Error al obtener actividad:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener historial de actividad"
@@ -223,7 +232,11 @@ const obtenerUsuariosActividad = async (req, res) => {
       data: { usuarios },
     });
   } catch (error) {
-    console.error("Error al obtener usuarios de actividad:", error);
+    logger.error('Error al obtener usuarios de actividad:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener usuarios"
@@ -248,7 +261,11 @@ const obtenerEntidadesActividad = async (req, res) => {
       data: { entidades },
     });
   } catch (error) {
-    console.error("Error al obtener entidades de actividad:", error);
+    logger.error('Error al obtener entidades de actividad:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener entidades"
@@ -277,7 +294,11 @@ const obtenerEstadisticas = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener estadísticas:', error);
+    logger.error('Error al obtener estadísticas:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al obtener estadísticas'
@@ -315,7 +336,11 @@ const obtenerUsuariosUnicos = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener usuarios únicos:', error);
+    logger.error('Error al obtener usuarios únicos:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al obtener usuarios',
@@ -346,7 +371,11 @@ const obtenerEntidadesUnicas = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener entidades:', error);
+    logger.error('Error al obtener entidades:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al obtener entidades',

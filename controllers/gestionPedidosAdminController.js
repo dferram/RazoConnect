@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Actualizar costo de envío de un pedido
@@ -67,7 +68,11 @@ const updateCostoEnvio = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al actualizar costo de envío:", error);
+    logger.error('Error al actualizar costo de envío:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al actualizar el costo de envío",

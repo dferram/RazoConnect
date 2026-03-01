@@ -1,4 +1,5 @@
 const inventoryAuditService = require('../services/inventoryAuditService');
+const logger = require('../utils/logger');
 const db = require('../db');
 
 const crearSesionAuditoria = async (req, res) => {
@@ -22,7 +23,11 @@ const crearSesionAuditoria = async (req, res) => {
       sesion
     });
   } catch (error) {
-    console.error('Error al crear sesión de auditoría:', error);
+    logger.error('Error al crear sesión de auditoría:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: 'Error al crear sesión de auditoría' });
   }
 };
@@ -36,7 +41,11 @@ const obtenerSesionesAuditoria = async (req, res) => {
 
     res.json({ sesiones });
   } catch (error) {
-    console.error('Error al obtener sesiones de auditoría:', error);
+    logger.error('Error al obtener sesiones de auditoría:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: 'Error al obtener sesiones de auditoría' });
   }
 };
@@ -75,7 +84,11 @@ const obtenerSesionDetalle = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error('Error al obtener detalle de sesión:', error);
+    logger.error('Error al obtener detalle de sesión:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: 'Error al obtener detalle de sesión' });
   }
 };
@@ -134,7 +147,11 @@ const registrarConteo = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error('Error al registrar conteo:', error);
+    logger.error('Error al registrar conteo:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: error.message || 'Error al registrar conteo' });
   }
 };
@@ -180,7 +197,11 @@ const obtenerStockTeorico = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error('Error al obtener stock teórico:', error);
+    logger.error('Error al obtener stock teórico:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: 'Error al obtener stock teórico' });
   }
 };
@@ -215,7 +236,11 @@ const obtenerReconciliacion = async (req, res) => {
       resumen
     });
   } catch (error) {
-    console.error('Error al obtener reconciliación:', error);
+    logger.error('Error al obtener reconciliación:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: 'Error al obtener reconciliación' });
   }
 };
@@ -263,7 +288,11 @@ const agregarComentario = async (req, res) => {
       client.release();
     }
   } catch (error) {
-    console.error('Error al agregar comentario:', error);
+    logger.error('Error al agregar comentario:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: 'Error al agregar comentario' });
   }
 };
@@ -295,7 +324,11 @@ const cerrarYSincronizarAuditoria = async (req, res) => {
       ...resultado
     });
   } catch (error) {
-    console.error('Error al cerrar y sincronizar auditoría:', error);
+    logger.error('Error al cerrar y sincronizar auditoría:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: error.message || 'Error al cerrar y sincronizar auditoría' });
   }
 };
@@ -314,7 +347,11 @@ const generarReporteAuditoria = async (req, res) => {
 
     res.json(reporte);
   } catch (error) {
-    console.error('Error al generar reporte:', error);
+    logger.error('Error al generar reporte:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: error.message || 'Error al generar reporte' });
   }
 };
@@ -334,7 +371,11 @@ const calcularStockTeoricoMasivo = async (req, res) => {
 
     res.json({ productos: resultados });
   } catch (error) {
-    console.error('Error al calcular stock teórico masivo:', error);
+    logger.error('Error al calcular stock teórico masivo:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: 'Error al calcular stock teórico masivo' });
   }
 };

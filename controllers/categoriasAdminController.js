@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener todas las categorías
@@ -52,7 +53,11 @@ const getCategorias = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener categorías:", error);
+    logger.error('Error al obtener categorías:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -146,7 +151,11 @@ const crearCategoria = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al crear categoría:", error);
+    logger.error('Error al crear categoría:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al crear la categoría",
@@ -251,7 +260,11 @@ const actualizarCategoria = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al actualizar categoría:", error);
+    logger.error('Error al actualizar categoría:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al actualizar la categoría",
@@ -307,7 +320,11 @@ const eliminarCategoria = async (req, res) => {
       message: "Categoría eliminada exitosamente",
     });
   } catch (error) {
-    console.error("Error al eliminar categoría:", error);
+    logger.error('Error al eliminar categoría:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al eliminar la categoría",

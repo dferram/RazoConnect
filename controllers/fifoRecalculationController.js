@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 const SmartStockService = require("../services/SmartStockService");
 
 /**
@@ -166,7 +167,11 @@ const recalcularTodosPedidos = async (req, res) => {
         }
         
       } catch (error) {
-        console.error(`❌ [FIFO] Error procesando pedido #${pedido.pedidoid}:`, error);
+        logger.error('❌ [FIFO] Error procesando pedido #${pedido.pedidoid}:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         errores.push({
           pedidoId: pedido.pedidoid,
           error: error.message
@@ -190,7 +195,11 @@ const recalcularTodosPedidos = async (req, res) => {
     
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("❌ [FIFO RECALCULATION] Error fatal:", error);
+    logger.error('❌ [FIFO RECALCULATION] Error fatal:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     
     return res.status(500).json({
       success: false,
@@ -339,7 +348,11 @@ const recalcularPedidoEspecifico = async (req, res) => {
     
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error(`❌ [FIFO] Error recalculando pedido:`, error);
+    logger.error('❌ [FIFO] Error recalculando pedido:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     
     return res.status(500).json({
       success: false,
@@ -434,7 +447,11 @@ const obtenerConflictosAllocation = async (req, res) => {
     });
     
   } catch (error) {
-    console.error("❌ [FIFO] Error obteniendo conflictos:", error);
+    logger.error('❌ [FIFO] Error obteniendo conflictos:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     
     return res.status(500).json({
       success: false,

@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener ajustes de inventario con filtros avanzados
@@ -229,7 +230,11 @@ const getAjustesInventarioFiltrados = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener ajustes de inventario filtrados:", error);
+    logger.error('Error al obtener ajustes de inventario filtrados:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error en el servidor",
@@ -307,7 +312,11 @@ const getTiposAjusteInventario = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error al obtener tipos de ajuste:", error);
+    logger.error('Error al obtener tipos de ajuste:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error en el servidor",

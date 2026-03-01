@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener cuentas por pagar
@@ -106,7 +107,11 @@ const getCuentasPorPagar = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener cuentas por pagar:", error);
+    logger.error('Error al obtener cuentas por pagar:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener cuentas por pagar",
@@ -290,7 +295,11 @@ const registrarPagoCuentaPorPagar = async (req, res) => {
     } catch (e) {
       // ignore
     }
-    console.error("Error al registrar pago CxP:", error);
+    logger.error('Error al registrar pago CxP:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al registrar pago",
@@ -334,7 +343,11 @@ const getResumenEstadoCuentaProveedores = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener resumen estado de cuenta proveedores:", error);
+    logger.error('Error al obtener resumen estado de cuenta proveedores:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener estado de cuenta",
@@ -490,7 +503,11 @@ const getEstadoCuentaProveedorMovimientos = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener movimientos proveedor:", error);
+    logger.error('Error al obtener movimientos proveedor:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener movimientos",
@@ -596,7 +613,11 @@ const getProductosRecibidosPorCxp = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener productos recibidos por CxP:", error);
+    logger.error('Error al obtener productos recibidos por CxP:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener productos recibidos",

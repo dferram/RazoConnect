@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const auditService = require('../services/auditService');
 
 /**
@@ -76,7 +77,11 @@ const toggleProductoVisibilidad = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al cambiar visibilidad del producto:", error);
+    logger.error('Error al cambiar visibilidad del producto:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al cambiar la visibilidad del producto",

@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const auditService = require('../services/auditService');
 const { crearNotificacion: crearNotificacionServicio } = require('../services/notificacionesService');
 
@@ -33,7 +34,11 @@ const subirEvidenciaRecepcionOC = async (req, res) => {
       data: { url },
     });
   } catch (error) {
-    console.error("Error al subir evidencia de recepción:", error);
+    logger.error('Error al subir evidencia de recepción:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al subir la evidencia",
@@ -144,7 +149,11 @@ const subirEvidenciaEntrega = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al subir evidencia de entrega:", error);
+    logger.error('Error al subir evidencia de entrega:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al subir evidencia de entrega"

@@ -23,6 +23,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const SmartStockService = require('../services/SmartStockService');
 const { crearNotificacionServicio } = require('../services/notificacionesService');
 const { executeTransaction, createValidator } = require('../utils/transactionManager');
@@ -77,7 +78,10 @@ const updatePedidoEstatus = async (req, res) => {
     ];
 
     if (!estatusValidos.includes(estatus)) {
-      console.error(`❌ [STATUS CHANGE] Estatus inválido: ${estatus}`);
+      logger.error('❌ [STATUS CHANGE] Estatus inválido: ${estatus}', {
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       return res.status(400).json({
         success: false,
         message: `Estatus inválido. Valores permitidos: ${estatusValidos.join(', ')}`

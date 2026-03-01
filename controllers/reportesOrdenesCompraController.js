@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener órdenes de compra para reportes con estado de recepción
@@ -66,7 +67,11 @@ async function getOrdenesCompraReportes(req, res) {
       ordenes: result.rows
     });
   } catch (error) {
-    console.error('Error al obtener órdenes para reportes:', error);
+    logger.error('Error al obtener órdenes para reportes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al obtener órdenes de compra',
@@ -242,7 +247,11 @@ async function getOrdenCompraReporteDetallado(req, res) {
       }
     });
   } catch (error) {
-    console.error('Error al obtener detalle de orden:', error);
+    logger.error('Error al obtener detalle de orden:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al obtener detalle de la orden',

@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const db = require("../db");
+const logger = require('../utils/logger');
 const { enviarEmail, sendTemplatedEmail } = require("../services/emailService");
 const {
   generarOrdenCompraAutomatica,
@@ -325,7 +326,11 @@ const crearPedido = async (req, res) => {
         `${item.nombreproducto} (SKU: ${item.sku}) - TamanoID: ${item.tamanoid || 'NULL'}`
       ).join(', ');
       
-      console.error('Items del carrito sin presentación válida:', detallesError);
+      logger.error('Items del carrito sin presentación válida', {
+        detalles: detallesError,
+        requestId: req.requestId,
+        tenantId: tenant_id
+      });
       
       return res.status(400).json({
         success: false,
@@ -377,7 +382,11 @@ const crearPedido = async (req, res) => {
             tenantId: tenant_id
           });
         } catch (stockError) {
-          console.error('[PedidosController] Error al obtener stock dinámico:', stockError);
+          logger.error('Error al obtener stock dinámico', {
+            error: stockError.message,
+            requestId: req.requestId,
+            tenantId: tenant_id
+          });
           // Si falla SmartStock, rechazar pedido (seguro)
           await client.query("ROLLBACK");
           transactionStarted = false;
@@ -393,7 +402,12 @@ const crearPedido = async (req, res) => {
       masterVariantsResult.rows.forEach(row => {
         const stockValue = stockMapBulk.get(row.varianteid) || 0;
         if (stockValue < 0) {
-          console.error(`❌ [STOCK ERROR] Variante ${row.varianteid} tiene stock NEGATIVO: ${stockValue}`);
+          logger.error('Stock negativo detectado', {
+            varianteId: row.varianteid,
+            stock: stockValue,
+            requestId: req.requestId,
+            tenantId: tenant_id
+          });
         } else if (stockValue === 0) {
           console.warn(`⚠️ [STOCK WARNING] Variante ${row.varianteid} tiene stock CERO`);
         }
@@ -508,11 +522,14 @@ const crearPedido = async (req, res) => {
       const validacion = validarConsistenciaTotales(totalClienteEnviado, montoTotal, 0.50);
       
       if (!validacion.esConsistente) {
-        console.error(`🚨 [ERROR FINANCIERO] Discrepancia detectada en Pedido`);
-        console.error(`   Total calculado por servidor: $${validacion.total2}`);
-        console.error(`   Total enviado por cliente: $${validacion.total1}`);
-        console.error(`   Diferencia: $${validacion.diferencia}`);
-        console.error(`   Cliente ID: ${clienteId}, Tenant: ${tenant_id}`);
+        logger.error('Discrepancia financiera detectada en pedido', {
+          totalCalculado: validacion.total2,
+          totalEnviado: validacion.total1,
+          diferencia: validacion.diferencia,
+          clienteId,
+          tenantId: tenant_id,
+          requestId: req.requestId
+        });
         
         // NUEVO: Rechazar pedido si la diferencia es significativa (>$0.50)
         await client.query("ROLLBACK");
@@ -1015,10 +1032,15 @@ const crearPedido = async (req, res) => {
       // CRITICAL FIX: Validate and correct split BEFORE extracting to local variables
       // This prevents the bug where stock=0 but split returns cantidadSurtida > 0
       if (stockActual === 0 && split.cantidadSurtida > 0) {
-        console.error(`🚨 [LOGIC ERROR] Stock es 0 pero cantidadSurtida es ${split.cantidadSurtida}!`);
-        console.error(`   Producto: ${item.nombreproducto} (ID: ${item.productoid})`);
-        console.error(`   Variante: ${item.varianteid}`);
-        console.error(`   CORRECCIÓN: Forzando cantidadSurtida a 0 y todo a backorder`);
+        logger.error('Logic error: stock 0 pero cantidadSurtida > 0', {
+          cantidadSurtida: split.cantidadSurtida,
+          producto: item.nombreproducto,
+          productoId: item.productoid,
+          varianteId: item.varianteid,
+          correccion: 'Forzando cantidadSurtida a 0',
+          requestId: req.requestId,
+          tenantId: tenant_id
+        });
         split.cantidadSurtida = 0;
         split.cantidadBackorderAjustada = cantidadRequerida;
       }
@@ -1065,9 +1087,14 @@ const crearPedido = async (req, res) => {
       const puedeSerSurtido = stockFinalValidation > 0 && cantidadSurtida > 0 && piezasSurtidas <= stockFinalValidation;
       
       if (!puedeSerSurtido && cantidadSurtida > 0) {
-        console.error(`🚨 [DUPLICATION PREVENTED] Stock insuficiente para surtir ${cantidadSurtida} paquetes`);
-        console.error(`   Stock disponible: ${stockFinalValidation} piezas, necesario: ${piezasSurtidas} piezas`);
-        console.error(`   ACCIÓN: Saltando INSERT de surtido, todo irá a backorder`);
+        logger.error('Duplication prevented: stock insuficiente', {
+          cantidadSurtida,
+          stockDisponible: stockFinalValidation,
+          piezasNecesarias: piezasSurtidas,
+          accion: 'Saltando INSERT de surtido',
+          requestId: req.requestId,
+          tenantId: tenant_id
+        });
       }
 
       // Insertar detalle surtido (SOLO si hay stock real disponible)
@@ -1474,7 +1501,10 @@ const crearPedido = async (req, res) => {
         buttonUrl: `${frontendUrl}/perfil/pedidos`,
         additionalInfo: `<strong>Método de Pago:</strong> ${metodoPago === 'credito' ? 'Crédito' : metodoPago === 'transferencia' ? 'Transferencia' : 'Efectivo'}<br><strong>Estatus:</strong> ${pedido.estatus}`
       }).catch((err) => {
-        console.error("No se pudo enviar correo de recibo de pedido:", err);
+        logger.error('No se pudo enviar correo de recibo de pedido', {
+          error: err.message,
+          pedidoId: pedido.pedidoid
+        });
       });
     }
 
@@ -1497,10 +1527,10 @@ const crearPedido = async (req, res) => {
       `;
 
       enviarEmail(adminEmail, asuntoAdmin, cuerpoAdmin).catch((err) => {
-        console.error(
-          "No se pudo enviar alerta de nuevo pedido al admin:",
-          err
-        );
+        logger.error('No se pudo enviar alerta de nuevo pedido al admin', {
+          error: err.message,
+          pedidoId: pedido.pedidoid
+        });
       });
 
       if (backordersGenerados.length > 0) {
@@ -1535,10 +1565,10 @@ const crearPedido = async (req, res) => {
 
         enviarEmail(adminEmail, asuntoBackorder, cuerpoBackorder).catch(
           (err) => {
-            console.error(
-              "No se pudo enviar alerta de backorder al admin:",
-              err
-            );
+            logger.error('No se pudo enviar alerta de backorder al admin', {
+              error: err.message,
+              pedidoId: pedido.pedidoid
+            });
           }
         );
       }
@@ -1576,19 +1606,21 @@ const crearPedido = async (req, res) => {
       `;
 
       enviarEmail(agenteEmail, asuntoAgente, cuerpoAgente).catch((err) => {
-        console.error(
-          "No se pudo enviar notificación de nuevo pedido al agente:",
-          err
-        );
+        logger.error('No se pudo enviar notificación de nuevo pedido al agente', {
+          error: err.message,
+          pedidoId: pedido.pedidoid,
+          agenteId: agente.agenteid
+        });
       });
     }
 
     for (const varianteId of variantesAfectadas) {
       checkStockBajo(varianteId).catch((err) => {
-        console.error(
-          `Error verificando stock bajo para la variante ${varianteId} tras pedido:`,
-          err
-        );
+        logger.error('Error verificando stock bajo para variante', {
+          error: err.message,
+          varianteId,
+          pedidoId: pedido.pedidoid
+        });
       });
     }
   } catch (error) {
@@ -1597,7 +1629,12 @@ const crearPedido = async (req, res) => {
       await client.query("ROLLBACK");
       transactionStarted = false;
     }
-    console.error("Error al crear pedido:", error);
+    logger.error('Error al crear pedido', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id,
+      clienteId: req.user?.id
+    });
     const status = Number.isInteger(error.statusCode) ? error.statusCode : 500;
     const isServerError = status >= 500;
     res.status(status).json({
@@ -1812,7 +1849,12 @@ const obtenerPedidos = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener pedidos:", error);
+    logger.error('Error al obtener pedidos', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id,
+      clienteId: req.user?.id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener los pedidos",
@@ -2022,7 +2064,12 @@ const obtenerPedidoPorId = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener pedido:", error);
+    logger.error('Error al obtener pedido', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id,
+      pedidoId: req.params.id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener el pedido",
@@ -2184,7 +2231,12 @@ const obtenerDatosPago = async (req, res) => {
     return res.status(200).json(responseData);
 
   } catch (error) {
-    console.error("Error al obtener datos de pago:", error);
+    logger.error('Error al obtener datos de pago', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id,
+      pedidoId: req.params.id
+    });
     res.status(500).json({
       success: false,
       message: "Error al procesar la solicitud de pago",
@@ -2438,7 +2490,11 @@ const cancelarPedido = async (req, res) => {
       } else {
       }
     } catch (ocError) {
-      console.error('[Cancelar Pedido] Error al cancelar OCs en cascada:', ocError);
+      logger.error('Error al cancelar OCs en cascada', {
+        error: ocError.message,
+        pedidoId: req.params.id,
+        requestId: req.requestId
+      });
       // No lanzar el error para no interrumpir la cancelación del pedido
       // El pedido se cancela de todas formas, pero se registra el error
     }
@@ -2612,12 +2668,12 @@ const cancelarPedido = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('[Cancelar Pedido] Error crítico:', {
+    logger.error('Error crítico al cancelar pedido', { // Replace console.error with logger.error
+      error: error.message,
       pedidoId: req.params.id,
       clienteId: req.user?.id,
-      error: error.message,
-      stack: error.stack,
-      code: error.code
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
     });
     
     res.status(500).json({ 
@@ -2665,7 +2721,11 @@ const simulatePriorityImpact = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("❌ [simulatePriorityImpact] Error:", error);
+    logger.error('Error al simular impacto de prioridad', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al simular el impacto de prioridad",
@@ -2749,7 +2809,11 @@ const togglePrioridad = async (req, res) => {
             await SmartStockService.reallocateStockForVariant(varianteId, tenant_id);
           }
         } catch (error) {
-          console.error(`❌ [REALLOCATION] Error para pedido #${pedidoId}:`, error.message);
+          logger.error('Error en reallocación de stock', {
+            error: error.message,
+            pedidoId,
+            varianteId
+          });
         }
       });
     }
@@ -2764,7 +2828,12 @@ const togglePrioridad = async (req, res) => {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("❌ [togglePrioridad] Error:", error);
+    logger.error('Error al cambiar prioridad', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id,
+      pedidoId: req.params.id
+    });
     res.status(500).json({
       message: "Error al cambiar la prioridad del pedido",
       error: error.message,

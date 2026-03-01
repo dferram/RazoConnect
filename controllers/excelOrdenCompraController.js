@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 const getOrderDetailsForExcel = async (req, res) => {
   try {
@@ -113,7 +114,11 @@ const getOrderDetailsForExcel = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener detalles para Excel:", error);
+    logger.error('Error al obtener detalles para Excel:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener detalles de la orden",

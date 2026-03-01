@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 const { sendTemplatedEmail } = require("../services/emailService");
 
 const NIVEL_RIESGO = {
@@ -42,7 +43,11 @@ async function obtenerSolicitudesPendientes(req, res) {
       }
     });
   } catch (error) {
-    console.error("Error obteniendo solicitudes pendientes:", error);
+    logger.error('Error obteniendo solicitudes pendientes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener solicitudes pendientes"
@@ -161,7 +166,11 @@ async function obtenerAnalisisSolicitud(req, res) {
       }
     });
   } catch (error) {
-    console.error("Error en análisis de solicitud:", error);
+    logger.error('Error en análisis de solicitud:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al analizar solicitud"
@@ -272,7 +281,11 @@ async function aprobarSolicitud(req, res) {
           buttonUrl: `${frontendUrl}/perfil/creditos`,
           additionalInfo: 'Puedes comenzar a realizar compras a crédito de inmediato. Recuerda revisar tus movimientos y saldos regularmente.'
         }
-      ).catch(err => console.error('Error enviando email de aprobación de crédito:', err));
+      ).catch(err => logger.error('Error enviando email de aprobación de crédito:', {
+      error: err.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    }));
     }
 
     return res.json({
@@ -281,7 +294,11 @@ async function aprobarSolicitud(req, res) {
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error("Error aprobando solicitud:", error);
+    logger.error('Error aprobando solicitud:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al aprobar solicitud"
@@ -377,7 +394,11 @@ async function rechazarSolicitud(req, res) {
           buttonUrl: `${frontendUrl}/contacto`,
           additionalInfo: 'Si tienes preguntas sobre esta decisión, nuestro equipo está disponible para ayudarte.'
         }
-      ).catch(err => console.error('Error enviando email de rechazo de crédito:', err));
+      ).catch(err => logger.error('Error enviando email de rechazo de crédito:', {
+      error: err.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    }));
     }
 
     return res.json({
@@ -386,7 +407,11 @@ async function rechazarSolicitud(req, res) {
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error("Error rechazando solicitud:", error);
+    logger.error('Error rechazando solicitud:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al rechazar solicitud"

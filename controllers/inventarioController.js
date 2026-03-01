@@ -1,4 +1,5 @@
 const ExcelJS = require('exceljs');
+const logger = require('../utils/logger');
 const db = require('../db');
 const { format } = require('date-fns');
 const SmartStockService = require('../services/SmartStockService');
@@ -108,7 +109,11 @@ async function exportarEntradasAlmacen(req, res) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error en exportación de entradas:', error);
+        logger.error('Error en exportación de entradas:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             message: 'Error al generar el reporte de entradas',
             error: error.message
@@ -166,7 +171,11 @@ async function getOrdenesPendientes(req, res) {
         });
 
     } catch (error) {
-        console.error('Error al obtener órdenes:', error);
+        logger.error('Error al obtener órdenes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             message: 'Error al obtener órdenes pendientes',
             error: error.message
@@ -229,7 +238,11 @@ async function crearSesionInventario(req, res) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error al crear sesión de inventario:', error);
+        logger.error('Error al crear sesión de inventario:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         
         if (error.code === '23505') {
             return res.status(409).json({
@@ -350,7 +363,11 @@ async function listarSesionesInventario(req, res) {
         });
 
     } catch (error) {
-        console.error('Error al listar sesiones de inventario:', error);
+        logger.error('Error al listar sesiones de inventario:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener las sesiones de inventario',
@@ -437,7 +454,11 @@ async function obtenerSesionInventario(req, res) {
         });
 
     } catch (error) {
-        console.error('Error al obtener sesión de inventario:', error);
+        logger.error('Error al obtener sesión de inventario:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener la sesión de inventario',
@@ -531,7 +552,11 @@ async function asignarAgenteASesion(req, res) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error al asignar agente a sesión:', error);
+        logger.error('Error al asignar agente a sesión:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al asignar el agente a la sesión',
@@ -578,7 +603,11 @@ async function obtenerAgentesDisponibles(req, res) {
         });
 
     } catch (error) {
-        console.error('Error al obtener agentes disponibles:', error);
+        logger.error('Error al obtener agentes disponibles:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener la lista de agentes',
@@ -657,7 +686,11 @@ async function actualizarEstatusSesion(req, res) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error al actualizar estatus de sesión:', error);
+        logger.error('Error al actualizar estatus de sesión:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al actualizar el estatus de la sesión',
@@ -707,7 +740,11 @@ async function obtenerInventarioParaPDF(req, res) {
                 });
                 console.log(`✅ [InventarioController] Stock obtenido para ${varianteIds.length} variantes (Usuario: ${userId})`);
             } catch (stockError) {
-                console.error('[InventarioController] Error al obtener stock dinámico:', stockError);
+                logger.error('[InventarioController] Error al obtener stock dinámico:', {
+      error: stockError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
                 // Fallback: retornar sin stock si falla
             }
         }
@@ -755,7 +792,11 @@ async function obtenerInventarioParaPDF(req, res) {
                         }))
                     ];
                 } catch (error) {
-                    console.error(`[InventarioController] Error al obtener distribución para variante ${item.varianteId}:`, error);
+                    logger.error('[InventarioController] Error al obtener distribución para variante ${item.varianteId}:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
                     item.stock_distribucion = [];
                 }
             }
@@ -770,7 +811,11 @@ async function obtenerInventarioParaPDF(req, res) {
             isSuperAdmin // Indicar al frontend si es Super Admin
         });
     } catch (error) {
-        console.error('Error al obtener inventario para PDF:', error);
+        logger.error('Error al obtener inventario para PDF:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         return res.status(500).json({
             success: false,
             message: 'Error al obtener inventario',

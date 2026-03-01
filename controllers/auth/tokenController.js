@@ -180,7 +180,11 @@ const logout = async (req, res) => {
     if (req.session) {
       req.session.destroy((err) => {
         if (err) {
-          console.error('Error al destruir sesión de Express:', err);
+          logger.error('Error al destruir sesión de Express:', {
+      error: err.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         }
       });
     }

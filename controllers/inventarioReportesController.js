@@ -1,4 +1,5 @@
 const pool = require('../db');
+const logger = require('../utils/logger');
 const PDFDocument = require('pdfkit');
 const { format } = require('date-fns');
 const { es } = require('date-fns/locale');
@@ -76,7 +77,11 @@ async function obtenerSesionesInventario(req, res) {
         });
 
     } catch (error) {
-        console.error('❌ [ERROR] obtenerSesionesInventario:', error);
+        logger.error('❌ [ERROR] obtenerSesionesInventario:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener sesiones de inventario',
@@ -379,7 +384,11 @@ async function generarReportePDF(req, res) {
         doc.end();
 
     } catch (error) {
-        console.error('❌ [ERROR] generarReportePDF:', error);
+        logger.error('❌ [ERROR] generarReportePDF:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         if (!res.headersSent) {
             res.status(500).json({
                 success: false,
@@ -465,7 +474,11 @@ async function obtenerDetalleSesion(req, res) {
         });
 
     } catch (error) {
-        console.error('❌ [ERROR] obtenerDetalleSesion:', error);
+        logger.error('❌ [ERROR] obtenerDetalleSesion:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener detalle de sesión',

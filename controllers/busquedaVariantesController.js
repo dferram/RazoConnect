@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Búsqueda de variantes con autocompletado para movimientos
@@ -110,7 +111,11 @@ const searchVariantesMovimientos = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error en búsqueda de variantes:', error);
+    logger.error('Error en búsqueda de variantes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al buscar variantes',

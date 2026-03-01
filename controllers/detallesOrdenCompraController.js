@@ -11,6 +11,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener detalles de una orden de compra específica
@@ -189,7 +190,11 @@ const getDetallesOrdenCompra = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener detalles de orden de compra:", error);
+    logger.error('Error al obtener detalles de orden de compra:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener detalles de la orden de compra",
@@ -424,7 +429,11 @@ const getRecepcionOrdenCompra = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener recepción de OC:", error);
+    logger.error('Error al obtener recepción de OC:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener información de recepción",

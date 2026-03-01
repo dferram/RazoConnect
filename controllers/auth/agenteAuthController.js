@@ -1,4 +1,5 @@
 const bcrypt = require("bcryptjs");
+const logger = require('../../utils/logger');
 const db = require("../../db");
 const { generateAccessToken, generateRefreshToken } = require("../../utils/jwtHelper");
 const { saveRefreshToken } = require("../../config/redisClient");
@@ -111,7 +112,11 @@ const registroAgente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en registro de agente:", error);
+    logger.error('Error en registro de agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al registrar el agente",

@@ -1,4 +1,5 @@
 const db = require("../../db");
+const logger = require('../../utils/logger');
 
 const normalizeClienteId = (req) => {
   const raw =
@@ -75,7 +76,11 @@ const checkAuthCredit = async (req, res) => {
       pendingRequest,
     });
   } catch (error) {
-    console.error("Error verificando crédito del cliente:", error);
+    logger.error('Error verificando crédito del cliente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "No fue posible verificar el estado de tu crédito",
@@ -167,7 +172,11 @@ const obtenerPerfilCredito = async (req, res) => {
       data,
     });
   } catch (error) {
-    console.error("Error obteniendo perfil de crédito:", error);
+    logger.error('Error obteniendo perfil de crédito:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "No fue posible obtener tu perfil de crédito",
@@ -294,7 +303,11 @@ const enviarSolicitudCredito = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al enviar solicitud de crédito:", error);
+    logger.error('Error al enviar solicitud de crédito:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "No fue posible enviar la solicitud",
@@ -413,7 +426,11 @@ const obtenerMovimientosCredito = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error obteniendo movimientos de crédito:", error);
+    logger.error('Error obteniendo movimientos de crédito:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "No fue posible obtener los movimientos de crédito",
@@ -504,7 +521,11 @@ const registrarPagoCliente = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error registrando pago de cliente:", error);
+    logger.error('Error registrando pago de cliente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "No fue posible registrar el pago",
@@ -574,7 +595,11 @@ async function obtenerMovimientosPendientes(req, res) {
       data: movimientosPendientes,
     });
   } catch (error) {
-    console.error("Error obteniendo movimientos pendientes:", error);
+    logger.error('Error obteniendo movimientos pendientes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "No fue posible obtener los movimientos pendientes",
@@ -729,7 +754,11 @@ const obtenerEstadoCuentaMensual = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error obteniendo estado de cuenta mensual:", error);
+    logger.error('Error obteniendo estado de cuenta mensual:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "No fue posible obtener el estado de cuenta",

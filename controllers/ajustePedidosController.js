@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 const SmartStockService = require("../services/SmartStockService");
 
 async function ajustarPedido(req, res) {
@@ -292,7 +293,10 @@ async function ajustarPedido(req, res) {
             client: client
           });
           if (!resultado.success) {
-            console.error(`⚠️ Error al devolver stock: ${resultado.message}`);
+            logger.error('⚠️ Error al devolver stock: ${resultado.message}', {
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
           } else {
           }
         }
@@ -546,7 +550,11 @@ async function ajustarPedido(req, res) {
       await client.query("ROLLBACK");
     }
     client.release();
-    console.error("Error al ajustar pedido:", error);
+    logger.error('Error al ajustar pedido:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al ajustar el pedido",

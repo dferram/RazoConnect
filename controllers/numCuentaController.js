@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 const { registrarLog } = require("../services/loggerService");
 
 // ============================================
@@ -19,7 +20,11 @@ async function obtenerCuentasEmpresa(req, res) {
       total: result.rows.length,
     });
   } catch (error) {
-    console.error("Error al obtener cuentas de empresa:", error);
+    logger.error('Error al obtener cuentas de empresa:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       success: false,
       error: "Error al obtener cuentas bancarias" 
@@ -74,7 +79,11 @@ async function crearCuentaEmpresa(req, res) {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al crear cuenta de empresa:", error);
+    logger.error('Error al crear cuenta de empresa:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       success: false,
       error: "Error al crear cuenta bancaria" 
@@ -137,7 +146,11 @@ async function activarCuentaEmpresa(req, res) {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al activar cuenta de empresa:", error);
+    logger.error('Error al activar cuenta de empresa:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       success: false,
       error: "Error al activar cuenta bancaria" 
@@ -215,7 +228,11 @@ async function eliminarCuentaEmpresa(req, res) {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al eliminar cuenta de empresa:", error);
+    logger.error('Error al eliminar cuenta de empresa:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       success: false,
       error: "Error al eliminar cuenta bancaria" 
@@ -246,7 +263,11 @@ async function obtenerCuentaAdmin(req, res) {
 
     res.json(result.rows[0]);
   } catch (error) {
-    console.error("Error al obtener cuenta de admin:", error);
+    logger.error('Error al obtener cuenta de admin:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: "Error al obtener información de cuenta" });
   }
 }
@@ -288,7 +309,11 @@ async function actualizarCuentaAdmin(req, res) {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al actualizar cuenta de admin:", error);
+    logger.error('Error al actualizar cuenta de admin:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: "Error al actualizar información bancaria" });
   } finally {
     client.release();
@@ -312,7 +337,11 @@ async function obtenerCuentaAgente(req, res) {
 
     res.json(result.rows[0]);
   } catch (error) {
-    console.error("Error al obtener cuenta de agente:", error);
+    logger.error('Error al obtener cuenta de agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: "Error al obtener información de cuenta" });
   }
 }
@@ -354,7 +383,11 @@ async function actualizarCuentaAgente(req, res) {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al actualizar cuenta de agente:", error);
+    logger.error('Error al actualizar cuenta de agente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ error: "Error al actualizar información bancaria" });
   } finally {
     client.release();

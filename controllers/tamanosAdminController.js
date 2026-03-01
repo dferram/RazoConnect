@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener todos los tamaños de paquetes disponibles
@@ -48,7 +49,11 @@ const getTamanosPaquetes = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener tamaños de paquetes:", error);
+    logger.error('Error al obtener tamaños de paquetes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener los tamaños de paquetes",
@@ -95,7 +100,11 @@ const getTamanosDisponiblesProducto = async (req, res) => {
       data: tamanos
     });
   } catch (error) {
-    console.error("Error al obtener tamaños disponibles del producto:", error);
+    logger.error('Error al obtener tamaños disponibles del producto:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener los tamaños disponibles",

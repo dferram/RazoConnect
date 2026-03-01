@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener variantes de productos por proveedor
@@ -99,7 +100,11 @@ const getVariantesProveedor = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener variantes del proveedor:", error);
+    logger.error('Error al obtener variantes del proveedor:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener variantes del proveedor",
@@ -270,7 +275,11 @@ const agregarProductoAOrdenCompra = async (req, res) => {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error agregando producto a orden de compra:", error);
+    logger.error('Error agregando producto a orden de compra:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al agregar producto a la orden",
@@ -399,7 +408,11 @@ const quitarProductoDeOrdenCompra = async (req, res) => {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error quitando producto de orden de compra:", error);
+    logger.error('Error quitando producto de orden de compra:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al quitar producto de la orden",

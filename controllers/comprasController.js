@@ -1,4 +1,5 @@
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Editar items de una Orden de Compra (Pre-Recepción)
@@ -289,7 +290,11 @@ const editarItemsOrdenCompra = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error al editar items de orden de compra:', error);
+    logger.error('Error al editar items de orden de compra:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al editar la orden de compra',
@@ -379,7 +384,11 @@ const cancelarBackorderVinculado = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error al cancelar backorder:', error);
+    logger.error('Error al cancelar backorder:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al cancelar el backorder',
@@ -532,7 +541,11 @@ const registrarAnomaliaEntrada = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error al registrar anomalía:', error);
+    logger.error('Error al registrar anomalía:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al registrar la anomalía',

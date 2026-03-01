@@ -1,4 +1,5 @@
 const PDFDocument = require('pdfkit');
+const logger = require('../utils/logger');
 const db = require('../db');
 const path = require('path');
 const fs = require('fs');
@@ -597,7 +598,11 @@ async function generarPDFPedido(req, res) {
         doc.end();
 
     } catch (error) {
-        console.error('Error generando PDF:', error);
+        logger.error('Error generando PDF:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         console.error('Stack trace:', error.stack);
         console.error('Error details:', {
             message: error.message,
@@ -892,7 +897,11 @@ async function generarPDFEstadoCuenta(req, res) {
         doc.end();
 
     } catch (error) {
-        console.error('Error generando PDF de estado de cuenta:', error);
+        logger.error('Error generando PDF de estado de cuenta:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         
         if (!res.headersSent) {
             res.status(500).json({ 

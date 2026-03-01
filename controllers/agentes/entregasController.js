@@ -1,4 +1,5 @@
 const pool = require('../../db');
+const logger = require('../../utils/logger');
 const cloudinary = require('../../config/cloudinary');
 
 /**
@@ -162,7 +163,11 @@ exports.confirmarEntrega = async (req, res) => {
         buttonUrl: `${frontendUrl}/dashboard?tab=pedidos&pedido=${pedido_id}`,
         additionalInfo: `<strong>Pedido:</strong> #${pedido_id}<br><strong>Fecha de entrega:</strong> ${fechaEntregaReal.toLocaleDateString('es-MX')}`
       }).catch(err => {
-        console.error('Error enviando email de confirmación de entrega:', err);
+        logger.error('Error enviando email de confirmación de entrega:', {
+      error: err.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       });
     }
 
@@ -182,7 +187,11 @@ exports.confirmarEntrega = async (req, res) => {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error al confirmar entrega:', error);
+    logger.error('Error al confirmar entrega:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
 
     res.status(500).json({ 
       success: false,
@@ -248,7 +257,11 @@ exports.obtenerEntregasPendientes = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener entregas pendientes:', error);
+    logger.error('Error al obtener entregas pendientes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       success: false,
       error: 'Error al obtener entregas pendientes',

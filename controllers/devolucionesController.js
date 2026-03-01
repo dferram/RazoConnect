@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 const { sendTemplatedEmail } = require("../services/emailService");
 const SmartStockService = require("../services/SmartStockService");
 
@@ -208,7 +209,11 @@ async function solicitarDevolucion(req, res) {
         }
       });
     } catch (emailError) {
-      console.error('Error al enviar email de confirmación:', emailError);
+      logger.error('Error al enviar email de confirmación:', {
+      error: emailError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     }
 
     res.status(201).json({
@@ -225,7 +230,11 @@ async function solicitarDevolucion(req, res) {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error al solicitar devolución:', error);
+    logger.error('Error al solicitar devolución:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       error: 'Error al procesar la solicitud de devolución',
       detalle: error.message 
@@ -288,7 +297,11 @@ async function subirEvidencia(req, res) {
     });
 
   } catch (error) {
-    console.error('Error al subir evidencia:', error);
+    logger.error('Error al subir evidencia:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       error: 'Error al subir la evidencia',
       detalle: error.message 
@@ -335,7 +348,11 @@ async function obtenerMisDevoluciones(req, res) {
     });
 
   } catch (error) {
-    console.error('Error al obtener devoluciones:', error);
+    logger.error('Error al obtener devoluciones:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       error: 'Error al obtener las devoluciones',
       detalle: error.message 
@@ -420,7 +437,11 @@ async function obtenerDetalleDevolucion(req, res) {
     });
 
   } catch (error) {
-    console.error('Error al obtener detalle de devolución:', error);
+    logger.error('Error al obtener detalle de devolución:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       error: 'Error al obtener el detalle',
       detalle: error.message 
@@ -523,7 +544,11 @@ async function obtenerTodasDevoluciones(req, res) {
     });
 
   } catch (error) {
-    console.error('Error al obtener devoluciones (admin):', error);
+    logger.error('Error al obtener devoluciones (admin):', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       error: 'Error al obtener las devoluciones',
       detalle: error.message 
@@ -638,7 +663,10 @@ async function aprobarDevolucion(req, res) {
         });
 
         if (!ajusteResult.success) {
-          console.error(`   ❌ Error al reintegrar stock: ${ajusteResult.message}`);
+          logger.error('   ❌ Error al reintegrar stock: ${ajusteResult.message}', {
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         }
       } else {
         // Producto dañado/abierto: Registrar como merma
@@ -815,7 +843,11 @@ async function aprobarDevolucion(req, res) {
         }
       });
     } catch (emailError) {
-      console.error('Error al enviar email de aprobación:', emailError);
+      logger.error('Error al enviar email de aprobación:', {
+      error: emailError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     }
 
     res.json({
@@ -827,7 +859,11 @@ async function aprobarDevolucion(req, res) {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('❌ [RMA] Error al aprobar devolución:', error);
+    logger.error('❌ [RMA] Error al aprobar devolución:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       error: 'Error al aprobar la devolución',
       detalle: error.message 
@@ -916,7 +952,11 @@ async function rechazarDevolucion(req, res) {
         }
       });
     } catch (emailError) {
-      console.error('Error al enviar email de rechazo:', emailError);
+      logger.error('Error al enviar email de rechazo:', {
+      error: emailError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     }
 
     res.json({
@@ -927,7 +967,11 @@ async function rechazarDevolucion(req, res) {
 
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error al rechazar devolución:', error);
+    logger.error('Error al rechazar devolución:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({ 
       error: 'Error al rechazar la devolución',
       detalle: error.message 

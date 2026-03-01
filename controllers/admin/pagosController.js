@@ -1,4 +1,5 @@
 const db = require('../../db');
+const logger = require('../../utils/logger');
 const { registrarCambio } = require('../../services/auditService');
 
 /**
@@ -40,7 +41,11 @@ async function getPagosPendientes(req, res) {
       pagos: rows
     });
   } catch (error) {
-    console.error('Error al obtener pagos pendientes:', error);
+    logger.error('Error al obtener pagos pendientes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al obtener pagos pendientes',
@@ -138,7 +143,11 @@ async function aprobarPago(req, res) {
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error al aprobar pago:', error);
+    logger.error('Error al aprobar pago:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al aprobar pago',
@@ -237,7 +246,11 @@ async function rechazarPago(req, res) {
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error al rechazar pago:', error);
+    logger.error('Error al rechazar pago:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al rechazar pago',

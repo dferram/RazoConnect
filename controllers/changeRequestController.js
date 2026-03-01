@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 const { aprobarSolicitudes } = require("../services/ChangeRequestService");
 const { crearNotificacion } = require("../services/notificacionesService");
 const { enviarEmail } = require("../services/emailService");
@@ -223,10 +224,11 @@ async function aprobarCambios(req, res) {
         try {
           await notificarSolicitudAprobada(solicitud);
         } catch (staffNotifyError) {
-          console.error(
-            "Error creando notificación interna de aprobación:",
-            staffNotifyError
-          );
+          logger.error('Error creando notificación interna de aprobación:', {
+      error: staffNotifyError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         }
 
         const entidad = (solicitud.entidad || "").toString().toLowerCase();
@@ -302,7 +304,11 @@ async function aprobarCambios(req, res) {
         }
       }
     } catch (notifyError) {
-      console.error("Error creando notificaciones tras aprobar cambios:", notifyError);
+      logger.error('Error creando notificaciones tras aprobar cambios:', {
+      error: notifyError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     }
 
     return res.json({
@@ -314,7 +320,11 @@ async function aprobarCambios(req, res) {
       },
     });
   } catch (error) {
-    console.error("Error al aprobar cambios:", error);
+    logger.error('Error al aprobar cambios:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al aprobar cambios",
@@ -553,7 +563,11 @@ async function rechazarCambios(req, res) {
     });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al rechazar cambios:", error);
+    logger.error('Error al rechazar cambios:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al rechazar cambios",
@@ -664,7 +678,11 @@ async function obtenerPendientes(req, res) {
       },
     });
   } catch (error) {
-    console.error("Error al obtener cambios pendientes:", error);
+    logger.error('Error al obtener cambios pendientes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener cambios pendientes",

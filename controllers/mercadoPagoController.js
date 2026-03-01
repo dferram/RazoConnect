@@ -1,4 +1,5 @@
 const mercadopago = require("mercadopago");
+const logger = require('../utils/logger');
 const db = require("../db");
 
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
@@ -176,7 +177,11 @@ const procesarPagoTarjeta = async (req, res) => {
       await client.query("ROLLBACK");
     }
 
-    console.error("Error procesando pago Mercado Pago:", error);
+    logger.error('Error procesando pago Mercado Pago:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
 
     const mpError = error?.cause?.[0] || error?.response?.data?.cause?.[0];
     const mpMessage =

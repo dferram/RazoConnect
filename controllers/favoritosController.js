@@ -1,4 +1,5 @@
 const db = require('../db');
+const logger = require('../utils/logger');
 
 const favoritosController = {
   async toggleFavorito(req, res) {
@@ -67,7 +68,11 @@ const favoritosController = {
 
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('❌ [FAVORITOS] Error en toggleFavorito:', error);
+      logger.error('❌ [FAVORITOS] Error en toggleFavorito:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       res.status(500).json({ message: 'Error al gestionar favorito', error: error.message });
     } finally {
       client.release();
@@ -148,7 +153,11 @@ const favoritosController = {
       res.json({ favoritos });
 
     } catch (error) {
-      console.error('❌ [FAVORITOS] Error en obtenerFavoritos:', error);
+      logger.error('❌ [FAVORITOS] Error en obtenerFavoritos:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       res.status(500).json({ message: 'Error al obtener favoritos', error: error.message });
     }
   },
@@ -172,7 +181,11 @@ const favoritosController = {
       });
 
     } catch (error) {
-      console.error('❌ [FAVORITOS] Error en verificarFavorito:', error);
+      logger.error('❌ [FAVORITOS] Error en verificarFavorito:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       res.status(500).json({ message: 'Error al verificar favorito', error: error.message });
     }
   },
@@ -197,7 +210,11 @@ const favoritosController = {
       });
 
     } catch (error) {
-      console.error('❌ [FAVORITOS] Error en contarNotificacionesRestock:', error);
+      logger.error('❌ [FAVORITOS] Error en contarNotificacionesRestock:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       res.status(500).json({ message: 'Error al contar notificaciones', error: error.message });
     }
   },
@@ -224,7 +241,11 @@ const favoritosController = {
       });
 
     } catch (error) {
-      console.error('❌ [FAVORITOS] Error en marcarNotificacionesLeidas:', error);
+      logger.error('❌ [FAVORITOS] Error en marcarNotificacionesLeidas:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
       res.status(500).json({ message: 'Error al marcar notificaciones', error: error.message });
     }
   }

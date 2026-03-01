@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 
 /**
  * GET /api/admin/reportes/rentabilidad
@@ -178,7 +179,11 @@ const getReporteRentabilidad = async (req, res) => {
       }),
     });
   } catch (error) {
-    console.error("Error al generar reporte de rentabilidad:", error);
+    logger.error('Error al generar reporte de rentabilidad:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al generar el reporte de rentabilidad",
@@ -252,7 +257,11 @@ const getValuacionInventario = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ Error al calcular la valuación de inventario:", error);
+    logger.error('❌ Error al calcular la valuación de inventario:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al calcular la valuación de inventario",
@@ -289,7 +298,11 @@ const getAgingBackorders = async (req, res) => {
       })),
     });
   } catch (error) {
-    console.error("Error al generar reporte de aging de backorders:", error);
+    logger.error('Error al generar reporte de aging de backorders:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al generar el reporte de aging de backorders",

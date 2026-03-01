@@ -1,4 +1,5 @@
 const pool = require('../db');
+const logger = require('../utils/logger');
 
 async function getLandingConfig(req, res) {
   const { tenant_id } = req.tenant;
@@ -22,7 +23,11 @@ async function getLandingConfig(req, res) {
       data: config
     });
   } catch (error) {
-    console.error('Error obteniendo configuración de landing:', error);
+    logger.error('Error obteniendo configuración de landing:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al obtener la configuración de la landing'
@@ -71,7 +76,11 @@ async function createLandingItem(req, res) {
       message: 'Item creado exitosamente'
     });
   } catch (error) {
-    console.error('Error creando item de landing:', error);
+    logger.error('Error creando item de landing:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al crear el item'
@@ -145,7 +154,11 @@ async function updateLandingItem(req, res) {
       message: 'Item actualizado exitosamente'
     });
   } catch (error) {
-    console.error('Error actualizando item de landing:', error);
+    logger.error('Error actualizando item de landing:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al actualizar el item'
@@ -177,7 +190,11 @@ async function deleteLandingItem(req, res) {
       message: 'Item eliminado exitosamente'
     });
   } catch (error) {
-    console.error('Error eliminando item de landing:', error);
+    logger.error('Error eliminando item de landing:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al eliminar el item'
@@ -222,7 +239,11 @@ async function reorderLandingItems(req, res) {
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error reordenando items de landing:', error);
+    logger.error('Error reordenando items de landing:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: 'Error al reordenar los items'

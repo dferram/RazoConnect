@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const cloudinary = require('cloudinary').v2;
 
 /**
@@ -38,7 +39,11 @@ const eliminarImagenCloudinary = async (publicId) => {
     const result = await cloudinary.uploader.destroy(publicId);
     return result;
   } catch (error) {
-    console.error(`Error al eliminar imagen de Cloudinary: ${publicId}`, error);
+    logger.error('Error al eliminar imagen de Cloudinary: ${publicId}', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     throw error;
   }
 };
@@ -294,7 +299,11 @@ const eliminarImagenProducto = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(`❌ Error al eliminar imagen ${imagenId}:`, error);
+    logger.error('❌ Error al eliminar imagen ${imagenId}:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al eliminar la imagen",
@@ -359,7 +368,11 @@ const getImagenesVariante = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ Error al obtener imágenes de la variante:", error);
+    logger.error('❌ Error al obtener imágenes de la variante:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener imágenes de la variante",
@@ -504,7 +517,11 @@ const subirImagenesVarianteMultiple = async (req, res) => {
         }
       }
     } catch (replicacionError) {
-      console.error(`[REPLICACION_IMG] Error durante replicación (operación principal exitosa):`, replicacionError);
+      logger.error('[REPLICACION_IMG] Error durante replicación (operación principal exitosa):', {
+      error: replicacionError.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     }
 
     const portadaResult = await db.query(
@@ -536,7 +553,11 @@ const subirImagenesVarianteMultiple = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ Error al subir imágenes múltiples de la variante:", error);
+    logger.error('❌ Error al subir imágenes múltiples de la variante:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
 
     return res.status(500).json({
       success: false,
@@ -642,7 +663,11 @@ const actualizarOrdenImagenesVariante = async (req, res) => {
       await client.query("ROLLBACK");
     }
 
-    console.error("❌ Error al actualizar orden de imágenes de variante:", error);
+    logger.error('❌ Error al actualizar orden de imágenes de variante:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al actualizar el orden de imágenes",

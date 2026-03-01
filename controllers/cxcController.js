@@ -1,4 +1,5 @@
 const ExcelJS = require('exceljs');
+const logger = require('../utils/logger');
 const db = require('../db');
 const { format } = require('date-fns');
 const path = require('path');
@@ -289,7 +290,11 @@ async function exportarLoteCxC(req, res) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error en exportación CxC:', error);
+        logger.error('Error en exportación CxC:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             message: 'Error al generar el reporte de CxC',
             error: error.message
@@ -345,7 +350,11 @@ async function getMetricasCobranza(req, res) {
         });
 
     } catch (error) {
-        console.error('Error obteniendo métricas CxC:', error);
+        logger.error('Error obteniendo métricas CxC:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener métricas de cobranza'
@@ -403,7 +412,11 @@ async function getClientesCredito(req, res) {
         });
 
     } catch (error) {
-        console.error('Error obteniendo clientes:', error);
+        logger.error('Error obteniendo clientes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener lista de clientes'
@@ -451,7 +464,11 @@ async function obtenerHistorialMovimientos(req, res) {
             data: rows
         });
     } catch (error) {
-        console.error('Error obteniendo historial de movimientos:', error);
+        logger.error('Error obteniendo historial de movimientos:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         return res.status(500).json({
             success: false,
             message: 'Error al obtener el historial de movimientos'
@@ -618,7 +635,11 @@ async function getSummaryAging(req, res) {
         });
 
     } catch (error) {
-        console.error('Error obteniendo summary aging:', error);
+        logger.error('Error obteniendo summary aging:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener resumen de cartera'
@@ -667,7 +688,11 @@ async function getPagosClientesPendientes(req, res) {
         });
 
     } catch (error) {
-        console.error('Error obteniendo pagos de clientes pendientes:', error);
+        logger.error('Error obteniendo pagos de clientes pendientes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener pagos pendientes'
@@ -815,7 +840,11 @@ async function gestionarPagoCliente(req, res) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error gestionando pago de cliente:', error);
+        logger.error('Error gestionando pago de cliente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al gestionar el pago'
@@ -866,7 +895,11 @@ async function getClienteCXCDetail(req, res) {
         });
 
     } catch (error) {
-        console.error('Error obteniendo detalle de cliente CXC:', error);
+        logger.error('Error obteniendo detalle de cliente CXC:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener detalle del cliente'
@@ -929,7 +962,11 @@ async function getClienteCXCMovimientos(req, res) {
         });
 
     } catch (error) {
-        console.error('Error obteniendo movimientos de cliente:', error);
+        logger.error('Error obteniendo movimientos de cliente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al obtener movimientos del cliente'

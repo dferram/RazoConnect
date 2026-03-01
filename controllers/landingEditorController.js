@@ -4,6 +4,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * GET /api/admin/landing/config
@@ -35,7 +36,11 @@ exports.getConfig = async (req, res) => {
       page: page
     });
   } catch (error) {
-    console.error('Error fetching landing config:', error);
+    logger.error('Error fetching landing config', {
+      error: error.message,
+      requestId: req.requestId,
+      page: req.query.page
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al obtener configuración de landing',
@@ -86,7 +91,10 @@ exports.saveDraft = async (req, res) => {
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error saving draft:', error);
+    logger.error('Error saving draft', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al guardar borrador',
@@ -128,7 +136,10 @@ exports.publishChanges = async (req, res) => {
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error publishing changes:', error);
+    logger.error('Error publishing changes', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al publicar cambios',
@@ -169,7 +180,10 @@ exports.uploadImage = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error uploading image:', error);
+    logger.error('Error uploading image', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al subir imagen'
@@ -255,7 +269,10 @@ exports.getPublicContent = async (req, res) => {
       data: slides
     });
   } catch (error) {
-    console.error('Error fetching public landing content:', error);
+    logger.error('Error fetching public landing content', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al obtener contenido de landing',
@@ -285,7 +302,10 @@ exports.getCategories = async (req, res) => {
       data: result.rows
     });
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    logger.error('Error fetching categories', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al obtener categorías',
@@ -311,7 +331,10 @@ exports.resetDraft = async (req, res) => {
       message: 'Borrador descartado exitosamente'
     });
   } catch (error) {
-    console.error('Error resetting draft:', error);
+    logger.error('Error resetting draft', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al descartar borrador',
@@ -356,7 +379,10 @@ exports.getSmartSelectorData = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching smart selector data:', error);
+    logger.error('Error fetching smart selector data', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al obtener datos para selector',
@@ -399,7 +425,10 @@ exports.getLandingItems = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching landing items:', error);
+    logger.error('Error fetching landing items', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al obtener items de landing',
@@ -473,7 +502,10 @@ exports.createLandingItem = async (req, res) => {
       data: result.rows[0]
     });
   } catch (error) {
-    console.error('Error creating landing item:', error);
+    logger.error('Error creating landing item', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al crear item',
@@ -532,7 +564,10 @@ exports.updateLandingItem = async (req, res) => {
       data: result.rows[0]
     });
   } catch (error) {
-    console.error('Error updating landing item:', error);
+    logger.error('Error updating landing item', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al actualizar item',
@@ -575,7 +610,10 @@ exports.deleteLandingItem = async (req, res) => {
       message: 'Item eliminado exitosamente'
     });
   } catch (error) {
-    console.error('Error deleting landing item:', error);
+    logger.error('Error deleting landing item', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al eliminar item',
@@ -621,7 +659,10 @@ exports.reorderLandingItems = async (req, res) => {
     });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error reordering landing items:', error);
+    logger.error('Error reordering landing items', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al actualizar orden',
@@ -666,7 +707,10 @@ exports.getPublicLandingItems = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching public landing items:', error);
+    logger.error('Error fetching public landing items', {
+      error: error.message,
+      requestId: req.requestId
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al obtener items de landing'

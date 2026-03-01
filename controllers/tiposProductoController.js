@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener todos los tipos de producto
@@ -41,7 +42,11 @@ const getTiposProductoAdmin = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener tipos de producto (admin):", error);
+    logger.error('Error al obtener tipos de producto (admin):', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener los tipos de producto",
@@ -101,7 +106,11 @@ const crearTipoProductoAdmin = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al crear tipo de producto (admin):", error);
+    logger.error('Error al crear tipo de producto (admin):', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al crear el tipo de producto",

@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener catálogo de medidas disponibles
@@ -46,7 +47,11 @@ const getMedidas = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[getMedidas] Error:', error);
+    logger.error('[getMedidas] Error:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor"
@@ -83,7 +88,11 @@ const getMedidasExistentes = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[getMedidasExistentes] Error:', error);
+    logger.error('[getMedidasExistentes] Error:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error en el servidor"

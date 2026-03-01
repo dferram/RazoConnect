@@ -1,4 +1,5 @@
 const db = require("../../db");
+const logger = require('../../utils/logger');
 
 /**
  * Obtener notificaciones del cliente autenticado
@@ -31,7 +32,11 @@ async function obtenerNotificacionesCliente(req, res) {
       },
     });
   } catch (error) {
-    console.error("Error al obtener notificaciones del cliente:", error);
+    logger.error('Error al obtener notificaciones del cliente:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener las notificaciones",
@@ -57,7 +62,11 @@ async function obtenerConteoNotificacionesNoLeidas(req, res) {
       count,
     });
   } catch (error) {
-    console.error("Error al obtener conteo de notificaciones no leídas:", error);
+    logger.error('Error al obtener conteo de notificaciones no leídas:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener el conteo de notificaciones",

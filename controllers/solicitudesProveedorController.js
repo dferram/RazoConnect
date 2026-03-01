@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtener solicitudes pendientes de un proveedor
@@ -74,7 +75,11 @@ const getSolicitudesPendientesProveedor = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener solicitudes pendientes del proveedor:", error);
+    logger.error('Error al obtener solicitudes pendientes del proveedor:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener solicitudes pendientes",

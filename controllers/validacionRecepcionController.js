@@ -10,6 +10,7 @@
  */
 
 const db = require('../db');
+const logger = require('../utils/logger');
 const inventoryService = require('../services/inventoryService');
 
 /**
@@ -216,7 +217,11 @@ const validarRecepcionCompra = async (req, res) => {
     } catch (e) {
       // ignore
     }
-    console.error("Error en validarRecepcionCompra:", error);
+    logger.error('Error en validarRecepcionCompra:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     const status = error && Number.isInteger(error.status) ? error.status : 500;
     const isBusinessError = status < 500;
     

@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 const inventoryService = require("../services/inventoryService");
 
 function createControllerError(message, status = 500, code = "INVENTORY_AUDIT_ERROR") {
@@ -76,7 +77,10 @@ const crearSesion = async (req, res) => {
       }
     } catch (notifyError) {
       // No bloquear creación de sesión si falla la notificación.
-      console.error("Error al notificar a agentes sobre auditoría:", notifyError);
+      logger.error('Error al notificar a agentes sobre auditoría', {
+        error: notifyError.message,
+        sesionId: result.rows[0].sesion_id
+      });
     }
 
     return res.json({
@@ -93,7 +97,11 @@ const crearSesion = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en crearSesion:", error);
+    logger.error('Error en crearSesion', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al crear sesión",
@@ -185,7 +193,11 @@ const listarSesiones = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en listarSesiones:", error);
+    logger.error('Error en listarSesiones', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al listar sesiones",
@@ -242,7 +254,11 @@ const buscarProductos = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en buscarProductos:", error);
+    logger.error('Error en buscarProductos', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al buscar productos",
@@ -294,7 +310,12 @@ const getVariantePorSku = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en getVariantePorSku:", error);
+    logger.error('Error en getVariantePorSku', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id,
+      sku: req.params.sku
+    });
     return res.status(500).json({
       success: false,
       message: "Error al buscar SKU",
@@ -581,7 +602,11 @@ const registrarConteo = async (req, res) => {
       // ignore
     }
 
-    console.error("Error en registrarConteo:", error);
+    logger.error('Error en registrarConteo', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     const status = error && Number.isInteger(error.status) ? error.status : 500;
     return res.status(status).json({
       success: false,
@@ -732,7 +757,12 @@ const getDashboardSesion = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en getDashboardSesion:", error);
+    logger.error('Error en getDashboardSesion', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id,
+      sesionId: req.params.sesionId
+    });
     return res.status(500).json({
       success: false,
       message: "Error al cargar dashboard",
@@ -974,7 +1004,12 @@ const aplicarSesion = async (req, res) => {
       // ignore
     }
 
-    console.error("Error en aplicarSesion:", error);
+    logger.error('Error en aplicarSesion', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id,
+      sesionId: req.params.sesionId
+    });
     const status = error && Number.isInteger(error.status) ? error.status : 500;
     return res.status(status).json({
       success: false,
@@ -1069,7 +1104,11 @@ const diagnosticoSesiones = async (req, res) => {
         : '✅ No se detectaron inconsistencias. Todas las sesiones ABIERTA tienen integridad correcta.',
     });
   } catch (error) {
-    console.error("Error en diagnosticoSesiones:", error);
+    logger.error('Error en diagnosticoSesiones', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al ejecutar diagnóstico",
@@ -1156,7 +1195,12 @@ const getSesionDetalle = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en getSesionDetalle:", error);
+    logger.error('Error en getSesionDetalle', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id,
+      sesionId: req.params.sesionId
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener detalles de la sesión",
@@ -1238,7 +1282,11 @@ const asignarAgenteASesion = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en asignarAgenteASesion:", error);
+    logger.error('Error en asignarAgenteASesion', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al asignar agente",
@@ -1274,7 +1322,11 @@ const obtenerAgentesDisponibles = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error en obtenerAgentesDisponibles:", error);
+    logger.error('Error en obtenerAgentesDisponibles', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener agentes",
@@ -1400,7 +1452,12 @@ const finalizarSesion = async (req, res) => {
       // ignore
     }
 
-    console.error("Error en finalizarSesion:", error);
+    logger.error('Error en finalizarSesion', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id,
+      sesionId: req.params.sesionId
+    });
     const status = error && Number.isInteger(error.status) ? error.status : 500;
     return res.status(status).json({
       success: false,

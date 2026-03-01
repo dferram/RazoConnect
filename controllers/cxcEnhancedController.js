@@ -1,4 +1,5 @@
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Obtiene resumen de CxC con desglose de antigüedad (Aging Report)
@@ -133,7 +134,11 @@ async function getCxcSummaryWithAging(req, res) {
         });
 
     } catch (error) {
-        console.error('Error obteniendo CxC con aging:', error);
+        logger.error('Error obteniendo CxC con aging:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         return res.status(500).json({
             success: false,
             message: 'Error al obtener el resumen de cuentas por cobrar'
@@ -245,7 +250,11 @@ async function getEstadoCuentaCliente(req, res) {
         });
 
     } catch (error) {
-        console.error('Error obteniendo estado de cuenta:', error);
+        logger.error('Error obteniendo estado de cuenta:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         return res.status(500).json({
             success: false,
             message: 'Error al obtener el estado de cuenta'
@@ -466,7 +475,11 @@ async function registrarPagoManual(req, res) {
 
     } catch (error) {
         await client.query('ROLLBACK');
-        console.error('Error registrando pago manual:', error);
+        logger.error('Error registrando pago manual:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         return res.status(500).json({
             success: false,
             message: 'Error al registrar el pago',

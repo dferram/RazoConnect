@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 const SmartStockService = require("../services/SmartStockService");
 const { getPaginationParams, buildPaginationMeta } = require("../utils/pagination");
 
@@ -58,7 +59,11 @@ const obtenerProveedoresPublicos = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener proveedores públicos:", error);
+    logger.error('Error al obtener proveedores públicos', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener los proveedores",
@@ -100,7 +105,11 @@ const obtenerTiposProducto = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener tipos de producto:", error);
+    logger.error('Error al obtener tipos de producto', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener los tipos de producto",
@@ -146,7 +155,11 @@ const obtenerTiposProductoPublicos = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener tipos de producto públicos:", error);
+    logger.error('Error al obtener tipos de producto públicos', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({
       success: false,
       message: "Error al obtener los tipos de producto",
@@ -557,7 +570,11 @@ const obtenerProductos = async (req, res) => {
           tenantId: req.tenant.tenant_id
         });
       } catch (stockError) {
-        console.error('[ProductosController] Error al obtener stock dinámico:', stockError);
+        logger.error('Error al obtener stock dinámico', {
+          error: stockError.message,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
         // Fallback: usar stock de BD si falla el servicio
       }
     }
@@ -856,7 +873,11 @@ const obtenerProductos = async (req, res) => {
 
     res.status(200).json(response);
   } catch (error) {
-    console.error("Error al obtener productos:", error);
+    logger.error('Error al obtener productos', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener los productos",
@@ -900,7 +921,11 @@ const obtenerDimensiones = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener dimensiones:", error);
+    logger.error('Error al obtener dimensiones', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener las dimensiones",
@@ -1032,7 +1057,11 @@ const obtenerProductoPorId = async (req, res) => {
           tenantId: req.tenant.tenant_id
         });
       } catch (stockError) {
-        console.error('[ProductosController] Error al obtener stock detalle:', stockError);
+        logger.error('Error al obtener stock detalle', {
+          error: stockError.message,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
       }
     }
 
@@ -1227,7 +1256,11 @@ const obtenerProductoPorId = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener producto:", error);
+    logger.error('Error al obtener producto', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener el producto",
@@ -1280,7 +1313,11 @@ const obtenerCategorias = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener categorías:", error);
+    logger.error('Error al obtener categorías', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener las categorías",
@@ -1333,7 +1370,11 @@ const obtenerAgentesPublicos = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error al obtener agentes públicos:", error);
+    logger.error('Error al obtener agentes públicos', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al obtener la lista de agentes",
@@ -1351,9 +1392,11 @@ const buscarProductosAutocomplete = async (req, res) => {
     // Logging detallado para diagnosticar problemas de tenant
 
     if (!req.tenant || !req.tenant.tenant_id) {
-      console.error('❌ [SEARCH ERROR] req.tenant no está disponible');
-      console.error('   Esto indica que tenantGuard no se ejecutó correctamente');
-      console.error('   Headers completos:', JSON.stringify(req.headers, null, 2));
+      logger.error('req.tenant no está disponible', {
+        mensaje: 'tenantGuard no se ejecutó correctamente',
+        headers: req.headers,
+        requestId: req.requestId
+      });
       
       return res.status(500).json({
         success: false,
@@ -1471,8 +1514,11 @@ const buscarProductosAutocomplete = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ Error en búsqueda de productos:", error);
-    console.error("   Stack:", error.stack);
+    logger.error('Error en búsqueda de productos', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     res.status(500).json({
       success: false,
       message: "Error al buscar productos",
@@ -1527,7 +1573,12 @@ const obtenerVariantesProducto = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error al obtener variantes del producto:', error);
+    logger.error('Error al obtener variantes del producto', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id,
+      productoId: req.params.id
+    });
     return res.status(500).json({
       success: false,
       message: 'Error al obtener variantes del producto',

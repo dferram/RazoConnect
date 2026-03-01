@@ -1,4 +1,5 @@
 const db = require("../db");
+const logger = require('../utils/logger');
 
 const NIVEL_RIESGO = {
   BAJO: "BAJO",
@@ -97,7 +98,11 @@ async function obtenerSolicitudesPendientes(req, res) {
 
     return res.json({ success: true, data: { solicitudes, stats } });
   } catch (error) {
-    console.error("Error al obtener solicitudes pendientes:", error);
+    logger.error('Error al obtener solicitudes pendientes:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({ success: false, message: "Error al obtener solicitudes pendientes" });
   }
 }
@@ -140,7 +145,11 @@ async function analizarRiesgoCredito(req, res) {
 
     return res.json({ success: true, data: analisis });
   } catch (error) {
-    console.error("Error al analizar riesgo crediticio:", error);
+    logger.error('Error al analizar riesgo crediticio:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({ success: false, message: "Error al analizar riesgo crediticio" });
   }
 }
@@ -168,7 +177,11 @@ async function aprobarSolicitud(req, res) {
     return res.json({ success: true, message: "Solicitud aprobada correctamente" });
   } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al aprobar solicitud:", error);
+    logger.error('Error al aprobar solicitud:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({ success: false, message: error.message || "Error al aprobar solicitud" });
   } finally {
     client.release();
@@ -189,7 +202,11 @@ async function rechazarSolicitud(req, res) {
 
     return res.json({ success: true, message: "Solicitud rechazada correctamente" });
   } catch (error) {
-    console.error("Error al rechazar solicitud:", error);
+    logger.error('Error al rechazar solicitud:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
     return res.status(500).json({ success: false, message: "Error al rechazar solicitud" });
   }
 }

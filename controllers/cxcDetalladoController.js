@@ -1,4 +1,5 @@
 const ExcelJS = require('exceljs');
+const logger = require('../utils/logger');
 const db = require('../db');
 const { format } = require('date-fns');
 const path = require('path');
@@ -302,7 +303,11 @@ async function exportarCxCDetallado(req, res) {
         res.send(buffer);
 
     } catch (error) {
-        console.error('Error en exportación detallada CxC:', error);
+        logger.error('Error en exportación detallada CxC:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         res.status(500).json({
             success: false,
             message: 'Error al generar el reporte detallado',
@@ -339,7 +344,11 @@ async function obtenerClientesConCredito(req, res) {
             data: rows
         });
     } catch (error) {
-        console.error('Error obteniendo clientes con crédito:', error);
+        logger.error('Error obteniendo clientes con crédito:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
         return res.status(500).json({
             success: false,
             message: 'Error al obtener lista de clientes'
