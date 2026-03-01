@@ -25,8 +25,6 @@ const getInventarioResumen = async (req, res) => {
     const isSuperAdmin = userRol === 'superadmin' || userRol === 'super-admin' || userRol === 'super_admin';
 
     const { stock, categoria, proveedor, admin_id, search, tipo_ingreso, fecha_desde, fecha_hasta } = req.query;
-    
-    console.log('🔍 [getInventarioResumen] Query params recibidos:', { stock, categoria, proveedor, admin_id, search, tipo_ingreso, fecha_desde, fecha_hasta });
 
     const whereClauses = [`p.tenant_id = $1`];
     const params = [tenant_id];
@@ -101,9 +99,6 @@ const getInventarioResumen = async (req, res) => {
     }
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-    
-    console.log('📋 [getInventarioResumen] WHERE clause construido:', whereClause);
-    console.log('📋 [getInventarioResumen] Params para query:', params);
 
     // ✅ SMART STOCK: Obtener productos con sus variantes (sin filtrar por stock aún)
     const query = `
@@ -174,8 +169,6 @@ const getInventarioResumen = async (req, res) => {
     } else if (stock === 'sin') {
       productosFiltrados = productosConStock.filter(p => p.stockTotal === 0);
     }
-
-    console.log(`📊 [getInventarioResumen] Usuario ${userId} (${userRol}): ${productosFiltrados.length} productos`);
 
     res.json({
       success: true,
@@ -294,7 +287,6 @@ const getProductoDetalleInventario = async (req, res) => {
           userRole: userRoles,
           tenantId: tenant_id
         });
-        console.log(`✅ [getProductoDetalleInventario] Stock obtenido para ${varianteIds.length} variantes (Usuario: ${userId})`);
       } catch (error) {
         console.error('[getProductoDetalleInventario] Error al obtener stock dinámico:', error);
       }
@@ -353,11 +345,10 @@ const getProductoDetalleInventario = async (req, res) => {
       data: productoDetalle,
     });
   } catch (error) {
-    console.error("Error al obtener detalle de inventario:", error);
+    console.error('[getProductoDetalleInventario] Error:', error);
     return res.status(500).json({
       success: false,
-      message: "Error en el servidor",
-      error: error.message,
+      message: "Error en el servidor"
     });
   }
 };

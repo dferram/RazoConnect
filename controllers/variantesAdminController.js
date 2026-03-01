@@ -192,8 +192,6 @@ const applyGaleriaVarianteAtomic = async ({
   // REPLICACIÓN AUTOMÁTICA A VARIANTES HERMANAS
   // ============================================
   if (imagenes.length > 0) {
-    console.log(`[REPLICACION_IMG] Iniciando replicación desde applyGaleriaVarianteAtomic para varianteId: ${varianteId}`);
-    
     try {
       // Obtener productoid y color_nombre de la variante actual
       const varianteInfoResult = await client.query(
@@ -205,7 +203,6 @@ const applyGaleriaVarianteAtomic = async ({
 
       if (varianteInfoResult.rows.length > 0) {
         const { productoid, color_nombre } = varianteInfoResult.rows[0];
-        console.log(`[REPLICACION_IMG] Variante origen - ProductoID: ${productoid}, Color: ${color_nombre}`);
 
         // Buscar variantes hermanas (mismo producto + color) que NO tengan imágenes
         const variantesHermanasResult = await client.query(
@@ -223,13 +220,9 @@ const applyGaleriaVarianteAtomic = async ({
         );
 
         const variantesHermanas = variantesHermanasResult.rows;
-        console.log(`[REPLICACION_IMG] Variantes hermanas sin imágenes encontradas: ${variantesHermanas.length}`);
 
         if (variantesHermanas.length > 0) {
-          // Replicar cada imagen a todas las variantes hermanas
           for (const hermana of variantesHermanas) {
-            console.log(`[REPLICACION_IMG] Replicando ${imagenes.length} imágenes a varianteId: ${hermana.varianteid}`);
-            
             for (const img of imagenesFinalRes.rows) {
               await client.query(
                 `INSERT INTO producto_variante_imagenes (varianteid, url_imagen, textoalternativo, orden)
@@ -238,12 +231,7 @@ const applyGaleriaVarianteAtomic = async ({
               );
             }
           }
-          console.log(`[REPLICACION_IMG] Replicación completada exitosamente para ${variantesHermanas.length} variantes`);
-        } else {
-          console.log(`[REPLICACION_IMG] No hay variantes hermanas sin imágenes para replicar`);
         }
-      } else {
-        console.log(`[REPLICACION_IMG] No se pudo obtener información de la variante origen`);
       }
     } catch (replicacionError) {
       // No fallar la operación principal si falla la replicación
@@ -528,7 +516,7 @@ const crearVariante = async (req, res) => {
       const status = error && Number.isInteger(error.status) ? error.status : 500;
       return res.status(status).json({
         success: false,
-        message: error.message || "Error en el servidor",
+        message: "Error en el servidor"
       });
     } finally {
       client.release();
@@ -782,8 +770,7 @@ const crearVariante = async (req, res) => {
     console.error("Error al crear variante (solicitud de cambio):", error);
     return res.status(500).json({
       success: false,
-      message: "Error en el servidor",
-      error: error.message,
+      message: "Error en el servidor"
     });
   }
 };
@@ -1099,7 +1086,7 @@ const actualizarVariante = async (req, res) => {
       const status = error && Number.isInteger(error.status) ? error.status : 500;
       return res.status(status).json({
         success: false,
-        message: error.message || "Error en el servidor",
+        message: "Error en el servidor"
       });
     } finally {
       client.release();
@@ -1449,11 +1436,10 @@ const actualizarVariante = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("❌ Error al generar solicitud de actualización de variante:", error);
+    console.error('[generarSolicitudActualizacionVariante] Error:', error);
     res.status(500).json({
       success: false,
-      message: "Error en el servidor: " + error.message,
-      error: error.message,
+      message: "Error en el servidor"
     });
   }
 };
@@ -1544,12 +1530,8 @@ const subirEvidenciaEntrega = async (req, res) => {
         tenantId: tenant_id,
         client: db
       });
-      
-      if (recalcResult.success) {
-        console.log(`[Evidencia Entrega] ✅ Recálculo FIFO completado - Pedidos posteriores actualizados`);
-      }
     } catch (fifoError) {
-      console.warn('[Evidencia Entrega] ⚠️ Error en recálculo FIFO (no crítico):', fifoError.message);
+      console.error('[Evidencia Entrega] Error en recálculo FIFO (no crítico):', fifoError);
       // No interrumpir la operación si falla el recálculo
     }
 
@@ -1567,8 +1549,7 @@ const subirEvidenciaEntrega = async (req, res) => {
     console.error("Error al subir evidencia de entrega:", error);
     res.status(500).json({
       success: false,
-      message: "Error al subir evidencia de entrega",
-      error: error.message,
+      message: "Error al subir evidencia de entrega"
     });
   }
 };

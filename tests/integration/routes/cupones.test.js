@@ -208,4 +208,66 @@ describe('Cupones Routes Integration Tests', () => {
       expect(response.body.data.nuevoTotal).toBe(450);
     });
   });
+
+  describe('Cupones — Casos edge de seguridad', () => {
+    it('debe retornar 400 cuando subtotal es negativo', async () => {
+      const response = await request(app)
+        .post('/api/cupones/validar')
+        .send({
+          codigo: 'DESCUENTO10',
+          subtotal: -100
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('debe retornar 400 cuando subtotal es texto', async () => {
+      const response = await request(app)
+        .post('/api/cupones/validar')
+        .send({
+          codigo: 'DESCUENTO10',
+          subtotal: 'abc'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('debe retornar 400 cuando codigo es un número en lugar de string', async () => {
+      const response = await request(app)
+        .post('/api/cupones/validar')
+        .send({
+          codigo: 12345,
+          subtotal: 1000
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('debe retornar 400 cuando el body está vacío', async () => {
+      const response = await request(app)
+        .post('/api/cupones/validar')
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('debe retornar 404 cuando el código es una inyección SQL', async () => {
+      db.query.mockResolvedValueOnce({ rows: [] });
+
+      const response = await request(app)
+        .post('/api/cupones/validar')
+        .send({
+          codigo: '\'; DROP TABLE cupones;--\'',
+          subtotal: 1000
+        });
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('no existe');
+    });
+  });
 });

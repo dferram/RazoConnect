@@ -1,182 +1,473 @@
-# RazoConnect by xCore
+<div align="center">
 
-![Node.js](https://img.shields.io/badge/Node.js-v18+-green.svg)
-![Express](https://img.shields.io/badge/Express-4.18.2-blue.svg)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-v17+-blue.svg)
-![Bootstrap](https://img.shields.io/badge/Bootstrap-5.0-purple.svg)
-![Azure](https://img.shields.io/badge/Azure-Cloud-0078D4.svg)
+# RazoConnect
 
-Sistema SaaS Multi-Tenant de E-commerce y gestión de inventario B2B diseñado para optimizar operaciones comerciales con aislamiento completo de datos por cliente.
+![Node.js](https://img.shields.io/badge/Node.js-v18+-339933?style=flat-square&logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-4.18-000000?style=flat-square&logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-v17+-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Azure](https://img.shields.io/badge/Azure-App_Service-0078D4?style=flat-square&logo=microsoftazure&logoColor=white)
+![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)
 
-## Descripción
+B2B SaaS platform for multi-tenant e-commerce and inventory management. Built and maintained by [xCore](https://xcore.mx).
 
-RazoConnect es una plataforma integral desarrollada por la empresa xCore que permite a múltiples empresas (tenants) gestionar sus operaciones de venta, inventario, créditos y comisiones desde una única instancia de la aplicación, manteniendo un aislamiento total de datos entre clientes.
+</div>
 
-### Características Destacadas
+---
 
-- **Multi-Tenant**: Una instancia sirve múltiples clientes con dominios personalizados
-- **E-commerce B2B**: Catálogo de productos, carrito, checkout y seguimiento de pedidos
-- **Gestión de Inventario**: Órdenes de compra, recepción, movimientos y auditoría
-- **Sistema de Créditos**: Líneas de crédito, CXC, alertas de vencimiento
-- **Comisiones Automatizadas**: Cálculo y seguimiento de comisiones para agentes
-- **Reportes Avanzados**: Ventas, inventario, comisiones con exportación a Excel
+## Overview
 
-## Documentación
+RazoConnect is a multi-tenant SaaS platform that enables B2B commerce operations — catalog management, order processing, inventory control, credit lines, and agent commissions — from a single application instance. Each tenant operates in complete data isolation through a shared PostgreSQL database partitioned by `tenant_id`, with dedicated frontend views served per domain.
 
-La documentación completa del sistema está organizada en los siguientes documentos:
+The system is deployed on Azure App Service and serves production traffic for multiple businesses simultaneously.
 
-### 1. [Arquitectura del Sistema](docs/ARQUITECTURA.md)
+---
 
-Documentación técnica detallada sobre la arquitectura Multi-Tenant:
+## Architecture
 
-- Stack tecnológico completo (Node.js, Express, PostgreSQL, Azure)
-- Arquitectura Multi-Tenant con base de datos compartida
-- Modelo de datos y relaciones entre tablas
-- Seguridad en múltiples capas (Tenant Guard, JWT, validación de sesiones)
-- Flujo de autenticación y autorización
-- Middleware pipeline y orden de ejecución
-- Diagramas de arquitectura y flujo de datos
-- Consideraciones de escalabilidad
+### System Layers
 
-Guía completa de funcionalidades y flujos de negocio:
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     CLIENT LAYER                            │
+│          Vanilla JS · Bootstrap 5 · Per-tenant views        │
+│            razo.com.mx          fashion.com.mx              │
+└───────────────────────┬─────────────────────────────────────┘
+                        │ HTTPS
+┌───────────────────────▼─────────────────────────────────────┐
+│                  MIDDLEWARE PIPELINE                        │
+│  Helmet · CORS · Rate Limit (Redis) · Session · TenantGuard │
+│              JWT Auth · Input Sanitization                  │
+└───────────────────────┬─────────────────────────────────────┘
+                        │
+┌───────────────────────▼─────────────────────────────────────┐
+│                    ROUTE LAYER                              │
+│         routes/admin.js · routes/clientes.js               │
+│         routes/auth.js · routes/developer.js               │
+└──────────┬──────────────────────────┬───────────────────────┘
+           │                          │
+┌──────────▼──────────┐  ┌────────────▼──────────────────────┐
+│   CONTROLLER LAYER  │  │          SERVICE LAYER            │
+│                     │  │                                   │
+│  authAdminCtrl      │  │  SmartStockService   (FIFO alloc) │
+│  pedidosAdminCtrl   │  │  KardexService       (movements)  │
+│  clientesAdminCtrl  │  │  FIFOAllocationService            │
+│  inventarioCtrl     │  │  OptimizationService              │
+│  comisionesCtrl     │  │  creditAnalysisService            │
+│  cxcAdminCtrl       │  │  inventoryAuditService            │
+│  cxpController      │  │  emailService                     │
+│  dashboardCtrl      │  │  loggerService                    │
+│  bitacoraCtrl       │  │  notificacionesService            │
+│  ...30+ controllers │  └───────────────┬───────────────────┘
+└──────────┬──────────┘                  │
+           └──────────────┬─────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│                    DATA LAYER                               │
+│         PostgreSQL (Azure) · Redis (sessions/cache)         │
+│              pg pool · Parameterized queries                │
+└─────────────────────────────────────────────────────────────┘
+```
 
-- Roles del sistema: Super Admin, Admin, Agente, Cliente
-- Flujos de negocio principales (ventas, inventario, créditos, comisiones)
-- Módulo de Ventas: catálogo, carrito, checkout, cupones
-- Módulo de Inventario: órdenes de compra, recepción, movimientos
-- Módulo de Créditos: CXC, límites, validaciones
-- Módulo de Comisiones: cálculo automático, reportes
-- Casos de uso detallados paso a paso
+### Multi-Tenant Model
 
-**Ideal para**: Administradores, usuarios finales y analistas de negocio.
+```
+Incoming Request
+       │
+       ▼
+┌─────────────────┐
+│  TenantGuard    │  Resolves tenant from domain or FORCE_TENANT_ID
+│  Middleware     │  Attaches req.tenant = { tenant_id, dominio, ... }
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  All queries    │  WHERE tenant_id = $1 enforced at controller level
+│  filtered by    │  Cross-tenant access blocked at middleware + query
+│  tenant_id      │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────────────────────────────┐
+│           PostgreSQL                    │
+│                                         │
+│  ┌────────────┐    ┌────────────┐       │
+│  │  Tenant A  │    │  Tenant B  │  ...  │
+│  │  (razo)    │    │ (fashion)  │       │
+│  │            │    │            │       │
+│  │ pedidos    │    │ pedidos    │       │
+│  │ clientes   │    │ clientes   │       │
+│  │ productos  │    │ productos  │       │
+│  └────────────┘    └────────────┘       │
+│         Shared tables, isolated rows    │
+└─────────────────────────────────────────┘
+```
 
-## Tecnologías
+### Request Authentication Flow
 
-### Backend
-- **Runtime**: Node.js v18+
-- **Framework**: Express.js 4.18.2
-- **Base de Datos**: PostgreSQL v17+ (Azure Database)
-- **Autenticación**: JWT + Passport.js (Google OAuth)
-- **Sesiones**: express-session + connect-pg-simple
-- **Tareas Programadas**: node-cron
+```
+POST /api/admin/login
+         │
+         ▼
+┌────────────────────┐
+│   TenantGuard      │  Validates domain → assigns tenant_id
+└────────┬───────────┘
+         │
+         ▼
+┌────────────────────┐
+│  authAdminCtrl     │  Queries Administradores WHERE email=$1 AND tenant_id=$2
+│  loginAdmin()      │  bcryptjs.compare(password, hash)
+└────────┬───────────┘
+         │
+         ├── Invalid → 401
+         │
+         ▼
+┌────────────────────┐
+│  JWT Generation    │  generateAccessToken({ id, rol, tenant_id })
+│                    │  generateRefreshToken → stored in Redis
+└────────┬───────────┘
+         │
+         ▼
+   Access Token (15min) + Refresh Token (30d) returned to client
 
-### Frontend
-- **Lenguaje**: JavaScript Vanilla (ES6+)
-- **Framework CSS**: Bootstrap 5
-- **Arquitectura**: Component-Based con inyección dinámica
+─────────────────────────────────────────────────────
+Subsequent requests:
 
-### Infraestructura
-- **Hosting**: Azure App Service
-- **Base de Datos**: Azure Database for PostgreSQL
-- **CDN de Imágenes**: Cloudinary
-- **CI/CD**: GitHub Actions
-- **Email**: Nodemailer (SMTP)
-- **Pagos**: MercadoPago SDK
+Authorization: Bearer <access_token>
+         │
+         ▼
+┌────────────────────┐
+│  verifyToken       │  Decode JWT → attach req.user
+│  middleware        │  validateUserTenant → check user.tenant_id === req.tenant.tenant_id
+└────────┬───────────┘
+         │
+         ▼
+   Controller receives req.user + req.tenant (fully validated)
+```
 
-## Arquitectura Multi-Tenant
+### FIFO Inventory Allocation
 
-RazoConnect implementa un modelo Multi-Tenant con base de datos compartida y aislamiento por columna `tenant_id`:
+```
+New order arrives for Variant X (qty: 10)
+         │
+         ▼
+┌────────────────────────────────────┐
+│  SmartStockService                 │
+│  calculateAllocationStatus()       │
+│                                    │
+│  1. Get physical stock for variant │
+│  2. Get "debt" from prior orders   │
+│     (older orders already claim    │
+│      stock in FIFO order)          │
+│  3. Subtract hard reserves         │
+│  4. Remaining = available for this │
+│     order                          │
+└───────────────┬────────────────────┘
+                │
+        ┌───────┴────────┐
+        │                │
+        ▼                ▼
+  available >= 10    available < 10
+  estatus: surtido   estatus: backorder
+                     cantidadBackorder = 10 - available
+                          │
+                          ▼
+               Order stored with backorder flag.
+               FIFOAllocationService hooks on:
+                - onPedidoCancelado()  → stock freed → recalculate queue
+                - onPedidoEntregado()  → stock freed → recalculate queue
+```
 
-- Una única instancia de la aplicación sirve a múltiples clientes
-- Una única base de datos PostgreSQL con aislamiento por `tenant_id`
-- Cada tenant tiene su propio dominio personalizado (ej: `razo.com.mx`, `fashion.com.mx`)
-- Seguridad en múltiples capas: Tenant Guard, JWT, validación de sesiones
-- Archivos estáticos aislados por tenant (carpetas `tenants_views/razo` y `tenants_views/fashion`)
+---
 
-### Detección de Tenant
+## Stack
 
-El sistema detecta el tenant activo mediante:
+<div align="center">
 
-1. **Por Dominio (Producción)**: Detecta automáticamente el tenant basándose en el dominio de la petición
-2. **Por Variable de Entorno (Desarrollo)**: Usa `FORCE_TENANT_ID` para desarrollo local
+| Layer | Technology |
+|---|---|
+| Runtime | Node.js v18+ |
+| Framework | Express.js 4.18 |
+| Database | PostgreSQL v17 (Azure Database) |
+| Cache / Sessions | Redis (rate limiting, refresh tokens) |
+| Authentication | JWT (access + refresh) + Passport.js (Google OAuth) |
+| File Storage | Cloudinary |
+| Payments | MercadoPago SDK |
+| Email | Nodemailer (SMTP) |
+| PDF Generation | PDFKit |
+| Excel Export | ExcelJS |
+| Scheduled Jobs | node-cron |
+| Hosting | Azure App Service |
+| Testing | Jest + Supertest |
 
-### Roles del Sistema
+</div>
 
-- **Super Admin (Developer)**: Acceso completo a todos los tenants, gestión de la plataforma
-- **Admin (Administrador de Tenant)**: Control completo de su tenant específico
-- **Agente de Ventas**: Acceso a cartera de clientes y comisiones
-- **Cliente**: Acceso a catálogo, carrito y pedidos propios
+---
 
-## Estructura del Proyecto
+## Project Structure
 
 ```
 RazoConnect/
-├── config/              # Configuración (Passport, Cloudinary, Domain Mapper)
-├── controllers/         # Lógica de negocio
-│   ├── admin/          # Controladores de admin
-│   └── clientes/       # Controladores de clientes
-├── cron/               # Tareas programadas
-├── docs/               # Documentación técnica
-├── middlewares/        # Middlewares personalizados
-├── routes/             # Definición de rutas
-├── services/           # Servicios de negocio
-├── tenants_views/      # Vistas por tenant
-│   ├── razo/          # Tema Razo
-│   └── fashion/       # Tema Fashion
-├── utils/              # Utilidades
-├── .env                # Variables de entorno (no versionado)
-├── db.js               # Configuración de PostgreSQL
-├── index.js            # Punto de entrada de la aplicación
-└── package.json        # Dependencias
+├── config/
+│   ├── cloudinary.js          # Cloudinary SDK configuration
+│   ├── domainMapper.js        # Domain → tenant_id resolution
+│   └── passport.js            # Google OAuth strategy
+│
+├── controllers/
+│   ├── admin/
+│   │   ├── pagosController.js
+│   │   └── pagosClientesController.js
+│   ├── auth/
+│   │   └── tokenController.js
+│   ├── authAdminController.js
+│   ├── pedidosAdminController.js
+│   ├── clientesAdminController.js
+│   ├── inventarioResumenController.js
+│   ├── comisionesAdminController.js
+│   ├── cxcAdminController.js
+│   ├── cxpController.js
+│   ├── dashboardAdminController.js
+│   ├── bitacoraController.js
+│   ├── fifoRecalculationController.js
+│   └── ...30+ specialized controllers
+│
+├── services/
+│   ├── SmartStockService.js       # FIFO stock allocation per admin
+│   ├── FIFOAllocationService.js   # Backorder recalculation hooks
+│   ├── KardexService.js           # Inventory movement ledger
+│   ├── OptimizationService.js     # Purchase order consolidation
+│   ├── inventoryAuditService.js   # Physical count reconciliation
+│   ├── creditAnalysisService.js   # Credit risk scoring
+│   ├── auditService.js            # Change request audit trail
+│   ├── loggerService.js           # Action log (bitácora)
+│   ├── emailService.js            # Templated email dispatch
+│   └── notificacionesService.js   # In-app notifications
+│
+├── middlewares/
+│   ├── tenantGuard.js             # Domain → tenant resolution
+│   ├── authMiddleware.js          # JWT verification
+│   ├── validateUserTenant.js      # Cross-tenant access prevention
+│   ├── inputValidator.js          # XSS + prototype pollution sanitization
+│   ├── rateLimiter.js             # Redis-backed distributed rate limiting
+│   └── errorHandler.js
+│
+├── routes/
+│   ├── admin.js
+│   ├── clientes.js
+│   ├─��� auth.js
+│   └── developer.js
+│
+├── tenants_views/
+│   ├── razo/                      # Tenant A frontend (HTML/CSS/JS)
+│   └── fashion/                   # Tenant B frontend (HTML/CSS/JS)
+│
+├── cron/                          # Scheduled jobs (sessions, alerts)
+├── utils/                         # jwtHelper, validator, skuGenerator, etc.
+├── docs/                          # Technical documentation
+├── tests/                         # Jest test suites
+├── db.js                          # PostgreSQL pool configuration
+├── index.js                       # Application entry point
+└── package.json
 ```
 
-## Módulos Principales
+---
 
-### Gestión de Ventas
-- Catálogo de productos con variantes (tamaños, colores, dimensiones)
-- Sistema de packs configurables (venta por unidad, 6, 12, 24, etc.)
-- Carrito de compras con validación de stock en tiempo real
-- Sistema de cupones de descuento
-- Checkout con múltiples direcciones de envío
-- Seguimiento de pedidos con estados (Pendiente, Surtido, Enviado, Entregado)
+## Modules
 
-### Gestión de Inventario
-- Órdenes de compra a proveedores
-- Recepción de inventario con validación de reglas de empaque
-- Movimientos de inventario (entradas, salidas, ajustes)
-- Auditoría completa de movimientos
-- Alertas de stock bajo
+### Sales
 
-### Sistema de Créditos
-- Líneas de crédito configurables por cliente
-- Validación automática de límites en cada compra
-- Cuentas por cobrar (CXC) con fechas de vencimiento
-- Alertas de deudas próximas a vencer
-- Registro de pagos y liberación de crédito
+- Product catalog with variants (size, color, dimensions)
+- Configurable pack system (unit, 6, 12, 24, etc.)
+- Real-time stock validation at cart and checkout
+- Coupon system (percentage and fixed discount, expiry, usage limits)
+- Multi-address shipping per customer
+- Order lifecycle: Pending → Surtido → Shipped → Delivered
 
-### Comisiones de Agentes
-- Cálculo automático de comisiones al entregar pedidos
-- Esquemas de comisión configurables por agente
-- Dashboard para agentes con métricas de ventas
-- Gestión de cartera de clientes asignados
-- Reportes de comisiones pagadas y pendientes
+### Inventory
 
-### Reportes y Análisis
-- Reportes de ventas por período
-- Inventario valorizado
-- Análisis de clientes y productos más vendidos
-- Comisiones de agentes
-- Exportación a Excel con formato profesional
+- Purchase orders to suppliers with packaging rule enforcement
+- Inventory reception and FIFO allocation to admin-level stock
+- KardexService: immutable ledger of every stock movement
+- Physical count reconciliation with traffic-light discrepancy system
+- FIFOAllocationService: automatic backorder queue recalculation on cancellation or delivery
 
-## Seguridad
+### Credit
 
-El sistema implementa múltiples capas de seguridad:
+- Configurable credit lines per customer
+- Automatic credit limit validation at checkout
+- Accounts receivable (CXC) with due-date tracking
+- Credit risk scoring based on purchase history and payment behavior
+- Overdue alerts via in-app notifications and email
 
-1. **Tenant Guard**: Middleware que detecta y valida el tenant en cada petición
-2. **Autenticación JWT**: Tokens con expiración de 7 días
-3. **Validación de Tenant**: Verifica que usuarios autenticados pertenezcan al tenant correcto
-4. **Aislamiento de Datos**: Todas las queries incluyen filtro por `tenant_id`
-5. **Sesiones Persistentes**: Almacenadas en PostgreSQL con aislamiento por dominio
-6. **HTTPS**: Forzado en producción con certificados SSL de Azure
+### Agent Commissions
 
-### Tareas Automatizadas
-El sistema ejecuta diariamente:
-- Limpieza de sesiones expiradas
-- Verificación de deudas vencidas
-- Alertas de stock bajo
-- Generación de reportes automáticos
+- Automatic commission calculation on order delivery
+- Configurable commission rates per agent
+- Agent dashboard with portfolio and sales metrics
+- Commission approval and payment workflow
 
+### Audit and Compliance
 
-## Licencia
+- `loggerService`: full audit trail of all administrative actions
+- `auditService`: change request system with before/after snapshots
+- `bitacoraController`: filterable log query API for compliance review
+- Developer panel: cross-tenant platform administration
 
-Este proyecto está bajo la Licencia ISC y es desarrollado por xCore.
+---
+
+## Security
+
+<div align="center">
+
+| Layer | Mechanism |
+|---|---|
+| Transport | HTTPS enforced, Azure SSL certificates |
+| Database connection | SSL with certificate validation (`DB_SSL=true`) |
+| SQL injection | 100% parameterized queries (`$1, $2, ...`) |
+| XSS | `sanitizeInputs` middleware strips dangerous patterns |
+| Prototype pollution | `sanitizeObject` removes `__proto__` and `constructor` keys |
+| Rate limiting | Redis-backed distributed limiter via `express-rate-limit` |
+| Authentication | JWT access token (short-lived) + refresh token in Redis |
+| Cross-tenant isolation | `validateUserTenant` middleware compares `req.user.tenant_id` to `req.tenant.tenant_id` |
+| Headers | Helmet (CSP, HSTS, X-Frame-Options, X-Content-Type-Options) |
+| CORS | Allowlist-based, configurable per environment |
+
+</div>
+
+---
+
+## Environment Variables
+
+```env
+# Database
+DB_USER=
+DB_HOST=
+DB_NAME=
+DB_PASSWORD=
+DB_PORT=5432
+DB_SSL=true
+
+# JWT
+JWT_SECRET=
+JWT_REFRESH_SECRET=
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=30d
+
+# Redis
+REDIS_URL=
+
+# Session
+SESSION_SECRET=
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# MercadoPago
+MERCADOPAGO_ACCESS_TOKEN=
+
+# Google OAuth
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_CALLBACK_URL=
+
+# Email (SMTP)
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASS=
+
+# Application
+NODE_ENV=production
+FRONTEND_BASE_URL=https://yourdomain.com
+PORT=3000
+
+# Development only
+FORCE_TENANT_ID=1
+```
+
+---
+
+## Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Watch mode
+npm run test:watch
+
+# Coverage report
+npm run test:coverage
+```
+
+Test structure:
+
+```
+tests/
+├── helpers/
+│   ├── mockAuth.js        # Token generation utilities
+│   └── mockDb.js          # Database mock factory
+├── integration/
+│   └── routes/
+│       ├── auth.test.js
+│       └── cupones.test.js
+├── unit/
+│   ├── middlewares/
+│   │   ├── inputValidator.test.js
+│   │   └── validateUserTenant.test.js
+│   └── utils/
+│       ├── jwtHelper.test.js
+│       ├── validator.test.js
+│       ├── skuGenerator.test.js
+│       └── emailTemplates.test.js
+└── setup.js
+```
+
+Current status: **86 tests passing across 8 suites.**
+
+---
+
+## Local Development
+
+1. Clone the repository and install dependencies:
+
+```bash
+npm install
+```
+
+2. Copy `.env.example` to `.env` and fill in the required values. Set `FORCE_TENANT_ID=1` to bypass domain detection locally.
+
+3. Ensure PostgreSQL and Redis are running and accessible.
+
+4. Start the development server:
+
+```bash
+npm run dev
+```
+
+The application serves each tenant's frontend from `tenants_views/{tenant_folder}/` based on the resolved `tenant_id`.
+
+---
+
+## Documentation
+
+Technical documentation is maintained in `docs/`:
+
+| File | Contents |
+|---|---|
+| `ARQUITECTURA.md` | System architecture, middleware pipeline, data model |
+| `ARCHITECTURE_AUDIT.md` | Engineering audit and refactoring decisions |
+| `FIFO_CASOS_DE_USO.md` | FIFO allocation logic and edge cases |
+| `INVENTARIO_EXPLICACION.md` | Inventory system design |
+| `AUDITORIA_MENSUAL_INVENTARIO.md` | Physical count reconciliation process |
+| `CONCILIACION_INVENTARIO_REFACTOR.md` | Inventory reconciliation refactor notes |
+| `SECURITY.md` | Security controls and threat model |
+
+---
+
+## License
+
+Copyright (c) 2024–2025 xCore. All rights reserved.
+
+This software is proprietary and confidential. See [LICENSE](LICENSE) for terms.

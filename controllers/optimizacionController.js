@@ -23,13 +23,7 @@ async function getSugerenciasOptimizacion(req, res) {
 
     const adminId = userRol === 'admin' ? userId : null;
 
-    console.log(`🔍 [Optimization] Detectando oportunidades de consolidación para tenant ${tenant_id}${adminId ? ` (Admin ${adminId})` : ''}`);
-
     const resultado = await OptimizationService.detectConsolidationOpportunities(tenant_id, adminId);
-
-    console.log(`✅ [Optimization] ${resultado.resumen.totalOportunidades} oportunidades detectadas`);
-    console.log(`   💰 Ahorro potencial: ${resultado.resumen.ahorroTotalPiezas} piezas`);
-    console.log(`   📦 Órdenes afectadas: ${resultado.resumen.ordenesAfectadas}`);
 
     res.json({
       success: true,
@@ -37,11 +31,10 @@ async function getSugerenciasOptimizacion(req, res) {
     });
 
   } catch (error) {
-    console.error('❌ [Optimization] Error obteniendo sugerencias:', error);
+    console.error('[getSugerenciasOptimizacion] Error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al detectar oportunidades de optimización',
-      error: error.message
+      message: 'Error al detectar oportunidades de optimización'
     });
   }
 }
@@ -63,15 +56,11 @@ async function crearGrupoOptimizado(req, res) {
       });
     }
 
-    console.log(`🚀 [Optimization] Creando grupo optimizado con ${ordenesIds.length} órdenes`);
-
     const resultado = await OptimizationService.createConsolidatedGroup(
       tenant_id,
       ordenesIds,
       userId
     );
-
-    console.log(`✅ [Optimization] Grupo ${resultado.grupoId} creado exitosamente`);
 
     res.json({
       success: true,
@@ -80,11 +69,10 @@ async function crearGrupoOptimizado(req, res) {
     });
 
   } catch (error) {
-    console.error('❌ [Optimization] Error creando grupo optimizado:', error);
+    console.error('[crearGrupoOptimizado] Error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error al crear grupo optimizado',
-      error: error.message
+      message: 'Error al crear grupo optimizado'
     });
   }
 }

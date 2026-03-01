@@ -464,8 +464,6 @@ const subirImagenesVarianteMultiple = async (req, res) => {
     }
 
     // Replicación automática a variantes hermanas
-    console.log(`[REPLICACION_IMG] Iniciando replicación para varianteId: ${varianteId}`);
-    
     try {
       const varianteInfoResult = await db.query(
         `SELECT productoid, color_nombre 
@@ -476,7 +474,6 @@ const subirImagenesVarianteMultiple = async (req, res) => {
 
       if (varianteInfoResult.rows.length > 0) {
         const { productoid, color_nombre } = varianteInfoResult.rows[0];
-        console.log(`[REPLICACION_IMG] Variante origen - ProductoID: ${productoid}, Color: ${color_nombre}`);
 
         const variantesHermanasResult = await db.query(
           `SELECT pv.varianteid
@@ -493,12 +490,9 @@ const subirImagenesVarianteMultiple = async (req, res) => {
         );
 
         const variantesHermanas = variantesHermanasResult.rows;
-        console.log(`[REPLICACION_IMG] Variantes hermanas sin imágenes encontradas: ${variantesHermanas.length}`);
 
         if (variantesHermanas.length > 0) {
           for (const hermana of variantesHermanas) {
-            console.log(`[REPLICACION_IMG] Replicando ${imagenesGuardadas.length} imágenes a varianteId: ${hermana.varianteid}`);
-            
             for (const img of imagenesGuardadas) {
               await db.query(
                 `INSERT INTO producto_variante_imagenes (varianteid, url_imagen, textoalternativo, orden)
@@ -507,12 +501,7 @@ const subirImagenesVarianteMultiple = async (req, res) => {
               );
             }
           }
-          console.log(`[REPLICACION_IMG] Replicación completada exitosamente para ${variantesHermanas.length} variantes`);
-        } else {
-          console.log(`[REPLICACION_IMG] No hay variantes hermanas sin imágenes para replicar`);
         }
-      } else {
-        console.log(`[REPLICACION_IMG] No se pudo obtener información de la variante origen`);
       }
     } catch (replicacionError) {
       console.error(`[REPLICACION_IMG] Error durante replicación (operación principal exitosa):`, replicacionError);

@@ -2,6 +2,10 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 // Configuración del pool de conexiones a PostgreSQL
+// Variables de entorno SSL disponibles:
+// - DB_SSL=true: Habilita SSL
+// - DB_SSL_REJECT_UNAUTHORIZED=false: Permite certificados autofirmados (solo para dev/legacy)
+// En producción Azure: usar DB_SSL=true sin DB_SSL_REJECT_UNAUTHORIZED para validar certificados
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
@@ -11,7 +15,11 @@ const pool = new Pool({
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false
+  ssl: process.env.DB_SSL === 'true' 
+    ? { 
+        rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
+      } 
+    : false
 });
 
 pool.on('connect', () => {

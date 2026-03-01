@@ -17,9 +17,7 @@ const db = require('../db');
  */
 const getMedidas = async (req, res) => {
   try {
-    console.log("\n=== INICIO getMedidas ===");
     const { tenant_id } = req.tenant;
-    console.log("tenant_id:", tenant_id);
 
     const result = await db.query(
       `SELECT medidaid, tipoproductoid, nombremedida, descripcion, 
@@ -29,8 +27,6 @@ const getMedidas = async (req, res) => {
        ORDER BY orden ASC, nombremedida ASC`,
       [tenant_id]
     );
-
-    console.log("Medidas encontradas:", result.rows.length);
 
     res.json({
       success: true,
@@ -50,14 +46,10 @@ const getMedidas = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("\n=== ERROR en getMedidas ===");
-    console.error("Error completo:", error);
-    console.error("Error message:", error.message);
-    console.error("Error code:", error.code);
+    console.error('[getMedidas] Error:', error);
     res.status(500).json({
       success: false,
-      message: "Error en el servidor",
-      error: error.message
+      message: "Error en el servidor"
     });
   }
 };
@@ -68,9 +60,7 @@ const getMedidas = async (req, res) => {
  */
 const getMedidasExistentes = async (req, res) => {
   try {
-    console.log("\n=== INICIO getMedidasExistentes ===");
     const { tenant_id } = req.tenant;
-    console.log("tenant_id:", tenant_id);
 
     const result = await db.query(
       `SELECT DISTINCT TRIM(pv.dimensiones) as dimension
@@ -83,8 +73,6 @@ const getMedidasExistentes = async (req, res) => {
       [tenant_id]
     );
 
-    console.log("Dimensiones únicas encontradas:", result.rows.length);
-
     // Retornar array simple de strings
     const medidas = result.rows.map(row => row.dimension);
 
@@ -95,14 +83,10 @@ const getMedidasExistentes = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("\n=== ERROR en getMedidasExistentes ===");
-    console.error("Error completo:", error);
-    console.error("Error message:", error.message);
-    console.error("Error code:", error.code);
+    console.error('[getMedidasExistentes] Error:', error);
     res.status(500).json({
       success: false,
-      message: "Error en el servidor",
-      error: error.message
+      message: "Error en el servidor"
     });
   }
 };
