@@ -345,8 +345,6 @@ const recepcionMasivaOrdenCompra = async (req, res) => {
              updated_at = CURRENT_TIMESTAMP`,
           [adminIdRegistro, varianteId, piezasRecibidasAhora, tenant_id]
         );
-        
-        console.log(`📦 [STOCK ASSIGNMENT] Inventario asignado al Admin ID ${adminIdRegistro} (OC #${ordenCompraId}, Recepción Masiva)`);
 
         try {
           const kardexService = require('../services/kardexService');

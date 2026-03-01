@@ -38,16 +38,13 @@ const getAgenteAdminColumnsInfo = async () => {
     };
 
     if (!agenteAdminColumnsCache.esAdmin || !agenteAdminColumnsCache.adminRol) {
-      console.warn(
-        "⚠️  Columnas opcionales para admin de agentes no detectadas en AgentesDeVentas.",
-        agenteAdminColumnsCache
-      );
+      logger.warn('Columnas opcionales para admin de agentes no detectadas en AgentesDeVentas', {
+        columnsCache: agenteAdminColumnsCache
+      });
     }
   } catch (error) {
     logger.error('Error verificando columnas de agentes admin:', {
-      error: error.message,
-      requestId: req.requestId,
-      tenantId: req.tenant?.tenant_id
+      error: error.message
     });
     agenteAdminColumnsCache = {
       esAdmin: false,

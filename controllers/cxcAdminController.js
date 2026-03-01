@@ -239,8 +239,6 @@ const registrarAbonoCxC = async (req, res) => {
 
     await client.query("COMMIT");
 
-    console.log(`✅ [CXC] Abono registrado: Cliente ${creditoRow.cliente_id}, Monto $${montoNormalizado}, Nuevo saldo: $${nuevoSaldo}`);
-
     return res.json({
       success: true,
       message: "Abono registrado exitosamente",

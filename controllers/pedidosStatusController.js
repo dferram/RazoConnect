@@ -163,7 +163,11 @@ const updatePedidoEstatus = async (req, res) => {
       }
 
       if (itemsConStockInsuficiente.length > 0) {
-        console.warn(`⚠️ [STOCK VALIDATION] Stock insuficiente para ${itemsConStockInsuficiente.length} items`);
+        logger.warn(`[STOCK VALIDATION] Stock insuficiente para ${itemsConStockInsuficiente.length} items`, {
+          itemsCount: itemsConStockInsuficiente.length,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
         
         const detalleProductos = itemsConStockInsuficiente.map(item => 
           `${item.producto} (${item.sku}): Necesitas ${item.necesario}, disponible ${item.disponible}`
@@ -398,7 +402,11 @@ const updatePedidoEstatus = async (req, res) => {
         metadata: { pedidoId }
       });
     } catch (notifError) {
-      console.warn(`⚠️ [NOTIFICATION] Error al crear notificación (no crítico):`, notifError.message);
+      logger.warn('[NOTIFICATION] Error al crear notificación (no crítico)', {
+        error: notifError.message,
+        requestId: req.requestId,
+        tenantId: req.tenant?.tenant_id
+      });
     }
 
 

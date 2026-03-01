@@ -283,7 +283,9 @@ const enviarSolicitudCredito = async (req, res) => {
       rows = result.rows;
     } catch (error) {
       // Si falla (probablemente porque las columnas no existen), usar query básico
-      console.warn("Columnas ingresos_mensuales/plazo_preferido no existen, usando query básico");
+      logger.warn('Columnas ingresos_mensuales/plazo_preferido no existen, usando query básico', {
+        error: error.message
+      });
       query = `
         INSERT INTO solicitudes_credito 
           (cliente_id, monto_solicitado, motivo_uso, tenant_id)

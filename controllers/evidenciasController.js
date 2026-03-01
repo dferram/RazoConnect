@@ -107,7 +107,11 @@ const subirEvidenciaEntrega = async (req, res) => {
           'normal'
         );
       } catch (notifError) {
-        console.warn("No se pudo crear notificación de entrega:", notifError);
+        logger.warn('No se pudo crear notificación de entrega', {
+          error: notifError.message,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
       }
     }
 
@@ -131,10 +135,17 @@ const subirEvidenciaEntrega = async (req, res) => {
       });
       
       if (recalcResult.success) {
-        console.log(`[Evidencia Entrega] ✅ Recálculo FIFO completado - Pedidos posteriores actualizados`);
+        logger.info('[Evidencia Entrega] Recálculo FIFO completado - Pedidos posteriores actualizados', {
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
       }
     } catch (fifoError) {
-      console.warn('[Evidencia Entrega] ⚠️ Error en recálculo FIFO (no crítico):', fifoError.message);
+      logger.warn('[Evidencia Entrega] Error en recálculo FIFO (no crítico)', {
+        error: fifoError.message,
+        requestId: req.requestId,
+        tenantId: req.tenant?.tenant_id
+      });
       // No interrumpir la operación si falla el recálculo
     }
 
