@@ -5,6 +5,7 @@ const path = require('path');
 const { authenticate, authorize } = require('../middlewares/authMiddleware');
 const entregasController = require('../controllers/agentes/entregasController');
 const inventoryAuditController = require('../controllers/inventoryAuditController');
+const { heavyOperationLimiter } = require('../middlewares/rateLimiter');
 
 // Configurar multer para subida de evidencias
 // CRÍTICO: Usar memoryStorage para evitar pérdida de datos en Azure App Service
@@ -35,7 +36,7 @@ router.use(authorize(['agente', 'admin']));
  * POST /api/agente/entregas/confirmar
  * Confirma la entrega de un pedido con evidencia fotográfica
  */
-router.post('/entregas/confirmar', upload.single('foto_evidencia'), entregasController.confirmarEntrega);
+router.post('/entregas/confirmar', heavyOperationLimiter, upload.single('foto_evidencia'), entregasController.confirmarEntrega);
 
 /**
  * GET /api/agente/entregas/pendientes

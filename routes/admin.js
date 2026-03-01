@@ -104,7 +104,7 @@ const {
 } = require("../middlewares/authMiddleware");
 
 // Rate limiter para proteger login de admin contra ataques de fuerza bruta
-const { authLimiter } = require("../middlewares/rateLimiter");
+const { authLimiter, heavyOperationLimiter } = require("../middlewares/rateLimiter");
 
 /**
  * Rutas de autenticación de admin (públicas)
@@ -402,6 +402,7 @@ router.post(
   "/productos/:id/imagen",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   upload.single("imagen"),
   imagenesProductoController.subirImagenProducto
 );
@@ -410,6 +411,7 @@ router.post(
   "/productos/:id/imagenes",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   (req, res, next) => {
     const handler = upload.fields([
       { name: "imagenes", maxCount: 12 },
@@ -462,6 +464,7 @@ router.post(
   "/variantes",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   (req, res, next) => {
     const handler = upload.fields([
       { name: "imagenes", maxCount: 12 },
@@ -504,6 +507,7 @@ router.put(
   "/variantes/:id",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   (req, res, next) => {
     const handler = upload.fields([
       { name: "imagenes", maxCount: 12 },
@@ -554,6 +558,7 @@ router.post(
   "/variantes/:id/imagenes",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   (req, res, next) => {
     const handler = upload.fields([
       { name: "imagenes", maxCount: 12 },
@@ -627,6 +632,7 @@ router.post(
   "/categorias",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   uploadCategoryImage.single("image"),
   categoriasAdminController.crearCategoria
 );
@@ -635,6 +641,7 @@ router.put(
   "/categorias/:id",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   uploadCategoryImage.single("image"),
   categoriasAdminController.actualizarCategoria
 );
@@ -1355,12 +1362,14 @@ router.get(
   "/ordenes-compra/:id/export",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   excelOrdenCompraController.getOrderDetailsForExcel
 );
 router.get(
   "/ordenes-compra/:id/pdf",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   ordenCompraPDFController.generarPDFOrdenCompra
 );
 // ✅ REFACTORED: Migrado a recepcionInventarioController.js
@@ -1449,6 +1458,7 @@ router.post(
   "/ordenes-compra/:id/evidencia",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   upload.single("evidencia"),
   evidenciasController.subirEvidenciaRecepcionOC
 );
@@ -1484,24 +1494,28 @@ router.get(
   "/ordenes-compra/grupos/:id/pdf-proveedor",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   gruposOrdenesPDFController.generarPDFProveedorGrupo
 );
 router.get(
   "/ordenes-compra/grupos/:id/pdf-interno",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   gruposOrdenesPDFController.generarPDFInternoGrupo
 );
 router.get(
   "/ordenes-compra/grupos/:id/excel-proveedor",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   gruposOrdenesExcelController.generarExcelProveedorGrupo
 );
 router.get(
   "/ordenes-compra/grupos/:id/excel-interno",
   authenticate,
   authorizeAdmin,
+  heavyOperationLimiter,
   gruposOrdenesExcelController.generarExcelInternoGrupo
 );
 router.put(

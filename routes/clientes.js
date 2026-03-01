@@ -21,6 +21,7 @@ const {
 const { authenticate } = require("../middlewares/authMiddleware");
 const verifyTenantContext = require("../middlewares/verifyTenantContext");
 const { generarPDFEstadoCuenta } = require("../controllers/pdfController");
+const { heavyOperationLimiter } = require("../middlewares/rateLimiter");
 
 router.get("/notificaciones", authenticate, verifyTenantContext, obtenerNotificacionesCliente);
 router.get(
@@ -38,7 +39,7 @@ router.get("/perfil-credito", authenticate, verifyTenantContext, obtenerPerfilCr
 router.get("/credito", authenticate, verifyTenantContext, obtenerMovimientosCredito);
 router.get("/credito/pendientes", authenticate, verifyTenantContext, obtenerMovimientosPendientes);
 router.get("/estado-cuenta/:mes/:anio", authenticate, verifyTenantContext, obtenerEstadoCuentaMensual);
-router.get("/estado-cuenta/:mes/:anio/pdf", authenticate, verifyTenantContext, generarPDFEstadoCuenta);
+router.get("/estado-cuenta/:mes/:anio/pdf", authenticate, verifyTenantContext, heavyOperationLimiter, generarPDFEstadoCuenta);
 router.post("/pagar-credito", authenticate, verifyTenantContext, registrarPagoCliente);
 router.post("/solicitar-credito", authenticate, verifyTenantContext, enviarSolicitudCredito);
 

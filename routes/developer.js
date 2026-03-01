@@ -3,9 +3,10 @@ const router = express.Router();
 const developerController = require('../controllers/developerController');
 const onboardingController = require('../controllers/onboardingController');
 const developerGuard = require('../middlewares/developerGuard');
+const { authLimiter } = require('../middlewares/rateLimiter');
 
 router.get('/login', developerController.loginPage);
-router.post('/login', developerController.login);
+router.post('/login', authLimiter, developerController.login);
 router.post('/logout', developerGuard, developerController.logout);
 
 router.get('/dashboard', developerGuard, developerController.dashboardPage);

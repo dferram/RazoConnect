@@ -5,6 +5,7 @@ const pdfController = require("../controllers/pdfController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 const checkCreditStatus = require("../middlewares/checkCreditStatus");
 const uploadComprobante = require("../middlewares/uploadComprobante");
+const { heavyOperationLimiter } = require("../middlewares/rateLimiter");
 
 /**
  * @route   GET /api/pedidos
@@ -41,6 +42,7 @@ router.post(
   "/pedidos/finalizar",
   authenticate,
   authorize(["cliente"]),
+  heavyOperationLimiter,
   uploadComprobante.single("comprobante"),
   checkCreditStatus(),
   pedidosController.crearPedido
@@ -79,6 +81,7 @@ router.get(
   "/pedidos/:id/pdf",
   authenticate,
   authorize(["cliente", "admin", "agente", "superadmin"]),
+  heavyOperationLimiter,
   pdfController.generarPDFPedido
 );
 

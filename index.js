@@ -63,7 +63,9 @@ const {
   preventSQLInjection 
 } = require("./middlewares/inputValidator");
 const { 
-  globalLimiter 
+  globalLimiter,
+  tenantRateLimiter,
+  heavyOperationLimiter
 } = require("./middlewares/rateLimiter");
 
 // Inicializar la aplicación Express
@@ -296,6 +298,14 @@ app.use(tenantGuard);
 // Este middleware valida que usuarios autenticados pertenezcan al tenant correcto
 // Se ejecuta DESPUÉS de tenantGuard (que detecta el tenant) y passport.session() (que carga el usuario)
 app.use(validateUserTenant);
+
+// ============================================================================
+// RATE LIMITING POR TENANT
+// ============================================================================
+// Aplica rate limiting por combinación de IP + tenant_id
+// Evita que un tenant abusivo afecte a otros en el SaaS
+// Se ejecuta DESPUÉS de tenantGuard para tener acceso a req.tenantId
+app.use('/api', tenantRateLimiter);
 
 // ============================================================================
 // NO-CACHE MIDDLEWARE PARA PÁGINAS PROTEGIDAS
