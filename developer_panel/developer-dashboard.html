@@ -184,6 +184,172 @@
             color: #64748b;
             font-size: 0.875rem;
         }
+
+        .btn-create-tenant {
+            background: linear-gradient(135deg, var(--razo-orange) 0%, #ea580c 100%);
+            border: none;
+            color: white;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+        }
+
+        .btn-create-tenant:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4);
+            color: white;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--dev-purple);
+        }
+
+        .stat-card.orange {
+            border-left-color: var(--razo-orange);
+        }
+
+        .stat-card.green {
+            border-left-color: #22c55e;
+        }
+
+        .stat-card.red {
+            border-left-color: #ef4444;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .tenant-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .tenant-stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #64748b;
+        }
+
+        .tenant-stat-item i {
+            color: var(--dev-purple);
+        }
+
+        .btn-view-detail {
+            background: transparent;
+            border: 1px solid var(--dev-purple);
+            color: var(--dev-purple);
+            border-radius: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            transition: all 0.3s;
+        }
+
+        .btn-view-detail:hover {
+            background: var(--dev-purple);
+            color: white;
+        }
+
+        .modal-content {
+            border-radius: 1rem;
+            border: none;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--dev-purple) 0%, var(--dev-purple-dark) 100%);
+            color: white;
+            border-radius: 1rem 1rem 0 0;
+            padding: 1.5rem;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--dev-purple);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .required-field::after {
+            content: '*';
+            color: #ef4444;
+            margin-left: 0.25rem;
+        }
+
+        .form-text {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .password-strength {
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            transition: all 0.3s;
+            width: 0;
+        }
+
+        .password-strength-bar.weak {
+            width: 33%;
+            background: #ef4444;
+        }
+
+        .password-strength-bar.medium {
+            width: 66%;
+            background: #f59e0b;
+        }
+
+        .password-strength-bar.strong {
+            width: 100%;
+            background: #22c55e;
+        }
     </style>
 </head>
 <body>
@@ -209,8 +375,28 @@
             <p>Control centralizado del estado de servicio para todos los clientes</p>
         </div>
 
+        <div class="stats-row" id="statsRow" style="display: none;">
+            <div class="stat-card orange">
+                <p class="stat-value" id="totalTenants">0</p>
+                <p class="stat-label"><i class="bi bi-building"></i> Total Tenants</p>
+            </div>
+            <div class="stat-card green">
+                <p class="stat-value" id="activeTenants">0</p>
+                <p class="stat-label"><i class="bi bi-check-circle"></i> Activos</p>
+            </div>
+            <div class="stat-card red">
+                <p class="stat-value" id="inactiveTenants">0</p>
+                <p class="stat-label"><i class="bi bi-x-circle"></i> Suspendidos</p>
+            </div>
+        </div>
+
         <div class="tenants-card">
-            <h2><i class="bi bi-list-ul"></i> Lista de Tenants</h2>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-list-ul"></i> Lista de Tenants</h2>
+                <button class="btn btn-create-tenant" id="btnCreateTenant">
+                    <i class="bi bi-plus-circle"></i> Crear Nuevo Tenant
+                </button>
+            </div>
             
             <div id="loadingSpinner" class="loading-spinner">
                 <div class="spinner-border text-primary" role="status">
@@ -226,9 +412,10 @@
                             <th>ID</th>
                             <th>Cliente</th>
                             <th>Dominio</th>
+                            <th>Estadísticas</th>
                             <th>Estado</th>
                             <th>Fecha Creación</th>
-                            <th class="text-center">Acción</th>
+                            <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tenantsTableBody">
@@ -244,6 +431,101 @@
         </div>
     </div>
 
+    <!-- Modal Crear Tenant -->
+    <div class="modal fade" id="modalCreateTenant" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Crear Nuevo Tenant</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formCreateTenant">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nombreCliente" class="form-label required-field">Nombre del Cliente</label>
+                                <input type="text" class="form-control" id="nombreCliente" required>
+                                <div class="form-text">Nombre comercial o razón social</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="dominio" class="form-label required-field">Dominio</label>
+                                <input type="text" class="form-control" id="dominio" required>
+                                <div class="form-text">ej: cliente.razoconnect.com</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="adminNombre" class="form-label required-field">Nombre del Admin</label>
+                                <input type="text" class="form-control" id="adminNombre" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="adminApellido" class="form-label required-field">Apellido del Admin</label>
+                                <input type="text" class="form-control" id="adminApellido" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="adminEmail" class="form-label required-field">Email del Admin</label>
+                                <input type="email" class="form-control" id="adminEmail" required>
+                                <div class="form-text">Se usará para el login</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="adminPassword" class="form-label required-field">Contraseña Temporal</label>
+                                <input type="password" class="form-control" id="adminPassword" required minlength="8">
+                                <div class="password-strength">
+                                    <div class="password-strength-bar" id="passwordStrengthBar"></div>
+                                </div>
+                                <div class="form-text">Mínimo 8 caracteres</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="plan" class="form-label">Plan</label>
+                                <select class="form-select" id="plan">
+                                    <option value="basic" selected>Basic</option>
+                                    <option value="pro">Pro</option>
+                                    <option value="enterprise">Enterprise</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>Nota:</strong> El admin recibirá las credenciales y deberá cambiar la contraseña en su primer login.
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-create-tenant" id="btnSubmitTenant">
+                        <i class="bi bi-check-circle"></i> Crear Tenant
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalle Tenant -->
+    <div class="modal fade" id="modalTenantDetail" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-info-circle"></i> Detalle del Tenant</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body" id="tenantDetailBody">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const loadingSpinner = document.getElementById('loadingSpinner');
@@ -251,24 +533,29 @@
         const tenantsTableBody = document.getElementById('tenantsTableBody');
         const emptyState = document.getElementById('emptyState');
         const btnLogout = document.getElementById('btnLogout');
+        const btnCreateTenant = document.getElementById('btnCreateTenant');
+        const statsRow = document.getElementById('statsRow');
+        const modalCreateTenant = new bootstrap.Modal(document.getElementById('modalCreateTenant'));
+        const modalTenantDetail = new bootstrap.Modal(document.getElementById('modalTenantDetail'));
 
         async function loadTenants() {
             try {
-                const response = await fetch('/api/developer/tenants', {
+                const response = await fetch('/developer/api/tenants', {
                     credentials: 'include'
                 });
                 const data = await response.json();
 
                 loadingSpinner.style.display = 'none';
 
-                if (data.success && data.tenants.length > 0) {
-                    renderTenants(data.tenants);
+                if (data.success && data.data && data.data.length > 0) {
+                    renderTenants(data.data);
+                    updateStats(data.data);
+                    statsRow.style.display = 'grid';
                     tenantsTableContainer.style.display = 'block';
                 } else {
                     emptyState.style.display = 'block';
                 }
             } catch (error) {
-                console.error('Error al cargar tenants:', error);
                 loadingSpinner.style.display = 'none';
                 emptyState.innerHTML = `
                     <i class="bi bi-exclamation-triangle text-danger"></i>
@@ -279,40 +566,160 @@
             }
         }
 
+        function updateStats(tenants) {
+            const total = tenants.length;
+            const active = tenants.filter(t => t.isActive).length;
+            const inactive = total - active;
+
+            document.getElementById('totalTenants').textContent = total;
+            document.getElementById('activeTenants').textContent = active;
+            document.getElementById('inactiveTenants').textContent = inactive;
+        }
+
         function renderTenants(tenants) {
             tenantsTableBody.innerHTML = tenants.map(tenant => {
-                const isActive = tenant.is_active;
+                const isActive = tenant.isActive;
                 const statusBadge = isActive 
                     ? '<span class="badge-status badge-active"><i class="bi bi-check-circle"></i> Activo</span>'
                     : '<span class="badge-status badge-inactive"><i class="bi bi-x-circle"></i> Bloqueado</span>';
                 
-                const date = new Date(tenant.created_at).toLocaleDateString('es-MX', {
+                const date = new Date(tenant.creadoEn).toLocaleDateString('es-MX', {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric'
                 });
 
+                const stats = tenant.stats || { totalAdmins: 0, totalClientes: 0 };
+
                 return `
                     <tr>
-                        <td><span class="tenant-id">#${tenant.tenant_id}</span></td>
-                        <td><strong>${tenant.nombre_cliente}</strong></td>
+                        <td><span class="tenant-id">#${tenant.tenantId}</span></td>
+                        <td><strong>${tenant.nombreCliente}</strong></td>
                         <td><span class="tenant-domain">${tenant.dominio || 'N/A'}</span></td>
+                        <td>
+                            <div class="tenant-stats">
+                                <span class="tenant-stat-item">
+                                    <i class="bi bi-person-badge"></i> ${stats.totalAdmins}
+                                </span>
+                                <span class="tenant-stat-item">
+                                    <i class="bi bi-people"></i> ${stats.totalClientes}
+                                </span>
+                            </div>
+                        </td>
                         <td>${statusBadge}</td>
                         <td><span class="tenant-date">${date}</span></td>
                         <td class="text-center">
+                            <button class="btn btn-view-detail btn-sm me-2" onclick="viewTenantDetail(${tenant.tenantId})">
+                                <i class="bi bi-eye"></i> Ver
+                            </button>
                             <div class="form-check form-switch d-inline-block">
                                 <input 
                                     class="form-check-input" 
                                     type="checkbox" 
-                                    id="switch-${tenant.tenant_id}"
+                                    id="switch-${tenant.tenantId}"
                                     ${isActive ? 'checked' : ''}
-                                    onchange="toggleTenantStatus(${tenant.tenant_id}, this)"
+                                    onchange="toggleTenantStatus(${tenant.tenantId}, this)"
                                 >
                             </div>
                         </td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        async function viewTenantDetail(tenantId) {
+            const detailBody = document.getElementById('tenantDetailBody');
+            detailBody.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            `;
+            modalTenantDetail.show();
+
+            try {
+                const response = await fetch(`/developer/api/tenants/${tenantId}`, {
+                    credentials: 'include'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    const tenant = result.data;
+                    const date = new Date(tenant.creadoEn).toLocaleDateString('es-MX', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    detailBody.innerHTML = `
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-3">Información General</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <strong>ID:</strong> <span class="tenant-id">#${tenant.tenantId}</span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <strong>Cliente:</strong> ${tenant.nombreCliente}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <strong>Dominio:</strong> <span class="tenant-domain">${tenant.dominio}</span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <strong>Estado:</strong> ${tenant.isActive ? '<span class="badge-status badge-active"><i class="bi bi-check-circle"></i> Activo</span>' : '<span class="badge-status badge-inactive"><i class="bi bi-x-circle"></i> Suspendido</span>'}
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <strong>Fecha de Creación:</strong> ${date}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h6 class="text-muted mb-3">Administradores (${tenant.administradores.length})</h6>
+                            ${tenant.administradores.length > 0 ? `
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Nombre</th>
+                                                <th>Email</th>
+                                                <th>Rol</th>
+                                                <th>Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${tenant.administradores.map(admin => `
+                                                <tr>
+                                                    <td>#${admin.adminid}</td>
+                                                    <td>${admin.nombre} ${admin.apellido}</td>
+                                                    <td>${admin.email}</td>
+                                                    <td><span class="badge bg-primary">${admin.rol}</span></td>
+                                                    <td>${admin.activo ? '<i class="bi bi-check-circle text-success"></i>' : '<i class="bi bi-x-circle text-danger"></i>'}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ` : '<p class="text-muted">No hay administradores registrados</p>'}
+                        </div>
+                    `;
+                } else {
+                    detailBody.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle"></i> ${result.message || 'Error al cargar el detalle'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                detailBody.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Error de conexión
+                    </div>
+                `;
+            }
         }
 
         async function toggleTenantStatus(tenantId, switchElement) {
@@ -402,6 +809,105 @@
                 switchElement.disabled = false;
             }
         }
+
+        btnCreateTenant.addEventListener('click', () => {
+            document.getElementById('formCreateTenant').reset();
+            document.getElementById('passwordStrengthBar').className = 'password-strength-bar';
+            modalCreateTenant.show();
+        });
+
+        document.getElementById('adminPassword').addEventListener('input', (e) => {
+            const password = e.target.value;
+            const strengthBar = document.getElementById('passwordStrengthBar');
+            
+            if (password.length === 0) {
+                strengthBar.className = 'password-strength-bar';
+            } else if (password.length < 8) {
+                strengthBar.className = 'password-strength-bar weak';
+            } else if (password.length < 12 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+                strengthBar.className = 'password-strength-bar medium';
+            } else {
+                strengthBar.className = 'password-strength-bar strong';
+            }
+        });
+
+        document.getElementById('btnSubmitTenant').addEventListener('click', async () => {
+            const form = document.getElementById('formCreateTenant');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const data = {
+                nombre_cliente: document.getElementById('nombreCliente').value.trim(),
+                dominio: document.getElementById('dominio').value.trim().toLowerCase(),
+                admin_nombre: document.getElementById('adminNombre').value.trim(),
+                admin_apellido: document.getElementById('adminApellido').value.trim(),
+                admin_email: document.getElementById('adminEmail').value.trim().toLowerCase(),
+                admin_password: document.getElementById('adminPassword').value,
+                plan: document.getElementById('plan').value
+            };
+
+            const btnSubmit = document.getElementById('btnSubmitTenant');
+            const originalText = btnSubmit.innerHTML;
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creando...';
+
+            try {
+                const response = await fetch('/developer/api/tenants/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    modalCreateTenant.hide();
+                    
+                    await Swal.fire({
+                        icon: 'success',
+                        title: '¡Tenant Creado!',
+                        html: `
+                            <div class="text-start">
+                                <p><strong>Cliente:</strong> ${result.data.tenant.nombreCliente}</p>
+                                <p><strong>Dominio:</strong> ${result.data.tenant.dominio}</p>
+                                <p><strong>Admin:</strong> ${result.data.adminCreado.email}</p>
+                                <hr>
+                                <p class="mb-2"><strong>Siguientes pasos:</strong></p>
+                                <ol class="small">
+                                    ${result.data.siguientesPasos.map(paso => `<li>${paso}</li>`).join('')}
+                                </ol>
+                            </div>
+                        `,
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#667eea'
+                    });
+
+                    await loadTenants();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al Crear Tenant',
+                        text: result.message || 'Ocurrió un error desconocido',
+                        confirmButtonColor: '#ef4444'
+                    });
+                }
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de Conexión',
+                    text: 'No se pudo conectar con el servidor',
+                    confirmButtonColor: '#ef4444'
+                });
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = originalText;
+            }
+        });
 
         btnLogout.addEventListener('click', async () => {
             if (!confirm('¿Cerrar sesión?')) return;
