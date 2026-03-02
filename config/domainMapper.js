@@ -56,13 +56,23 @@ function extractRootDomain(hostname) {
 }
 
 function getDomainForCookie(hostname) {
-  const rootDomain = extractRootDomain(hostname);
-  
-  if (hostname === 'localhost' || hostname === '127.0.0.1') {
-    return hostname;
+  // Detectar IPs (IPv4) — no usar como cookie domain
+  const isIPv4 = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname);
+  if (isIPv4) {
+    // En Azure: 169.254.x.x son IPs internas de health checks
+    // No establecer cookie domain para IPs — usar undefined (cookie válida para el host actual)
+    console.log('🍪 Cookie domain omitido para IP interna', { hostname });
+    return undefined;
   }
   
-  return `.${rootDomain}`;
+  // Detectar localhost
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return undefined;
+  }
+  
+  // Hostname normal: usar dominio con punto inicial para compartir entre subdominios
+  // Ej: "razo.com.mx" → ".razo.com.mx" (válido para www.razo.com.mx, api.razo.com.mx, etc.)
+  return `.${hostname}`;
 }
 
 async function invalidateCache() {

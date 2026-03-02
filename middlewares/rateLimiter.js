@@ -15,6 +15,28 @@ const { RedisStore } = require('rate-limit-redis');
 const logger = require('../utils/logger');
 
 // ============================================================================
+// HELPER: Extrae IP limpia (sin puerto) para Azure App Service
+// Azure inyecta X-Forwarded-For con formato IP:PUERTO
+// ============================================================================
+function getCleanIp(req) {
+  const raw = req.ip || req.connection?.remoteAddress || 'unknown';
+  
+  // Manejar formato IPv4-mapped IPv6 (::ffff:1.2.3.4)
+  if (raw.startsWith('::ffff:')) {
+    return raw.substring(7);
+  }
+  
+  // Manejar formato IP:PUERTO que Azure App Service puede inyectar
+  // Ej: "148.220.190.13:10048" → "148.220.190.13"
+  const ipv4WithPort = raw.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}):\d+$/);
+  if (ipv4WithPort) {
+    return ipv4WithPort[1];
+  }
+  
+  return raw;
+}
+
+// ============================================================================
 // CONFIGURACIÓN ESTRICTA DE AZURE REDIS CON TLS
 // ============================================================================
 
@@ -24,7 +46,17 @@ const redisClient = createClient({
   socket: {
     host: process.env.REDIS_HOST,
     port: process.env.REDIS_PORT || 6380,
-    tls: true // OBLIGATORIO PARA AZURE
+    tls: true, // OBLIGATORIO PARA AZURE
+    keepAlive: 30000,         // Ping cada 30 segundos para mantener la conexión viva
+    connectTimeout: 10000,    // Timeout de conexión 10 segundos
+    reconnectStrategy: (retries) => {
+      if (retries > 10) {
+        logger.error('Redis: demasiados reintentos, abandonando reconexión');
+        return new Error('Redis reconexión abandonada después de 10 intentos');
+      }
+      // Backoff exponencial: 500ms, 1s, 2s, 4s, 8s... máx 30s
+      return Math.min(500 * Math.pow(2, retries), 30000);
+    }
   }
 });
 
@@ -68,6 +100,9 @@ const globalLimiter = rateLimit({
   standardHeaders: true, // Retornar info en headers `RateLimit-*`
   legacyHeaders: false, // Deshabilitar headers `X-RateLimit-*`
   
+  // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
+  keyGenerator: (req) => getCleanIp(req),
+  
   // Usar RedisStore con Azure Redis (sin fallback)
   store: new RedisStore({
     sendCommand: (...args) => redisClient.sendCommand(args),
@@ -76,7 +111,7 @@ const globalLimiter = rateLimit({
   
   // Mensaje de error personalizado
   handler: (req, res) => {
-    const clientIp = req.ip || 'unknown';
+    const clientIp = getCleanIp(req);
     logger.warn('Rate limit global alcanzado', { ip: clientIp });
     
     res.status(429).json({
@@ -101,6 +136,9 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   
+  // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
+  keyGenerator: (req) => getCleanIp(req),
+  
   // Usar RedisStore con Azure Redis (sin fallback)
   store: new RedisStore({
     sendCommand: (...args) => redisClient.sendCommand(args),
@@ -108,7 +146,7 @@ const authLimiter = rateLimit({
   }),
   
   handler: (req, res) => {
-    const clientIp = req.ip || 'unknown';
+    const clientIp = getCleanIp(req);
     logger.warn('Rate limit auth alcanzado - posible fuerza bruta', { ip: clientIp });
     
     res.status(429).json({
@@ -132,20 +170,21 @@ const tenantRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 
-  // Usar el keyGenerator por defecto (basado en IP) y agregar tenant_id al prefix
-  // Esto evita problemas con IPv6 y usa el helper interno de express-rate-limit
+  // FIX AZURE: keyGenerator personalizado que combina IP limpia + tenant
+  keyGenerator: (req) => {
+    const cleanIp = getCleanIp(req);
+    const tenantId = req.tenantId || req.headers['x-tenant-id'] || 'unknown';
+    return `${cleanIp}:${tenantId}`;
+  },
+
   store: new RedisStore({
     sendCommand: (...args) => redisClient.sendCommand(args),
-    // El prefix incluirá el tenant_id dinámicamente
-    prefix: (req) => {
-      const tenantId = req.tenantId || req.headers['x-tenant-id'] || 'unknown';
-      return `rl:tenant:${tenantId}:`;
-    },
+    prefix: 'rl:tenant:',
   }),
 
   handler: (req, res) => {
     const tenantId = req.tenantId || 'unknown';
-    logger.warn('Rate limit por tenant alcanzado', { tenantId, ip: req.ip });
+    logger.warn('Rate limit por tenant alcanzado', { tenantId, ip: getCleanIp(req) });
     res.status(429).json({
       success: false,
       message: 'Límite de peticiones alcanzado. Intenta de nuevo en 15 minutos.',
@@ -163,20 +202,21 @@ const heavyOperationLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 
-  // Usar el keyGenerator por defecto (basado en IP) y agregar tenant_id al prefix
-  // Esto evita problemas con IPv6 y usa el helper interno de express-rate-limit
+  // FIX AZURE: keyGenerator personalizado que combina IP limpia + tenant
+  keyGenerator: (req) => {
+    const cleanIp = getCleanIp(req);
+    const tenantId = req.tenantId || req.headers['x-tenant-id'] || 'unknown';
+    return `${cleanIp}:${tenantId}`;
+  },
+
   store: new RedisStore({
     sendCommand: (...args) => redisClient.sendCommand(args),
-    // El prefix incluirá el tenant_id dinámicamente
-    prefix: (req) => {
-      const tenantId = req.tenantId || req.headers['x-tenant-id'] || 'unknown';
-      return `rl:heavy:${tenantId}:`;
-    },
+    prefix: 'rl:heavy:',
   }),
 
   handler: (req, res) => {
     const tenantId = req.tenantId || 'unknown';
-    logger.warn('Rate limit de operaciones pesadas alcanzado', { tenantId, ip: req.ip });
+    logger.warn('Rate limit de operaciones pesadas alcanzado', { tenantId, ip: getCleanIp(req) });
     res.status(429).json({
       success: false,
       message: 'Límite de operaciones alcanzado. Intenta de nuevo en 1 hora.',
@@ -191,6 +231,10 @@ const heavyOperationLimiter = rateLimit({
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
   max: 3,
+  
+  // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
+  keyGenerator: (req) => getCleanIp(req),
+  
   store: new RedisStore({
     sendCommand: (...args) => redisClient.sendCommand(args),
     prefix: 'rl:register:',
@@ -205,6 +249,10 @@ const registerLimiter = rateLimit({
 const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
   max: 3,
+  
+  // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
+  keyGenerator: (req) => getCleanIp(req),
+  
   store: new RedisStore({
     sendCommand: (...args) => redisClient.sendCommand(args),
     prefix: 'rl:password:',
@@ -219,6 +267,10 @@ const passwordResetLimiter = rateLimit({
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+  
+  // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
+  keyGenerator: (req) => getCleanIp(req),
+  
   store: new RedisStore({
     sendCommand: (...args) => redisClient.sendCommand(args),
     prefix: 'rl:api:',
@@ -233,6 +285,10 @@ const apiLimiter = rateLimit({
 const checkoutLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 30,
+  
+  // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
+  keyGenerator: (req) => getCleanIp(req),
+  
   store: new RedisStore({
     sendCommand: (...args) => redisClient.sendCommand(args),
     prefix: 'rl:checkout:',
@@ -247,6 +303,10 @@ const checkoutLimiter = rateLimit({
 const adminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
+  
+  // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
+  keyGenerator: (req) => getCleanIp(req),
+  
   store: new RedisStore({
     sendCommand: (...args) => redisClient.sendCommand(args),
     prefix: 'rl:admin:',

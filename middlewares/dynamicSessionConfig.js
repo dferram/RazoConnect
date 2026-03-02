@@ -33,7 +33,9 @@ function createDynamicSessionMiddleware() {
     const hostname = req.hostname;
     const cookieDomain = getDomainForCookie(hostname);
     
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    // Solo configurar domain si getDomainForCookie retorna un valor válido
+    // Si es undefined (IPs internas de Azure), no establecer domain
+    if (cookieDomain) {
       req.sessionOptions = {
         ...baseSessionConfig,
         cookie: {
@@ -43,6 +45,8 @@ function createDynamicSessionMiddleware() {
       };
       
       console.log(`🍪 Cookie domain configurado: ${cookieDomain} (hostname: ${hostname})`);
+    } else {
+      console.log(`🍪 Cookie domain no establecido para hostname: ${hostname}`);
     }
 
     sessionMiddleware(req, res, next);
