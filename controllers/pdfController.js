@@ -8,18 +8,29 @@ async function generarPDFPedido(req, res) {
     const pedidoId = parseInt(req.params.id);
     const { tenant_id } = req.tenant;
     
-    // Normalizar userId: admins usan adminid, clientes usan clienteid/userId, agentes usan id
-    const userId = req.user?.userId 
+    // Normalizar userId — forzar a número para comparaciones con la DB
+    const userIdRaw = req.user?.userId 
         ?? req.user?.clienteid 
         ?? req.user?.clienteId 
         ?? req.user?.adminid 
         ?? req.user?.id;
+    const userId = userIdRaw ? parseInt(userIdRaw, 10) : null;
     
     // Normalizar rol: siempre lowercase para comparaciones
-    const userRole = (req.user?.rol || req.user?.role || '').toLowerCase();
-    const userRoles = Array.isArray(req.user?.roles)
-        ? req.user.roles.map(r => r?.toLowerCase())
-        : [userRole];
+    const userRole = (req.user?.rol || req.user?.role || '').toLowerCase().trim();
+    const userRoles = Array.isArray(req.user?.roles) && req.user.roles.length > 0
+        ? req.user.roles.map(r => (r || '').toString().toLowerCase().trim())
+        : [userRole].filter(Boolean);
+
+    // Log de diagnóstico para detectar problemas de permisos
+    logger.info('PDF request iniciada', {
+        pedidoId,
+        userId,
+        userRole,
+        userRoles,
+        tenantId: tenant_id,
+        requestId: req.requestId
+    });
 
     try {
         const pedidoQuery = await db.query(
@@ -65,25 +76,39 @@ async function generarPDFPedido(req, res) {
 
         const pedido = pedidoQuery.rows[0];
 
-        // Validar permisos según el rol
-        const isAdmin = userRoles.some(r => ['admin', 'superadmin', 'super_admin'].includes(r));
-        const isClienteOwner = userRole === 'cliente' && pedido.clienteid === userId;
+        // Verificación de permisos CORREGIDA
+        // admin y super_admin incluyen todas las variantes posibles del rol
+        const isAdmin = userRoles.some(r => 
+            ['admin', 'superadmin', 'super_admin', 'super-admin'].includes(r)
+        );
         
-        // Si es agente, verificar que el cliente del pedido esté asignado a este agente
+        // Comparación de números para evitar mismatch de tipos (string vs integer de DB)
+        const pedidoClienteIdNum = parseInt(pedido.clienteid, 10);
+        const isClienteOwner = userRole === 'cliente' && pedidoClienteIdNum === userId;
+        
+        // Verificación de agente con columna correcta
         let isAgenteAutorizado = false;
-        if (userRoles.includes('agente')) {
+        if (userRoles.includes('agente') && userId) {
             const agenteClienteCheck = await db.query(
-                'SELECT 1 FROM clientes WHERE clienteid = $1 AND agenteid = $2 LIMIT 1',
+                `SELECT 1 FROM clientes 
+                 WHERE clienteid = $1 
+                 AND (agenteid = $2 OR agentedeventasid = $2)
+                 LIMIT 1`,
                 [pedido.clienteid, userId]
             );
             isAgenteAutorizado = agenteClienteCheck.rows.length > 0;
         }
 
-        // Permitir acceso si es admin, cliente propietario, o agente autorizado
         if (!isAdmin && !isClienteOwner && !isAgenteAutorizado) {
-            logger.warn('PDF acceso denegado', {
-                userId, userRole, userRoles,
+            logger.warn('PDF acceso denegado - detalle completo', {
+                userId,
+                userRole,
+                userRoles,
+                isAdmin,
+                isClienteOwner,
+                isAgenteAutorizado,
                 pedidoClienteId: pedido.clienteid,
+                pedidoClienteIdNum,
                 pedidoId,
                 requestId: req.requestId
             });

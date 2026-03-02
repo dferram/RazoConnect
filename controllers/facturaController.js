@@ -8,6 +8,15 @@ async function descargarFactura(req, res) {
     const { tenant_id } = req.tenant;
     const { id: userId, rol } = req.user;
 
+    // Log de diagnóstico para confirmar que el rol llega correctamente
+    logger.info('[FacturaController] Request recibida', {
+      pedidoId,
+      userId,
+      rol,
+      tenant_id,
+      requestId: req.requestId
+    });
+
     if (!pedidoId || isNaN(pedidoId)) {
       return res.status(400).json({
         success: false,
