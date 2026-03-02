@@ -1405,9 +1405,13 @@
             return;
           }
 
+          // Usar UI.setButtonLoading si está disponible
+          const btn = document.getElementById('btnGenerarRemision');
+          const restore = (btn && typeof UI !== 'undefined')
+            ? UI.setButtonLoading(btn, 'Generando...')
+            : () => {};
+
           try {
-            showToast('Generando PDF...', 'info');
-            
             const response = await fetch(`${API_BASE_URL}/pedidos/${selectedOrderId}/pdf`, {
               method: 'GET',
               headers: {
@@ -1451,6 +1455,8 @@
             } else {
               showToast(error.message || 'Error al generar el PDF. Intenta de nuevo.', 'error');
             }
+          } finally {
+            restore(); // SIEMPRE restaurar el botón
           }
         };
 

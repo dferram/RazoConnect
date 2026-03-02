@@ -1085,7 +1085,7 @@
           }).format(amount);
         }
 
-        function descargarPDFPedido() {
+        async function descargarPDFPedido() {
           const urlParams = new URLSearchParams(window.location.search);
           const pedidoId = parseInt(urlParams.get("id"), 10);
           
@@ -1094,11 +1094,24 @@
             return;
           }
           
-          // Abrir PDF en nueva pestaña
-          const pdfUrl = `/api/pedidos/${pedidoId}/pdf`;
-          window.open(pdfUrl, '_blank');
+          const btn = document.getElementById('btnDescargarPDF');
+          const restore = (btn && typeof UI !== 'undefined')
+            ? UI.setButtonLoading(btn, 'Generando...')
+            : () => {};
           
-          showToast("Generando PDF...", "info");
+          try {
+            // Abrir PDF en nueva pestaña
+            const pdfUrl = `/api/pedidos/${pedidoId}/pdf`;
+            window.open(pdfUrl, '_blank');
+            
+            showToast("PDF generado correctamente", "success");
+          } catch (error) {
+            console.error('Error al generar PDF:', error);
+            showToast("Error al generar el PDF", "error");
+          } finally {
+            // Restaurar botón después de un breve delay para que el usuario vea el feedback
+            setTimeout(() => restore(), 1000);
+          }
         }
 
         function formatDate(value) {

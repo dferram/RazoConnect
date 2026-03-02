@@ -7,9 +7,19 @@ const fs = require('fs');
 async function generarPDFPedido(req, res) {
     const pedidoId = parseInt(req.params.id);
     const { tenant_id } = req.tenant;
-    const userId = req.user?.id;
-    const userRole = req.user?.rol;
-    const userRoles = Array.isArray(req.user?.roles) ? req.user.roles : [userRole];
+    
+    // Normalizar userId: admins usan adminid, clientes usan clienteid/userId, agentes usan id
+    const userId = req.user?.userId 
+        ?? req.user?.clienteid 
+        ?? req.user?.clienteId 
+        ?? req.user?.adminid 
+        ?? req.user?.id;
+    
+    // Normalizar rol: siempre lowercase para comparaciones
+    const userRole = (req.user?.rol || req.user?.role || '').toLowerCase();
+    const userRoles = Array.isArray(req.user?.roles)
+        ? req.user.roles.map(r => r?.toLowerCase())
+        : [userRole];
 
     try {
         const pedidoQuery = await db.query(
@@ -56,7 +66,7 @@ async function generarPDFPedido(req, res) {
         const pedido = pedidoQuery.rows[0];
 
         // Validar permisos según el rol
-        const isAdmin = userRoles.some(role => ['admin', 'superadmin'].includes(role?.toLowerCase()));
+        const isAdmin = userRoles.some(r => ['admin', 'superadmin', 'super_admin'].includes(r));
         const isClienteOwner = userRole === 'cliente' && pedido.clienteid === userId;
         
         // Si es agente, verificar que el cliente del pedido esté asignado a este agente
@@ -71,7 +81,16 @@ async function generarPDFPedido(req, res) {
 
         // Permitir acceso si es admin, cliente propietario, o agente autorizado
         if (!isAdmin && !isClienteOwner && !isAgenteAutorizado) {
-            return res.status(403).json({ error: 'No tienes permiso para acceder a este pedido' });
+            logger.warn('PDF acceso denegado', {
+                userId, userRole, userRoles,
+                pedidoClienteId: pedido.clienteid,
+                pedidoId,
+                requestId: req.requestId
+            });
+            return res.status(403).json({ 
+                success: false,
+                message: 'No tienes permiso para acceder a este recurso' 
+            });
         }
 
         // 🚨 CRITICAL FIX: Added DISTINCT ON to prevent duplicate rows from JOIN
@@ -120,7 +139,7 @@ async function generarPDFPedido(req, res) {
                 logoExists = true;
             }
         } catch (err) {
-            console.log('Logo no encontrado, usando texto');
+            logger.info('Logo no encontrado, usando texto', { requestId: req.requestId });
         }
 
         // Function to render header on each page
