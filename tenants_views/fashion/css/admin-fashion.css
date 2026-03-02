@@ -1191,6 +1191,16 @@ body.sidebar-collapsed .admin-main {
   color: #16a34a;
 }
 
+.pedido-estatus-badge.surtido {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.pedido-estatus-badge.parcialmente-surtido {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
 .pedido-estatus-badge.en-ruta,
 .pedido-estatus-badge.enviado {
   background: #dbeafe;

@@ -73,6 +73,16 @@
         color: #16a34a;
       }
 
+      .pedido-estatus-badge.surtido {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+
+      .pedido-estatus-badge.parcialmente-surtido {
+        background: #fef9c3;
+        color: #854d0e;
+      }
+
       .pedido-estatus-badge.en-ruta {
         background: #dbeafe;
         color: #2563eb;
@@ -934,11 +944,12 @@
             const estatusEl = document.getElementById("pedidoEstatus");
             estatusEl.textContent = pedido.estatus || "";
 
-            const estatusValor = (pedido.estatus || "").toString().toLowerCase();
+            const estatusValor = (pedido.estatus || "").toString().toLowerCase().trim();
             let estatusClass = "pedido-estatus-badge pendiente";
 
             if (estatusValor === "pendiente") estatusClass = "pedido-estatus-badge pendiente";
-            else if (estatusValor === "confirmado") estatusClass = "pedido-estatus-badge confirmado";
+            else if (estatusValor === "confirmado" || estatusValor === "surtido") estatusClass = "pedido-estatus-badge confirmado";
+            else if (estatusValor === "parcialmente surtido" || estatusValor === "parcialmente_surtido") estatusClass = "pedido-estatus-badge parcialmente-surtido";
             else if (
               estatusValor === "enviado" ||
               estatusValor === "en ruta" ||
@@ -946,12 +957,10 @@
               estatusValor === "en-ruta"
             ) {
               estatusClass = "pedido-estatus-badge enviado";
-            } else if (estatusValor === "entregado") {
+            } else if (estatusValor === "entregado" || estatusValor === "completado") {
               estatusClass = "pedido-estatus-badge entregado";
             } else if (estatusValor === "cancelado") {
               estatusClass = "pedido-estatus-badge cancelado";
-            } else if (estatusValor === "completado") {
-              estatusClass = "pedido-estatus-badge completado";
             }
 
             estatusEl.className = estatusClass;

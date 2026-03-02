@@ -20,10 +20,11 @@
     let currentStatusFilter = "";
 
     function getPedidoStatusBadgeClass(estatus) {
-      const value = (estatus || "").toString().toLowerCase();
+      const value = (estatus || "").toString().toLowerCase().trim();
 
       if (value === "pendiente") return "pedido-estatus-badge pendiente";
-      if (value === "confirmado") return "pedido-estatus-badge confirmado";
+      if (value === "confirmado" || value === "surtido") return "pedido-estatus-badge confirmado";
+      if (value === "parcialmente surtido" || value === "parcialmente_surtido") return "pedido-estatus-badge parcialmente-surtido";
       if (
         value === "enviado" ||
         value === "en ruta" ||
@@ -32,9 +33,8 @@
       ) {
         return "pedido-estatus-badge enviado";
       }
-      if (value === "entregado") return "pedido-estatus-badge entregado";
+      if (value === "entregado" || value === "completado") return "pedido-estatus-badge entregado";
       if (value === "cancelado") return "pedido-estatus-badge cancelado";
-      if (value === "completado") return "pedido-estatus-badge completado";
 
       return "pedido-estatus-badge pendiente";
     }

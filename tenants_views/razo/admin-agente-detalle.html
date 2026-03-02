@@ -444,11 +444,12 @@
             if (ventas.length > 0) {
               ventasBody.innerHTML = ventas
                 .map((v) => {
-                  const estatusValor = (v.estatus || "").toString().toLowerCase();
+                  const estatusValor = (v.estatus || "").toString().toLowerCase().trim();
                   let badgeClass = "pedido-estatus-badge pendiente";
 
                   if (estatusValor === "pendiente") badgeClass = "pedido-estatus-badge pendiente";
-                  else if (estatusValor === "confirmado") badgeClass = "pedido-estatus-badge confirmado";
+                  else if (estatusValor === "confirmado" || estatusValor === "surtido") badgeClass = "pedido-estatus-badge confirmado";
+                  else if (estatusValor === "parcialmente surtido" || estatusValor === "parcialmente_surtido") badgeClass = "pedido-estatus-badge parcialmente-surtido";
                   else if (
                     estatusValor === "enviado" ||
                     estatusValor === "en ruta" ||
@@ -456,12 +457,10 @@
                     estatusValor === "en-ruta"
                   ) {
                     badgeClass = "pedido-estatus-badge enviado";
-                  } else if (estatusValor === "entregado") {
+                  } else if (estatusValor === "entregado" || estatusValor === "completado") {
                     badgeClass = "pedido-estatus-badge entregado";
                   } else if (estatusValor === "cancelado") {
                     badgeClass = "pedido-estatus-badge cancelado";
-                  } else if (estatusValor === "completado") {
-                    badgeClass = "pedido-estatus-badge completado";
                   }
 
                   return `
