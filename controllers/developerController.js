@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const path = require('path');
+const configuracionService = require('../services/configuracionService');
 
 async function loginPage(req, res) {
   if (req.session && req.session.isDeveloper) {
@@ -155,11 +156,103 @@ async function toggleTenantStatus(req, res) {
   }
 }
 
+async function getIvaConfig(req, res) {
+  try {
+    const { tenantId } = req.params;
+
+    if (!tenantId) {
+      return res.status(400).json({ 
+        error: 'Parámetro faltante',
+        message: 'Se requiere tenantId' 
+      });
+    }
+
+    const tasa = await configuracionService.getIvaTasa(parseInt(tenantId));
+    const porcentaje = `${(tasa * 100).toFixed(0)}%`;
+
+    res.json({
+      success: true,
+      data: {
+        tasa,
+        porcentaje
+      }
+    });
+
+  } catch (error) {
+    console.error('[Developer] Error al obtener configuración de IVA:', error);
+    res.status(500).json({ 
+      error: 'Error del servidor',
+      message: 'Error al obtener la configuración de IVA' 
+    });
+  }
+}
+
+async function updateIvaConfig(req, res) {
+  try {
+    const { tenantId } = req.params;
+    const { tasa } = req.body;
+
+    if (!tenantId) {
+      return res.status(400).json({ 
+        error: 'Parámetro faltante',
+        message: 'Se requiere tenantId' 
+      });
+    }
+
+    if (tasa === undefined || tasa === null) {
+      return res.status(400).json({
+        error: 'Parámetro faltante',
+        message: 'El campo "tasa" es requerido'
+      });
+    }
+
+    const tasaNum = parseFloat(tasa);
+
+    if (isNaN(tasaNum) || tasaNum < 0 || tasaNum > 1) {
+      return res.status(400).json({
+        error: 'Valor inválido',
+        message: 'La tasa de IVA debe ser un número entre 0 y 1 (ej: 0.16 para 16%)'
+      });
+    }
+
+    const developerId = req.session.developerId;
+
+    await configuracionService.setConfiguracion(
+      parseInt(tenantId),
+      'iva_tasa',
+      tasaNum.toString(),
+      developerId
+    );
+
+    const porcentaje = `${(tasaNum * 100).toFixed(0)}%`;
+
+    console.log(`🔧 [Developer] IVA actualizado para tenant ${tenantId}: ${porcentaje} por ${req.session.developerUsername}`);
+
+    res.json({
+      success: true,
+      message: 'Configuración de IVA actualizada correctamente',
+      data: {
+        tasa: tasaNum,
+        porcentaje
+      }
+    });
+
+  } catch (error) {
+    console.error('[Developer] Error al actualizar configuración de IVA:', error);
+    res.status(500).json({ 
+      error: 'Error del servidor',
+      message: 'Error al actualizar la configuración de IVA' 
+    });
+  }
+}
+
 module.exports = {
   loginPage,
   login,
   logout,
   dashboardPage,
   getTenants,
-  toggleTenantStatus
+  toggleTenantStatus,
+  getIvaConfig,
+  updateIvaConfig
 };

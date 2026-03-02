@@ -526,6 +526,74 @@
         </div>
     </div>
 
+    <!-- Modal Configurar IVA -->
+    <div class="modal fade" id="modalConfigIva" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-receipt"></i> Configurar IVA</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Tenant:</strong></label>
+                        <p id="ivaTenantName" class="text-muted"></p>
+                    </div>
+                    
+                    <div id="ivaLoadingState" class="text-center py-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Cargando configuración actual...</p>
+                    </div>
+
+                    <div id="ivaFormContainer" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>IVA Actual:</strong> <span id="ivaActual">--</span>
+                        </div>
+
+                        <form id="formConfigIva">
+                            <div class="mb-3">
+                                <label for="ivaPorcentaje" class="form-label required-field">Nueva Tasa de IVA (%)</label>
+                                <input type="number" class="form-control" id="ivaPorcentaje" min="0" max="100" step="0.01" required>
+                                <div class="form-text">Ingresa el porcentaje (ej: 16 para 16%)</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Vista previa:</label>
+                                <div class="p-3" style="background: #f8fafc; border-radius: 0.5rem; border: 1px solid #e2e8f0;">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Subtotal:</span>
+                                        <strong>$1,000.00</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>IVA (<span id="previewPorcentaje">0</span>%):</span>
+                                        <strong style="color: #f97316;">$<span id="previewIva">0.00</span></strong>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <strong>Total:</strong>
+                                        <strong style="color: #1e293b; font-size: 1.25rem;">$<span id="previewTotal">1000.00</span></strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i> <strong>Importante:</strong> Este cambio afectará todas las nuevas facturas generadas para este tenant.
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-create-tenant" id="btnSaveIva" style="display: none;">
+                        <i class="bi bi-check-circle"></i> Guardar Configuración
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const loadingSpinner = document.getElementById('loadingSpinner');
@@ -611,6 +679,9 @@
                         <td class="text-center">
                             <button class="btn btn-view-detail btn-sm me-2" onclick="viewTenantDetail(${tenant.tenantId})">
                                 <i class="bi bi-eye"></i> Ver
+                            </button>
+                            <button class="btn btn-sm me-2" style="background: #f97316; color: white; border: none;" onclick="openIvaModal(${tenant.tenantId}, '${tenant.nombreCliente}')" title="Configurar IVA">
+                                <i class="bi bi-receipt"></i> IVA
                             </button>
                             <div class="form-check form-switch d-inline-block">
                                 <input 
@@ -926,6 +997,136 @@
             } catch (error) {
                 console.error('Error al cerrar sesión:', error);
                 window.location.href = '/developer/login';
+            }
+        });
+
+        // IVA Configuration Modal
+        const modalConfigIva = new bootstrap.Modal(document.getElementById('modalConfigIva'));
+        let currentTenantId = null;
+
+        window.openIvaModal = async function(tenantId, tenantName) {
+            currentTenantId = tenantId;
+            document.getElementById('ivaTenantName').textContent = tenantName;
+            document.getElementById('ivaLoadingState').style.display = 'block';
+            document.getElementById('ivaFormContainer').style.display = 'none';
+            document.getElementById('btnSaveIva').style.display = 'none';
+            
+            modalConfigIva.show();
+
+            try {
+                const response = await fetch(`/developer/api/tenants/${tenantId}/iva`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const tasaActual = data.data.tasa;
+                    const porcentajeActual = (tasaActual * 100).toFixed(2);
+                    
+                    document.getElementById('ivaActual').textContent = data.data.porcentaje;
+                    document.getElementById('ivaPorcentaje').value = porcentajeActual;
+                    
+                    updateIvaPreview(porcentajeActual);
+                    
+                    document.getElementById('ivaLoadingState').style.display = 'none';
+                    document.getElementById('ivaFormContainer').style.display = 'block';
+                    document.getElementById('btnSaveIva').style.display = 'inline-block';
+                } else {
+                    throw new Error(data.message || 'Error al cargar configuración');
+                }
+            } catch (error) {
+                console.error('Error al cargar IVA:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudo cargar la configuración de IVA',
+                    confirmButtonColor: '#ef4444'
+                });
+                modalConfigIva.hide();
+            }
+        };
+
+        document.getElementById('ivaPorcentaje').addEventListener('input', (e) => {
+            updateIvaPreview(e.target.value);
+        });
+
+        function updateIvaPreview(porcentaje) {
+            const subtotal = 1000;
+            const iva = subtotal * (parseFloat(porcentaje) / 100);
+            const total = subtotal + iva;
+
+            document.getElementById('previewPorcentaje').textContent = parseFloat(porcentaje).toFixed(2);
+            document.getElementById('previewIva').textContent = iva.toFixed(2);
+            document.getElementById('previewTotal').textContent = total.toFixed(2);
+        }
+
+        document.getElementById('btnSaveIva').addEventListener('click', async () => {
+            const form = document.getElementById('formConfigIva');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const porcentaje = parseFloat(document.getElementById('ivaPorcentaje').value);
+            const tasa = porcentaje / 100;
+
+            const result = await Swal.fire({
+                icon: 'question',
+                title: '¿Confirmar cambio de IVA?',
+                html: `
+                    <p>Se actualizará la tasa de IVA a <strong>${porcentaje.toFixed(2)}%</strong></p>
+                    <p class="text-muted" style="font-size: 0.875rem;">Este cambio afectará todas las nuevas facturas generadas.</p>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Sí, actualizar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#f97316',
+                cancelButtonColor: '#6c757d'
+            });
+
+            if (!result.isConfirmed) return;
+
+            const btnSave = document.getElementById('btnSaveIva');
+            const originalText = btnSave.innerHTML;
+            btnSave.disabled = true;
+            btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
+
+            try {
+                const response = await fetch(`/developer/api/tenants/${currentTenantId}/iva`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ tasa })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Configuración actualizada!',
+                        text: `IVA configurado a ${data.data.porcentaje}`,
+                        confirmButtonColor: '#22c55e',
+                        timer: 3000,
+                        timerProgressBar: true
+                    });
+                    modalConfigIva.hide();
+                } else {
+                    throw new Error(data.message || 'Error al actualizar');
+                }
+            } catch (error) {
+                console.error('Error al guardar IVA:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'No se pudo actualizar la configuración',
+                    confirmButtonColor: '#ef4444'
+                });
+            } finally {
+                btnSave.disabled = false;
+                btnSave.innerHTML = originalText;
             }
         });
 

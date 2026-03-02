@@ -299,4 +299,117 @@ router.get('/api/tenants/:id', developerGuard, onboardingController.obtenerTenan
  */
 router.post('/api/tenants/create', developerGuard, onboardingController.crearTenant);
 
+/**
+ * @swagger
+ * /developer/api/tenants/{tenantId}/iva:
+ *   get:
+ *     summary: Obtener configuración de IVA de un tenant
+ *     tags: [Developer]
+ *     x-internal: true
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del tenant
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Configuración de IVA obtenida
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     tasa:
+ *                       type: number
+ *                       example: 0.16
+ *                     porcentaje:
+ *                       type: string
+ *                       example: "16%"
+ *       401:
+ *         description: No autenticado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get('/api/tenants/:tenantId/iva', developerGuard, developerController.getIvaConfig);
+
+/**
+ * @swagger
+ * /developer/api/tenants/{tenantId}/iva:
+ *   put:
+ *     summary: Actualizar configuración de IVA de un tenant
+ *     tags: [Developer]
+ *     x-internal: true
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: tenantId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del tenant
+ *         example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [tasa]
+ *             properties:
+ *               tasa:
+ *                 type: number
+ *                 example: 0.16
+ *                 description: Tasa de IVA (0-1, ej 0.16 = 16%)
+ *     responses:
+ *       200:
+ *         description: Configuración actualizada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Configuración de IVA actualizada correctamente"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     tasa:
+ *                       type: number
+ *                       example: 0.16
+ *                     porcentaje:
+ *                       type: string
+ *                       example: "16%"
+ *       400:
+ *         description: Datos inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: No autenticado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put('/api/tenants/:tenantId/iva', developerGuard, developerController.updateIvaConfig);
+
 module.exports = router;
