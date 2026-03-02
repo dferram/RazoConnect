@@ -163,8 +163,8 @@ function generarHeader(doc, tenantInfo, pedidoData) {
      .text(`Fecha: ${fechaEmision}`, 390, 78, { align: 'right', width: 172 });
 
   // Línea separadora — azul marino
-  doc.moveTo(50, 115)
-     .lineTo(562, 115)
+  doc.moveTo(50, 120)
+     .lineTo(562, 120)
      .strokeColor(COLOR_PRIMARIO)
      .lineWidth(1.5)
      .stroke();
