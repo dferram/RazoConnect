@@ -238,7 +238,10 @@ function generarTablaProductos(doc, detalles) {
       yPos = 50;
     }
 
-    const subtotal = parseFloat(detalle.preciorporpaquete || 0) * parseInt(detalle.cantidadpaquetes || 0);
+    // CORRECTO — usar preciounitario * piezastotales como fallback:
+    const precioPorPaquete = parseFloat(detalle.preciorporpaquete) || 
+                             (parseFloat(detalle.preciounitario || 0) * parseInt(detalle.cantidadpaquetes || 1));
+    const subtotal = precioPorPaquete * parseInt(detalle.cantidadpaquetes || 0);
 
     if (index % 2 === 0) {
       doc.rect(50, yPos, 512, 20)

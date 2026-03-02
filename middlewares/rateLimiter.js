@@ -37,6 +37,32 @@ function getCleanIp(req) {
 }
 
 // ============================================================================
+// HELPER: Detecta si Redis está disponible para el rate limiter
+// Si Redis no está listo, deja pasar la request (fail-open) para evitar 
+// que un fallo de Redis bloquee la app completa
+// ============================================================================
+function isRedisReady() {
+  try {
+    return redisClient.isReady;
+  } catch {
+    return false;
+  }
+}
+
+// Skip function: si Redis no está listo, deja pasar SIN limitear
+// Esto es "fail-open" — preferimos no limitar a bloquear toda la app
+function skipIfRedisDown(req, res) {
+  if (!isRedisReady()) {
+    logger.warn('Rate limiter: Redis no disponible, skip aplicado', {
+      path: req.path,
+      method: req.method
+    });
+    return true; // true = skip the rate limiter
+  }
+  return false;
+}
+
+// ============================================================================
 // CONFIGURACIÓN ESTRICTA DE AZURE REDIS CON TLS
 // ============================================================================
 
@@ -49,6 +75,7 @@ const redisClient = createClient({
     tls: true, // OBLIGATORIO PARA AZURE
     keepAlive: 30000,         // Ping cada 30 segundos para mantener la conexión viva
     connectTimeout: 10000,    // Timeout de conexión 10 segundos
+    commandTimeout: 3000,     // CRÍTICO: máx 3 segundos por comando — evita bloqueos largos
     reconnectStrategy: (retries) => {
       if (retries > 10) {
         logger.error('Redis: demasiados reintentos, abandonando reconexión');
@@ -100,6 +127,9 @@ const globalLimiter = rateLimit({
   standardHeaders: true, // Retornar info en headers `RateLimit-*`
   legacyHeaders: false, // Deshabilitar headers `X-RateLimit-*`
   
+  // CRÍTICO: skip si Redis no está disponible (fail-open)
+  skip: skipIfRedisDown,
+  
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
   
@@ -136,6 +166,9 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   
+  // CRÍTICO: skip si Redis no está disponible (fail-open)
+  skip: skipIfRedisDown,
+  
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
   
@@ -170,6 +203,9 @@ const tenantRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 
+  // CRÍTICO: skip si Redis no está disponible (fail-open)
+  skip: skipIfRedisDown,
+
   // FIX AZURE: keyGenerator personalizado que combina IP limpia + tenant
   keyGenerator: (req) => {
     const cleanIp = getCleanIp(req);
@@ -202,6 +238,9 @@ const heavyOperationLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 
+  // CRÍTICO: skip si Redis no está disponible (fail-open)
+  skip: skipIfRedisDown,
+
   // FIX AZURE: keyGenerator personalizado que combina IP limpia + tenant
   keyGenerator: (req) => {
     const cleanIp = getCleanIp(req);
@@ -232,6 +271,9 @@ const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
   max: 3,
   
+  // CRÍTICO: skip si Redis no está disponible (fail-open)
+  skip: skipIfRedisDown,
+  
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
   
@@ -249,6 +291,9 @@ const registerLimiter = rateLimit({
 const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
   max: 3,
+  
+  // CRÍTICO: skip si Redis no está disponible (fail-open)
+  skip: skipIfRedisDown,
   
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
@@ -268,6 +313,9 @@ const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   
+  // CRÍTICO: skip si Redis no está disponible (fail-open)
+  skip: skipIfRedisDown,
+  
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
   
@@ -286,6 +334,9 @@ const checkoutLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 30,
   
+  // CRÍTICO: skip si Redis no está disponible (fail-open)
+  skip: skipIfRedisDown,
+  
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
   
@@ -303,6 +354,9 @@ const checkoutLimiter = rateLimit({
 const adminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
+  
+  // CRÍTICO: skip si Redis no está disponible (fail-open)
+  skip: skipIfRedisDown,
   
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
