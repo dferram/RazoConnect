@@ -48,6 +48,7 @@ const pedidosAdminController = require("../controllers/pedidosAdminController");
 const cxpAdminController = require("../controllers/cxpAdminController");
 const movimientosInventarioController = require("../controllers/movimientosInventarioController");
 const medidasAdminController = require("../controllers/medidasAdminController");
+const configuracionController = require("../controllers/admin/configuracionController");
 const tamanosAdminController = require("../controllers/tamanosAdminController");
 const dashboardAdminController = require("../controllers/dashboardAdminController");
 const reportesVentasController = require("../controllers/reportesVentasController");
@@ -2234,6 +2235,30 @@ router.post(
   authenticate,
   authorizeAdmin,
   pedidosController.togglePrioridad
+);
+
+/**
+ * @route   GET /api/admin/configuracion/iva
+ * @desc    Obtener configuración de IVA del tenant
+ * @access  Private (Admin only)
+ */
+router.get(
+  "/configuracion/iva",
+  authenticate,
+  authorizeAdmin,
+  configuracionController.getIvaConfig
+);
+
+/**
+ * @route   PUT /api/admin/configuracion/iva
+ * @desc    Actualizar configuración de IVA del tenant
+ * @access  Private (Admin only)
+ */
+router.put(
+  "/configuracion/iva",
+  authenticate,
+  authorizeAdmin,
+  configuracionController.updateIvaConfig
 );
 
 module.exports = router;

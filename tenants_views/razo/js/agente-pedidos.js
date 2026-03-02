@@ -166,6 +166,19 @@
                     Ver detalle
                   </button>
                   ${
+                    (pedido.estatus === 'Surtido' || pedido.estatus === 'Enviado' || pedido.estatus === 'Entregado')
+                      ? `
+                      <button
+                        class="btn"
+                        style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #dc2626; color: white; border: 2px solid #991b1b;"
+                        onclick="descargarFacturaAgente(${pedido.pedidoId})"
+                        title="Generar factura PDF">
+                        🧾 Generar Factura
+                      </button>
+                      `
+                      : ""
+                  }
+                  ${
                     puedeSolicitarCambio
                       ? `<button
                           type="button"
@@ -508,6 +521,80 @@
             "error"
           );
         }
+      }
+    };
+
+    // Función global para descargar factura
+    window.descargarFacturaAgente = async function(pedidoId) {
+      const token = localStorage.getItem('razoconnect_agente_token');
+      if (!token) {
+        showToast('Debes iniciar sesión para descargar la factura', 'error');
+        return;
+      }
+
+      // Mostrar alerta sobre el IVA
+      if (typeof Swal !== 'undefined' && Swal && typeof Swal.fire === 'function') {
+        const result = await Swal.fire({
+          icon: 'info',
+          title: 'Información sobre la Factura',
+          html: `
+            <div style="text-align: left;">
+              <p><strong>⚠️ Importante:</strong></p>
+              <ul style="margin-left: 1rem;">
+                <li>Esta factura incluye el <strong>IVA (16%)</strong> aplicable.</li>
+                <li>Es un documento interno para control administrativo.</li>
+                <li><strong>No es un CFDI fiscal válido</strong> ante el SAT.</li>
+              </ul>
+              <p style="margin-top: 1rem;">¿Deseas continuar con la descarga?</p>
+            </div>
+          `,
+          showCancelButton: true,
+          confirmButtonText: 'Sí, descargar',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#dc2626',
+          cancelButtonColor: '#6b7280'
+        });
+
+        if (!result.isConfirmed) {
+          return;
+        }
+      }
+
+      try {
+        const response = await fetch(`/api/pedidos/${pedidoId}/factura`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Error al generar la factura');
+          } else {
+            throw new Error(`Error del servidor: ${response.status}`);
+          }
+        }
+
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `Factura-Pedido-${pedidoId}.pdf`;
+        link.style.display = 'none';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+        
+        showToast('Factura descargada correctamente', 'success');
+      } catch (error) {
+        console.error('Error al descargar factura:', error);
+        showToast(error.message || 'Error al generar la factura', 'error');
       }
     };
 

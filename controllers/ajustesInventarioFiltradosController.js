@@ -46,11 +46,15 @@ const getAjustesInventarioFiltrados = async (req, res) => {
       'MERMA',             // Mermas específicas
       'ADICION',           // Adiciones específicas
       'VENTA',             // Salidas por venta
-      'DEVOLUCION'         // Devoluciones
+      'DEVOLUCION',        // Devoluciones
+      'SALIDA_PEDIDO'      // Salidas de almacén por pedidos surtidos
     ];
     
+    // Mapeo de SALIDA_PEDIDO a VENTA (mismo tipo en DB)
+    const tipoOrigenDB = tipoOrigenRaw === 'SALIDA_PEDIDO' ? 'VENTA' : tipoOrigenRaw;
+    
     if (tipoOrigenRaw && tiposOrigenValidos.includes(tipoOrigenRaw)) {
-      values.push(tipoOrigenRaw);
+      values.push(tipoOrigenDB);
       where.push(`li.tipo_origen = $${values.length}`);
     }
 
@@ -81,6 +85,9 @@ const getAjustesInventarioFiltrados = async (req, res) => {
       }
     }
 
+    // NOTA: log_inventario NO tiene columna pedido_id según schema
+    // Los pedidos se rastrean mediante motivo que incluye "Pedido #XXX"
+    
     const whereSql = `WHERE ${where.join(" AND ")}`;
     
     // Query unificada desde log_inventario con trazabilidad de origen
@@ -156,6 +163,12 @@ const getAjustesInventarioFiltrados = async (req, res) => {
         referenciaOrigen = `Sesión: ${r.sesion_nombre || `#${r.sesion_auditoria_id}`}`;
       } else if (r.ajuste_manual_id) {
         referenciaOrigen = `Ajuste #${r.ajuste_manual_id}`;
+      } else if (r.motivo && r.motivo.includes('Pedido #')) {
+        // Extraer número de pedido del motivo si existe
+        const match = r.motivo.match(/Pedido #(\d+)/);
+        if (match) {
+          referenciaOrigen = `Pedido #${match[1]}`;
+        }
       }
 
       return {

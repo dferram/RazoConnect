@@ -25,7 +25,8 @@
 const db = require('../db');
 const logger = require('../utils/logger');
 const SmartStockService = require('../services/SmartStockService');
-const { crearNotificacionServicio } = require('../services/notificacionesService');
+const inventoryService = require('../services/inventoryService');
+const { crearNotificacion } = require('../services/notificacionesService');
 const { executeTransaction, createValidator } = require('../utils/transactionManager');
 
 /**
@@ -248,45 +249,31 @@ const updatePedidoEstatus = async (req, res) => {
             continue;
           }
 
-          
-          // Usar SmartStockService para deducir stock
-          const resultado = await SmartStockService.adjustStock({
-            varianteId,
-            cantidad: -1 * piezasTotales,
-            userId: req.user.id,
-            userRole: req.user.roles || ['admin'],
-            tenantId: tenant_id,
-            motivo,
-            client // ✅ CRÍTICO: Pasar el client de la transacción
-          });
-
-          if (!resultado.success) {
-            throw new Error(`Error al deducir stock de ${item.sku}: ${resultado.message}`);
-          }
-
-          logger.logOperation('STOCK_DEDUCIDO', { 
-            sku: item.sku, 
-            cantidad: piezasTotales, 
-            nuevoStock: resultado.newStock 
-          });
-          
-          // Registrar en Kardex
-          await client.query(
-            `INSERT INTO movimientos_inventario 
-             (variante_id, tipo, cantidad, stock_previo, stock_posterior, motivo, admin_id, tenant_id)
-             VALUES ($1, 'MERMA', $2, $3, $4, $5, $6, $7)`,
-            [
+          // ✅ Usar inventoryService para registrar en log_inventario con tipo_origen=VENTA
+          try {
+            await inventoryService.registrarMovimiento(client, {
               varianteId,
-              piezasTotales,
-              resultado.newStock + piezasTotales,
-              resultado.newStock,
-              `Venta - Pedido #${pedidoId}`,
-              req.user.id,
-              tenant_id
-            ]
-          );
-          
-          logger.logOperation('KARDEX_REGISTRADO', { sku: item.sku });
+              cantidadDelta: -1 * piezasTotales,
+              motivo,
+              usuarioId: req.user.id,
+              esExcepcion: false,
+              tenantId: tenant_id,
+              userRole: req.user.roles || ['admin'],
+              tipoOrigen: 'VENTA' // ✅ CRÍTICO: Registrar como VENTA para conciliación
+            });
+
+            logger.logOperation('STOCK_DEDUCIDO', { 
+              sku: item.sku, 
+              cantidad: piezasTotales,
+              tipoOrigen: 'VENTA'
+            });
+          } catch (error) {
+            logger.logOperation('ERROR_DEDUCCION_STOCK', { 
+              sku: item.sku, 
+              error: error.message 
+            });
+            throw new Error(`Error al deducir stock de ${item.sku}: ${error.message}`);
+          }
         }
 
 
@@ -392,14 +379,21 @@ const updatePedidoEstatus = async (req, res) => {
 
     // Crear notificación para el cliente (fuera de transacción)
     try {
-      await crearNotificacionServicio({
+      await crearNotificacion(
+        result.pedido.clienteid,
+        'pedido',
+        `Pedido ${estatus}`,
+        `Tu pedido #${pedidoId} ha sido actualizado a: ${estatus}`,
+        {
+          url: `/dashboard.html?tab=pedidos`,
+          prioridad: 'normal',
+          metadata: { pedidoId }
+        }
+      );
+      logger.info('[NOTIFICATION] Notificación creada exitosamente', {
         clienteId: result.pedido.clienteid,
-        tipo: 'pedido',
-        titulo: `Pedido ${estatus}`,
-        mensaje: `Tu pedido #${pedidoId} ha sido actualizado a: ${estatus}`,
-        url: `/dashboard.html?tab=pedidos`,
-        prioridad: 'normal',
-        metadata: { pedidoId }
+        pedidoId,
+        estatus
       });
     } catch (notifError) {
       logger.warn('[NOTIFICATION] Error al crear notificación (no crítico)', {

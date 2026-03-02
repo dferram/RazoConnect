@@ -410,7 +410,6 @@
             class="form-input"
             style="width: 100%; padding: 0.75rem; font-size: 1rem"
           >
-            <option value="Pendiente">Pendiente</option>
             <option value="Surtido">✅ Con Stock (Confirmar y Reducir Inventario)</option>
             <option value="Enviado">Enviado</option>
             <option value="Entregado">Entregado</option>
@@ -616,44 +615,13 @@
                   <td>${order.agente ? `${order.agente.nombre} ${order.agente.apellido || ''}`.trim() : "-"}</td>
                   <td><span class="${badgeClass}">${order.estatus}</span></td>
                   <td>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                       <button 
-                        class="btn btn-secondary" 
+                        class="btn btn-primary" 
                         style="padding: 0.5rem 1rem; font-size: 0.875rem;"
                         onclick="verDetallePedido(${order.pedidoId})">
                         Ver detalle
                       </button>
-                      <button
-                        class="btn btn-primary"
-                        style="padding: 0.5rem 1rem; font-size: 0.875rem;"
-                        onclick="openStatusModal(${order.pedidoId}, '${
-                    order.clienteNombre
-                  }', '${order.estatus}')">
-                        Cambiar estatus
-                      </button>
-                      <button
-                        class="btn btn-info"
-                        style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #17a2b8; color: white;"
-                        onclick="descargarPDFPedido(${order.pedidoId})"
-                        title="Descargar remisión en PDF">
-                        📄 Generar Remisión
-                      </button>
-                      <button
-                        class="btn btn-warning"
-                        style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #ffc107; color: #000;"
-                        onclick="abrirModalAjuste(${order.pedidoId})"
-                        title="Ajustar productos del pedido">
-                        ✏️ Ajustar Pedido
-                      </button>
-                      ${order.urlEvidenciaEntrega ? `
-                        <button
-                          class="btn btn-success"
-                          style="padding: 0.5rem 1rem; font-size: 0.875rem;"
-                          onclick="verEvidencia('${order.urlEvidenciaEntrega}')"
-                          title="Ver evidencia de entrega">
-                          ✅ Ver Firma
-                        </button>
-                      ` : ''}
                     </div>
                   </td>
                 </tr>
@@ -1140,6 +1108,83 @@
         } catch (error) {
           console.error('Error al descargar PDF:', error);
           showToast(error.message || 'Error al generar el PDF. Intenta de nuevo.', 'error');
+        }
+      }
+
+      async function descargarFacturaPedido(pedidoId) {
+        const token = localStorage.getItem('razoconnect_admin_token');
+        if (!token) {
+          showToast('Debes iniciar sesión para descargar la factura', 'error');
+          return;
+        }
+
+        // Mostrar alerta sobre el IVA
+        const result = await Swal.fire({
+          icon: 'info',
+          title: 'Información sobre la Factura',
+          html: `
+            <div style="text-align: left;">
+              <p><strong>⚠️ Importante:</strong></p>
+              <ul style="margin-left: 1rem;">
+                <li>Esta factura incluye el <strong>IVA (16%)</strong> aplicable.</li>
+                <li>Es un documento interno para control administrativo.</li>
+                <li><strong>No es un CFDI fiscal válido</strong> ante el SAT.</li>
+              </ul>
+              <p style="margin-top: 1rem;">¿Deseas continuar con la descarga?</p>
+            </div>
+          `,
+          showCancelButton: true,
+          confirmButtonText: 'Sí, descargar',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#dc2626',
+          cancelButtonColor: '#6b7280'
+        });
+
+        if (!result.isConfirmed) {
+          return;
+        }
+
+        try {
+          showToast('Generando factura...', 'info');
+          
+          const response = await fetch(`${API_BASE_URL}/pedidos/${pedidoId}/factura`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              const errorData = await response.json();
+              throw new Error(errorData.message || errorData.error || 'Error al generar la factura');
+            } else {
+              throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+            }
+          }
+
+          const blob = await response.blob();
+          
+          if (blob.size === 0) {
+            throw new Error('La factura generada está vacía');
+          }
+          
+          const blobUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = `Factura-Pedido-${pedidoId}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+          
+          showToast('Factura descargada correctamente', 'success');
+        } catch (error) {
+          console.error('Error al descargar factura:', error);
+          showToast(error.message || 'Error al generar la factura. Intenta de nuevo.', 'error');
         }
       }
 

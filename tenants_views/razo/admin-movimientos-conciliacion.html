@@ -368,6 +368,8 @@
                 <option value="AJUSTE_MANUAL">Ajustes Manuales</option>
                 <option value="MERMA">Mermas</option>
                 <option value="ADICION">Adiciones</option>
+                <option value="VENTA">Salidas por Venta (Pedidos Surtidos)</option>
+                <option value="SALIDA_PEDIDO">Salidas de Almacén (Legacy)</option>
               </select>
             </div>
             <div class="col-md-3">
@@ -387,6 +389,15 @@
                 <option value="">Todas las órdenes</option>
               </select>
               <small class="text-muted">Solo aplica para Entradas de Almacén</small>
+            </div>
+            <div class="col-md-3" id="filtroPedidoContainer" style="display: none;">
+              <label for="filtroPedido" class="form-label">
+                <i class="bi bi-bag-check"></i> Pedido Surtido
+              </label>
+              <select id="filtroPedido" class="form-select" title="Filtra por pedido surtido específico">
+                <option value="">Todos los pedidos</option>
+              </select>
+              <small class="text-muted">Solo pedidos con estatus Surtido, Enviado o Entregado</small>
             </div>
             <div class="col-md-2">
               <label for="filtroReferencia" class="form-label">Búsqueda</label>

@@ -624,6 +624,15 @@
                   >
                     📄 Generar Remisión
                   </button>
+                  <button 
+                    type="button"
+                    class="btn btn-danger"
+                    id="btnDescargarFactura"
+                    onclick="descargarFacturaAdmin()"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #dc2626; color: white; display: none;"
+                    title="Generar factura PDF">
+                    🧾 Generar Factura
+                  </button>
                 </div>
               </div>
             </div>
@@ -790,8 +799,6 @@
               style="width: 100%; padding: 0.75rem; font-size: 1rem"
               aria-label="Nuevo estatus del pedido"
             >
-              <option value="Pendiente">Pendiente</option>
-              <option value="Parcialmente Surtido">Parcialmente Surtido</option>
               <option value="Surtido">✅ Con Stock (Confirmar y Reducir Inventario)</option>
               <option value="Enviado">Enviado</option>
               <option value="Entregado">Entregado</option>
@@ -956,6 +963,17 @@
             if (btnCambiarEstatus) {
               btnCambiarEstatus.disabled = false;
               btnCambiarEstatus.removeAttribute("disabled");
+            }
+
+            // Show invoice button only for Surtido, Enviado, or Entregado orders
+            const btnDescargarFactura = document.getElementById("btnDescargarFactura");
+            if (btnDescargarFactura) {
+              const estatusPermitidos = ['Surtido', 'Enviado', 'Entregado'];
+              if (estatusPermitidos.includes(pedido.estatus)) {
+                btnDescargarFactura.style.display = 'inline-block';
+              } else {
+                btnDescargarFactura.style.display = 'none';
+              }
             }
 
             // Show priority badge if order is prioritized
@@ -1432,6 +1450,92 @@
               showToast('Error de red: No se pudo conectar al servidor. Verifica tu conexión.', 'error');
             } else {
               showToast(error.message || 'Error al generar el PDF. Intenta de nuevo.', 'error');
+            }
+          }
+        };
+
+        window.descargarFacturaAdmin = async function() {
+          if (!selectedOrderId) {
+            showToast("No se pudo identificar el pedido", "error");
+            return;
+          }
+
+          const token = localStorage.getItem('razoconnect_admin_token');
+          if (!token) {
+            showToast('Debes iniciar sesión para descargar la factura', 'error');
+            return;
+          }
+
+          // Mostrar alerta sobre el IVA
+          const result = await Swal.fire({
+            icon: 'info',
+            title: 'Información sobre la Factura',
+            html: `
+              <div style="text-align: left;">
+                <p><strong>⚠️ Importante:</strong></p>
+                <ul style="margin-left: 1rem;">
+                  <li>Esta factura incluye el <strong>IVA (16%)</strong> aplicable.</li>
+                  <li>Es un documento interno para control administrativo.</li>
+                  <li><strong>No es un CFDI fiscal válido</strong> ante el SAT.</li>
+                </ul>
+                <p style="margin-top: 1rem;">¿Deseas continuar con la descarga?</p>
+              </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Sí, descargar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280'
+          });
+
+          if (!result.isConfirmed) {
+            return;
+          }
+
+          try {
+            showToast('Generando factura...', 'info');
+            
+            const response = await fetch(`${API_BASE_URL}/pedidos/${selectedOrderId}/factura`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (!response.ok) {
+              const contentType = response.headers.get('content-type');
+              if (contentType && contentType.includes('application/json')) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || errorData.error || 'Error al generar la factura');
+              } else {
+                throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+              }
+            }
+
+            const blob = await response.blob();
+            
+            if (blob.size === 0) {
+              throw new Error('La factura generada está vacía');
+            }
+            
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = `Factura-Pedido-${selectedOrderId}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+            
+            showToast('Factura descargada correctamente', 'success');
+          } catch (error) {
+            console.error('Error al descargar factura:', error);
+            if (error.message.includes('EAI_AGAIN') || error.message.includes('ENOTFOUND') || error.message.includes('fetch')) {
+              showToast('Error de red: No se pudo conectar al servidor. Verifica tu conexión.', 'error');
+            } else {
+              showToast(error.message || 'Error al generar la factura. Intenta de nuevo.', 'error');
             }
           }
         };

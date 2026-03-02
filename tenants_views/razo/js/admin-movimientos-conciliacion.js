@@ -11,6 +11,7 @@ let filtrosActivos = {};
 document.addEventListener('DOMContentLoaded', async () => {
   await cargarSesionesAuditoria();
   await cargarOrdenesCompra();
+  await cargarPedidosSurtidos();
   configurarEventListeners();
   establecerFechasPorDefecto();
 });
@@ -102,13 +103,68 @@ async function cargarOrdenesCompra() {
       ordenes.forEach(orden => {
         const option = document.createElement('option');
         option.value = orden.ordencompraid;
-        option.textContent = `OC #${orden.ordencompraid} - ${orden.proveedor_nombre || 'Sin proveedor'}`;
+        const fecha = new Date(orden.fechacreacion).toLocaleDateString('es-MX');
+        option.textContent = `OC #${orden.ordencompraid} - ${orden.proveedor_nombre} (${fecha})`;
         select.appendChild(option);
       });
       console.log(`✅ Cargadas ${ordenes.length} órdenes de compra`);
     }
   } catch (error) {
     console.error('❌ Error cargando órdenes:', error);
+  }
+}
+
+/**
+ * Cargar pedidos surtidos disponibles
+ */
+async function cargarPedidosSurtidos() {
+  try {
+    const token = localStorage.getItem('razoconnect_admin_token');
+    if (!token) return;
+
+    // Cargar pedidos con estatus Surtido, Enviado o Entregado
+    const response = await fetch('/api/admin/pedidos', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) throw new Error('Error al cargar pedidos');
+
+    const result = await response.json();
+    const todosPedidos = result.data || [];
+    
+    // Filtrar solo pedidos surtidos
+    const pedidosSurtidos = todosPedidos.filter(p => 
+      ['Surtido', 'Enviado', 'Entregado'].includes(p.estatus)
+    );
+    
+    const select = document.getElementById('filtroPedido');
+    
+    if (!select) return;
+    
+    // Limpiar opciones existentes excepto la primera
+    while (select.options.length > 1) {
+      select.remove(1);
+    }
+    
+    if (pedidosSurtidos.length === 0) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'No hay pedidos surtidos';
+      option.disabled = true;
+      select.appendChild(option);
+      console.log('⚠️ No hay pedidos surtidos disponibles');
+    } else {
+      pedidosSurtidos.forEach(pedido => {
+        const option = document.createElement('option');
+        option.value = pedido.pedidoId;
+        const fecha = new Date(pedido.fechaPedido).toLocaleDateString('es-MX');
+        option.textContent = `Pedido #${pedido.pedidoId} - ${pedido.clienteNombre} (${fecha})`;
+        select.appendChild(option);
+      });
+      console.log(`✅ Cargados ${pedidosSurtidos.length} pedidos surtidos`);
+    }
+  } catch (error) {
+    console.error('❌ Error cargando pedidos:', error);
   }
 }
 
@@ -130,10 +186,24 @@ function configurarEventListeners() {
   document.getElementById('btnExportarPDF').addEventListener('click', exportarPDF);
   
   // Enter en inputs
-  ['filtroFechaInicio', 'filtroFechaFin', 'filtroReferencia'].forEach(id => {
-    document.getElementById(id).addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') aplicarFiltros();
-    });
+  ['filtroFechaInicio', 'filtroFechaFin', 'filtroReferencia', 'filtroPedido'].forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') aplicarFiltros();
+      });
+    }
+  });
+  
+  // Mostrar/ocultar filtro de pedido según tipo de movimiento
+  document.getElementById('filtroTipoMovimiento').addEventListener('change', (e) => {
+    const filtroPedidoContainer = document.getElementById('filtroPedidoContainer');
+    if (e.target.value === 'SALIDA_PEDIDO' || e.target.value === 'VENTA') {
+      filtroPedidoContainer.style.display = 'block';
+    } else {
+      filtroPedidoContainer.style.display = 'none';
+      document.getElementById('filtroPedido').value = '';
+    }
   });
   
   // Restablecer fechas por defecto al limpiar
@@ -213,6 +283,13 @@ async function cargarAjustes() {
     const ordenValue = document.getElementById('filtroOrdenCompra').value;
     if (ordenValue && ordenValue !== 'TODAS') {
       params.append('ordenCompraId', ordenValue);
+    }
+    
+    // Filtro por pedido (solo para SALIDA_PEDIDO o VENTA)
+    // Busca en el campo motivo: "Venta Pedido #123"
+    const pedidoValue = document.getElementById('filtroPedido').value;
+    if (pedidoValue && (filtrosActivos.tipoMovimiento === 'SALIDA_PEDIDO' || filtrosActivos.tipoMovimiento === 'VENTA')) {
+      params.append('referencia', `Pedido #${pedidoValue}`);
     }
 
     const response = await fetch(`/api/admin/ajustes-inventario/filtrados?${params.toString()}`, {
@@ -436,6 +513,8 @@ function limpiarFiltros() {
   document.getElementById('filtroSesion').value = '';
   document.getElementById('filtroOrdenCompra').value = '';
   document.getElementById('filtroReferencia').value = '';
+  document.getElementById('filtroPedido').value = '';
+  document.getElementById('filtroPedidoContainer').style.display = 'none';
   
   filtrosActivos = {};
   ajustesData = [];
@@ -700,7 +779,8 @@ function obtenerBadgeOrigen(tipoOrigen) {
     'AUDITORIA': '<span class="badge-origen badge-origen-auditoria"><i class="bi bi-clipboard-check"></i> Auditoría</span>',
     'AJUSTE_MANUAL': '<span class="badge-origen badge-origen-ajuste"><i class="bi bi-pencil-square"></i> Ajuste Manual</span>',
     'MERMA': '<span class="badge-origen badge-origen-merma"><i class="bi bi-exclamation-triangle"></i> Merma</span>',
-    'ADICION': '<span class="badge-origen badge-origen-adicion"><i class="bi bi-plus-circle"></i> Adición</span>'
+    'ADICION': '<span class="badge-origen badge-origen-adicion"><i class="bi bi-plus-circle"></i> Adición</span>',
+    'VENTA': '<span class="badge-origen" style="background:#dc3545;color:white;"><i class="bi bi-box-arrow-up"></i> Salida Pedido</span>'
   };
   return badges[tipoOrigen] || '<span class="badge-origen badge-origen-ajuste"><i class="bi bi-question-circle"></i> Otro</span>';
 }
@@ -730,6 +810,13 @@ function obtenerReferenciaHTML(ajuste) {
   if (ajuste.sesionAuditoriaId) {
     return `<a href="/admin-inventario-detalle.html?sesionId=${ajuste.sesionAuditoriaId}" class="referencia-origen" title="Ver Sesión: ${ajuste.sesionNombre || 'Sin nombre'}">
       <i class="bi bi-box-arrow-up-right"></i> ${ajuste.sesionNombre || `Sesión #${ajuste.sesionAuditoriaId}`}
+    </a>`;
+  }
+  
+  if (ajuste.pedidoId) {
+    return `<a href="admin-pedido-detalle.html?id=${ajuste.pedidoId}" target="_blank" class="referencia-origen" style="color:#dc3545;font-weight:bold;" title="Ver Pedido #${ajuste.pedidoNumero}">
+      Pedido #${ajuste.pedidoNumero}<br>
+      <small class="text-muted">${ajuste.clienteNombre || ''}</small>
     </a>`;
   }
   

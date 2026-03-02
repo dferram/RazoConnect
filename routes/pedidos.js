@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pedidosController = require("../controllers/pedidosController");
 const pdfController = require("../controllers/pdfController");
+const facturaController = require("../controllers/facturaController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 const checkCreditStatus = require("../middlewares/checkCreditStatus");
 const uploadComprobante = require("../middlewares/uploadComprobante");
@@ -324,6 +325,69 @@ router.put(
   authenticate,
   authorize(["cliente"]),
   pedidosController.cancelarPedido
+);
+
+/**
+ * @swagger
+ * /api/pedidos/{id}/factura:
+ *   get:
+ *     summary: Descargar factura PDF de un pedido (solo pedidos Surtido/Enviado/Entregado)
+ *     tags: [Pedidos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID del pedido
+ *         example: 123
+ *     responses:
+ *       200:
+ *         description: Factura PDF generada exitosamente
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       400:
+ *         description: Pedido en estatus no válido para facturación
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: No autenticado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: No tiene permisos para descargar esta factura
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Pedido no encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Error del servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get(
+  "/pedidos/:id/factura",
+  authenticate,
+  authorize(["cliente", "admin", "agente", "super_admin"]),
+  heavyOperationLimiter,
+  facturaController.descargarFactura
 );
 
 /**
