@@ -54,13 +54,14 @@ async function obtenerDatosPedido(pedidoId, tenantId) {
   const result = await pool.query(
     `SELECT 
       p.pedidoid, p.fechapedido, p.estatus, p.montototal, p.monto_descuento,
-      p.costoenvio, p.metodo_pago,
+      p.costo_envio, p.metodo_pago,
       c.nombre, c.apellido, c.email,
-      d.calle, d.numeroext, d.numeroint, d.colonia, 
-      d.ciudad, e.nombre as estado, d.codigopostal as cp
+      d.calle, d.numero_exterior, d.numero_interior, d.colonia, 
+      d.ciudad, e.nombre as estado, d.codigo_postal as cp,
+      d.referencias
     FROM pedidos p
     INNER JOIN clientes c ON c.clienteid = p.clienteid
-    LEFT JOIN cliente_direcciones d ON d.direccionid = p.direccionenvioid
+    LEFT JOIN cliente_direcciones d ON d.direccionid = p.direccionenvio_id
     LEFT JOIN estados e ON e.estadoid = d.estadoid
     WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
     [pedidoId, tenantId]
@@ -90,15 +91,11 @@ async function obtenerDetallesPedido(pedidoId) {
 
 async function obtenerInfoTenant(tenantId) {
   const result = await pool.query(
-    `SELECT 
-      COALESCE(nombre_comercial, nombre_negocio, 'RazoConnect') as nombre_negocio,
-      COALESCE(dominio, '') as dominio,
-      tenant_id
-    FROM tenants WHERE tenant_id = $1`,
+    'SELECT nombre_negocio, dominio FROM tenants WHERE tenant_id = $1',
     [tenantId]
   );
 
-  return result.rows[0] || { nombre_negocio: 'RazoConnect', dominio: '', tenant_id: tenantId };
+  return result.rows[0] || { nombre_negocio: 'RazoConnect', dominio: '' };
 }
 
 function generarHeader(doc, tenantInfo, pedidoData) {
@@ -180,8 +177,8 @@ function generarDatosPedido(doc, pedidoData) {
 
     const direccion = [
       pedidoData.calle,
-      pedidoData.numeroext,
-      pedidoData.numeroint
+      pedidoData.numero_exterior,
+      pedidoData.numero_interior
     ].filter(Boolean).join(' ');
 
     doc.text(direccion, 50, yPos);
@@ -190,7 +187,12 @@ function generarDatosPedido(doc, pedidoData) {
     doc.text(`${pedidoData.colonia}, ${pedidoData.ciudad}`, 50, yPos);
     yPos += 15;
 
-    doc.text(`${pedidoData.estado || ''}, C.P. ${pedidoData.cp || ''}`, 50, yPos);
+    doc.text(`${pedidoData.estado}, C.P. ${pedidoData.cp}`, 50, yPos);
+
+    if (pedidoData.referencias) {
+      yPos += 15;
+      doc.text(`Referencias: ${pedidoData.referencias}`, 50, yPos);
+    }
   }
 
   doc.currentY = yPos + 25;
@@ -270,7 +272,7 @@ function generarTotales(doc, pedidoData, ivaTasa) {
   
   const subtotal = parseFloat(pedidoData.montototal || 0);
   const descuento = parseFloat(pedidoData.monto_descuento || 0);
-  const costoEnvio = parseFloat(pedidoData.costoenvio || 0);
+  const costoEnvio = parseFloat(pedidoData.costo_envio || 0);
   
   const subtotalSinIva = subtotal - descuento + costoEnvio;
   const montoIva = subtotalSinIva * ivaTasa;

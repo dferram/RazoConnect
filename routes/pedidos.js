@@ -436,7 +436,7 @@ router.get(
 router.get(
   "/pedidos/:id/pdf",
   authenticate,
-  authorize(["cliente", "admin", "agente", "superadmin", "super_admin"]),
+  authorize(["cliente", "admin", "agente", "superadmin"]),
   heavyOperationLimiter,
   pdfController.generarPDFPedido
 );
