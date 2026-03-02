@@ -329,16 +329,23 @@ async function generarPDFPedido(req, res) {
                 const stockActual = parseInt(item.stock_actual_variante) || 0;
                 const cantidadRequerida = cantidadSegura * tamanoSeguro;
                 const hayStockSuficiente = stockActual >= cantidadRequerida;
-                const pedidoConfirmado = pedidoEstatus && pedidoEstatus.toLowerCase() === 'confirmado';
+                
+                // Determinar si el pedido ya fue procesado/surtido por su estatus real
+                // Los estatus que indican que el pedido ya fue atendido:
+                const estatusSurtido = ['surtido', 'enviado', 'entregado', 'confirmado'];
+                const pedidoProcesado = pedidoEstatus && estatusSurtido.includes(pedidoEstatus.toLowerCase().trim());
                 
                 let badgeColor, badgeText;
                 if (!hayStockSuficiente) {
+                    // Sin stock suficiente al momento del pedido → Bajo Pedido
                     badgeColor = '#DC2626'; // Rojo
                     badgeText = 'BAJO PEDIDO';
-                } else if (pedidoConfirmado) {
+                } else if (pedidoProcesado) {
+                    // El pedido ya fue surtido/enviado/entregado → Surtido
                     badgeColor = '#F97316'; // Naranja
                     badgeText = 'SURTIDO';
                 } else {
+                    // Hay stock y el pedido aún está pendiente → Con Stock
                     badgeColor = '#16A34A'; // Verde
                     badgeText = 'CON STOCK';
                 }

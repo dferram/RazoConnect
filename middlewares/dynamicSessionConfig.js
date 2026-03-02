@@ -29,6 +29,9 @@ function createDynamicSessionMiddleware() {
 
   const sessionMiddleware = session(baseSessionConfig);
 
+  // Cache para evitar logging repetitivo
+  const loggedHostnames = new Set();
+
   return (req, res, next) => {
     const hostname = req.hostname;
     const cookieDomain = getDomainForCookie(hostname);
@@ -44,9 +47,17 @@ function createDynamicSessionMiddleware() {
         }
       };
       
-      console.log(`🍪 Cookie domain configurado: ${cookieDomain} (hostname: ${hostname})`);
+      // Log solo la primera vez que se ve este hostname
+      if (!loggedHostnames.has(hostname)) {
+        console.log(`[Session] Cookie domain configurado: ${cookieDomain} (hostname: ${hostname})`);
+        loggedHostnames.add(hostname);
+      }
     } else {
-      console.log(`🍪 Cookie domain no establecido para hostname: ${hostname}`);
+      // Log solo la primera vez que se ve este hostname
+      if (!loggedHostnames.has(hostname)) {
+        console.log(`[Session] Cookie domain no establecido para hostname: ${hostname}`);
+        loggedHostnames.add(hostname);
+      }
     }
 
     sessionMiddleware(req, res, next);

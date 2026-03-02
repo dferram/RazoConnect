@@ -386,5 +386,7 @@ module.exports = {
   apiLimiter,
   checkoutLimiter,
   adminLimiter,
-  redisClient // Exportar para uso en otros módulos si es necesario
+  redisClient, // Exportar para uso en otros módulos si es necesario
+  _skipIfRedisDown: skipIfRedisDown, // Para testing
+  _getCleanIp: getCleanIp // Para testing
 };
