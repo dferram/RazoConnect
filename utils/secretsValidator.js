@@ -204,11 +204,11 @@ const runSecurityAudit = () => {
   
   // Reportar variables faltantes (CRÍTICO)
   if (validation.missing.length > 0) {
-    console.error('❌ VARIABLES CRÍTICAS FALTANTES:');
+    console.error('[ERROR] VARIABLES CRITICAS FALTANTES:');
     validation.missing.forEach(varName => {
       console.error(`   - ${varName}`);
     });
-    console.error('\n⚠️  LA APLICACIÓN NO PUEDE INICIAR SIN ESTAS VARIABLES\n');
+    console.error('\n[ERROR] LA APLICACION NO PUEDE INICIAR SIN ESTAS VARIABLES\n');
     
     // En producción, detener la aplicación
     if (process.env.NODE_ENV === 'production') {
@@ -219,7 +219,7 @@ const runSecurityAudit = () => {
   
   // Reportar advertencias
   if (validation.warnings.length > 0) {
-    console.warn('⚠️  ADVERTENCIAS:');
+    console.warn('[WARN] ADVERTENCIAS:');
     validation.warnings.forEach(warning => {
       console.warn(`   - ${warning}`);
     });
@@ -228,11 +228,11 @@ const runSecurityAudit = () => {
   
   // Reportar secretos débiles
   if (validation.weak.length > 0) {
-    console.warn('⚠️  SECRETOS DÉBILES DETECTADOS:');
+    console.warn('[WARN] SECRETOS DEBILES DETECTADOS:');
     validation.weak.forEach(issue => {
       console.warn(`   - ${issue}`);
     });
-    console.warn('   Recomendación: Generar secretos más fuertes\n');
+    console.warn('   Recomendacion: Generar secretos mas fuertes\n');
   }
   
   // Validar fortaleza de secretos críticos
@@ -242,7 +242,7 @@ const runSecurityAudit = () => {
     const value = process.env[varName];
     if (value) {
       const result = validateSecretStrength(varName, value);
-      const icon = result.valid ? '✅' : '❌';
+      // Validación silenciosa - solo se reportan problemas arriba
     }
   });
   

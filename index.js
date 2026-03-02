@@ -165,13 +165,7 @@ app.use('/api', globalLimiter);
 // El middleware dinámico configura cookies específicas por dominio para aislamiento total
 app.use(createDynamicSessionMiddleware());
 
-console.log(`🔐 Configuración de sesión: ${isProduction ? 'PRODUCCIÓN' : 'DESARROLLO'}`);
-console.log(`   - Store: PostgreSQL (connect-pg-simple)`);
-console.log(`   - Secure cookies: ${isProduction}`);
-console.log(`   - SameSite: lax`);
-console.log(`   - MaxAge: 7 días`);
-console.log(`   - Trust proxy: enabled`);
-console.log(`   - Domain isolation: ENABLED (dynamic per request)`);
+console.log(`[INFO] Configuracion de sesion: ${isProduction ? 'PRODUCCION' : 'DESARROLLO'}`);
 
 // Session debug logging disabled - only errors are logged
 
@@ -356,7 +350,7 @@ if (process.env.NODE_ENV !== 'production') {
       persistAuthorization: true,
     },
   }));
-  console.log('📚 Swagger UI disponible en /api/docs');
+  console.log('[INFO] Swagger UI disponible en /api/docs');
 }
 
 // Endpoint JSON del spec (siempre disponible para herramientas)

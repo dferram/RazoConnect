@@ -31,19 +31,6 @@ const config = {
 cloudinary.config(config);
 
 // Verificar configuración
-console.log("✅ Cloudinary configurado:");
-console.log("   Cloud Name:", config.cloud_name);
-console.log("   API Key:", config.api_key);
-console.log("   API Secret:", config.api_secret ? "***" + config.api_secret.slice(-4) : "NOT SET");
-console.log("   API Secret Length:", config.api_secret.length);
-
-// Test signature generation
-const testTimestamp = Math.round(Date.now() / 1000);
-const testParams = {
-  folder: "razoconnect_productos",
-  timestamp: testTimestamp
-};
-const testSignature = cloudinary.utils.api_sign_request(testParams, config.api_secret);
-console.log("   Test Signature Generation: ✅");
+console.log("[INFO] Cloudinary configurado correctamente");
 
 module.exports = cloudinary;
