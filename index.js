@@ -406,7 +406,7 @@ app.use("/api/*", (req, res) => {
   });
 });
 
-// Redirigir rutas no encontradas a index
+// Redirigir rutas no encontradas a index o 404
 app.get("*", (req, res) => {
   // Si no hay tenant asignado (bloqueado o no encontrado), redirigir a suspended
   if (!req.tenant) {
@@ -415,9 +415,40 @@ app.get("*", (req, res) => {
   }
   
   // Determinar carpeta del tenant dinámicamente desde la base de datos
-  // El campo 'tema' en la tabla tenants define qué carpeta usar ('razo' o 'fashion')
-  const tenantFolder = req.tenant.tema || 'razo'; // Default a 'razo' si no hay tema
-  res.sendFile(path.join(__dirname, "tenants_views", tenantFolder, "index.html"));
+  const tenantFolder = req.tenant.tema || 'razo';
+  
+  const fs = require('fs');
+  const requestedPath = req.path.substring(1) || 'index.html';
+  
+  // Rutas especiales que siempre deben servir index.html (SPA)
+  const spaRoutes = ['', 'inicio', 'productos', 'carrito', 'pedidos'];
+  
+  // Si es la raíz o una ruta SPA conocida, servir index.html
+  if (requestedPath === '' || spaRoutes.includes(requestedPath)) {
+    return res.sendFile(path.join(__dirname, "tenants_views", tenantFolder, "index.html"));
+  }
+  
+  // Determinar el archivo a buscar
+  let fileToServe = requestedPath;
+  
+  // Si no tiene extensión, asumir que es .html
+  if (!requestedPath.includes('.')) {
+    fileToServe = requestedPath + '.html';
+  }
+  
+  const filePath = path.join(__dirname, "tenants_views", tenantFolder, fileToServe);
+  
+  // Verificar si el archivo existe
+  if (fs.existsSync(filePath)) {
+    // Archivo existe, servirlo
+    return res.sendFile(filePath);
+  }
+  
+  // Archivo no existe - mostrar 404
+  console.log(`⚠️ [404] Archivo no encontrado: ${fileToServe}`);
+  return res.status(404).sendFile(
+    path.join(__dirname, "tenants_views", tenantFolder, "404.html")
+  );
 });
 
 // ============================================================================
