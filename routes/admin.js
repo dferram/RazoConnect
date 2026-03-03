@@ -477,7 +477,7 @@ router.post(
 router.get(
   "/productos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'jefe_almacen', 'almacenista', 'compras', 'marketing', 'soporte_cliente']),
   productosAdminController.getAllProductos
 );
 
@@ -516,7 +516,7 @@ router.get(
 router.post(
   "/productos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras']),
   uploadProductImages,
   productosAdminController.crearProducto
 );
@@ -524,7 +524,7 @@ router.post(
 router.put(
   "/productos/:id",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras', 'marketing']),
   uploadProductImages,
   productosAdminController.actualizarProducto
 );
@@ -555,7 +555,7 @@ router.post(
 router.post(
   "/productos/:id/imagenes",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras', 'marketing']),
   heavyOperationLimiter,
   (req, res, next) => {
     const handler = upload.fields([
@@ -1406,7 +1406,7 @@ router.post(
 router.get(
   "/ordenes-compra",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras', 'jefe_almacen', 'recepcionista_compras', 'contador', 'auditor_interno']),
   ordenesCompraController.getAllOrdenesCompra
 );
 // ✅ REFACTORED: Migrado a reportesOrdenesCompraController.js
@@ -1469,7 +1469,7 @@ router.delete(
 router.post(
   "/ordenes-compra/:id/confirmar",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras']),
   backorderController.confirmarOrdenBackorder
 );
 // ✅ REFACTORED: Migrado a backorderController.js
@@ -1483,7 +1483,7 @@ router.post(
 router.post(
   "/ordenes-compra",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras']),
   crearOrdenCompraSchema,
   validate,
   ordenesCompraController.crearOrdenCompra

@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const comprasController = require('../controllers/comprasController');
-const { authenticate } = require('../middlewares/authMiddleware');
-const { authorizeAdmin } = require('../middlewares/roleMiddleware');
+const { authenticate, authorizeRole } = require('../middlewares/roleMiddleware');
 
 /**
  * @swagger
@@ -54,7 +53,7 @@ const { authorizeAdmin } = require('../middlewares/roleMiddleware');
 router.put(
   '/orden-compra/:id/items',
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras']),
   comprasController.editarItemsOrdenCompra
 );
 
@@ -100,7 +99,7 @@ router.put(
 router.post(
   '/orden-compra/cancelar-backorder',
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras', 'jefe_almacen']),
   comprasController.cancelarBackorderVinculado
 );
 
@@ -157,7 +156,7 @@ router.post(
 router.post(
   '/orden-compra/registrar-anomalia',
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'jefe_almacen', 'recepcionista_compras']),
   comprasController.registrarAnomaliaEntrada
 );
 
