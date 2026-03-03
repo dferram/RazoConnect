@@ -417,38 +417,38 @@ app.get("*", (req, res) => {
   // Determinar carpeta del tenant dinámicamente desde la base de datos
   const tenantFolder = req.tenant.tema || 'razo';
   
-  // Lista de archivos HTML válidos en la raíz
-  const validPages = [
-    'index.html', 'inicio.html', 'login.html', 'registro.html',
-    'dashboard.html', 'productos.html', 'carrito.html', 'pedidos.html',
-    'admin-dashboard.html', 'admin-pedidos.html', 'admin-productos.html',
-    'agente-dashboard.html', 'test-permisos.html', '404.html'
-  ];
+  const fs = require('fs');
+  const requestedPath = req.path.substring(1) || 'index.html';
   
-  // Extraer nombre del archivo de la ruta
-  const requestedFile = req.path.substring(1) || 'index.html';
+  // Rutas especiales que siempre deben servir index.html (SPA)
+  const spaRoutes = ['', 'inicio', 'productos', 'carrito', 'pedidos'];
   
-  // Si es una ruta que termina en .html y NO existe en validPages
-  if (requestedFile.endsWith('.html') && !validPages.includes(requestedFile)) {
-    // Intentar servir el archivo, si no existe mostrar 404
-    const filePath = path.join(__dirname, "tenants_views", tenantFolder, requestedFile);
-    const fs = require('fs');
-    
-    if (!fs.existsSync(filePath)) {
-      // Archivo no existe, mostrar página 404
-      return res.status(404).sendFile(
-        path.join(__dirname, "tenants_views", tenantFolder, "404.html")
-      );
-    }
-  }
-  
-  // Servir index.html para rutas sin extensión o raíz
-  if (!requestedFile.includes('.')) {
+  // Si es la raíz o una ruta SPA conocida, servir index.html
+  if (requestedPath === '' || spaRoutes.includes(requestedPath)) {
     return res.sendFile(path.join(__dirname, "tenants_views", tenantFolder, "index.html"));
   }
   
-  // Para cualquier otra ruta, intentar servir el archivo
-  res.sendFile(path.join(__dirname, "tenants_views", tenantFolder, "index.html"));
+  // Determinar el archivo a buscar
+  let fileToServe = requestedPath;
+  
+  // Si no tiene extensión, asumir que es .html
+  if (!requestedPath.includes('.')) {
+    fileToServe = requestedPath + '.html';
+  }
+  
+  const filePath = path.join(__dirname, "tenants_views", tenantFolder, fileToServe);
+  
+  // Verificar si el archivo existe
+  if (fs.existsSync(filePath)) {
+    // Archivo existe, servirlo
+    return res.sendFile(filePath);
+  }
+  
+  // Archivo no existe - mostrar 404
+  console.log(`⚠️ [404] Archivo no encontrado: ${fileToServe}`);
+  return res.status(404).sendFile(
+    path.join(__dirname, "tenants_views", tenantFolder, "404.html")
+  );
 });
 
 // ============================================================================
