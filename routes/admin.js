@@ -102,7 +102,8 @@ const {
   authorizeAdminOnly,
   authorizeSuperAdmin,
   verifySuperAdmin,
-} = require("../middlewares/authMiddleware");
+  authorizeRole,
+} = require("../middlewares/roleMiddleware");
 
 // Rate limiter para proteger login de admin contra ataques de fuerza bruta
 const { authLimiter, heavyOperationLimiter } = require("../middlewares/rateLimiter");
@@ -999,7 +1000,7 @@ router.get(
 router.post(
   "/cuentas-por-pagar/:id/pagar",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador']),
   uploadComprobante.single("comprobante"),
   cxpAdminController.registrarPagoCuentaPorPagar
 );
@@ -1007,7 +1008,7 @@ router.post(
 router.get(
   "/cxp/exportar",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador', 'compras', 'auditor_interno']),
   cxpController.exportarLoteCxP
 );
 
@@ -1015,21 +1016,21 @@ router.get(
 router.get(
   "/cxc-summary",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'contador', 'auditor_interno']),
   cxcAdminController.getCxcSummary
 );
 
 router.get(
   "/cxc/metricas",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'contador', 'auditor_interno']),
   cxcController.getMetricasCobranza
 );
 
 router.get(
   "/cxc/exportar",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'contador', 'auditor_interno']),
   cxcController.exportarLoteCxC
 );
 
@@ -1040,70 +1041,70 @@ router.get(
 router.get(
   "/pagos-clientes/pendientes",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza']),
   cxcController.getPagosClientesPendientes
 );
 
 router.post(
   "/pagos-clientes/:pagoId/gestionar",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza']),
   cxcController.gestionarPagoCliente
 );
 
 router.get(
   "/cxc/historial-movimientos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'contador', 'auditor_interno']),
   cxcController.obtenerHistorialMovimientos
 );
 
 router.get(
   "/cxc/exportar-detallado",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'contador', 'auditor_interno']),
   cxcDetalladoController.exportarCxCDetallado
 );
 
 router.get(
   "/cxc/clientes-con-credito",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'encargado_credito']),
   cxcDetalladoController.obtenerClientesConCredito
 );
 
 router.get(
   "/cxc/summary-aging",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'contador', 'auditor_interno']),
   cxcController.getSummaryAging
 );
 
 router.get(
   "/cxc/cliente/:clienteId",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'encargado_credito', 'soporte_cliente']),
   cxcController.getClienteCXCDetail
 );
 
 router.get(
   "/cxc/cliente/:clienteId/movimientos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'encargado_credito', 'soporte_cliente']),
   cxcController.getClienteCXCMovimientos
 );
 
 router.get(
   "/cxc/estado-cuenta/:clienteId",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'encargado_credito', 'soporte_cliente']),
   cxcEnhancedController.getEstadoCuentaCliente
 );
 
 router.post(
   "/cxc/registrar-pago-manual",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza']),
   cxcEnhancedController.registrarPagoManual
 );
 
@@ -1127,7 +1128,7 @@ router.post(
 router.get(
   "/estado-cuenta/resumen",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador', 'compras', 'auditor_interno']),
   cxpAdminController.getResumenEstadoCuentaProveedores
 );
 
@@ -1135,7 +1136,7 @@ router.get(
 router.get(
   "/estado-cuenta/proveedores/:id/movimientos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador', 'compras', 'auditor_interno']),
   cxpAdminController.getEstadoCuentaProveedorMovimientos
 );
 
@@ -1143,7 +1144,7 @@ router.get(
 router.get(
   "/estado-cuenta/cxp/:id/productos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador', 'compras', 'auditor_interno']),
   cxpAdminController.getProductosRecibidosPorCxp
 );
 
@@ -2240,24 +2241,24 @@ router.post(
 /**
  * @route   GET /api/admin/configuracion/iva
  * @desc    Obtener configuración de IVA del tenant
- * @access  Private (Admin only)
+ * @access  Private (Financial roles)
  */
 router.get(
   "/configuracion/iva",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador']),
   configuracionController.getIvaConfig
 );
 
 /**
  * @route   PUT /api/admin/configuracion/iva
  * @desc    Actualizar configuración de IVA del tenant
- * @access  Private (Admin only)
+ * @access  Private (Financial roles)
  */
 router.put(
   "/configuracion/iva",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador']),
   configuracionController.updateIvaConfig
 );
 
