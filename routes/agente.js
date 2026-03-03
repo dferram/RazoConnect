@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const { authenticate, authorize } = require('../middlewares/authMiddleware');
+const { authenticate, authorizeRole } = require('../middlewares/roleMiddleware');
 const entregasController = require('../controllers/agentes/entregasController');
 const inventoryAuditController = require('../controllers/inventoryAuditController');
 const { heavyOperationLimiter } = require('../middlewares/rateLimiter');
@@ -28,9 +28,10 @@ const upload = multer({
   }
 });
 
-// Todas las rutas requieren autenticación de agente
+// Todas las rutas requieren autenticación de agente o ejecutivo_ventas
+// NOTA: ejecutivo_ventas es el mismo perfil que agente — acceso idéntico
 router.use(authenticate);
-router.use(authorize(['agente', 'admin']));
+router.use(authorizeRole(['super_admin', 'admin', 'ejecutivo_ventas']));
 
 /**
  * @swagger

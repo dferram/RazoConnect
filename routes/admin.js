@@ -444,14 +444,14 @@ router.get(
 router.get(
   "/pedidos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'supervisor_ventas', 'soporte_cliente', 'auditor_interno']),
   pedidosAdminController.getAllPedidos
 );
 // ✅ REFACTORED: Migrado a pedidosStatusController.js (Strangler Pattern)
 router.put(
   "/pedidos/:id",
   authenticate,
-  authorizeAdminOrAgente,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'supervisor_ventas']),
   pedidosStatusController.updatePedidoEstatus
 );
 // ✅ REFACTORED: Migrado a gestionPedidosAdminController.js
@@ -915,14 +915,14 @@ router.post(
 router.get(
   "/agentes",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'supervisor_ventas']),
   agentesAdminController.getAllAgentes
 );
 // ✅ REFACTORED: Migrado a agentesAdminController.js
 router.post(
   "/agentes",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial']),
   crearAgenteSchema,
   validate,
   agentesAdminController.crearAgente
@@ -945,7 +945,7 @@ router.get(
 router.put(
   "/agentes/:id",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial']),
   agentesAdminController.actualizarAgente
 );
 // ✅ REFACTORED: Migrado a agentesAdminController.js
@@ -963,14 +963,14 @@ router.put(
 router.get(
   "/comisiones",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'supervisor_ventas', 'ejecutivo_cobranza']),
   comisionesAdminController.getAllComisiones
 );
 // ✅ REFACTORED: Migrado a comisionesAdminController.js
 router.put(
   "/comisiones/:id/pagar",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'gerente_finanzas']),
   comisionesAdminController.pagarComision
 );
 
@@ -1179,7 +1179,7 @@ router.put(
 router.get(
   "/clientes",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'supervisor_ventas', 'ejecutivo_cobranza', 'encargado_credito', 'soporte_cliente', 'auditor_interno']),
   clientesAdminController.getAllClientes
 );
 // ✅ REFACTORED: Migrado a clientesAdminController.js
@@ -1220,7 +1220,7 @@ router.get(
 router.put(
   "/clientes/:id/credito",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'encargado_credito']),
   clientesAdminController.actualizarCreditoCliente
 );
 
@@ -2101,7 +2101,7 @@ router.put(
 router.get(
   "/cupones",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'marketing', 'supervisor_ventas']),
   cuponesController.listarCupones
 );
 
@@ -2115,21 +2115,21 @@ router.get(
 router.post(
   "/cupones",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'marketing']),
   cuponesController.crearCupon
 );
 
 router.put(
   "/cupones/:id",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'marketing']),
   cuponesController.actualizarCupon
 );
 
 router.delete(
   "/cupones/:id",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial']),
   cuponesController.desactivarCupon
 );
 

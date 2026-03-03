@@ -3,7 +3,7 @@ const router = express.Router();
 
 const notificacionesController = require("../controllers/notificacionesController");
 const numCuentaController = require("../controllers/numCuentaController");
-const { authenticate, authorize } = require("../middlewares/authMiddleware");
+const { authenticate, authorizeRole } = require("../middlewares/roleMiddleware");
 
 /**
  * @swagger
@@ -44,7 +44,7 @@ const { authenticate, authorize } = require("../middlewares/authMiddleware");
 router.get(
   "/notificaciones",
   authenticate,
-  authorize(["admin", "superadmin", "super_admin", "agente"]),
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'gerente_operaciones', 'gerente_comercial', 'contador', 'encargado_credito', 'ejecutivo_cobranza', 'supervisor_ventas', 'ejecutivo_ventas', 'jefe_almacen', 'almacenista', 'recepcionista_compras', 'compras', 'marketing', 'auditor_interno', 'soporte_cliente']),
   notificacionesController.obtenerNotificacionesStaff
 );
 
@@ -83,7 +83,7 @@ router.get(
 router.get(
   "/notificaciones/unread-count",
   authenticate,
-  authorize(["admin", "superadmin", "super_admin", "agente"]),
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'gerente_operaciones', 'gerente_comercial', 'contador', 'encargado_credito', 'ejecutivo_cobranza', 'supervisor_ventas', 'ejecutivo_ventas', 'jefe_almacen', 'almacenista', 'recepcionista_compras', 'compras', 'marketing', 'auditor_interno', 'soporte_cliente']),
   notificacionesController.obtenerConteoNoLeidasStaff
 );
 
@@ -118,7 +118,7 @@ router.get(
 router.post(
   "/notificaciones/marcar-todas-leidas",
   authenticate,
-  authorize(["admin", "superadmin", "super_admin", "agente"]),
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'gerente_operaciones', 'gerente_comercial', 'contador', 'encargado_credito', 'ejecutivo_cobranza', 'supervisor_ventas', 'ejecutivo_ventas', 'jefe_almacen', 'almacenista', 'recepcionista_compras', 'compras', 'marketing', 'auditor_interno', 'soporte_cliente']),
   notificacionesController.marcarTodasLeidasStaff
 );
 
@@ -160,7 +160,7 @@ router.post(
 router.get(
   "/numcuenta",
   authenticate,
-  authorize(["agente"]),
+  authorizeRole(['ejecutivo_ventas']),
   numCuentaController.obtenerCuentaAgente
 );
 
@@ -212,7 +212,7 @@ router.get(
 router.put(
   "/numcuenta",
   authenticate,
-  authorize(["agente"]),
+  authorizeRole(['ejecutivo_ventas']),
   numCuentaController.actualizarCuentaAgente
 );
 
