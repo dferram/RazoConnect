@@ -452,6 +452,39 @@ app.get("*", (req, res) => {
 });
 
 // ============================================================================
+// MANEJO DE ERRORES HTTP CON PÁGINAS PERSONALIZADAS
+// ============================================================================
+// Middleware para servir páginas de error personalizadas
+app.use((err, req, res, next) => {
+  const tenantFolder = req.tenant?.tema || 'razo';
+  const errorPage = path.join(__dirname, "tenants_views", tenantFolder);
+  
+  // Determinar qué página de error servir según el status code
+  if (err.status === 401 || res.statusCode === 401) {
+    return res.status(401).sendFile(path.join(errorPage, "401.html"));
+  }
+  
+  if (err.status === 403 || res.statusCode === 403) {
+    return res.status(403).sendFile(path.join(errorPage, "403.html"));
+  }
+  
+  if (err.status === 429 || res.statusCode === 429) {
+    return res.status(429).sendFile(path.join(errorPage, "429.html"));
+  }
+  
+  if (err.status === 503 || res.statusCode === 503) {
+    return res.status(503).sendFile(path.join(errorPage, "503.html"));
+  }
+  
+  // Para cualquier otro error 5xx, servir 500.html
+  if (err.status >= 500 || res.statusCode >= 500) {
+    return res.status(500).sendFile(path.join(errorPage, "500.html"));
+  }
+  
+  next(err);
+});
+
+// ============================================================================
 // MANEJO DE ERRORES GLOBAL CON SANITIZACIÓN
 // ============================================================================
 // Previene exposición de información sensible en errores (OWASP)
