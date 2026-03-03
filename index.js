@@ -406,7 +406,7 @@ app.use("/api/*", (req, res) => {
   });
 });
 
-// Redirigir rutas no encontradas a index
+// Redirigir rutas no encontradas a index o 404
 app.get("*", (req, res) => {
   // Si no hay tenant asignado (bloqueado o no encontrado), redirigir a suspended
   if (!req.tenant) {
@@ -415,8 +415,39 @@ app.get("*", (req, res) => {
   }
   
   // Determinar carpeta del tenant dinámicamente desde la base de datos
-  // El campo 'tema' en la tabla tenants define qué carpeta usar ('razo' o 'fashion')
-  const tenantFolder = req.tenant.tema || 'razo'; // Default a 'razo' si no hay tema
+  const tenantFolder = req.tenant.tema || 'razo';
+  
+  // Lista de archivos HTML válidos en la raíz
+  const validPages = [
+    'index.html', 'inicio.html', 'login.html', 'registro.html',
+    'dashboard.html', 'productos.html', 'carrito.html', 'pedidos.html',
+    'admin-dashboard.html', 'admin-pedidos.html', 'admin-productos.html',
+    'agente-dashboard.html', 'test-permisos.html', '404.html'
+  ];
+  
+  // Extraer nombre del archivo de la ruta
+  const requestedFile = req.path.substring(1) || 'index.html';
+  
+  // Si es una ruta que termina en .html y NO existe en validPages
+  if (requestedFile.endsWith('.html') && !validPages.includes(requestedFile)) {
+    // Intentar servir el archivo, si no existe mostrar 404
+    const filePath = path.join(__dirname, "tenants_views", tenantFolder, requestedFile);
+    const fs = require('fs');
+    
+    if (!fs.existsSync(filePath)) {
+      // Archivo no existe, mostrar página 404
+      return res.status(404).sendFile(
+        path.join(__dirname, "tenants_views", tenantFolder, "404.html")
+      );
+    }
+  }
+  
+  // Servir index.html para rutas sin extensión o raíz
+  if (!requestedFile.includes('.')) {
+    return res.sendFile(path.join(__dirname, "tenants_views", tenantFolder, "index.html"));
+  }
+  
+  // Para cualquier otra ruta, intentar servir el archivo
   res.sendFile(path.join(__dirname, "tenants_views", tenantFolder, "index.html"));
 });
 
