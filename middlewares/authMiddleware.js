@@ -184,9 +184,13 @@ const authenticate = async (req, res, next) => {
 
     if (adminResult.rows.length && adminResult.rows[0].activo === true) {
       const dbRol = normalizeRole(adminResult.rows[0].rol);
-      const rolFinal = ["superadmin", "super-admin", "super admin"].includes(dbRol)
-        ? "super_admin"
-        : "admin";
+      
+      // Normalizar variantes de super_admin
+      let rolFinal = dbRol;
+      if (["superadmin", "super-admin", "super admin"].includes(dbRol)) {
+        rolFinal = "super_admin";
+      }
+      // Para roles granulares, mantener el rol exacto de la BD
 
       req.user = {
         id: userId,
@@ -195,6 +199,7 @@ const authenticate = async (req, res, next) => {
         roles: [rolFinal], // Legacy compatibility
         email: decoded?.email || adminResult.rows[0].email || null,
         tenant_id: adminResult.rows[0].tenant_id,
+        permisos: [], // Se llenará con authorizePermiso si es necesario
       };
 
       return tenantSessionGuard(req, res, next);
@@ -389,6 +394,114 @@ const authorizeSuperAdmin = (req, res, next) => {
   next();
 };
 
+/**
+ * Middleware para autorizar por roles granulares
+ * Acepta array de roles exactos o wildcards tipo 'gerente_*'
+ * super_admin y admin pasan SIEMPRE (backward compatible)
+ * @param {Array<string>} rolesPermitidos - Array de roles permitidos
+ */
+const authorizeRole = (rolesPermitidos = []) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    const rolUsuario = normalizeRole(req.user.rol);
+
+    // super_admin y admin pasan SIEMPRE (backward compatible)
+    if (rolUsuario === "super_admin" || rolUsuario === "admin") {
+      return next();
+    }
+
+    // Verificar roles permitidos
+    const rolesNormalizados = rolesPermitidos.map(normalizeRole);
+    
+    // Verificar coincidencia exacta
+    if (rolesNormalizados.includes(rolUsuario)) {
+      return next();
+    }
+
+    // Verificar wildcards (ej: 'gerente_*' acepta gerente_finanzas, gerente_operaciones, etc.)
+    const tieneAccesoPorWildcard = rolesNormalizados.some(rolPermitido => {
+      if (rolPermitido.endsWith('*')) {
+        const prefijo = rolPermitido.slice(0, -1);
+        return rolUsuario.startsWith(prefijo);
+      }
+      return false;
+    });
+
+    if (tieneAccesoPorWildcard) {
+      return next();
+    }
+
+    // Construir mensaje descriptivo
+    const rolesLegibles = rolesPermitidos.join(', ');
+    return res.status(403).json({
+      success: false,
+      message: `Acceso denegado. Se requiere uno de los siguientes roles: ${rolesLegibles}`,
+      rolActual: req.user.rol,
+    });
+  };
+};
+
+/**
+ * Middleware para autorizar por permisos granulares
+ * Verifica si el rol del usuario tiene permiso para modulo:accion
+ * super_admin y admin tienen "*" en todo → pasan siempre
+ * @param {string} modulo - Módulo del sistema (ej: 'inventario', 'finanzas')
+ * @param {string} accion - Acción específica (ej: 'ver', 'editar', 'auditar')
+ */
+const authorizePermiso = (modulo, accion) => {
+  return async (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    const rolUsuario = normalizeRole(req.user.rol);
+
+    // super_admin y admin tienen acceso total (backward compatible)
+    if (rolUsuario === "super_admin" || rolUsuario === "admin") {
+      return next();
+    }
+
+    try {
+      // Lazy load del servicio de permisos (evitar dependencia circular)
+      const { tienePermiso } = require('../services/permisosService');
+      
+      const permitido = await tienePermiso(rolUsuario, modulo, accion);
+      
+      if (permitido) {
+        return next();
+      }
+
+      return res.status(403).json({
+        success: false,
+        message: `Acceso denegado. Se requiere permiso: ${modulo}:${accion}`,
+        rolActual: req.user.rol,
+      });
+    } catch (error) {
+      logger.error('Error verificando permisos', {
+        error: error.message,
+        rol: rolUsuario,
+        modulo,
+        accion,
+        requestId: req.requestId
+      });
+      
+      return res.status(500).json({
+        success: false,
+        message: "Error al verificar permisos",
+      });
+    }
+  };
+};
+
 module.exports = {
   authenticate,
   authorize,
@@ -397,4 +510,6 @@ module.exports = {
   authorizeAdminOnly,
   authorizeSuperAdmin,
   verifySuperAdmin,
+  authorizeRole,
+  authorizePermiso,
 };

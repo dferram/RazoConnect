@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate, authorizeAdmin } = require('../middlewares/authMiddleware');
+const { authenticate, authorizeRole, authorizeReportes } = require('../middlewares/roleMiddleware');
 const reportesController = require('../controllers/reportesController');
 const { heavyOperationLimiter } = require('../middlewares/rateLimiter');
 
@@ -41,7 +41,7 @@ const { heavyOperationLimiter } = require('../middlewares/rateLimiter');
 router.get(
   '/rentabilidad',
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'gerente_operaciones', 'gerente_comercial', 'contador', 'auditor_interno']),
   heavyOperationLimiter,
   reportesController.getReporteRentabilidad
 );
@@ -83,7 +83,7 @@ router.get(
 router.get(
   '/valuacion-inventario',
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'gerente_operaciones', 'contador', 'auditor_interno']),
   heavyOperationLimiter,
   reportesController.getValuacionInventario
 );
@@ -127,7 +127,7 @@ router.get(
 router.get(
   '/aging-backorders',
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras', 'auditor_interno']),
   heavyOperationLimiter,
   reportesController.getAgingBackorders
 );

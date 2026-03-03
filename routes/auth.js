@@ -907,4 +907,56 @@ router.get(
   agentesController.getCxCAgente
 );
 
+/**
+ * @swagger
+ * /api/auth/mis-permisos:
+ *   get:
+ *     summary: Obtener permisos del usuario autenticado
+ *     description: Retorna el rol y permisos del usuario para que el frontend sepa qué secciones mostrar
+ *     tags: [Autenticación]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Permisos obtenidos exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 rol:
+ *                   type: string
+ *                   example: gerente_finanzas
+ *                 permisos:
+ *                   type: object
+ *                   description: Mapa de módulos y sus acciones permitidas
+ *       401:
+ *         description: No autenticado
+ */
+router.get(
+  "/auth/mis-permisos",
+  authenticate,
+  async (req, res) => {
+    try {
+      const permisosService = require('../services/permisosService');
+      const permisos = await permisosService.getPermisosRol(req.user.rol);
+      
+      res.json({
+        success: true,
+        rol: req.user.rol,
+        permisos: permisos
+      });
+    } catch (error) {
+      console.error('Error obteniendo permisos:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener permisos del usuario'
+      });
+    }
+  }
+);
+
 module.exports = router;

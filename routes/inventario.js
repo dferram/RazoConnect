@@ -2,7 +2,7 @@
 const router = express.Router();
 const inventarioController = require('../controllers/inventarioController');
 const inventoryAuditController = require('../controllers/inventoryAuditController');
-const { authenticate, authorizeAdmin } = require('../middlewares/authMiddleware');
+const { authenticate, authorizeAdmin, authorizeRole } = require('../middlewares/roleMiddleware');
 
 // ============================================================================
 // RUTAS DE SESIONES DE INVENTARIO
@@ -47,7 +47,7 @@ const { authenticate, authorizeAdmin } = require('../middlewares/authMiddleware'
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/sesiones', authenticate, authorizeAdmin, inventoryAuditController.crearSesion);
+router.post('/sesiones', authenticate, authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'jefe_almacen']), inventoryAuditController.crearSesion);
 
 /**
  * @swagger
@@ -86,6 +86,7 @@ router.post('/sesiones', authenticate, authorizeAdmin, inventoryAuditController.
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+// NOTA: Agentes con toma de inventario también pasan - lógica en el controlador
 router.get('/sesiones', authenticate, inventoryAuditController.listarSesiones);
 
 /**
@@ -142,6 +143,7 @@ router.get('/sesiones', authenticate, inventoryAuditController.listarSesiones);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+// NOTA: Mantener validación 403 existente si agente no está asignado a esa sesión
 router.get('/sesiones/:sesionId', authenticate, inventarioController.obtenerSesionInventario);
 
 /**
@@ -230,7 +232,8 @@ router.get('/sesiones/:sesionId/dashboard', authenticate, inventoryAuditControll
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/sesiones/:sesionId/aplicar', authenticate, authorizeAdmin, inventoryAuditController.aplicarSesion);
+// Cerrar y sincronizar - acción crítica solo para gerentes
+router.post('/sesiones/:sesionId/aplicar', authenticate, authorizeRole(['super_admin', 'admin', 'gerente_operaciones']), inventoryAuditController.aplicarSesion);
 
 /**
  * @swagger
@@ -283,6 +286,7 @@ router.post('/sesiones/:sesionId/aplicar', authenticate, authorizeAdmin, invento
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+// NOTA: agente también pasa si está asignado (lógica en controlador)
 router.post('/registrar-conteo', authenticate, inventoryAuditController.registrarConteo);
 
 /**
@@ -434,7 +438,7 @@ router.get('/variante-por-sku', authenticate, inventoryAuditController.getVarian
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.put('/sesiones/:sesionId/asignar-agente', authenticate, authorizeAdmin, inventoryAuditController.asignarAgenteASesion);
+router.put('/sesiones/:sesionId/asignar-agente', authenticate, authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'jefe_almacen']), inventoryAuditController.asignarAgenteASesion);
 
 /**
  * @swagger

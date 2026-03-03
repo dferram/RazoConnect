@@ -102,7 +102,8 @@ const {
   authorizeAdminOnly,
   authorizeSuperAdmin,
   verifySuperAdmin,
-} = require("../middlewares/authMiddleware");
+  authorizeRole,
+} = require("../middlewares/roleMiddleware");
 
 // Rate limiter para proteger login de admin contra ataques de fuerza bruta
 const { authLimiter, heavyOperationLimiter } = require("../middlewares/rateLimiter");
@@ -443,14 +444,14 @@ router.get(
 router.get(
   "/pedidos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'supervisor_ventas', 'soporte_cliente', 'auditor_interno']),
   pedidosAdminController.getAllPedidos
 );
 // ✅ REFACTORED: Migrado a pedidosStatusController.js (Strangler Pattern)
 router.put(
   "/pedidos/:id",
   authenticate,
-  authorizeAdminOrAgente,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'supervisor_ventas']),
   pedidosStatusController.updatePedidoEstatus
 );
 // ✅ REFACTORED: Migrado a gestionPedidosAdminController.js
@@ -476,7 +477,7 @@ router.post(
 router.get(
   "/productos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'jefe_almacen', 'almacenista', 'compras', 'marketing', 'soporte_cliente']),
   productosAdminController.getAllProductos
 );
 
@@ -515,7 +516,7 @@ router.get(
 router.post(
   "/productos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras']),
   uploadProductImages,
   productosAdminController.crearProducto
 );
@@ -523,7 +524,7 @@ router.post(
 router.put(
   "/productos/:id",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras', 'marketing']),
   uploadProductImages,
   productosAdminController.actualizarProducto
 );
@@ -554,7 +555,7 @@ router.post(
 router.post(
   "/productos/:id/imagenes",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras', 'marketing']),
   heavyOperationLimiter,
   (req, res, next) => {
     const handler = upload.fields([
@@ -914,14 +915,14 @@ router.post(
 router.get(
   "/agentes",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'supervisor_ventas']),
   agentesAdminController.getAllAgentes
 );
 // ✅ REFACTORED: Migrado a agentesAdminController.js
 router.post(
   "/agentes",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial']),
   crearAgenteSchema,
   validate,
   agentesAdminController.crearAgente
@@ -944,7 +945,7 @@ router.get(
 router.put(
   "/agentes/:id",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial']),
   agentesAdminController.actualizarAgente
 );
 // ✅ REFACTORED: Migrado a agentesAdminController.js
@@ -962,14 +963,14 @@ router.put(
 router.get(
   "/comisiones",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'supervisor_ventas', 'ejecutivo_cobranza']),
   comisionesAdminController.getAllComisiones
 );
 // ✅ REFACTORED: Migrado a comisionesAdminController.js
 router.put(
   "/comisiones/:id/pagar",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'gerente_finanzas']),
   comisionesAdminController.pagarComision
 );
 
@@ -999,7 +1000,7 @@ router.get(
 router.post(
   "/cuentas-por-pagar/:id/pagar",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador']),
   uploadComprobante.single("comprobante"),
   cxpAdminController.registrarPagoCuentaPorPagar
 );
@@ -1007,7 +1008,7 @@ router.post(
 router.get(
   "/cxp/exportar",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador', 'compras', 'auditor_interno']),
   cxpController.exportarLoteCxP
 );
 
@@ -1015,21 +1016,21 @@ router.get(
 router.get(
   "/cxc-summary",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'contador', 'auditor_interno']),
   cxcAdminController.getCxcSummary
 );
 
 router.get(
   "/cxc/metricas",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'contador', 'auditor_interno']),
   cxcController.getMetricasCobranza
 );
 
 router.get(
   "/cxc/exportar",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'contador', 'auditor_interno']),
   cxcController.exportarLoteCxC
 );
 
@@ -1040,70 +1041,70 @@ router.get(
 router.get(
   "/pagos-clientes/pendientes",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza']),
   cxcController.getPagosClientesPendientes
 );
 
 router.post(
   "/pagos-clientes/:pagoId/gestionar",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza']),
   cxcController.gestionarPagoCliente
 );
 
 router.get(
   "/cxc/historial-movimientos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'contador', 'auditor_interno']),
   cxcController.obtenerHistorialMovimientos
 );
 
 router.get(
   "/cxc/exportar-detallado",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'contador', 'auditor_interno']),
   cxcDetalladoController.exportarCxCDetallado
 );
 
 router.get(
   "/cxc/clientes-con-credito",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'encargado_credito']),
   cxcDetalladoController.obtenerClientesConCredito
 );
 
 router.get(
   "/cxc/summary-aging",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'contador', 'auditor_interno']),
   cxcController.getSummaryAging
 );
 
 router.get(
   "/cxc/cliente/:clienteId",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'encargado_credito', 'soporte_cliente']),
   cxcController.getClienteCXCDetail
 );
 
 router.get(
   "/cxc/cliente/:clienteId/movimientos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'encargado_credito', 'soporte_cliente']),
   cxcController.getClienteCXCMovimientos
 );
 
 router.get(
   "/cxc/estado-cuenta/:clienteId",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza', 'encargado_credito', 'soporte_cliente']),
   cxcEnhancedController.getEstadoCuentaCliente
 );
 
 router.post(
   "/cxc/registrar-pago-manual",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'ejecutivo_cobranza']),
   cxcEnhancedController.registrarPagoManual
 );
 
@@ -1127,7 +1128,7 @@ router.post(
 router.get(
   "/estado-cuenta/resumen",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador', 'compras', 'auditor_interno']),
   cxpAdminController.getResumenEstadoCuentaProveedores
 );
 
@@ -1135,7 +1136,7 @@ router.get(
 router.get(
   "/estado-cuenta/proveedores/:id/movimientos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador', 'compras', 'auditor_interno']),
   cxpAdminController.getEstadoCuentaProveedorMovimientos
 );
 
@@ -1143,7 +1144,7 @@ router.get(
 router.get(
   "/estado-cuenta/cxp/:id/productos",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador', 'compras', 'auditor_interno']),
   cxpAdminController.getProductosRecibidosPorCxp
 );
 
@@ -1178,7 +1179,7 @@ router.put(
 router.get(
   "/clientes",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'supervisor_ventas', 'ejecutivo_cobranza', 'encargado_credito', 'soporte_cliente', 'auditor_interno']),
   clientesAdminController.getAllClientes
 );
 // ✅ REFACTORED: Migrado a clientesAdminController.js
@@ -1219,7 +1220,7 @@ router.get(
 router.put(
   "/clientes/:id/credito",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'encargado_credito']),
   clientesAdminController.actualizarCreditoCliente
 );
 
@@ -1405,7 +1406,7 @@ router.post(
 router.get(
   "/ordenes-compra",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras', 'jefe_almacen', 'recepcionista_compras', 'contador', 'auditor_interno']),
   ordenesCompraController.getAllOrdenesCompra
 );
 // ✅ REFACTORED: Migrado a reportesOrdenesCompraController.js
@@ -1468,7 +1469,7 @@ router.delete(
 router.post(
   "/ordenes-compra/:id/confirmar",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras']),
   backorderController.confirmarOrdenBackorder
 );
 // ✅ REFACTORED: Migrado a backorderController.js
@@ -1482,7 +1483,7 @@ router.post(
 router.post(
   "/ordenes-compra",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras']),
   crearOrdenCompraSchema,
   validate,
   ordenesCompraController.crearOrdenCompra
@@ -2100,7 +2101,7 @@ router.put(
 router.get(
   "/cupones",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'marketing', 'supervisor_ventas']),
   cuponesController.listarCupones
 );
 
@@ -2114,21 +2115,21 @@ router.get(
 router.post(
   "/cupones",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'marketing']),
   cuponesController.crearCupon
 );
 
 router.put(
   "/cupones/:id",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'marketing']),
   cuponesController.actualizarCupon
 );
 
 router.delete(
   "/cupones/:id",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_comercial']),
   cuponesController.desactivarCupon
 );
 
@@ -2240,24 +2241,24 @@ router.post(
 /**
  * @route   GET /api/admin/configuracion/iva
  * @desc    Obtener configuración de IVA del tenant
- * @access  Private (Admin only)
+ * @access  Private (Financial roles)
  */
 router.get(
   "/configuracion/iva",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador']),
   configuracionController.getIvaConfig
 );
 
 /**
  * @route   PUT /api/admin/configuracion/iva
  * @desc    Actualizar configuración de IVA del tenant
- * @access  Private (Admin only)
+ * @access  Private (Financial roles)
  */
 router.put(
   "/configuracion/iva",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'contador']),
   configuracionController.updateIvaConfig
 );
 
