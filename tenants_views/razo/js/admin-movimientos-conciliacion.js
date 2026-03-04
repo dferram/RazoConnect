@@ -370,6 +370,10 @@ function renderizarTabla() {
       ? '<span class="direccion-movimiento direccion-entrada"><i class="bi bi-arrow-up-circle-fill"></i> Entrada</span>'
       : '<span class="direccion-movimiento direccion-salida"><i class="bi bi-arrow-down-circle-fill"></i> Salida</span>';
     
+    // Usar valor absoluto para mostrar cantidades (más intuitivo para el usuario)
+    const cantidadAbsoluta = Math.abs(ajuste.cantidad);
+    const piezasAbsolutas = Math.abs(ajuste.totalPiezas);
+    
     // ✅ Badge de origen con icono
     const origenBadge = obtenerBadgeOrigen(ajuste.tipoOrigen);
     
@@ -398,8 +402,8 @@ function renderizarTabla() {
         <td>${direccionHTML}</td>
         <td>${origenBadge}</td>
         <td>${referenciaHTML}</td>
-        <td class="text-end"><strong>${ajuste.cantidad.toLocaleString('es-MX')}</strong></td>
-        <td class="text-end">${ajuste.totalPiezas.toLocaleString('es-MX')}</td>
+        <td class="text-end"><strong>${cantidadAbsoluta.toLocaleString('es-MX')}</strong></td>
+        <td class="text-end">${piezasAbsolutas.toLocaleString('es-MX')}</td>
         <td class="text-end"><strong>$${ajuste.valorTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong></td>
         <td class="text-end"><strong>$${costoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong></td>
       </tr>
@@ -722,9 +726,13 @@ async function exportarPDF() {
     const boxHeight = 105;
     const boxX = pageWidth - boxWidth - 40; // Alineado a la derecha
 
-    // Calcular costo total
-    const costoTotal = ajustesData.reduce((sum, ajuste) => {
-      return sum + (ajuste.totalPiezas * ajuste.costoUnitario);
+    // Calcular totales para conciliación (usar valores absolutos para que tenga sentido)
+    const totalPiezas = ajustesData.reduce((sum, a) => sum + Math.abs(a.totalPiezas), 0);
+    const valorTotalizado = ajustesData.reduce((sum, a) => sum + Math.abs(a.valorTotal), 0);
+    // Calcular paquetes correctamente: piezas totales / piezas por paquete
+    const totalPaquetes = ajustesData.reduce((sum, a) => {
+      const paquetes = a.piezasPorPaquete > 0 ? Math.floor(Math.abs(a.totalPiezas) / a.piezasPorPaquete) : Math.abs(a.cantidad);
+      return sum + paquetes;
     }, 0);
 
     // Fondo y borde

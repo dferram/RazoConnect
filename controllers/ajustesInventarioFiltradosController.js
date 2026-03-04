@@ -286,7 +286,6 @@ const getAjustesInventarioFiltrados = async (req, res) => {
                dp.detalleid,
                dp.cantidadpaquetes,
                dp.precioporpaquete,
-               dp.subtotal,
                dp.piezastotales,
                pv.sku,
                pv.dimensiones,
@@ -314,17 +313,23 @@ const getAjustesInventarioFiltrados = async (req, res) => {
               email: pedido.cliente_email,
               telefono: pedido.cliente_telefono
             },
-            productos: detallesResult.rows.map(d => ({
-              sku: d.sku,
-              nombreProducto: d.nombreproducto,
-              colorNombre: d.color_nombre,
-              dimensiones: d.dimensiones,
-              cantidadPaquetes: parseInt(d.cantidadpaquetes),
-              piezasPorPaquete: parseInt(d.piezasporpaquete),
-              piezasTotales: parseInt(d.piezastotales),
-              precioPorPaquete: parseFloat(d.precioporpaquete),
-              subtotal: parseFloat(d.subtotal)
-            }))
+            productos: detallesResult.rows.map(d => {
+              const cantidadPaquetes = parseInt(d.cantidadpaquetes);
+              const precioPorPaquete = parseFloat(d.precioporpaquete);
+              const subtotal = cantidadPaquetes * precioPorPaquete;
+              
+              return {
+                sku: d.sku,
+                nombreProducto: d.nombreproducto,
+                colorNombre: d.color_nombre,
+                dimensiones: d.dimensiones,
+                cantidadPaquetes,
+                piezasPorPaquete: parseInt(d.piezasporpaquete),
+                piezasTotales: parseInt(d.piezastotales),
+                precioPorPaquete,
+                subtotal
+              };
+            })
           };
         } else {
           logger.warn(`⚠️ Pedido #${pedidoIdFiltro} no encontrado en la base de datos`);
