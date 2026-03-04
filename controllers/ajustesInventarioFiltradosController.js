@@ -88,6 +88,18 @@ const getAjustesInventarioFiltrados = async (req, res) => {
     // NOTA: log_inventario NO tiene columna pedido_id según schema
     // Los pedidos se rastrean mediante motivo que incluye "Pedido #XXX"
     
+    // Filtro por pedido específico (extrae del motivo)
+    const pedidoIdRaw = req.query.pedidoId;
+    let pedidoIdFiltro = null;
+    if (pedidoIdRaw !== undefined && pedidoIdRaw !== null && pedidoIdRaw !== "") {
+      pedidoIdFiltro = Number.parseInt(pedidoIdRaw, 10);
+      if (Number.isInteger(pedidoIdFiltro) && pedidoIdFiltro > 0) {
+        values.push(`%Pedido #${pedidoIdFiltro}%`);
+        where.push(`li.motivo ILIKE $${values.length}`);
+        logger.info(`🔍 Filtrando por pedido #${pedidoIdFiltro}`);
+      }
+    }
+    
     const whereSql = `WHERE ${where.join(" AND ")}`;
     
     // Query unificada desde log_inventario con trazabilidad de origen
@@ -170,6 +182,17 @@ const getAjustesInventarioFiltrados = async (req, res) => {
           referenciaOrigen = `Pedido #${match[1]}`;
         }
       }
+      
+      // Extraer pedido_id del motivo para referencia
+      let pedidoId = null;
+      let pedidoNumero = null;
+      if (r.motivo && r.motivo.includes('Pedido #')) {
+        const match = r.motivo.match(/Pedido #(\d+)/);
+        if (match) {
+          pedidoId = parseInt(match[1], 10);
+          pedidoNumero = match[1];
+        }
+      }
 
       return {
         ajusteId: r.ajuste_id,
@@ -206,6 +229,8 @@ const getAjustesInventarioFiltrados = async (req, res) => {
         sesionEstatus: r.sesion_estatus,
         ajusteManualId: r.ajuste_manual_id,
         referenciaOrigen,
+        pedidoId,
+        pedidoNumero,
       };
     });
 
@@ -228,6 +253,93 @@ const getAjustesInventarioFiltrados = async (req, res) => {
       acc[a.tipoAjuste].valor += a.valorTotal;
       return acc;
     }, {});
+    
+    // Si se filtró por pedido específico, obtener detalles del pedido
+    let pedidoDetalles = null;
+    logger.info(`📊 Ajustes encontrados: ${ajustes.length}, pedidoIdFiltro: ${pedidoIdFiltro}`);
+    
+    if (pedidoIdFiltro) {
+      try {
+        const pedidoResult = await db.query(
+          `SELECT 
+             p.pedidoid,
+             p.fechapedido,
+             p.estatus,
+             p.montototal,
+             p.completamente_surtido,
+             c.nombre AS cliente_nombre,
+             c.email AS cliente_email,
+             c.telefono AS cliente_telefono
+           FROM pedidos p
+           LEFT JOIN clientes c ON c.clienteid = p.clienteid
+           WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
+          [pedidoIdFiltro, tenant_id]
+        );
+        
+        if (pedidoResult.rows.length > 0) {
+          const pedido = pedidoResult.rows[0];
+          logger.info(`✅ Pedido encontrado: #${pedido.pedidoid}, Cliente: ${pedido.cliente_nombre}`);
+          
+          // Obtener detalles de productos del pedido
+          const detallesResult = await db.query(
+            `SELECT 
+               dp.detalleid,
+               dp.cantidadpaquetes,
+               dp.precioporpaquete,
+               dp.subtotal,
+               dp.piezastotales,
+               pv.sku,
+               pv.dimensiones,
+               pv.piezasporpaquete,
+               pv.color_nombre,
+               p.nombreproducto
+             FROM detallesdelpedido dp
+             INNER JOIN producto_variantes pv ON pv.varianteid = dp.varianteid
+             INNER JOIN productos p ON p.productoid = pv.productoid
+             WHERE dp.pedidoid = $1
+             ORDER BY dp.detalleid`,
+            [pedidoIdFiltro]
+          );
+          
+          logger.info(`📦 Productos del pedido: ${detallesResult.rows.length}`);
+          
+          pedidoDetalles = {
+            pedidoId: pedido.pedidoid,
+            fechaPedido: pedido.fechapedido,
+            estatus: pedido.estatus,
+            montoTotal: parseFloat(pedido.montototal),
+            completamenteSurtido: pedido.completamente_surtido,
+            cliente: {
+              nombre: pedido.cliente_nombre,
+              email: pedido.cliente_email,
+              telefono: pedido.cliente_telefono
+            },
+            productos: detallesResult.rows.map(d => ({
+              sku: d.sku,
+              nombreProducto: d.nombreproducto,
+              colorNombre: d.color_nombre,
+              dimensiones: d.dimensiones,
+              cantidadPaquetes: parseInt(d.cantidadpaquetes),
+              piezasPorPaquete: parseInt(d.piezasporpaquete),
+              piezasTotales: parseInt(d.piezastotales),
+              precioPorPaquete: parseFloat(d.precioporpaquete),
+              subtotal: parseFloat(d.subtotal)
+            }))
+          };
+        } else {
+          logger.warn(`⚠️ Pedido #${pedidoIdFiltro} no encontrado en la base de datos`);
+        }
+      } catch (error) {
+        logger.error('❌ Error al obtener detalles del pedido:', {
+          error: error.message,
+          pedidoId: pedidoIdFiltro,
+          stack: error.stack
+        });
+        // No fallar la petición completa si no se pueden obtener los detalles
+      }
+    } else if (pedidoIdFiltro) {
+      logger.warn(`⚠️ Se solicitó pedido #${pedidoIdFiltro} pero no se encontraron ajustes de inventario`);
+    }
 
     return res.status(200).json({
       success: true,
@@ -240,6 +352,7 @@ const getAjustesInventarioFiltrados = async (req, res) => {
           valorTotalizado: parseFloat(valorTotalizado.toFixed(2)),
         },
         resumenPorTipo,
+        pedidoDetalles, // Incluir detalles del pedido si se filtró por uno específico
       },
     });
   } catch (error) {

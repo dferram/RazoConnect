@@ -6,6 +6,7 @@
 let ajustesData = [];
 let totalesData = null;
 let resumenTipoData = null;
+let pedidoDetalles = null;
 let filtrosActivos = {};
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -286,10 +287,14 @@ async function cargarAjustes() {
     }
     
     // Filtro por pedido (solo para SALIDA_PEDIDO o VENTA)
-    // Busca en el campo motivo: "Venta Pedido #123"
     const pedidoValue = document.getElementById('filtroPedido').value;
+    console.log('🔍 [FILTRO PEDIDO] Valor:', pedidoValue, 'Tipo movimiento:', filtrosActivos.tipoMovimiento);
+    
     if (pedidoValue && (filtrosActivos.tipoMovimiento === 'SALIDA_PEDIDO' || filtrosActivos.tipoMovimiento === 'VENTA')) {
-      params.append('referencia', `Pedido #${pedidoValue}`);
+      params.append('pedidoId', pedidoValue);
+      console.log('✅ [FILTRO PEDIDO] Agregado pedidoId:', pedidoValue);
+    } else if (pedidoValue) {
+      console.log('⚠️ [FILTRO PEDIDO] No se agregó - tipo movimiento no coincide');
     }
 
     const response = await fetch(`/api/admin/ajustes-inventario/filtrados?${params.toString()}`, {
@@ -304,11 +309,22 @@ async function cargarAjustes() {
     ajustesData = result.data.ajustes || [];
     totalesData = result.data.totales || null;
     resumenTipoData = result.data.resumenPorTipo || null;
+    pedidoDetalles = result.data.pedidoDetalles || null;
+    
+    console.log('📦 [RESPUESTA] Ajustes:', ajustesData.length);
+    console.log('📦 [RESPUESTA] Pedido Detalles:', pedidoDetalles ? `Pedido #${pedidoDetalles.pedidoId}` : 'null');
 
     renderizarTabla();
     renderizarTotales();
     renderizarResumenTipo();
     renderizarUsuarios();
+    renderizarPedidoDetalles();
+    
+    if (pedidoDetalles) {
+      console.log('✅ [RENDER] Detalles del pedido renderizados');
+    } else {
+      console.log('⚠️ [RENDER] No hay detalles de pedido para renderizar');
+    }
 
     console.log(`✅ Cargados ${ajustesData.length} ajustes de inventario`);
     console.log(`📊 Total Piezas: ${totalesData?.totalPiezas || 0}`);
@@ -520,6 +536,7 @@ function limpiarFiltros() {
   ajustesData = [];
   totalesData = null;
   resumenTipoData = null;
+  pedidoDetalles = null;
   
   document.getElementById('tablaAjustes').innerHTML = `
     <tr>
@@ -533,6 +550,12 @@ function limpiarFiltros() {
   document.getElementById('resumenTipoContainer').style.display = 'none';
   document.getElementById('usuariosContainer').style.display = 'none';
   document.getElementById('emptyState').style.display = 'none';
+  
+  // Limpiar detalles de pedido
+  const pedidoDetallesCard = document.getElementById('pedidoDetallesCard');
+  if (pedidoDetallesCard) {
+    pedidoDetallesCard.remove();
+  }
   
   establecerFechasPorDefecto();
 }
@@ -936,6 +959,111 @@ function determinarOrigen(motivo, sesionNombre) {
   }
   
   return 'Otro';
+}
+
+/**
+ * Renderizar detalles del pedido cuando se filtra por pedido específico
+ */
+function renderizarPedidoDetalles() {
+  // Remover card existente si hay
+  const existingCard = document.getElementById('pedidoDetallesCard');
+  if (existingCard) {
+    existingCard.remove();
+  }
+  
+  if (!pedidoDetalles) {
+    return;
+  }
+  
+  // Crear card de detalles del pedido
+  const card = document.createElement('div');
+  card.id = 'pedidoDetallesCard';
+  card.className = 'filter-card';
+  card.style.marginTop = '1.5rem';
+  card.style.borderLeft = '4px solid #dc3545';
+  
+  const estatusBadgeClass = 
+    pedidoDetalles.estatus === 'Surtido' ? 'badge bg-success' :
+    pedidoDetalles.estatus === 'Enviado' ? 'badge bg-info' :
+    pedidoDetalles.estatus === 'Entregado' ? 'badge bg-primary' :
+    'badge bg-secondary';
+  
+  const totalPiezas = pedidoDetalles.productos.reduce((sum, p) => sum + p.piezasTotales, 0);
+  
+  card.innerHTML = `
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <h5 class="mb-2">
+          <i class="bi bi-box-seam text-danger"></i>
+          Detalles del Pedido #${pedidoDetalles.pedidoId}
+        </h5>
+        <p class="text-muted mb-0" style="font-size: 0.9rem;">
+          <strong>Cliente:</strong> ${pedidoDetalles.cliente.nombre || 'N/A'} | 
+          <strong>Fecha:</strong> ${new Date(pedidoDetalles.fechaPedido).toLocaleDateString('es-MX')} | 
+          <strong>Estatus:</strong> <span class="${estatusBadgeClass}">${pedidoDetalles.estatus}</span>
+        </p>
+      </div>
+      <div class="text-end">
+        <div style="font-size: 0.9rem; color: #6b5d57; margin-bottom: 0.25rem;">Total del Pedido</div>
+        <div style="font-size: 1.5rem; font-weight: 700; color: #dc3545;">$${pedidoDetalles.montoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</div>
+        <div style="font-size: 0.85rem; color: #6b5d57;">${totalPiezas.toLocaleString('es-MX')} piezas totales</div>
+      </div>
+    </div>
+    
+    <div class="table-responsive" style="border-radius: 0.5rem; overflow: hidden;">
+      <table class="table table-sm mb-0" style="font-size: 0.875rem;">
+        <thead style="background: #f8f9fa;">
+          <tr>
+            <th>SKU</th>
+            <th>Producto</th>
+            <th>Color</th>
+            <th>Medida</th>
+            <th class="text-end">Cant. Paquetes</th>
+            <th class="text-end">Pzas/Paq</th>
+            <th class="text-end">Total Piezas</th>
+            <th class="text-end">Precio/Paq</th>
+            <th class="text-end">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${pedidoDetalles.productos.map(p => `
+            <tr>
+              <td><code>${p.sku}</code></td>
+              <td><strong>${p.nombreProducto}</strong></td>
+              <td>${p.colorNombre || '-'}</td>
+              <td>${p.dimensiones || '-'}</td>
+              <td class="text-end">${p.cantidadPaquetes}</td>
+              <td class="text-end">${p.piezasPorPaquete}</td>
+              <td class="text-end"><strong>${p.piezasTotales.toLocaleString('es-MX')}</strong></td>
+              <td class="text-end">$${p.precioPorPaquete.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+              <td class="text-end"><strong>$${p.subtotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong></td>
+            </tr>
+          `).join('')}
+        </tbody>
+        <tfoot style="background: #fff7ed; font-weight: 600;">
+          <tr>
+            <td colspan="6" class="text-end">TOTAL:</td>
+            <td class="text-end">${totalPiezas.toLocaleString('es-MX')} pzas</td>
+            <td></td>
+            <td class="text-end" style="color: #dc3545;">$${pedidoDetalles.montoTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    
+    <div class="mt-3 p-2" style="background: #fff3cd; border-radius: 0.5rem; border-left: 4px solid #ffc107;">
+      <small>
+        <i class="bi bi-info-circle"></i>
+        <strong>Nota:</strong> Este pedido generó ${ajustesData.length} movimiento(s) de inventario (salidas de almacén) que se muestran en la tabla de conciliación arriba.
+      </small>
+    </div>
+  `;
+  
+  // Insertar antes de la tabla de resultados
+  const tableContainer = document.querySelector('.table-responsive');
+  if (tableContainer) {
+    tableContainer.parentNode.insertBefore(card, tableContainer);
+  }
 }
 
 function mostrarLoading(mostrar) {

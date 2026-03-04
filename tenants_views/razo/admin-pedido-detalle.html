@@ -241,6 +241,46 @@
         font-size: 0.8rem;
         color: var(--text-secondary);
       }
+      
+      /* Tooltip for disabled button */
+      .btn-disabled-wrapper {
+        position: relative;
+        display: inline-block;
+      }
+      
+      .btn-disabled-wrapper .tooltip-text {
+        visibility: hidden;
+        width: 200px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.875rem;
+      }
+      
+      .btn-disabled-wrapper .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+      }
+      
+      .btn-disabled-wrapper:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
 
       .items-total {
         display: flex;
@@ -643,6 +683,17 @@
                     title="Generar factura PDF">
                     🧾 Generar Factura
                   </button>
+                  <div class="btn-disabled-wrapper" id="btnFacturaBloqueadaWrapper" style="display: none;">
+                    <button 
+                      type="button"
+                      class="btn"
+                      id="btnFacturaBloqueada"
+                      style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #9ca3af; color: #d1d5db; cursor: not-allowed;"
+                      disabled>
+                      🧾 Generar Factura
+                    </button>
+                    <span class="tooltip-text">Pedido pendiente por surtir</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -974,14 +1025,27 @@
               btnCambiarEstatus.removeAttribute("disabled");
             }
 
-            // Show invoice button only for Surtido, Enviado, or Entregado orders
+            // Show invoice button only for completely fulfilled orders
             const btnDescargarFactura = document.getElementById("btnDescargarFactura");
-            if (btnDescargarFactura) {
+            const btnFacturaBloqueadaWrapper = document.getElementById("btnFacturaBloqueadaWrapper");
+            
+            if (btnDescargarFactura && btnFacturaBloqueadaWrapper) {
               const estatusPermitidos = ['Surtido', 'Enviado', 'Entregado'];
-              if (estatusPermitidos.includes(pedido.estatus)) {
+              const estaSurtido = estatusPermitidos.includes(pedido.estatus);
+              const estaCompletamenteSurtido = pedido.completamente_surtido === true || pedido.completamente_surtido === 1;
+              
+              // Show active button only if order is completely fulfilled
+              if (estaSurtido && estaCompletamenteSurtido) {
                 btnDescargarFactura.style.display = 'inline-block';
-              } else {
+                btnFacturaBloqueadaWrapper.style.display = 'none';
+              } else if (estaSurtido && !estaCompletamenteSurtido) {
+                // Order is marked as fulfilled but not completely (has backorders)
                 btnDescargarFactura.style.display = 'none';
+                btnFacturaBloqueadaWrapper.style.display = 'inline-block';
+              } else {
+                // Order is not yet fulfilled
+                btnDescargarFactura.style.display = 'none';
+                btnFacturaBloqueadaWrapper.style.display = 'inline-block';
               }
             }
 
