@@ -47,6 +47,23 @@
   }
 
   async function initializeHeader() {
+    // ESPERAR a que auth-guard termine su verificación
+    // Esto previene la condición de carrera donde header-loader se ejecuta
+    // antes de que auth-guard haya guardado los datos del admin
+    const maxWaitTime = 5000; // 5 segundos máximo
+    const startTime = Date.now();
+    
+    while (window.adminAuthVerifying && (Date.now() - startTime) < maxWaitTime) {
+      await new Promise(resolve => setTimeout(resolve, 50)); // Esperar 50ms
+    }
+    
+    // Si auth-guard falló la verificación, no intentar cargar el header
+    if (!window.adminAuthVerified) {
+      console.warn("⚠️ Auth-guard no verificó la sesión, esperando...");
+      // No redirigir aquí - auth-guard ya lo hará si es necesario
+      return;
+    }
+    
     // MISIÓN 1: Blindaje completo con try-catch y fallback a localStorage
     let adminData = null;
     
@@ -59,18 +76,11 @@
         adminData = null;
       }
 
-      // Si no hay sesión, redirigir (Protección básica) y DETENER ejecución
+      // Si no hay sesión después de que auth-guard verificó, algo está mal
       if (!adminData || !adminData.nombre) {
-        console.warn("⚠️ No hay datos de admin en localStorage, redirigiendo...");
-        
-        // Limpiar cualquier intento de carga
-        const container = document.getElementById("admin-header-container");
-        if (container) {
-          container.innerHTML = '';
-        }
-        
-        window.location.replace("/login.html");
-        return; // CRÍTICO: Detener ejecución aquí
+        console.warn("⚠️ No hay datos de admin después de verificación. Esperando a auth-guard...");
+        // No redirigir - dejar que auth-guard maneje esto
+        return;
       }
 
       // MISIÓN 1: NO hacer fetch redundante - auth-guard ya validó la sesión
@@ -86,8 +96,7 @@
           throw new Error("No hay datos de respaldo");
         }
       } catch (recoveryError) {
-        console.error("❌ No se pudo recuperar datos, redirigiendo al login");
-        window.location.replace("/login.html");
+        console.error("❌ No se pudo recuperar datos, auth-guard manejará el redirect");
         return;
       }
     }

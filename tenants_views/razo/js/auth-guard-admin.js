@@ -7,6 +7,10 @@
 (function () {
   "use strict";
 
+  // Global flag para indicar que la verificación de auth está en progreso
+  window.adminAuthVerifying = true;
+  window.adminAuthVerified = false;
+
   // Aliases legacy para evitar crashes si se removieron IDs del navbar en alguna pantalla.
   // Se inyecta en <head> para que exista antes de que corran scripts inline al final del body.
   (function ensureLegacyHeaderAliases() {
@@ -118,6 +122,10 @@
           JSON.stringify(data.data.admin)
         );
       }
+      
+      // Marcar verificación como completa
+      window.adminAuthVerified = true;
+      window.adminAuthVerifying = false;
     })
     .catch((error) => {
       // Check if it's a network error (no response from server)
@@ -136,6 +144,10 @@
       if (isNetworkError) {
         // Network error - don't redirect, just log and continue
         console.warn("[AUTH-GUARD] Error de red al verificar token. Permitiendo acceso con token local.");
+        
+        // Marcar como verificado (con token local)
+        window.adminAuthVerified = true;
+        window.adminAuthVerifying = false;
         return; // Don't redirect - user can continue working
       }
 
@@ -144,6 +156,9 @@
         console.warn("[AUTH-GUARD] Token inválido o expirado. Redirigiendo a login.");
         localStorage.removeItem("razoconnect_admin_token");
         localStorage.removeItem("razoconnect_admin");
+        
+        window.adminAuthVerified = false;
+        window.adminAuthVerifying = false;
 
         if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
           Swal.fire({
@@ -162,6 +177,10 @@
       } else {
         // Other server errors (500, etc.) - don't redirect, just log
         console.warn("[AUTH-GUARD] Error del servidor al verificar token. Permitiendo acceso con token local.");
+        
+        // Marcar como verificado (con token local)
+        window.adminAuthVerified = true;
+        window.adminAuthVerifying = false;
       }
     });
 })();
