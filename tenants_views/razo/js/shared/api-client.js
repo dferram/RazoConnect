@@ -75,7 +75,7 @@ const ApiClient = (() => {
       if (response.status === 401) {
         localStorage.removeItem('adminToken');
         localStorage.removeItem('token');
-        window.location.href = '/admin/login.html';
+        window.location.href = '/login.html';
         throw new ApiError('Sesión expirada. Redirigiendo...', 401);
       }
 

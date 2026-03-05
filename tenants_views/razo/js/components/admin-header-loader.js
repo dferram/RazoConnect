@@ -69,7 +69,7 @@
           container.innerHTML = '';
         }
         
-        window.location.replace("/login-admin.html");
+        window.location.replace("/login.html");
         return; // CRÍTICO: Detener ejecución aquí
       }
 
