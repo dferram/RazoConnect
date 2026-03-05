@@ -11,16 +11,24 @@
 const { body, param } = require('express-validator');
 
 // ============================================================
-// AUTH — ADMIN LOGIN
+// AUTH — ADMIN LOGIN (Email O Teléfono)
 // POST /api/admin/login
 // ============================================================
 const loginAdminSchema = [
   body('email')
     .trim()
-    .notEmpty().withMessage('El email es requerido')
-    .isEmail().withMessage('El email no tiene un formato válido')
-    .normalizeEmail()
-    .isLength({ max: 254 }).withMessage('El email es demasiado largo'),
+    .notEmpty().withMessage('El correo o teléfono es requerido')
+    .custom((value) => {
+      // Validar que sea email O teléfono (10 dígitos)
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const phoneRegex = /^\d{10}$/;
+      
+      if (!emailRegex.test(value) && !phoneRegex.test(value)) {
+        throw new Error('Formato inválido. Ingresa un correo válido o 10 dígitos');
+      }
+      return true;
+    })
+    .isLength({ max: 254 }).withMessage('El valor es demasiado largo'),
 
   body('password')
     .notEmpty().withMessage('La contraseña es requerida')
@@ -39,6 +47,32 @@ const loginAgenteSchema = [
     .isEmail().withMessage('El email no tiene un formato válido')
     .normalizeEmail()
     .isLength({ max: 254 }).withMessage('El email es demasiado largo'),
+
+  body('password')
+    .notEmpty().withMessage('La contraseña es requerida')
+    .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres')
+    .isLength({ max: 128 }).withMessage('La contraseña es demasiado larga'),
+];
+
+// ============================================================
+// AUTH — CLIENTE/AGENTE LOGIN (Email O Teléfono)
+// POST /api/login
+// ============================================================
+const loginClienteSchema = [
+  body('email')
+    .trim()
+    .notEmpty().withMessage('El correo o teléfono es requerido')
+    .custom((value) => {
+      // Validar que sea email O teléfono (10 dígitos)
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const phoneRegex = /^\d{10}$/;
+      
+      if (!emailRegex.test(value) && !phoneRegex.test(value)) {
+        throw new Error('Formato inválido. Ingresa un correo válido o 10 dígitos');
+      }
+      return true;
+    })
+    .isLength({ max: 254 }).withMessage('El valor es demasiado largo'),
 
   body('password')
     .notEmpty().withMessage('La contraseña es requerida')
@@ -227,6 +261,7 @@ const abonoSchema = [
 module.exports = {
   loginAdminSchema,
   loginAgenteSchema,
+  loginClienteSchema,
   registroClienteSchema,
   crearAgenteSchema,
   crearOrdenCompraSchema,

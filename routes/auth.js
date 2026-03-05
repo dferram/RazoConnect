@@ -8,7 +8,7 @@ const profileController = require("../controllers/auth/profileController");
 const agentesController = require("../controllers/agentesController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 const passport = require("passport");
-const { registroClienteSchema, loginAgenteSchema } = require("../middlewares/validators/schemas");
+const { registroClienteSchema, loginAgenteSchema, loginClienteSchema } = require("../middlewares/validators/schemas");
 const validate = require("../middlewares/validate");
 
 // ============================================================================
@@ -174,7 +174,7 @@ router.post("/registro/agente", registerLimiter, agenteAuthController.registroAg
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post("/login", authLimiter, loginAgenteSchema, validate, clienteAuthController.login);
+router.post("/login", authLimiter, loginClienteSchema, validate, clienteAuthController.login);
 
 /**
  * @swagger
