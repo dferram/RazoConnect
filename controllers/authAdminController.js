@@ -73,9 +73,9 @@ const loginAdmin = async (req, res) => {
 
     const { tenant_id } = req.tenant;
 
-    // Buscar administrador por email Y tenant_id (aislamiento multi-tenant)
+    // Buscar administrador por email O teléfono Y tenant_id (aislamiento multi-tenant)
     const result = await db.query(
-      "SELECT * FROM Administradores WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE",
+      "SELECT * FROM Administradores WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2 AND Activo = TRUE",
       [email, tenant_id]
     );
 
@@ -107,7 +107,7 @@ const loginAdmin = async (req, res) => {
           CodigoAgente,
           Activo
         FROM AgentesDeVentas
-        WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE
+        WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2 AND Activo = TRUE
       `;
 
       if (hasEsAdminColumn && hasAdminRolColumn) {
@@ -123,7 +123,7 @@ const loginAdmin = async (req, res) => {
             EsAdmin,
             AdminRol
           FROM AgentesDeVentas
-          WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE
+          WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2 AND Activo = TRUE
         `;
       } else if (hasEsAdminColumn) {
         agenteQueryText = `
@@ -137,7 +137,7 @@ const loginAdmin = async (req, res) => {
             Activo,
             EsAdmin
           FROM AgentesDeVentas
-          WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE
+          WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2 AND Activo = TRUE
         `;
       } else if (hasAdminRolColumn) {
         agenteQueryText = `
@@ -151,7 +151,7 @@ const loginAdmin = async (req, res) => {
             Activo,
             AdminRol
           FROM AgentesDeVentas
-          WHERE Email = $1 AND tenant_id = $2 AND Activo = TRUE
+          WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2 AND Activo = TRUE
         `;
       }
 
