@@ -11,24 +11,17 @@
 const { body, param } = require('express-validator');
 
 // ============================================================
-// AUTH — ADMIN LOGIN (Email O Teléfono)
+// AUTH — ADMIN LOGIN (Email SOLAMENTE)
 // POST /api/admin/login
+// NOTA: La tabla administradores NO tiene columna telefono
 // ============================================================
 const loginAdminSchema = [
   body('email')
+    .notEmpty().withMessage('El correo es requerido')
     .trim()
-    .notEmpty().withMessage('El correo o teléfono es requerido')
-    .custom((value) => {
-      // Validar que sea email O teléfono (10 dígitos)
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      const phoneRegex = /^\d{10}$/;
-      
-      if (!emailRegex.test(value) && !phoneRegex.test(value)) {
-        throw new Error('Formato inválido. Ingresa un correo válido o 10 dígitos');
-      }
-      return true;
-    })
-    .isLength({ max: 254 }).withMessage('El valor es demasiado largo'),
+    .isEmail().withMessage('Debe ser un correo electrónico válido')
+    .normalizeEmail()
+    .isLength({ max: 254 }).withMessage('El correo es demasiado largo'),
 
   body('password')
     .notEmpty().withMessage('La contraseña es requerida')
@@ -60,8 +53,8 @@ const loginAgenteSchema = [
 // ============================================================
 const loginClienteSchema = [
   body('email')
-    .trim()
     .notEmpty().withMessage('El correo o teléfono es requerido')
+    .trim()
     .custom((value) => {
       // Validar que sea email O teléfono (10 dígitos)
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -71,8 +64,7 @@ const loginClienteSchema = [
         throw new Error('Formato inválido. Ingresa un correo válido o 10 dígitos');
       }
       return true;
-    })
-    .isLength({ max: 254 }).withMessage('El valor es demasiado largo'),
+    }),
 
   body('password')
     .notEmpty().withMessage('La contraseña es requerida')

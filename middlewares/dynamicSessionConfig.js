@@ -23,7 +23,7 @@ function createDynamicSessionMiddleware() {
       secure: isProduction,
       httpOnly: true,
       sameSite: isProduction ? 'lax' : 'lax',
-      maxAge: 1000 * 60 * 60 * 24 * 7
+      maxAge: 1000 * 60 * 60 * 24 * 30  // 30 días (antes 7)
     }
   };
 

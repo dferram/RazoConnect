@@ -73,9 +73,10 @@ const loginAdmin = async (req, res) => {
 
     const { tenant_id } = req.tenant;
 
-    // Buscar administrador por email O teléfono Y tenant_id (aislamiento multi-tenant)
+    // Buscar administrador por email Y tenant_id (aislamiento multi-tenant)
+    // NOTA: La tabla administradores NO tiene columna telefono
     const result = await db.query(
-      "SELECT * FROM Administradores WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2 AND Activo = TRUE",
+      "SELECT * FROM administradores WHERE email = $1 AND tenant_id = $2 AND activo = TRUE",
       [email, tenant_id]
     );
 
@@ -99,59 +100,59 @@ const loginAdmin = async (req, res) => {
 
       let agenteQueryText = `
         SELECT
-          AgenteID,
-          Nombre,
-          Apellido,
-          Email,
-          PasswordHash,
-          CodigoAgente,
-          Activo
-        FROM AgentesDeVentas
-        WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2 AND Activo = TRUE
+          agenteid,
+          nombre,
+          apellido,
+          email,
+          passwordhash,
+          codigoagente,
+          activo
+        FROM agentesdeventas
+        WHERE (email = $1 OR telefono = $1) AND tenant_id = $2 AND activo = TRUE
       `;
 
       if (hasEsAdminColumn && hasAdminRolColumn) {
         agenteQueryText = `
           SELECT
-            AgenteID,
-            Nombre,
-            Apellido,
-            Email,
-            PasswordHash,
-            CodigoAgente,
-            Activo,
-            EsAdmin,
-            AdminRol
-          FROM AgentesDeVentas
-          WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2 AND Activo = TRUE
+            agenteid,
+            nombre,
+            apellido,
+            email,
+            passwordhash,
+            codigoagente,
+            activo,
+            esadmin,
+            adminrol
+          FROM agentesdeventas
+          WHERE (email = $1 OR telefono = $1) AND tenant_id = $2 AND activo = TRUE
         `;
       } else if (hasEsAdminColumn) {
         agenteQueryText = `
           SELECT
-            AgenteID,
-            Nombre,
-            Apellido,
-            Email,
-            PasswordHash,
-            CodigoAgente,
-            Activo,
-            EsAdmin
-          FROM AgentesDeVentas
-          WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2 AND Activo = TRUE
+            agenteid,
+            nombre,
+            apellido,
+            email,
+            passwordhash,
+            codigoagente,
+            activo,
+            esadmin
+          FROM agentesdeventas
+          WHERE (email = $1 OR telefono = $1) AND tenant_id = $2 AND activo = TRUE
         `;
       } else if (hasAdminRolColumn) {
         agenteQueryText = `
           SELECT
-            AgenteID,
-            Nombre,
-            Apellido,
-            Email,
-            PasswordHash,
-            CodigoAgente,
-            Activo,
-            AdminRol
-          FROM AgentesDeVentas
-          WHERE (Email = $1 OR Telefono = $1) AND tenant_id = $2 AND Activo = TRUE
+            agenteid,
+            nombre,
+            apellido,
+            email,
+            passwordhash,
+            codigoagente,
+            activo,
+            adminrol
+          FROM agentesdeventas
+          WHERE (email = $1 OR telefono = $1) AND tenant_id = $2 AND activo = TRUE
         `;
       }
 
