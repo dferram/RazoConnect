@@ -50,6 +50,7 @@
     "mercadopago": "^1.5.17",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
+    "node-cache": "^5.1.2",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.10",
     "passport": "^0.7.0",

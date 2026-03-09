@@ -9,6 +9,21 @@
  */
 
 const redis = require('redis');
+const NodeCache = require('node-cache');
+
+// Hybrid Cache: Memoria RAM local (antes de Redis)
+const localCache = new NodeCache({
+  stdTTL: 300, // 5 minutos por defecto
+  checkperiod: 60, // Limpieza cada 60 segundos
+  useClones: false // Mejor performance, no clona objetos
+});
+
+// Cache específico para blacklist (60 segundos)
+const blacklistCache = new NodeCache({
+  stdTTL: 60,
+  checkperiod: 10,
+  useClones: false
+});
 
 let redisClient = null;
 let isConnected = false;
@@ -188,15 +203,96 @@ const blacklistAccessToken = async (tokenId, ttlSeconds) => {
 
 const isTokenBlacklisted = async (tokenId) => {
   try {
+    // 1. Verificar en RAM local primero (60s cache)
+    const cachedResult = blacklistCache.get(tokenId);
+    if (cachedResult !== undefined) {
+      return cachedResult;
+    }
+
+    // 2. Si no está en RAM, verificar en Redis
     const client = await getRedisClient();
     if (!client) return false;
     const key = `blacklist:${tokenId}`;
     const exists = await client.exists(key);
-    return exists === 1;
+    const isBlacklisted = exists === 1;
+
+    // 3. Guardar resultado en RAM local por 60 segundos
+    blacklistCache.set(tokenId, isBlacklisted);
+
+    return isBlacklisted;
   } catch (error) {
     console.error('[REDIS] Error al verificar blacklist:', error);
     return false;
   }
+};
+
+/**
+ * HYBRID CACHE HELPER
+ * Busca en: RAM local → Redis → Base de datos (fetchFunction)
+ * @param {string} key - Clave del cache
+ * @param {Function} fetchFunction - Función async que obtiene datos de BD
+ * @param {number} ttl - Tiempo de vida en segundos (default: 300s = 5min)
+ * @returns {Promise<any>}
+ */
+const getOrSetCache = async (key, fetchFunction, ttl = 300) => {
+  try {
+    // 1. Verificar en RAM local
+    const cachedValue = localCache.get(key);
+    if (cachedValue !== undefined) {
+      return cachedValue;
+    }
+
+    // 2. Verificar en Redis
+    const client = await getRedisClient();
+    if (client) {
+      const redisValue = await client.get(key);
+      if (redisValue !== null) {
+        const parsed = JSON.parse(redisValue);
+        // Guardar en RAM local para próximas peticiones
+        localCache.set(key, parsed, ttl);
+        return parsed;
+      }
+    }
+
+    // 3. Ejecutar fetchFunction (consulta a BD)
+    const freshData = await fetchFunction();
+
+    // 4. Guardar en ambos caches
+    localCache.set(key, freshData, ttl);
+    if (client) {
+      await client.setEx(key, ttl, JSON.stringify(freshData));
+    }
+
+    return freshData;
+  } catch (error) {
+    console.error('[HYBRID CACHE] Error:', error);
+    // Fallback: ejecutar fetchFunction directamente
+    return await fetchFunction();
+  }
+};
+
+/**
+ * Invalida cache en RAM y Redis
+ * @param {string} key - Clave a invalidar
+ */
+const invalidateCache = async (key) => {
+  try {
+    localCache.del(key);
+    const client = await getRedisClient();
+    if (client) {
+      await client.del(key);
+    }
+  } catch (error) {
+    console.error('[HYBRID CACHE] Error al invalidar:', error);
+  }
+};
+
+/**
+ * Limpia todo el cache local (útil para testing)
+ */
+const flushLocalCache = () => {
+  localCache.flushAll();
+  blacklistCache.flushAll();
 };
 
 module.exports = {
@@ -210,4 +306,8 @@ module.exports = {
   refreshTokenExists,
   blacklistAccessToken,
   isTokenBlacklisted,
+  // Hybrid Cache
+  getOrSetCache,
+  invalidateCache,
+  flushLocalCache,
 };
