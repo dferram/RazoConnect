@@ -81,33 +81,94 @@
     });
   }
 
+  /**
+   * FASE 2 - TASK 2: Sistema de visibilidad estricta basada en roles
+   * Define qué secciones del menú puede ver cada rol
+   */
   function setupRoleBasedVisibility() {
     const userDataRaw = localStorage.getItem('razoconnect_admin');
     const user = JSON.parse(userDataRaw || '{}');
     
-    const roles = user.roles || [];
     const rolString = (user.rol || user.role || '').toString().toLowerCase().trim();
     
-    const isSuperAdmin = 
-      roles.includes('super_admin') || 
-      roles.includes('superadmin') ||
-      rolString === 'superadmin' ||
-      rolString === 'super admin' ||
-      rolString === 'super_admin';
+    // Mapa de permisos: qué secciones puede ver cada rol
+    const rolePermissions = {
+      'super_admin': ['Principal', 'Ventas', 'Catálogo', 'Finanzas', 'Inventario', 'Compras', 'Reportes', 'Sistema'],
+      'superadmin': ['Principal', 'Ventas', 'Catálogo', 'Finanzas', 'Inventario', 'Compras', 'Reportes', 'Sistema'],
+      'super admin': ['Principal', 'Ventas', 'Catálogo', 'Finanzas', 'Inventario', 'Compras', 'Reportes', 'Sistema'],
+      'admin': ['Principal', 'Ventas', 'Catálogo', 'Finanzas', 'Inventario', 'Compras', 'Reportes'],
+      'inventarios': ['Principal', 'Inventario'], // Solo Dashboard e Inventario
+      'catalogo': ['Principal', 'Catálogo'],
+      'finanzas': ['Principal', 'Finanzas', 'Reportes'],
+      'compras': ['Principal', 'Compras']
+    };
 
-    const superAdminSections = document.querySelectorAll('[data-role="super_admin"]');
+    const allowedSections = rolePermissions[rolString] || ['Principal'];
+    
+    console.log(`🔒 [SIDEBAR] Rol detectado: ${rolString}`);
+    console.log(`✅ [SIDEBAR] Secciones permitidas:`, allowedSections);
 
-    if (!isSuperAdmin) {
-      superAdminSections.forEach(section => {
-        section.style.setProperty('display', 'none', 'important');
+    // Obtener todas las secciones del menú
+    const allSections = document.querySelectorAll('.admin-nav-section');
+    
+    // FASE 5 - TAREA 1: Manejo especial para inventarios ANTES de ocultar secciones
+    if (rolString === 'inventarios') {
+      const ventasSection = Array.from(allSections).find(section => {
+        return section.querySelector('.admin-nav-title')?.textContent?.trim() === 'Ventas';
       });
-    } else {
-      superAdminSections.forEach(section => {
+      
+      if (ventasSection) {
+        // Mostrar solo el link de Pedidos, ocultar el resto
+        const allLinks = ventasSection.querySelectorAll('.admin-nav-link');
+        allLinks.forEach(link => {
+          const href = link.getAttribute('href') || '';
+          // Usar href en lugar de texto para identificar Pedidos de manera confiable
+          if (href.includes('admin-pedidos.html')) {
+            link.style.setProperty('display', 'flex', 'important');
+            link.style.visibility = 'visible';
+            link.style.opacity = '1';
+            link.style.pointerEvents = 'auto';
+            console.log(`✅ [SIDEBAR] Mostrando link: Pedidos (${href})`);
+          } else {
+            link.style.setProperty('display', 'none', 'important');
+            console.log(`🚫 [SIDEBAR] Ocultando link: ${href}`);
+          }
+        });
+        
+        // Forzar visibilidad de la sección Ventas para inventarios
+        ventasSection.style.setProperty('display', 'block', 'important');
+        ventasSection.style.visibility = 'visible';
+        ventasSection.style.opacity = '1';
+        console.log(`✅ [SIDEBAR] Sección Ventas forzada visible (solo Pedidos) para inventarios`);
+      }
+    }
+    
+    // Aplicar reglas generales de visibilidad
+    allSections.forEach(section => {
+      const sectionTitle = section.querySelector('.admin-nav-title')?.textContent?.trim();
+      
+      if (!sectionTitle) return;
+      
+      // Para inventarios, Ventas ya fue manejada arriba
+      if (rolString === 'inventarios' && sectionTitle === 'Ventas') {
+        return; // Skip, ya fue configurada
+      }
+      
+      // Verificar si esta sección está permitida para el rol actual
+      const isAllowed = allowedSections.includes(sectionTitle);
+      
+      if (isAllowed) {
+        // Mostrar sección
         section.style.setProperty('display', 'block', 'important');
         section.style.visibility = 'visible';
         section.style.opacity = '1';
-      });
-    }
+        console.log(`✅ [SIDEBAR] Mostrando sección: ${sectionTitle}`);
+      } else {
+        // Ocultar sección completamente
+        section.style.setProperty('display', 'none', 'important');
+        console.log(`🚫 [SIDEBAR] Ocultando sección: ${sectionTitle}`);
+      }
+    });
   }
 
   if (document.readyState === 'loading') {

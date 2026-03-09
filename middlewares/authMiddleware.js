@@ -88,7 +88,10 @@ const authenticate = async (req, res, next) => {
 
     const isAgenteToken = rolFromToken === "agente";
     const isClienteToken = rolFromToken === "cliente";
-    const isAdminToken = rolFromToken === "admin" || rolFromToken === "super_admin";
+    // Roles administrativos: admin, super_admin, o cualquier rol granular (gerente_*, contador, etc.)
+    const isAdminToken = rolFromToken === "admin" || 
+                        rolFromToken === "super_admin" || 
+                        (!isAgenteToken && !isClienteToken);
 
     // 1) Si el token declara agente, validar contra agentesdeventas (activo)
     // CRÍTICO: Agentes son globales (no tienen tenant_id), validar solo por ID y estado
@@ -271,8 +274,9 @@ const authorize = (roles = []) => {
 
 /**
  * Middleware específico para verificar que el usuario es un administrador
- * Verifica que el token tenga el campo 'tipo' = 'admin' o que tenga rol admin/superadmin
- * También permite agentes con permisos de admin (EsAdmin=true) que tienen ['admin'] en roles
+ * Acepta los 7 roles base del sistema: super_admin, admin, inventarios, catalogo, finanzas, compras, agente
+ * También acepta roles granulares legacy (gerente_*, contador, etc.)
+ * RECHAZA: solo 'cliente'
  */
 const authorizeAdmin = (req, res, next) => {
   if (!req.user) {
@@ -284,19 +288,18 @@ const authorizeAdmin = (req, res, next) => {
 
   // Verificar rol principal
   const rol = normalizeRole(req.user.rol);
-  const isAdminByRol = rol === "admin" || rol === "super_admin" || rol === "superadmin";
-
-  // Verificar array de roles (para agentes con permisos de admin)
-  const userRoles = getUserRoles(req);
-  const isAdminByRoles = userRoles.includes("admin") || userRoles.includes("super_admin") || userRoles.includes("superadmin");
-
-  if (!isAdminByRol && !isAdminByRoles) {
+  
+  // CRÍTICO: Rechazar SOLO clientes - todos los demás roles son administrativos
+  const isCliente = rol === "cliente";
+  
+  if (isCliente) {
     return res.status(403).json({
       success: false,
       message: "Acceso denegado. Solo administradores",
     });
   }
 
+  // Todos los roles administrativos (super_admin, admin, inventarios, catalogo, finanzas, compras, agente, gerente_*, etc.) pasan
   next();
 };
 
@@ -502,6 +505,79 @@ const authorizePermiso = (modulo, accion) => {
   };
 };
 
+/**
+ * Middleware RBAC - Verificación de Permisos Granulares
+ * 
+ * Verifica si el usuario tiene permiso para ejecutar una acción en un módulo específico.
+ * Usa la matriz de permisos de config/rolesConfig.js como fuente única de verdad.
+ * 
+ * REGLAS:
+ * 1. super_admin y admin tienen bypass total (acceso a todo)
+ * 2. Los demás roles se validan contra la matriz de permisos
+ * 3. Si el rol no existe en la matriz, se deniega el acceso
+ * 4. Si el módulo no está en los permisos del rol, se deniega
+ * 5. Si la acción no está permitida para ese módulo, se deniega
+ * 
+ * @param {string} modulo - Módulo del sistema (ej: 'inventario', 'productos', 'pedidos')
+ * @param {string} accion - Acción específica (ej: 'ver', 'crear', 'modificar', 'eliminar')
+ * @returns {Function} Middleware de Express
+ * 
+ * @example
+ * // Proteger ruta de ajustes de inventario
+ * router.post('/inventario/ajustes', 
+ *   authenticate, 
+ *   requirePermission('ajustes', 'crear'), 
+ *   controller.crearAjuste
+ * );
+ * 
+ * @example
+ * // Proteger ruta de validación de pagos
+ * router.put('/pagos/:id/validar', 
+ *   authenticate, 
+ *   requirePermission('validar_pagos', 'modificar'), 
+ *   controller.validarPago
+ * );
+ */
+const requirePermission = (modulo, accion) => {
+  return (req, res, next) => {
+    // 1. Verificar autenticación
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    const rolUsuario = normalizeRole(req.user.rol);
+
+    // 2. Bypass para super_admin y admin (acceso total)
+    if (rolUsuario === "super_admin" || rolUsuario === "admin") {
+      return next();
+    }
+
+    // 3. Importar matriz de permisos desde config
+    const { tienePermiso } = require('../config/rolesConfig');
+
+    // 4. Verificar si el rol tiene el permiso requerido
+    const permitido = tienePermiso(rolUsuario, modulo, accion);
+
+    if (permitido) {
+      return next();
+    }
+
+    // 5. Denegar acceso con mensaje descriptivo
+    return res.status(403).json({
+      success: false,
+      message: `Acceso denegado. Se requiere permiso: ${modulo}:${accion}`,
+      rolActual: req.user.rol,
+      permisoRequerido: {
+        modulo,
+        accion
+      }
+    });
+  };
+};
+
 module.exports = {
   authenticate,
   authorize,
@@ -512,4 +588,5 @@ module.exports = {
   verifySuperAdmin,
   authorizeRole,
   authorizePermiso,
+  requirePermission, // Nueva función RBAC con matriz de permisos
 };

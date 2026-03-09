@@ -47,7 +47,17 @@
                    (Array.isArray(payload.roles) && payload.roles.length > 0);
     
     // Verificar que el rol sea válido
-    const validRoles = ['super_admin', 'superadmin', 'admin', 'agente', 'cliente'];
+    const validRoles = [
+      'super_admin', 
+      'superadmin', 
+      'admin', 
+      'agente', 
+      'cliente',
+      'inventarios',
+      'catalogo',   
+      'finanzas',   
+      'compras'     
+    ];
     let hasValidRol = false;
     
     if (payload.rol) {

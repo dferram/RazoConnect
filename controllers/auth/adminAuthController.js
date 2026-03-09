@@ -5,6 +5,7 @@ const { registrarLog } = require("../../services/loggerService");
 const { solicitarCambio, aprobarSolicitudes } = require("../../services/ChangeRequestService");
 const auditService = require("../../services/auditService");
 const { checkEmailGlobalUniqueness, getContextualErrorMessage } = require("../../utils/emailValidator");
+const { getRolesValidos, esRolValido } = require("../../config/rolesConfig");
 
 /**
  * Registro de nuevo administrador (protegido por SUPER_ADMIN_KEY)
@@ -40,6 +41,12 @@ const registroAdmin = async (req, res) => {
       errors.push("El email no es válido");
     if (!Password || Password.length < 6)
       errors.push("La contraseña debe tener al menos 6 caracteres");
+
+    // Validar rol contra lista de roles válidos
+    if (Rol && !esRolValido(Rol)) {
+      const rolesValidos = getRolesValidos();
+      errors.push(`El rol debe ser uno de los siguientes: ${rolesValidos.join(', ')}`);
+    }
 
     if (errors.length > 0) {
       return res.status(400).json({
@@ -139,6 +146,12 @@ const crearAdmin = async (req, res) => {
       errors.push("El email no es válido");
     if (!password || password.length < 6)
       errors.push("La contraseña debe tener al menos 6 caracteres");
+
+    // Validar rol contra lista de roles válidos
+    if (rol && !esRolValido(rol)) {
+      const rolesValidos = getRolesValidos();
+      errors.push(`El rol debe ser uno de los siguientes: ${rolesValidos.join(', ')}`);
+    }
 
     if (errors.length > 0) {
       return res.status(400).json({
@@ -418,8 +431,60 @@ const adminResetPassword = async (req, res) => {
   }
 };
 
+/**
+ * Obtener permisos del usuario autenticado
+ * GET /api/auth/mis-permisos
+ * Retorna los permisos granulares basados en el rol del usuario
+ */
+const getMisPermisos = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    const { getPermisosRol, getDescripcionRol } = require("../../config/rolesConfig");
+    
+    const rol = req.user.rol;
+    const permisos = getPermisosRol(rol);
+    const descripcion = getDescripcionRol(rol);
+
+    // Si permisos es null, significa que es super_admin o admin (acceso total)
+    const accesoTotal = permisos === null;
+
+    res.json({
+      success: true,
+      data: {
+        rol,
+        descripcion,
+        accesoTotal,
+        permisos: accesoTotal ? { mensaje: "Acceso total a todos los módulos" } : permisos,
+        usuario: {
+          id: req.user.id,
+          email: req.user.email,
+          tenant_id: req.user.tenant_id
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Error al obtener permisos del usuario:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id,
+      userId: req.user?.id
+    });
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener permisos"
+    });
+  }
+};
+
 module.exports = {
   registroAdmin,
   crearAdmin,
   adminResetPassword,
+  getMisPermisos,
 };

@@ -9,6 +9,9 @@
     <!-- Protección de autenticación -->
     <script src="js/auth-guard-admin.js"></script>
 
+    <!-- FASE 2: Blindaje de rutas por rol -->
+    <script src="js/route-guard.js"></script>
+
     <link rel="stylesheet" href="css/styles.css" />
     <script src="js/components/back-button-loader.js"></script>
     <link rel="stylesheet" href="css/admin.css" />
@@ -572,7 +575,7 @@
                     >
                   </div>
                 </div>
-                <div class="pedido-monto-section">
+                <div class="pedido-monto-section" id="montoTotalSection">
                   <span class="pedido-monto-label">Monto total:</span>
                   <span class="pedido-monto" id="pedidoMonto">$0.00</span>
                 </div>
@@ -611,7 +614,7 @@
                 <div id="itemsContainer">
                   <!-- Items will be rendered here -->
                 </div>
-                <div class="items-total">
+                <div class="items-total" id="itemsTotalSection">
                   <span class="items-total-label">Total del pedido</span>
                   <span class="items-total-value" id="itemsTotal">$0.00</span>
                 </div>
@@ -649,6 +652,7 @@
                     type="button"
                     class="btn btn-primary"
                     id="btnCambiarEstatus"
+                    data-admin-only="true"
                     onclick="openStatusModalFromDetalle()"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem;"
                   >
@@ -668,6 +672,7 @@
                     type="button"
                     class="btn btn-info"
                     id="btnGenerarRemision"
+                    data-admin-only="true"
                     onclick="descargarPDFPedidoDetalle()"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #17a2b8; color: white;"
                     title="Descargar remisión en PDF"
@@ -678,6 +683,7 @@
                     type="button"
                     class="btn btn-danger"
                     id="btnDescargarFactura"
+                    data-admin-only="true"
                     onclick="descargarFacturaAdmin()"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #dc2626; color: white; display: none;"
                     title="Generar factura PDF">
@@ -938,6 +944,48 @@
       let selectedOrderId = null;
       let selectedOrderStatus = null;
 
+      // FASE 3 - TASK 3: Get user role
+      function getUserRole() {
+        try {
+          const adminData = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
+          return (adminData.rol || adminData.role || '').toString().toLowerCase().trim();
+        } catch (error) {
+          return 'admin';
+        }
+      }
+
+      // FASE 3 - TASK 3: Setup role-based visibility
+      function setupRoleBasedVisibility() {
+        const userRole = getUserRole();
+        const isInventarios = userRole === 'inventarios';
+        
+        if (!isInventarios) {
+          console.log('✅ [PEDIDO-DETALLE] Rol admin - Mostrando todos los datos');
+          return; // Admin sees everything
+        }
+        
+        console.log('🚫 [PEDIDO-DETALLE] Rol inventarios - Ocultando datos financieros');
+        
+        // Hide financial sections
+        const montoTotalSection = document.getElementById('montoTotalSection');
+        const itemsTotalSection = document.getElementById('itemsTotalSection');
+        
+        if (montoTotalSection) {
+          montoTotalSection.style.display = 'none';
+        }
+        
+        if (itemsTotalSection) {
+          itemsTotalSection.style.display = 'none';
+        }
+        
+        // Hide admin-only buttons
+        const adminOnlyButtons = document.querySelectorAll('[data-admin-only="true"]');
+        adminOnlyButtons.forEach(button => {
+          button.style.display = 'none';
+          console.log(`🚫 [PEDIDO-DETALLE] Ocultando botón: ${button.id}`);
+        });
+      }
+
       (function () {
         "use strict";
 
@@ -951,7 +999,11 @@
           return;
         }
 
-        document.addEventListener("DOMContentLoaded", init);
+        // FASE 3 - TASK 3: Setup role-based visibility on load
+        document.addEventListener("DOMContentLoaded", () => {
+          setupRoleBasedVisibility();
+          init();
+        });
 
         async function init() {
           const urlParams = new URLSearchParams(window.location.search);
@@ -1113,6 +1165,10 @@
             }
 
             // Render items
+            // FASE 3 - TASK 3: Check if user is inventarios to hide pricing
+            const userRole = getUserRole();
+            const isInventarios = userRole === 'inventarios';
+            
             const itemsContainer = document.getElementById("itemsContainer");
             itemsContainer.innerHTML = productos
               .map(
@@ -1170,15 +1226,18 @@
                         ? `<span>${item.piezasPorPaquete} pzas/paquete</span>`
                         : ""
                     }
+                    <span>Cantidad: ${item.cantidadPaquetes} paquetes</span>
                     <span><span class="${badgeClass}">${badgeText}</span></span>
                   </p>
                 </div>
+                ${!isInventarios ? `
                 <div class="item-pricing">
                   <p class="item-subtotal">${formatCurrency(item.subtotal)}</p>
                   <p class="item-unit-price">${
                     item.cantidadPaquetes
                   } paquetes × ${formatCurrency(item.precioPorPaquete)}</p>
                 </div>
+                ` : ''}
               </div>
             `;
                 }

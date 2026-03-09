@@ -11,6 +11,9 @@
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN - Debe cargarse PRIMERO -->
     <script src="js/auth-guard-admin.js"></script>
 
+    <!-- FASE 2: Blindaje de rutas por rol -->
+    <script src="js/route-guard.js"></script>
+
     <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
 
     <link
@@ -211,14 +214,35 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/auth-manager.js"></script>
     <script src="js/api.js"></script>
+    
+    <!-- FASE 2: Dashboard modular por roles - DEBE cargarse ANTES del script inline -->
+    <script src="js/dashboard-modular.js"></script>
+    
     <script>
       const adminToken = localStorage.getItem("razoconnect_admin_token");
       if (!adminToken) {
         window.location.href = "/login.html";
       }
 
+      // FASE 3 - TASK 1: Get user role
+      function getUserRole() {
+        try {
+          const adminData = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
+          return (adminData.rol || adminData.role || '').toString().toLowerCase().trim();
+        } catch (error) {
+          return 'admin';
+        }
+      }
+
       // Load dashboard statistics
       async function loadDashboardStats() {
+        // FASE 3 - TASK 1: Skip fetch for inventarios role
+        const userRole = getUserRole();
+        if (userRole === 'inventarios') {
+          console.log('🚫 [DASHBOARD] Rol inventarios - No se cargan estadísticas de ventas');
+          return;
+        }
+
         try {
           const response = await fetch(
             `${API_BASE_URL}/admin/dashboard-stats`,
@@ -350,6 +374,24 @@
       }
 
       async function loadInventoryValuation() {
+        // FASE 5 - TAREA 2: Solo cargar valuación para roles con acceso financiero
+        const userRole = getUserRole();
+        const rolesConAccesoFinanciero = ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas'];
+        
+        if (!rolesConAccesoFinanciero.includes(userRole)) {
+          console.log('🚫 [DASHBOARD] Rol sin acceso financiero - No se carga valuación de inventario');
+          // Ocultar las tarjetas de valuación si existen
+          const ventaElement = document.getElementById("valorInventarioVenta");
+          const costoElement = document.getElementById("valorInventarioCosto");
+          if (ventaElement && ventaElement.closest('.admin-stat-card')) {
+            ventaElement.closest('.admin-stat-card').style.display = 'none';
+          }
+          if (costoElement && costoElement.closest('.admin-stat-card')) {
+            costoElement.closest('.admin-stat-card').style.display = 'none';
+          }
+          return; // No hacer fetch
+        }
+        
         try {
           const response = await fetch(
             `${API_BASE_URL}/admin/reportes/valuacion-inventario`,
@@ -427,19 +469,28 @@
           if (data.success && data.data && data.data.length > 0) {
             // Mostrar solo los últimos 5 pedidos
             const recentOrders = data.data.slice(0, 5);
+            
+            // FASE 5 - TAREA 3: Detectar rol para ocultar columnas financieras
+            const userRole = getUserRole();
+            const isInventarios = userRole === 'inventarios';
 
             ordersTableBody.innerHTML = recentOrders
               .map((order) => {
                 const badgeClass = getPedidoStatusBadgeClass(order.estatus);
+                
+                // FASE 5 - TAREA 3: Resaltar pedidos surtidos en verde
+                const estatusLower = (order.estatus || '').toString().toLowerCase().trim();
+                const isSurtido = estatusLower === 'surtido' || estatusLower === 'confirmado';
+                const rowStyle = isSurtido ? 'background-color: #d1e7dd !important;' : '';
 
                 return `
-              <tr>
+              <tr style="${rowStyle}">
                 <td><strong>#${order.pedidoId}</strong></td>
                 <td>${order.clienteNombre}</td>
                 <td>${new Date(order.fechaPedido).toLocaleDateString(
                   "es-MX"
                 )}</td>
-                <td><strong>${formatCurrency(order.montoTotal)}</strong></td>
+                ${!isInventarios ? `<td><strong>${formatCurrency(order.montoTotal)}</strong></td>` : ''}
                 <td><span class="${badgeClass}">${order.estatus}</span></td>
                 <td>
                   <button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;" 
@@ -451,6 +502,13 @@
             `;
               })
               .join("");
+            
+            // FASE 5 - TAREA 3: Ocultar columna "Total" del header si es inventarios
+            const totalHeader = ordersTable.querySelector('thead th:nth-child(4)');
+            if (totalHeader && isInventarios) {
+              totalHeader.style.display = 'none';
+            }
+            
             ordersTable.style.display = "table";
           } else {
             emptyOrders.style.display = "block";
