@@ -46,66 +46,60 @@
     return `${first}${second || ""}`.toUpperCase();
   }
 
-  async function initializeHeader() {
-    // ESPERAR a que auth-guard termine su verificación
-    // Esto previene la condición de carrera donde header-loader se ejecuta
-    // antes de que auth-guard haya guardado los datos del admin
-    const maxWaitTime = 5000; // 5 segundos máximo
-    const startTime = Date.now();
+  /**
+   * FASE 2 - TASK 1: Mapeo de roles a nombres legibles
+   * Convierte el rol técnico a un nombre amigable para mostrar en el header
+   */
+  function getRoleDisplayName(rol) {
+    const roleLower = (rol || '').toString().toLowerCase().trim();
     
-    while (window.adminAuthVerifying && (Date.now() - startTime) < maxWaitTime) {
-      await new Promise(resolve => setTimeout(resolve, 50)); // Esperar 50ms
-    }
+    const roleMap = {
+      'super_admin': 'Dueño de Tienda',
+      'superadmin': 'Dueño de Tienda',
+      'super admin': 'Dueño de Tienda',
+      'admin': 'Dueño de Tienda',
+      'inventarios': 'Inventarios',
+      'catalogo': 'Catálogo',
+      'finanzas': 'Finanzas',
+      'compras': 'Compras',
+      'agente': 'Agente de Ventas'
+    };
     
-    // Si auth-guard falló la verificación, no intentar cargar el header
-    if (!window.adminAuthVerified) {
-      console.warn("⚠️ Auth-guard no verificó la sesión, esperando...");
-      // No redirigir aquí - auth-guard ya lo hará si es necesario
-      return;
-    }
+    return roleMap[roleLower] || 'Administrador';
+  }
+
+  function initializeHeader() {
+    console.log("🔄 Inicializando header...");
     
-    // MISIÓN 1: Blindaje completo con try-catch y fallback a localStorage
-    let adminData = null;
-    
+    // Cargar datos inmediatamente con timeout de seguridad
+    setTimeout(() => {
+      loadHeaderData();
+    }, 100);
+  }
+
+  function loadHeaderData() {
+    let adminData;
     try {
-      // 1. Cargar Datos del Usuario (LocalStorage)
-      try {
-        adminData = JSON.parse(localStorage.getItem("razoconnect_admin"));
-      } catch (parseError) {
-        console.warn("⚠️ Error parseando razoconnect_admin:", parseError);
-        adminData = null;
-      }
-
-      // Si no hay sesión después de que auth-guard verificó, algo está mal
+      adminData = JSON.parse(localStorage.getItem("razoconnect_admin"));
       if (!adminData || !adminData.nombre) {
-        console.warn("⚠️ No hay datos de admin después de verificación. Esperando a auth-guard...");
-        // No redirigir - dejar que auth-guard maneje esto
-        return;
+        throw new Error("Datos de admin incompletos");
       }
-
-      // MISIÓN 1: NO hacer fetch redundante - auth-guard ya validó la sesión
-      // Simplemente usar los datos de localStorage que auth-guard refrescó
-    } catch (criticalError) {
-      // MISIÓN 1: Último recurso - intentar renderizar con datos básicos
-      console.error("❌ Error crítico en initializeHeader:", criticalError);
-      
-      // Intentar recuperar datos básicos de localStorage
-      try {
-        adminData = JSON.parse(localStorage.getItem("razoconnect_admin"));
-        if (!adminData) {
-          throw new Error("No hay datos de respaldo");
-        }
-      } catch (recoveryError) {
-        console.error("❌ No se pudo recuperar datos, auth-guard manejará el redirect");
-        return;
-      }
+    } catch (recoveryError) {
+      console.error("❌ No se pudo recuperar datos del header:", recoveryError);
+      // Intentar con datos mínimos
+      adminData = {
+        nombre: "Usuario",
+        rol: "admin"
+      };
     }
 
-    const nombre = (adminData.nombre || "Admin").toString().trim();
-    const rolSession = (adminData.rol || adminData.role || "").toString().trim();
+    const nombre = (adminData.nombre || "Usuario").toString().trim();
+    const rolSession = (adminData.rol || adminData.role || "admin").toString().trim();
     const rolRaw = rolSession.toLowerCase();
-    const isSuperAdmin = rolRaw === "super admin" || rolRaw === "superadmin" || rolRaw === "super-admin";
-    const rolTexto = isSuperAdmin ? "Super Admin" : "Administrador";
+    const isSuperAdmin = rolRaw === "super admin" || rolRaw === "superadmin" || rolRaw === "super-admin" || rolRaw === "super_admin" || rolRaw === "admin";
+    
+    // FASE 2 - TASK 1: Usar nombre de rol específico en lugar de genérico
+    const rolTexto = getRoleDisplayName(rolSession);
     
     // Sin restricciones de rol - Admin y SuperAdmin tienen acceso a todas las páginas
 

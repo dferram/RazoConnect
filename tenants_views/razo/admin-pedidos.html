@@ -9,6 +9,9 @@
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
 
+    <!-- FASE 2: Blindaje de rutas por rol -->
+    <script src="js/route-guard.js"></script>
+
     <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
 
     <link rel="stylesheet" href="css/styles.css" />
@@ -155,7 +158,7 @@
                     <th>Prioridad</th>
                     <th>Cliente</th>
                     <th>Fecha</th>
-                    <th>Total</th>
+                    <th id="thTotal">Total</th>
                     <th>Agente</th>
                     <th>Estado</th>
                     <th>Acciones</th>
@@ -482,6 +485,29 @@
         window.location.href = "/login.html";
       }
 
+      // FASE 3 - TASK 2: Get user role
+      function getUserRole() {
+        try {
+          const adminData = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
+          return (adminData.rol || adminData.role || '').toString().toLowerCase().trim();
+        } catch (error) {
+          return 'admin';
+        }
+      }
+
+      // FASE 3 - TASK 2: Setup role-based visibility on page load
+      function setupRoleBasedVisibility() {
+        const userRole = getUserRole();
+        const isInventarios = userRole === 'inventarios';
+        
+        // Hide "Total" column for inventarios role
+        const thTotal = document.getElementById('thTotal');
+        if (thTotal && isInventarios) {
+          thTotal.style.display = 'none';
+          console.log('🚫 [PEDIDOS] Ocultando columna "Total" para rol inventarios');
+        }
+      }
+
       // Mapea el estatus del pedido a un badge normalizado con diseño admin-badge info
       function getPedidoStatusBadgeClass(estatus) {
         const value = (estatus || "").toString().toLowerCase().trim();
@@ -571,6 +597,10 @@
             if (filteredOrders.length === 0) {
               emptyOrders.style.display = "block";
             } else {
+              // FASE 3 - TASK 2: Get user role for conditional rendering
+              const userRole = getUserRole();
+              const isInventarios = userRole === 'inventarios';
+              
               ordersTableBody.innerHTML = filteredOrders
                 .map((order) => {
                   const badgeClass = getPedidoStatusBadgeClass(order.estatus);
@@ -582,8 +612,13 @@
                   const esPrioritario = order.es_prioritario || false;
                   const puedeTogglePrioridad = ['Pendiente', 'Aprobado', 'Parcialmente Surtido'].includes(order.estatus);
                   
+                  // FASE 3 - TASK 2: Add green highlight for 'Surtido' status
+                  const estatusLower = (order.estatus || '').toString().toLowerCase().trim();
+                  const isSurtido = estatusLower === 'surtido' || estatusLower === 'confirmado';
+                  const rowStyle = isSurtido ? 'background-color: #d1e7dd !important;' : '';
+                  
                   return `
-                <tr>
+                <tr style="${rowStyle}">
                   <td><strong>#${order.pedidoId}</strong></td>
                   <td style="text-align: center;">
                     ${puedeTogglePrioridad ? `
@@ -611,7 +646,7 @@
                     ${order.clienteEmail ? `<div style="font-size: 0.875rem; color: var(--razo-gray-warm);">${order.clienteEmail}</div>` : ''}
                   </td>
                   <td>${fecha}</td>
-                  <td><strong>${formatCurrency(order.montoTotal)}</strong></td>
+                  ${!isInventarios ? `<td><strong>${formatCurrency(order.montoTotal || 0)}</strong></td>` : ''}
                   <td>${order.agente ? `${order.agente.nombre} ${order.agente.apellido || ''}`.trim() : "-"}</td>
                   <td><span class="${badgeClass}">${order.estatus}</span></td>
                   <td>
@@ -1801,6 +1836,8 @@
       }
 
       // Initialize
+      // FASE 3 - TASK 2: Setup role-based visibility first
+      setupRoleBasedVisibility();
       loadOrders();
 
       // Close modal when clicking outside

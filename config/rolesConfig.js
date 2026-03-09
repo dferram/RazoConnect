@@ -31,6 +31,7 @@ const ROLES_PERMISOS = {
   /**
    * INVENTARIOS
    * Responsable de la gestión de stock, ajustes, auditorías y recepciones
+   * También puede ver y gestionar pedidos para surtir
    */
   inventarios: {
     inventario: ['ver', 'modificar'],
@@ -41,6 +42,7 @@ const ROLES_PERMISOS = {
     reportes_inventario: ['ver', 'exportar'],
     recibir_inventario: ['ver', 'modificar'],
     productos: ['ver'], // Solo consulta para verificar stock
+    pedidos: ['ver', 'modificar'], // Ver pedidos y marcar como surtido
   },
 
   /**

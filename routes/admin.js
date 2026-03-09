@@ -444,14 +444,14 @@ router.get(
 router.get(
   "/pedidos",
   authenticate,
-  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'supervisor_ventas', 'soporte_cliente', 'auditor_interno']),
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'gerente_comercial', 'supervisor_ventas', 'soporte_cliente', 'auditor_interno']),
   pedidosAdminController.getAllPedidos
 );
 // ✅ REFACTORED: Migrado a pedidosStatusController.js (Strangler Pattern)
 router.put(
   "/pedidos/:id",
   authenticate,
-  authorizeRole(['super_admin', 'admin', 'gerente_comercial', 'supervisor_ventas']),
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'gerente_comercial', 'supervisor_ventas']),
   pedidosStatusController.updatePedidoEstatus
 );
 // ✅ REFACTORED: Migrado a gestionPedidosAdminController.js
