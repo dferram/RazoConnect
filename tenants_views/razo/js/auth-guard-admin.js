@@ -160,20 +160,8 @@
         window.adminAuthVerified = false;
         window.adminAuthVerifying = false;
 
-        if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
-          Swal.fire({
-            icon: "warning",
-            title: "Sesión Expirada",
-            text: "Tu sesión ha expirado o es inválida. Por favor, inicia sesión nuevamente.",
-            confirmButtonText: "Ir al Login",
-            confirmButtonColor: "#F97316",
-            allowOutsideClick: false,
-          }).then(() => {
-            window.location.replace("/login.html");
-          });
-        } else {
-          window.location.replace("/login.html");
-        }
+        // Redirect directly to login without SweetAlert
+        window.location.replace("/login.html");
       } else {
         // Other server errors (500, etc.) - don't redirect, just log
         console.warn("[AUTH-GUARD] Error del servidor al verificar token. Permitiendo acceso con token local.");

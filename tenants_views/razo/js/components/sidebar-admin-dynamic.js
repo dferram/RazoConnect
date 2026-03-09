@@ -210,25 +210,25 @@
           label: 'Reportes',
           icon: '📑',
           href: '/admin-reportes.html',
-          modules: ['reportes']
+          modules: ['reportes_financieros', 'reportes_ventas']
         },
         {
           label: 'Reportes de Inventario',
           icon: '📋',
           href: '/admin-inventario-reportes.html',
-          modules: ['reportes', 'inventario']
+          modules: ['reportes_inventario', 'inventario']
         },
         {
           label: 'Conciliación',
           icon: '🔍',
           href: '/admin-movimientos-conciliacion.html',
-          modules: ['reportes', 'finanzas']
+          modules: ['conciliacion', 'inventario', 'auditoria']
         },
         {
           label: 'Reportes de Recepciones',
           icon: '📊',
           href: '/admin-reportes-ordenes-compra.html',
-          modules: ['reportes', 'compras']
+          modules: ['reportes_recepciones', 'compras']
         }
       ]
     },
@@ -296,6 +296,11 @@
 
   function generateSidebarHTML(adminData) {
     const sections = [];
+    const userRole = adminData.rol ? adminData.rol.toLowerCase() : '';
+    const isFinanzasRole = userRole === 'finanzas';
+
+    // Secciones bloqueadas para rol finanzas (restricción quirúrgica)
+    const blockedSectionsForFinanzas = ['ventas', 'catalogo', 'inventario', 'compras'];
 
     // Generar cada sección del menú
     for (const [key, section] of Object.entries(MENU_STRUCTURE)) {
@@ -304,8 +309,19 @@
         continue;
       }
 
+      // Bloquear secciones específicas para rol finanzas
+      if (isFinanzasRole && blockedSectionsForFinanzas.includes(key)) {
+        continue;
+      }
+
       // Filtrar items según permisos
       const visibleItems = section.items.filter(item => {
+        // FILTRO ESPECÍFICO PARA FINANZAS EN REPORTES
+        if (isFinanzasRole && key === 'reportes') {
+          // Solo mostrar el item "Reportes" principal, bloquear subopciones
+          return item.label === 'Reportes' && item.href === '/admin-reportes.html';
+        }
+
         // Items sin módulos requeridos siempre visibles
         if (!item.modules || item.modules.length === 0) {
           return true;

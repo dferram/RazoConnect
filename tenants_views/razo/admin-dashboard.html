@@ -233,13 +233,31 @@
           return 'admin';
         }
       }
+      
+      // Check if role has permission for a module
+      function hasModulePermission(role, module) {
+        const permissions = {
+          'super_admin': ['ventas', 'inventario', 'finanzas', 'reportes', 'compras'],
+          'superadmin': ['ventas', 'inventario', 'finanzas', 'reportes', 'compras'],
+          'super admin': ['ventas', 'inventario', 'finanzas', 'reportes', 'compras'],
+          'admin': ['ventas', 'inventario', 'finanzas', 'reportes', 'compras'],
+          'gerente_finanzas': ['finanzas', 'reportes'],
+          'finanzas': ['finanzas', 'reportes'],
+          'inventarios': ['inventario'],
+          'compras': ['compras']
+        };
+        
+        const rolePerms = permissions[role] || [];
+        return rolePerms.includes(module);
+      }
 
       // Load dashboard statistics
       async function loadDashboardStats() {
-        // FASE 3 - TASK 1: Skip fetch for inventarios role
+        // FASE 3 - TASK 1: Skip fetch for roles without ventas permission
         const userRole = getUserRole();
-        if (userRole === 'inventarios') {
-          console.log('🚫 [DASHBOARD] Rol inventarios - No se cargan estadísticas de ventas');
+        if (!hasModulePermission(userRole, 'ventas')) {
+          console.log(`🚫 [DASHBOARD] Rol ${userRole} - No tiene permiso para estadísticas de ventas`);
+          hideCardsForRole(userRole);
           return;
         }
 
@@ -254,6 +272,12 @@
               },
             }
           );
+
+          if (response.status === 403) {
+            console.warn('⚠️ [DASHBOARD] 403 Forbidden - Sin permisos para dashboard-stats');
+            hideCardsForRole(userRole);
+            return;
+          }
 
           if (response.ok) {
             const data = await response.json();
@@ -332,7 +356,38 @@
           }
         } catch (error) {
           console.error("Error loading stats:", error);
+          hideCardsForRole(userRole);
         }
+      }
+      
+      // Hide cards that the role doesn't have permission to see
+      function hideCardsForRole(role) {
+        const cardsToHide = [];
+        
+        if (!hasModulePermission(role, 'ventas')) {
+          cardsToHide.push(
+            document.getElementById('totalPedidos')?.closest('.admin-stat-card'),
+            document.getElementById('ingresosTotales')?.closest('.admin-stat-card'),
+            document.getElementById('clientesActivos')?.closest('.admin-stat-card'),
+            document.getElementById('agentesActivos')?.closest('.admin-stat-card'),
+            document.getElementById('ventaTotal')?.closest('.admin-stat-card'),
+            document.getElementById('pedidosPendientesCount')?.closest('.admin-stat-card'),
+            document.getElementById('pedidosEntregados')?.closest('.admin-stat-card')
+          );
+        }
+        
+        if (!hasModulePermission(role, 'inventario')) {
+          cardsToHide.push(
+            document.getElementById('valorInventarioVenta')?.closest('.admin-stat-card')
+          );
+        }
+        
+        cardsToHide.forEach(card => {
+          if (card) {
+            card.style.display = 'none';
+            console.log('🚫 [DASHBOARD] Ocultando card sin permiso');
+          }
+        });
       }
 
       // Format currency helper (exacto)
@@ -374,12 +429,11 @@
       }
 
       async function loadInventoryValuation() {
-        // FASE 5 - TAREA 2: Solo cargar valuación para roles con acceso financiero
+        // FASE 5 - TAREA 2: Solo cargar valuación para roles con acceso a inventario
         const userRole = getUserRole();
-        const rolesConAccesoFinanciero = ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas'];
         
-        if (!rolesConAccesoFinanciero.includes(userRole)) {
-          console.log('🚫 [DASHBOARD] Rol sin acceso financiero - No se carga valuación de inventario');
+        if (!hasModulePermission(userRole, 'inventario')) {
+          console.log(`🚫 [DASHBOARD] Rol ${userRole} - No tiene permiso para valuación de inventario`);
           // Ocultar las tarjetas de valuación si existen
           const ventaElement = document.getElementById("valorInventarioVenta");
           const costoElement = document.getElementById("valorInventarioCosto");
@@ -435,7 +489,19 @@
           }
         } catch (error) {
           console.error("Error al cargar la valuación de inventario:", error);
-          if (typeof showToast === "function") {
+          
+          // Si es 403, ocultar las cards sin mostrar error
+          if (error.message && error.message.includes('403')) {
+            const ventaElement = document.getElementById("valorInventarioVenta");
+            const costoElement = document.getElementById("valorInventarioCosto");
+            if (ventaElement && ventaElement.closest('.admin-stat-card')) {
+              ventaElement.closest('.admin-stat-card').style.display = 'none';
+            }
+            if (costoElement && costoElement.closest('.admin-stat-card')) {
+              costoElement.closest('.admin-stat-card').style.display = 'none';
+            }
+            console.warn('⚠️ [DASHBOARD] Sin permisos para valuación de inventario - Cards ocultadas');
+          } else if (typeof showToast === "function") {
             showToast("No se pudo cargar la valuación de inventario", "error");
           }
         }
@@ -443,6 +509,7 @@
 
       // Load recent orders (REAL DATA from database)
       async function loadRecentOrders() {
+        const userRole = getUserRole();
         const loadingOrders = document.getElementById("loadingOrders");
         const ordersTable = document.getElementById("ordersTable");
         const emptyOrders = document.getElementById("emptyOrders");
@@ -461,6 +528,18 @@
               "Content-Type": "application/json",
             },
           });
+
+          if (response.status === 403) {
+            console.warn('⚠️ [DASHBOARD] 403 Forbidden - Sin permisos para ver pedidos');
+            loadingOrders.style.display = "none";
+            emptyOrders.innerHTML = `
+              <div class="empty-state-icon">🔒</div>
+              <h3 class="empty-state-title">Sin permisos</h3>
+              <p class="empty-state-text">No tienes acceso para ver pedidos</p>
+            `;
+            emptyOrders.style.display = "block";
+            return;
+          }
 
           if (!response.ok) throw new Error("Error al cargar pedidos");
 
@@ -515,7 +594,14 @@
           }
         } catch (error) {
           console.error("Error loading orders:", error);
-          showToast("Error al cargar pedidos recientes", "error");
+          
+          // Don't show toast for permission errors
+          if (!error.message || !error.message.includes('403')) {
+            if (typeof showToast === "function") {
+              showToast("Error al cargar pedidos recientes", "error");
+            }
+          }
+          
           emptyOrders.style.display = "block";
         } finally {
           loadingOrders.style.display = "none";

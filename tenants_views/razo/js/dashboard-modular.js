@@ -66,7 +66,8 @@
       fetchStats: true,
       fetchOrders: false,
       sections: ['finanzas'],
-      customMessage: 'Resumen Financiero'
+      customMessage: 'Resumen Financiero',
+      blockedReports: ['reportes_inventario', 'conciliacion', 'reportes_recepciones']
     },
     'compras': {
       cards: ['valorInventarioVenta'],
@@ -186,9 +187,38 @@
         {
           title: 'Cuentas por Cobrar',
           icon: '💳',
-          value: 'Próximamente',
-          subtitle: 'Saldo pendiente de clientes',
-          color: 'turquoise'
+          value: 'Cargando...',
+          subtitle: 'Gestiona cobranza de clientes',
+          color: 'turquoise',
+          link: '/admin-cxc.html',
+          id: 'card-cxc'
+        },
+        {
+          title: 'Cuentas por Pagar',
+          icon: '🧮',
+          value: 'Cargando...',
+          subtitle: 'Gestiona pagos a proveedores',
+          color: 'red',
+          link: '/admin-cuentaspagar.html',
+          id: 'card-cxp'
+        },
+        {
+          title: 'Comisiones',
+          icon: '💰',
+          value: 'Cargando...',
+          subtitle: 'Comisiones de agentes',
+          color: 'yellow',
+          link: '/admin-comisiones.html',
+          id: 'card-comisiones'
+        },
+        {
+          title: 'Validar Pagos',
+          icon: '✓',
+          value: 'Revisar',
+          subtitle: 'Validación de comprobantes',
+          color: 'green',
+          link: '/admin-validar-pagos.html',
+          id: 'card-pagos'
         }
       ],
       'compras': [
@@ -309,6 +339,249 @@
   }
 
   /**
+   * Carga totales financieros desde endpoints individuales
+   * Maneja 403 errors ocultando las cards en lugar de mostrar "Cargando..." infinito
+   */
+  async function loadFinanzasTotales() {
+    const userRole = getUserRole();
+    if (userRole !== 'finanzas' && userRole !== 'gerente_finanzas') return;
+
+    const token = localStorage.getItem('razoconnect_admin_token');
+    if (!token) {
+      console.warn('⚠️ [DASHBOARD] No hay token, no se pueden cargar totales');
+      hideAllFinanzasCards();
+      return;
+    }
+
+    console.log('🔄 [DASHBOARD] Cargando totales financieros...');
+
+    // Cargar CXC con manejo de 403
+    try {
+      const cxcResponse = await fetch('/api/admin/cxc-summary', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (cxcResponse.status === 403) {
+        console.warn('⚠️ [DASHBOARD] 403 Forbidden en CXC - Ocultando card');
+        hideCardByTitle('Cuentas por Cobrar');
+      } else if (cxcResponse.ok) {
+        const cxcData = await cxcResponse.json();
+        if (cxcData.success && cxcData.data) {
+          updateCardValue('card-cxc', 
+            `$${(cxcData.data.totalCobrar || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}`,
+            `${cxcData.data.conteoClientes || 0} clientes con deuda`
+          );
+        }
+      } else {
+        hideCardByTitle('Cuentas por Cobrar');
+      }
+    } catch (error) {
+      console.error('❌ [DASHBOARD] Error cargando CXC:', error);
+      hideCardByTitle('Cuentas por Cobrar');
+    }
+
+    // Cargar CXP con manejo de 403
+    try {
+      const cxpResponse = await fetch('/api/admin/cuentas-por-pagar/kpis', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (cxpResponse.status === 403) {
+        console.warn('⚠️ [DASHBOARD] 403 Forbidden en CXP - Ocultando card');
+        hideCardByTitle('Cuentas por Pagar');
+      } else if (cxpResponse.ok) {
+        const cxpData = await cxpResponse.json();
+        if (cxpData.success && cxpData.data) {
+          updateCardValue('card-cxp',
+            `$${(cxpData.data.total_por_pagar || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}`,
+            `Vencido: $${(cxpData.data.vencido || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}`
+          );
+        }
+      } else {
+        hideCardByTitle('Cuentas por Pagar');
+      }
+    } catch (error) {
+      console.error('❌ [DASHBOARD] Error cargando CXP:', error);
+      hideCardByTitle('Cuentas por Pagar');
+    }
+
+    // Cargar Comisiones con manejo de 403
+    try {
+      const comisionesResponse = await fetch('/api/admin/comisiones', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (comisionesResponse.status === 403) {
+        console.warn('⚠️ [DASHBOARD] 403 Forbidden en Comisiones - Ocultando card');
+        hideCardByTitle('Comisiones');
+      } else if (comisionesResponse.ok) {
+        const comisionesData = await comisionesResponse.json();
+        if (comisionesData.success && comisionesData.data) {
+          const totales = comisionesData.data.totales;
+          if (totales) {
+            updateCardValue('card-comisiones',
+              `$${(totales.montoTotal || 0).toLocaleString('es-MX', {minimumFractionDigits: 2})}`,
+              `${totales.totalPendientes || 0} pendientes`
+            );
+          }
+        }
+      } else {
+        hideCardByTitle('Comisiones');
+      }
+    } catch (error) {
+      console.error('❌ [DASHBOARD] Error cargando Comisiones:', error);
+      hideCardByTitle('Comisiones');
+    }
+
+    console.log('✅ [DASHBOARD] Carga de totales financieros completada');
+  }
+
+  /**
+   * Oculta una card por su título
+   */
+  function hideCardByTitle(title) {
+    const cards = document.querySelectorAll('.admin-stat-card');
+    cards.forEach(card => {
+      const titleElement = card.querySelector('h3');
+      if (titleElement && titleElement.textContent.trim() === title) {
+        card.style.display = 'none';
+        console.log(`🚫 [DASHBOARD] Card ocultada: ${title}`);
+      }
+    });
+  }
+
+  /**
+   * Oculta todas las cards financieras si no hay token
+   */
+  function hideAllFinanzasCards() {
+    hideCardByTitle('Cuentas por Cobrar');
+    hideCardByTitle('Cuentas por Pagar');
+    hideCardByTitle('Comisiones');
+    console.log('🚫 [DASHBOARD] Todas las cards financieras ocultadas');
+  }
+
+  /**
+   * Actualiza el valor de una tarjeta por su ID
+   */
+  function updateCardValue(cardId, value, subtitle) {
+    const cards = document.querySelectorAll('.admin-stat-card');
+    cards.forEach(card => {
+      const valueElement = card.querySelector('.admin-stat-value');
+      const subtitleElement = card.querySelector('.admin-stat-change');
+      
+      // Buscar la tarjeta por el contenido del título o por data attribute
+      const titleElement = card.querySelector('h3');
+      if (!titleElement) return;
+      
+      const cardTitle = titleElement.textContent.trim();
+      let matchesCard = false;
+      
+      if (cardId === 'card-cxc' && cardTitle === 'Cuentas por Cobrar') matchesCard = true;
+      if (cardId === 'card-cxp' && cardTitle === 'Cuentas por Pagar') matchesCard = true;
+      if (cardId === 'card-comisiones' && cardTitle === 'Comisiones') matchesCard = true;
+      
+      if (matchesCard && valueElement && subtitleElement) {
+        valueElement.textContent = value;
+        subtitleElement.textContent = subtitle;
+        console.log(`✅ [DASHBOARD] Actualizada tarjeta: ${cardTitle}`);
+      }
+    });
+  }
+
+  /**
+   * Crea una tarjeta financiera con datos
+   */
+  function createFinanzasCard(data) {
+    const card = document.createElement('div');
+    card.className = 'admin-stat-card';
+    
+    if (data.link) {
+      card.style.cursor = 'pointer';
+      card.style.transition = 'transform 0.2s, box-shadow 0.2s';
+      card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-2px)';
+        card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'translateY(0)';
+        card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
+      });
+      card.addEventListener('click', () => {
+        window.location.href = data.link;
+      });
+    }
+    
+    card.innerHTML = `
+      <div class="admin-stat-header">
+        <div class="admin-stat-content">
+          <h3>${data.title}</h3>
+          <div class="admin-stat-value">${data.value}</div>
+          <div class="admin-stat-change neutral">
+            ${data.subtitle}
+          </div>
+        </div>
+        <div class="admin-stat-icon ${data.color}">${data.icon}</div>
+      </div>
+    `;
+    
+    return card;
+  }
+
+  /**
+   * Crea panel personalizado para rol finanzas
+   */
+  function createFinanzasWelcomePanel() {
+    const userRole = getUserRole();
+    if (userRole !== 'finanzas') return;
+    
+    const statsGrid = document.querySelector('.admin-stats-grid');
+    if (!statsGrid) return;
+    
+    // Crear panel de bienvenida financiero
+    const welcomePanel = document.createElement('div');
+    welcomePanel.className = 'admin-stat-card';
+    welcomePanel.style.gridColumn = '1 / -1'; // Ocupar todo el ancho
+    welcomePanel.style.background = 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)';
+    welcomePanel.style.border = '2px solid #10B981';
+    welcomePanel.innerHTML = `
+      <div style="padding: 1.5rem;">
+        <h2 style="margin: 0 0 0.5rem 0; color: #10B981; font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          💰 Panel de Control Financiero
+        </h2>
+        <p style="margin: 0 0 1rem 0; color: #065f46; font-size: 0.95rem;">
+          Bienvenido al panel de gestión financiera. Administra cuentas por cobrar, cuentas por pagar y validación de pagos.
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+          <div style="background: white; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #06b6d4;">
+            <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.25rem;">Cobranza</div>
+            <div style="font-weight: 600; color: #1e293b;">Cuentas por Cobrar</div>
+          </div>
+          <div style="background: white; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #ef4444;">
+            <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.25rem;">Pagos</div>
+            <div style="font-weight: 600; color: #1e293b;">Cuentas por Pagar</div>
+          </div>
+          <div style="background: white; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #10b981;">
+            <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.25rem;">Validación</div>
+            <div style="font-weight: 600; color: #1e293b;">Comprobantes de Pago</div>
+          </div>
+          <div style="background: white; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #f59e0b;">
+            <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.25rem;">Comisiones</div>
+            <div style="font-weight: 600; color: #1e293b;">Gestión de Agentes</div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Insertar al inicio del grid
+    statsGrid.insertBefore(welcomePanel, statsGrid.firstChild);
+    
+    // Cargar totales dinámicamente
+    loadFinanzasTotales();
+    
+    console.log('✅ [DASHBOARD] Panel de bienvenida creado para finanzas');
+  }
+
+  /**
    * Intercepta las funciones de carga de datos según el rol
    */
   function interceptDataLoading(roleConfig) {
@@ -351,7 +624,8 @@
     
     const roleConfig = setupDashboardVisibility();
     setupOrdersTableVisibility(roleConfig);
-    createInventariosWelcomePanel(); // TAREA 3: Panel personalizado para inventarios
+    createInventariosWelcomePanel(); // Panel personalizado para inventarios
+    createFinanzasWelcomePanel(); // Panel personalizado para finanzas
     createRolePlaceholders(roleConfig);
     interceptDataLoading(roleConfig);
     

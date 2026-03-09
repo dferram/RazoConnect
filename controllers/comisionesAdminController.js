@@ -49,6 +49,19 @@ const getAllComisiones = async (req, res) => {
 
     const result = await db.query(query, params);
 
+    // Calcular totales
+    const totalesQuery = `
+      SELECT 
+        COUNT(*) FILTER (WHERE Estatus = 'Pendiente') as total_pendientes,
+        COUNT(*) FILTER (WHERE Estatus = 'Pagado') as total_pagadas,
+        COALESCE(SUM(MontoComision) FILTER (WHERE Estatus = 'Pendiente'), 0) as monto_pendiente,
+        COALESCE(SUM(MontoComision) FILTER (WHERE Estatus = 'Pagado'), 0) as monto_pagado,
+        COALESCE(SUM(MontoComision), 0) as monto_total
+      FROM Comisiones
+    `;
+    const totalesResult = await db.query(totalesQuery);
+    const totales = totalesResult.rows[0];
+
     res.json({
       success: true,
       data: {
@@ -65,6 +78,13 @@ const getAllComisiones = async (req, res) => {
           fechaPago: row.fechapago,
           montoVenta: parseFloat(row.montoventa),
         })),
+        totales: {
+          totalPendientes: parseInt(totales.total_pendientes),
+          totalPagadas: parseInt(totales.total_pagadas),
+          montoPendiente: parseFloat(totales.monto_pendiente),
+          montoPagado: parseFloat(totales.monto_pagado),
+          montoTotal: parseFloat(totales.monto_total)
+        }
       },
     });
   } catch (error) {

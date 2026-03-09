@@ -44,7 +44,7 @@ const { authenticate, authorizeRole } = require("../middlewares/roleMiddleware")
 router.get(
   "/notificaciones",
   authenticate,
-  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'gerente_operaciones', 'gerente_comercial', 'contador', 'encargado_credito', 'ejecutivo_cobranza', 'supervisor_ventas', 'ejecutivo_ventas', 'jefe_almacen', 'almacenista', 'recepcionista_compras', 'compras', 'marketing', 'auditor_interno', 'soporte_cliente']),
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'inventarios', 'catalogo', 'gerente_finanzas', 'gerente_operaciones', 'gerente_comercial', 'contador', 'encargado_credito', 'ejecutivo_cobranza', 'supervisor_ventas', 'ejecutivo_ventas', 'jefe_almacen', 'almacenista', 'recepcionista_compras', 'compras', 'marketing', 'auditor_interno', 'soporte_cliente']),
   notificacionesController.obtenerNotificacionesStaff
 );
 
@@ -83,7 +83,7 @@ router.get(
 router.get(
   "/notificaciones/unread-count",
   authenticate,
-  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'gerente_operaciones', 'gerente_comercial', 'contador', 'encargado_credito', 'ejecutivo_cobranza', 'supervisor_ventas', 'ejecutivo_ventas', 'jefe_almacen', 'almacenista', 'recepcionista_compras', 'compras', 'marketing', 'auditor_interno', 'soporte_cliente']),
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'inventarios', 'catalogo', 'gerente_finanzas', 'gerente_operaciones', 'gerente_comercial', 'contador', 'encargado_credito', 'ejecutivo_cobranza', 'supervisor_ventas', 'ejecutivo_ventas', 'jefe_almacen', 'almacenista', 'recepcionista_compras', 'compras', 'marketing', 'auditor_interno', 'soporte_cliente']),
   notificacionesController.obtenerConteoNoLeidasStaff
 );
 
@@ -118,7 +118,7 @@ router.get(
 router.post(
   "/notificaciones/marcar-todas-leidas",
   authenticate,
-  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'gerente_operaciones', 'gerente_comercial', 'contador', 'encargado_credito', 'ejecutivo_cobranza', 'supervisor_ventas', 'ejecutivo_ventas', 'jefe_almacen', 'almacenista', 'recepcionista_compras', 'compras', 'marketing', 'auditor_interno', 'soporte_cliente']),
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'inventarios', 'catalogo', 'gerente_finanzas', 'gerente_operaciones', 'gerente_comercial', 'contador', 'encargado_credito', 'ejecutivo_cobranza', 'supervisor_ventas', 'ejecutivo_ventas', 'jefe_almacen', 'almacenista', 'recepcionista_compras', 'compras', 'marketing', 'auditor_interno', 'soporte_cliente']),
   notificacionesController.marcarTodasLeidasStaff
 );
 

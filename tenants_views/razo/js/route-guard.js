@@ -13,7 +13,7 @@
    */
   const PAGE_PERMISSIONS = {
     // Dashboard - Todos los roles autenticados
-    'admin-dashboard.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'inventarios', 'catalogo', 'finanzas', 'compras'],
+    'admin-dashboard.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'inventarios', 'catalogo', 'finanzas', 'gerente_finanzas', 'compras'],
     
     // VENTAS - Admin y rol 'inventarios' (para gestión de pedidos)
     'admin-pedidos.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'inventarios'],
@@ -31,13 +31,13 @@
     'admin-catalogo-visual.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'catalogo'],
     'admin-landing-editor.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'catalogo'],
     
-    // FINANZAS - Admin y rol 'finanzas'
-    'admin-aprobaciones.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas'],
-    'admin-cxc.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas'],
-    'admin-validar-pagos.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas'],
-    'admin-edocuenta.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas'],
-    'admin-cuentaspagar.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas'],
-    'admin-cuentaspagadas.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas'],
+    // FINANZAS - Admin y rol 'finanzas' o 'gerente_finanzas'
+    'admin-aprobaciones.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'],
+    'admin-cxc.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'],
+    'admin-validar-pagos.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'],
+    'admin-edocuenta.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'],
+    'admin-cuentaspagar.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'],
+    'admin-cuentaspagadas.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'],
     
     // INVENTARIO - Admin y rol 'inventarios'
     'admin-inventario.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'inventarios'],
@@ -53,10 +53,10 @@
     'admin-grupos-ordenes.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'compras'],
     'admin-recibir-inventario.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'compras'],
     
-    // REPORTES - Admin, finanzas
-    'admin-reportes.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas'],
-    'admin-inventario-reportes.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'inventarios'],
-    'admin-movimientos-conciliacion.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas'],
+    // REPORTES - Admin, finanzas, gerente_finanzas
+    'admin-reportes.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'],
+    'admin-inventario-reportes.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'inventarios'],
+    'admin-movimientos-conciliacion.html': ['super_admin', 'superadmin', 'super admin', 'admin'],
     'admin-reportes-ordenes-compra.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'compras'],
     
     // SISTEMA - Solo super_admin

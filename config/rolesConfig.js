@@ -39,7 +39,8 @@ const ROLES_PERMISOS = {
     historial_ajustes: ['ver'],
     toma_inventario: ['ver', 'modificar'],
     auditoria: ['ver', 'modificar'],
-    reportes_inventario: ['ver', 'exportar'],
+    reportes: ['ver'], // Reportes generales
+    reportes_inventario: ['ver', 'exportar'], // Reportes específicos de inventario
     recibir_inventario: ['ver', 'modificar'],
     productos: ['ver'], // Solo consulta para verificar stock
     pedidos: ['ver', 'modificar'], // Ver pedidos y marcar como surtido
@@ -61,19 +62,26 @@ const ROLES_PERMISOS = {
 
   /**
    * FINANZAS
-   * Responsable de cuentas por cobrar/pagar, créditos y reportes financieros
+   * Rol con restricciones quirúrgicas - Solo gestión monetaria
+   * ACCESO PERMITIDO: comisiones, validar_pagos, cxc, cxp, reportes_financieros
+   * BLOQUEADO: inventario, conciliacion, reportes_inventario, configuracion_sistema, productos
    */
   finanzas: {
-    cuentas_cobrar: ['ver', 'crear_pago'],
-    cuentas_pagar: ['ver', 'crear_pago'],
-    validar_pagos: ['ver', 'modificar'],
-    historial_pagados: ['ver'],
-    edo_cuenta_proveedores: ['ver'],
-    comisiones: ['ver'],
-    gestion_creditos: ['ver', 'modificar'],
-    reportes_financieros: ['ver', 'exportar'],
-    clientes: ['ver'], // Solo consulta para CxC
+    comisiones: ['ver', 'exportar'], // Comisiones de agentes
+    validar_pagos: ['ver', 'modificar', 'aprobar', 'rechazar'], // Validación de comprobantes
+    cxc: ['ver', 'crear_pago', 'exportar', 'modificar'], // Cuentas por cobrar
+    cxp: ['ver', 'crear_pago', 'exportar'], // Cuentas por pagar
+    reportes_financieros: ['ver', 'exportar'], // Reportes de ventas y cobranza
+    reportes_ventas: ['ver', 'exportar'], // Reportes de ventas
+    historial_pagados: ['ver'], // Historial de pagos realizados
+    edo_cuenta_proveedores: ['ver'], // Estado de cuenta proveedores
+    credito: ['ver', 'modificar'], // Gestión de créditos
+    cobranza: ['ver', 'modificar'], // Gestión de cobranza
+    clientes: ['ver'], // Solo consulta para CXC
     pedidos: ['ver'], // Solo consulta para facturación
+    // EXPLÍCITAMENTE BLOQUEADO (no incluir estos módulos):
+    // inventario, productos, categorias, ajustes, configuracion_sistema
+    // conciliacion, reportes_inventario, reportes_recepciones, reportes (general)
   },
 
   /**
