@@ -193,120 +193,175 @@
       submitBtn.textContent = 'Iniciando sesión...';
 
       try {
-        const response = await API.login(identifier, password);
-        
-        // MISIÓN 2: Debug detallado - Imprimir estructura completa
-        console.log('📦 Respuesta Login completa:', response);
-        console.log('📦 Response.data:', response.data);
-        console.log('📦 Response.ok:', response.ok);
-        console.log('📦 Estructura de data:', JSON.stringify(response.data, null, 2));
+        let loginSuccessful = false;
+        let finalToken = null;
+        let finalUsuario = null;
+        let userRole = 'cliente'; // Default role
 
-        if (response.ok && response.data.success) {
-          // Búsqueda del token en estructura nueva del backend
-          let token = null;
-          let usuario = null;
-          
-          // Prioridad 1: Estructura nueva (data.data.accessToken)
-          if (response.data.data) {
-            token = response.data.data.accessToken || response.data.data.token;
-            usuario = response.data.data.usuario || response.data.data.cliente;
-          }
-          
-          // Prioridad 2: Estructura legacy (data.token)
-          if (!token) {
-            token = response.data.token || response.data.access_token;
-            usuario = response.data.cliente || response.data.usuario;
-          }
-          
-          console.log('🔍 Token encontrado:', token ? `Sí (${token.substring(0, 20)}...)` : 'NO');
-          
-          // MISIÓN 2: Validación final del token
-          if (!token || typeof token !== 'string') {
-            console.error('❌ Token no encontrado o inválido');
-            console.error('📦 Estructura completa de respuesta:', JSON.stringify(response, null, 2));
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
-            showToast('La respuesta del servidor no contiene un token válido.', 'error');
-            return;
-          }
-
-          // Validar estructura JWT (3 partes separadas por puntos)
-          const tokenParts = token.split('.');
-          if (tokenParts.length !== 3) {
-            console.error('❌ Token malformado: no tiene 3 partes', { token, parts: tokenParts.length });
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
-            showToast('Token malformado. Por favor intenta nuevamente.', 'error');
-            return;
-          }
-
-          // Validar que cada parte tenga contenido
-          if (!tokenParts[0] || !tokenParts[1] || !tokenParts[2]) {
-            console.error('❌ Token malformado: partes vacías', tokenParts);
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
-            showToast('Token incompleto. Por favor intenta nuevamente.', 'error');
-            return;
-          }
-
-          // Token válido - guardar en localStorage
-          console.log('✅ Token válido recibido:', { 
-            length: token.length, 
-            parts: tokenParts.length,
-            preview: `${token.substring(0, 20)}...${token.substring(token.length - 20)}`
+        // PASO 1: Intentar login como administrador/agente primero
+        try {
+          const adminResponse = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: identifier, password: password })
           });
 
-          localStorage.setItem('razoconnect_token', token);
-          localStorage.setItem('razoconnect_user', JSON.stringify(usuario));
+          const adminData = await adminResponse.json();
+          console.log('� Intento admin login:', adminData);
+
+          if (adminResponse.ok && adminData.success) {
+            const { accessToken, refreshToken, usuario } = adminData.data;
+            
+            if (accessToken && refreshToken && usuario) {
+              finalToken = accessToken;
+              finalUsuario = usuario;
+              userRole = 'admin';
+              loginSuccessful = true;
+              
+              // Guardar tokens de admin
+              localStorage.setItem('razoconnect_admin_token', accessToken);
+              localStorage.setItem('razoconnect_admin', JSON.stringify(usuario));
+              
+              console.log('✅ Login exitoso como admin/agente');
+            }
+          }
+        } catch (adminError) {
+          console.log('⚠️ Admin login no disponible, intentando cliente...');
+        }
+
+        // PASO 2: Si no es admin, intentar como cliente
+        if (!loginSuccessful) {
+          const response = await API.login(identifier, password);
           
+          console.log('📦 Respuesta Login cliente:', response);
+
+          if (response.ok && response.data.success) {
+            // Búsqueda del token en estructura nueva del backend
+            let token = null;
+            let usuario = null;
+            
+            // Prioridad 1: Estructura nueva (data.data.accessToken)
+            if (response.data.data) {
+              token = response.data.data.accessToken || response.data.data.token;
+              usuario = response.data.data.usuario || response.data.data.cliente;
+            }
+            
+            // Prioridad 2: Estructura legacy (data.token)
+            if (!token) {
+              token = response.data.token || response.data.access_token;
+              usuario = response.data.cliente || response.data.usuario;
+            }
+            
+            console.log('🔍 Token encontrado:', token ? `Sí (${token.substring(0, 20)}...)` : 'NO');
+            
+            // MISIÓN 2: Validación final del token
+            if (!token || typeof token !== 'string') {
+              console.error('❌ Token no encontrado o inválido');
+              console.error('📦 Estructura completa de respuesta:', JSON.stringify(response, null, 2));
+              submitBtn.disabled = false;
+              submitBtn.textContent = originalText;
+              showToast('La respuesta del servidor no contiene un token válido.', 'error');
+              return;
+            }
+
+            // Validar estructura JWT (3 partes separadas por puntos)
+            const tokenParts = token.split('.');
+            if (tokenParts.length !== 3) {
+              console.error('❌ Token malformado: no tiene 3 partes', { token, parts: tokenParts.length });
+              submitBtn.disabled = false;
+              submitBtn.textContent = originalText;
+              showToast('Token malformado. Por favor intenta nuevamente.', 'error');
+              return;
+            }
+
+            // Validar que cada parte tenga contenido
+            if (!tokenParts[0] || !tokenParts[1] || !tokenParts[2]) {
+              console.error('❌ Token malformado: partes vacías', tokenParts);
+              submitBtn.disabled = false;
+              submitBtn.textContent = originalText;
+              showToast('Token incompleto. Por favor intenta nuevamente.', 'error');
+              return;
+            }
+
+            // Token válido - guardar en localStorage
+            console.log('✅ Token válido recibido:', { 
+              length: token.length, 
+              parts: tokenParts.length,
+              preview: `${token.substring(0, 20)}...${token.substring(token.length - 20)}`
+            });
+
+            finalToken = token;
+            finalUsuario = usuario;
+            userRole = 'cliente';
+            loginSuccessful = true;
+
+            localStorage.setItem('razoconnect_token', token);
+            localStorage.setItem('razoconnect_user', JSON.stringify(usuario));
+          }
+        }
+
+        // PASO 3: Procesar login exitoso
+        if (loginSuccessful && finalToken) {
           showToast('Sesión iniciada correctamente', 'success');
           
           // Dispatch event for UI updates
           window.dispatchEvent(new CustomEvent('razoconnect:auth-changed'));
           
-          // CRITICAL: Migrate guest cart to server if exists
-          const migrateGuestCart = async () => {
-            try {
-              if (typeof CarritoService !== 'undefined' && CarritoService.getGuestCart) {
-                const guestCart = CarritoService.getGuestCart();
-                if (guestCart && guestCart.length > 0) {
-                  console.log('🛒 Migrando carrito de invitado al servidor...', guestCart.length, 'items');
-                  
-                  // Migrate each item to server cart
-                  for (const item of guestCart) {
-                    try {
-                      // Use cantidad field from guest cart (it's the same as cantidadPaquetes)
-                      const cantidadPaquetes = item.cantidad || item.cantidadPaquetes || 1;
-                      await API.agregarAlCarrito(item.varianteId, cantidadPaquetes, item.tamanoId);
-                      console.log('✅ Item migrado:', item.varianteId, 'cantidad:', cantidadPaquetes);
-                    } catch (err) {
-                      console.error('❌ Error migrando item:', item.varianteId, err);
+          // CRITICAL: Migrate guest cart to server if exists (solo para clientes)
+          if (userRole === 'cliente') {
+            const migrateGuestCart = async () => {
+              try {
+                if (typeof CarritoService !== 'undefined' && CarritoService.getGuestCart) {
+                  const guestCart = CarritoService.getGuestCart();
+                  if (guestCart && guestCart.length > 0) {
+                    console.log('🛒 Migrando carrito de invitado al servidor...', guestCart.length, 'items');
+                    
+                    // Migrate each item to server cart
+                    for (const item of guestCart) {
+                      try {
+                        const cantidadPaquetes = item.cantidad || item.cantidadPaquetes || 1;
+                        await API.agregarAlCarrito(item.varianteId, cantidadPaquetes, item.tamanoId);
+                        console.log('✅ Item migrado:', item.varianteId, 'cantidad:', cantidadPaquetes);
+                      } catch (err) {
+                        console.error('❌ Error migrando item:', item.varianteId, err);
+                      }
                     }
+                    
+                    CarritoService.clearGuestCart();
+                    console.log('✅ Carrito de invitado migrado y limpiado');
                   }
-                  
-                  // Clear guest cart after successful migration
-                  CarritoService.clearGuestCart();
-                  console.log('✅ Carrito de invitado migrado y limpiado');
                 }
+              } catch (error) {
+                console.error('❌ Error en migración de carrito:', error);
               }
-            } catch (error) {
-              console.error('❌ Error en migración de carrito:', error);
-            }
-          };
+            };
+            
+            await migrateGuestCart();
+          }
           
-          // Execute cart migration before redirect
-          await migrateGuestCart();
-          
-          // Check for redirect intent (guest checkout flow)
+          // Check for redirect intent
           const redirectUrl = sessionStorage.getItem('razoconnect_redirect_after_login');
           sessionStorage.removeItem('razoconnect_redirect_after_login');
           sessionStorage.removeItem('razoconnect_login_message');
           
-          // Close modal and redirect/reload after a short delay
+          // Close modal and redirect based on role
           setTimeout(() => {
             window.closeAuthModal();
+            
             if (redirectUrl) {
               window.location.href = redirectUrl;
+            } else if (userRole === 'admin') {
+              // Verificar si es agente
+              const esAgente = finalUsuario.rol === 'agente' || 
+                               finalUsuario.origen === 'agent' || 
+                               finalUsuario.esAgente === true || 
+                               finalUsuario.codigoAgente;
+              
+              if (esAgente) {
+                window.location.href = '/agente-dashboard.html';
+              } else {
+                window.location.href = '/admin-dashboard.html';
+              }
             } else {
               location.reload();
             }
@@ -314,7 +369,7 @@
         } else {
           submitBtn.disabled = false;
           submitBtn.textContent = originalText;
-          showToast(response.data.message || 'Credenciales incorrectas', 'error');
+          showToast('Credenciales incorrectas', 'error');
         }
       } catch (error) {
         console.error('Login error:', error);

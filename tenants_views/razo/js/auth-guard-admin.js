@@ -7,6 +7,10 @@
 (function () {
   "use strict";
 
+  // Global flag para indicar que la verificación de auth está en progreso
+  window.adminAuthVerifying = true;
+  window.adminAuthVerified = false;
+
   // Aliases legacy para evitar crashes si se removieron IDs del navbar en alguna pantalla.
   // Se inyecta en <head> para que exista antes de que corran scripts inline al final del body.
   (function ensureLegacyHeaderAliases() {
@@ -40,6 +44,25 @@
       window.location.replace("/login.html");
       return false;
     }
+    
+    // Verificar si el token parece válido (formato JWT básico)
+    try {
+      const parts = adminToken.split('.');
+      if (parts.length !== 3) {
+        console.warn("Token malformado. Redirigiendo a login...");
+        localStorage.removeItem("razoconnect_admin_token");
+        localStorage.removeItem("razoconnect_admin");
+        window.location.replace("/login.html");
+        return false;
+      }
+    } catch (error) {
+      console.warn("Error validando formato de token. Redirigiendo a login...");
+      localStorage.removeItem("razoconnect_admin_token");
+      localStorage.removeItem("razoconnect_admin");
+      window.location.replace("/login.html");
+      return false;
+    }
+    
     return true;
   }
 
@@ -63,6 +86,9 @@
   const verifyUrl = `${apiBaseUrl}/admin/verify`;
   
 
+  // Verificar token con el servidor de forma asíncrona
+  // IMPORTANTE: Esta verificación es opcional - si falla por problemas de red,
+  // NO expulsamos al usuario. Solo expulsamos en caso de token realmente inválido.
   fetch(verifyUrl, {
     method: "GET",
     headers: {
@@ -71,7 +97,6 @@
     },
   })
     .then((response) => {
-      
       // Capture status before processing
       const status = response.status;
       
@@ -84,7 +109,6 @@
       return response.json();
     })
     .then((data) => {
-      
       if (!data.success) {
         const error = new Error("Invalid token");
         error.status = 401;
@@ -98,9 +122,12 @@
           JSON.stringify(data.data.admin)
         );
       }
+      
+      // Marcar verificación como completa
+      window.adminAuthVerified = true;
+      window.adminAuthVerifying = false;
     })
     .catch((error) => {
-
       // Check if it's a network error (no response from server)
       const isNetworkError = 
         error.message.includes("Failed to fetch") ||
@@ -108,21 +135,30 @@
         error.message.includes("ECONNREFUSED") ||
         error.message.includes("EAI_AGAIN") ||
         error.message.includes("fetch failed") ||
+        error.message.includes("Load failed") ||
         !error.status; // No status means network issue
 
       // Only redirect to login on explicit auth failures (401, 403)
       const isAuthFailure = error.status === 401 || error.status === 403;
 
-
       if (isNetworkError) {
-        // Network error - don't redirect, just warn
-        return; // Don't redirect
+        // Network error - don't redirect, just log and continue
+        console.warn("[AUTH-GUARD] Error de red al verificar token. Permitiendo acceso con token local.");
+        
+        // Marcar como verificado (con token local)
+        window.adminAuthVerified = true;
+        window.adminAuthVerifying = false;
+        return; // Don't redirect - user can continue working
       }
 
       if (isAuthFailure) {
         // Explicit auth failure - clean tokens and redirect
+        console.warn("[AUTH-GUARD] Token inválido o expirado. Redirigiendo a login.");
         localStorage.removeItem("razoconnect_admin_token");
         localStorage.removeItem("razoconnect_admin");
+        
+        window.adminAuthVerified = false;
+        window.adminAuthVerifying = false;
 
         if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
           Swal.fire({
@@ -136,11 +172,15 @@
             window.location.replace("/login.html");
           });
         } else {
-          console.warn("[AUTH-GUARD] Redirigiendo a login...");
           window.location.replace("/login.html");
         }
       } else {
-        // Other server errors (500, etc.) - don't redirect
+        // Other server errors (500, etc.) - don't redirect, just log
+        console.warn("[AUTH-GUARD] Error del servidor al verificar token. Permitiendo acceso con token local.");
+        
+        // Marcar como verificado (con token local)
+        window.adminAuthVerified = true;
+        window.adminAuthVerifying = false;
       }
     });
 })();
