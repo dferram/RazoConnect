@@ -100,13 +100,26 @@
       'inventarios': ['Principal', 'Inventario'], // Solo Dashboard e Inventario
       'catalogo': ['Principal', 'Catálogo'],
       'finanzas': ['Principal', 'Finanzas', 'Reportes'],
+      'gerente_finanzas': ['Principal', 'Finanzas', 'Reportes'], // Rol de BD
       'compras': ['Principal', 'Compras']
+    };
+    
+    // Mapa de links permitidos por rol dentro de secciones
+    const roleLinkPermissions = {
+      'finanzas': {
+        'Reportes': ['admin-reportes.html'] // Solo el reporte general
+      },
+      'gerente_finanzas': {
+        'Reportes': ['admin-reportes.html'] // Solo el reporte general
+      }
     };
 
     const allowedSections = rolePermissions[rolString] || ['Principal'];
+    const linkPermissions = roleLinkPermissions[rolString] || {};
     
     console.log(`🔒 [SIDEBAR] Rol detectado: ${rolString}`);
     console.log(`✅ [SIDEBAR] Secciones permitidas:`, allowedSections);
+    console.log(`🔗 [SIDEBAR] Restricciones de links:`, linkPermissions);
 
     // Obtener todas las secciones del menú
     const allSections = document.querySelectorAll('.admin-nav-section');
@@ -163,6 +176,27 @@
         section.style.visibility = 'visible';
         section.style.opacity = '1';
         console.log(`✅ [SIDEBAR] Mostrando sección: ${sectionTitle}`);
+        
+        // Filtrar links dentro de la sección si hay restricciones
+        if (linkPermissions[sectionTitle]) {
+          const allowedLinks = linkPermissions[sectionTitle];
+          const allLinks = section.querySelectorAll('.admin-nav-link');
+          
+          allLinks.forEach(link => {
+            const href = link.getAttribute('href') || '';
+            const linkFile = href.replace('/', '');
+            
+            if (allowedLinks.includes(linkFile)) {
+              link.style.setProperty('display', 'flex', 'important');
+              link.style.visibility = 'visible';
+              link.style.opacity = '1';
+              console.log(`✅ [SIDEBAR] Mostrando link: ${linkFile}`);
+            } else {
+              link.style.setProperty('display', 'none', 'important');
+              console.log(`🚫 [SIDEBAR] Ocultando link: ${linkFile}`);
+            }
+          });
+        }
       } else {
         // Ocultar sección completamente
         section.style.setProperty('display', 'none', 'important');

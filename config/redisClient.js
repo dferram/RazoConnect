@@ -1,15 +1,29 @@
 /**
  * REDIS CLIENT CONFIGURATION
- * 
- * Cliente Redis para Azure Cache for Redis
- * Usado para almacenar refresh tokens y gestión de sesiones
- * 
- * @module config/redisClient
+ * * Cliente optimizado para Upstash Redis o Azure Cache for Redis.
+ * Soporta conexión mediante URL única (preferido para Upstash) 
+ * o variables separadas (Azure).
+ * * @module config/redisClient
  * @author RazoConnect Team
- * @date 2026-02-28
+ * @date 2026-03-09
  */
 
 const redis = require('redis');
+const NodeCache = require('node-cache');
+
+// Hybrid Cache: Memoria RAM local (antes de Redis)
+const localCache = new NodeCache({
+  stdTTL: 300, // 5 minutos por defecto
+  checkperiod: 60, // Limpieza cada 60 segundos
+  useClones: false // Mejor performance, no clona objetos
+});
+
+// Cache específico para blacklist (60 segundos)
+const blacklistCache = new NodeCache({
+  stdTTL: 60,
+  checkperiod: 10,
+  useClones: false
+});
 
 let redisClient = null;
 let isConnected = false;
@@ -24,47 +38,50 @@ const initRedisClient = async () => {
   }
 
   try {
-    const redisConfig = {
-      socket: {
+    const redisConfig = {};
+
+    // 1. Prioridad: URL completa (Recomendado para Upstash)
+    if (process.env.REDIS_URL) {
+      redisConfig.url = process.env.REDIS_URL;
+    } else {
+      // 2. Respaldo: Variables separadas (Azure)
+      redisConfig.socket = {
         host: process.env.REDIS_HOST,
         port: parseInt(process.env.REDIS_PORT || '6380', 10),
-        tls: true, // Azure Redis requiere TLS
-        reconnectStrategy: (retries) => {
-          if (retries > 10) {
-            console.error('❌ [REDIS] Máximo de reintentos alcanzado');
-            return new Error('Demasiados reintentos de conexión a Redis');
-          }
-          // Reintentar después de 500ms * número de reintentos
-          return Math.min(retries * 500, 3000);
+      };
+      redisConfig.password = process.env.REDIS_PASSWORD;
+    }
+
+    // Configuración de seguridad para la nube (Upstash/Azure)
+    redisConfig.socket = {
+      ...redisConfig.socket,
+      tls: true, // Obligatorio para rediss://
+      rejectUnauthorized: false, // Evita fallos por certificados intermedios
+      family: 4, // Fuerza IPv4 para evitar retardos en DNS
+      reconnectStrategy: (retries) => {
+        if (retries > 10) {
+          console.error('❌ [REDIS] Máximo de reintentos alcanzado');
+          return new Error('Demasiados reintentos de conexión');
         }
-      },
-      password: process.env.REDIS_PASSWORD,
+        return Math.min(retries * 500, 3000);
+      }
     };
 
     redisClient = redis.createClient(redisConfig);
 
-    // Event handlers
+    // Manejadores de eventos
     redisClient.on('error', (err) => {
-      console.error('❌ [REDIS] Error de conexión:', err.message);
+      console.error('❌ [REDIS] Error:', err.message);
       isConnected = false;
     });
 
-    redisClient.on('connect', () => {
-      console.log('🔄 [REDIS] Conectando a Azure Redis...');
-    });
-
     redisClient.on('ready', () => {
-      console.log('✅ [REDIS] Cliente Redis conectado y listo');
+      console.log('✅ [REDIS] Conectado exitosamente (Upstash/Cloud)');
       isConnected = true;
     });
 
     redisClient.on('reconnecting', () => {
-      console.log('🔄 [REDIS] Reconectando a Redis...');
-      isConnected = false;
-    });
-
-    redisClient.on('end', () => {
-      console.log('⚠️  [REDIS] Conexión cerrada');
+      console.log('🔄 [REDIS] Intentando reconexión...');
       isConnected = false;
     });
 
@@ -73,14 +90,16 @@ const initRedisClient = async () => {
 
     return redisClient;
   } catch (error) {
-    console.error('❌ [REDIS] Error al inicializar cliente:', error);
-    throw error;
+    console.error('❌ [REDIS] Error crítico de inicialización:', error.message);
+    // Fail-safe: No lanzamos error para que la app no muera, 
+    // el middleware de rate limit manejará el 'skip' automáticamente.
+    isConnected = false;
+    return null;
   }
 };
 
 /**
  * Obtiene el cliente Redis (inicializa si es necesario)
- * @returns {Promise<RedisClient>}
  */
 const getRedisClient = async () => {
   if (!redisClient || !isConnected) {
@@ -91,14 +110,13 @@ const getRedisClient = async () => {
 
 /**
  * Verifica si Redis está conectado
- * @returns {boolean}
  */
 const isRedisConnected = () => {
   return isConnected && redisClient !== null;
 };
 
 /**
- * Cierra la conexión de Redis (para shutdown graceful)
+ * Cierra la conexión de Redis (Shutdown)
  */
 const closeRedisConnection = async () => {
   if (redisClient) {
@@ -115,119 +133,166 @@ const closeRedisConnection = async () => {
 };
 
 /**
- * Guarda un refresh token en Redis
- * @param {string} userId - ID del usuario
- * @param {string} rol - Rol del usuario (super_admin, admin, agente, cliente)
- * @param {string} refreshToken - Token a guardar
- * @param {number} ttl - Tiempo de vida en segundos (default: 30 días)
+ * --- MÉTODOS DE NEGOCIO (Refresh Tokens & Blacklist) ---
  */
+
 const saveRefreshToken = async (userId, rol, refreshToken, ttl = 30 * 24 * 60 * 60) => {
   try {
     const client = await getRedisClient();
+    if (!client) return false;
     const key = `refresh_token:${rol}:${userId}`;
-    
     await client.setEx(key, ttl, refreshToken);
-    
     return true;
   } catch (error) {
     console.error('❌ [REDIS] Error al guardar refresh token:', error);
-    throw error;
+    return false;
   }
 };
 
-/**
- * Obtiene un refresh token de Redis
- * @param {string} userId - ID del usuario
- * @param {string} rol - Rol del usuario
- * @returns {Promise<string|null>}
- */
 const getRefreshToken = async (userId, rol) => {
   try {
     const client = await getRedisClient();
+    if (!client) return null;
     const key = `refresh_token:${rol}:${userId}`;
-    
-    const token = await client.get(key);
-    
-    return token;
+    return await client.get(key);
   } catch (error) {
     console.error('❌ [REDIS] Error al obtener refresh token:', error);
-    throw error;
+    return null;
   }
 };
 
-/**
- * Elimina un refresh token de Redis (logout)
- * @param {string} userId - ID del usuario
- * @param {string} rol - Rol del usuario
- * @returns {Promise<boolean>}
- */
 const deleteRefreshToken = async (userId, rol) => {
   try {
     const client = await getRedisClient();
+    if (!client) return false;
     const key = `refresh_token:${rol}:${userId}`;
-    
     const result = await client.del(key);
-    
     return result > 0;
   } catch (error) {
     console.error('❌ [REDIS] Error al eliminar refresh token:', error);
-    throw error;
+    return false;
   }
 };
 
-/**
- * Verifica si un refresh token existe en Redis
- * @param {string} userId - ID del usuario
- * @param {string} rol - Rol del usuario
- * @returns {Promise<boolean>}
- */
 const refreshTokenExists = async (userId, rol) => {
   try {
     const client = await getRedisClient();
+    if (!client) return false;
     const key = `refresh_token:${rol}:${userId}`;
-    
     const exists = await client.exists(key);
     return exists === 1;
   } catch (error) {
     console.error('❌ [REDIS] Error al verificar refresh token:', error);
-    throw error;
+    return false;
   }
 };
 
-/**
- * Agrega un access token a la blacklist (logout)
- * @param {string} tokenId - JTI del token o hash único
- * @param {number} ttlSeconds - TTL en segundos (tiempo restante del token)
- */
 const blacklistAccessToken = async (tokenId, ttlSeconds) => {
   try {
     const client = await getRedisClient();
+    if (!client) return false;
     const key = `blacklist:${tokenId}`;
-    // Mínimo 1 segundo, máximo el TTL real del token
     const safeTtl = Math.max(1, Math.min(ttlSeconds, 3600));
     await client.setEx(key, safeTtl, '1');
     return true;
   } catch (error) {
     console.error('[REDIS] Error al agregar token a blacklist:', error);
-    return false; // No lanzar error — logout no debe fallar por esto
+    return false;
+  }
+};
+
+const isTokenBlacklisted = async (tokenId) => {
+  try {
+    // 1. Verificar en RAM local primero (60s cache)
+    const cachedResult = blacklistCache.get(tokenId);
+    if (cachedResult !== undefined) {
+      return cachedResult;
+    }
+
+    // 2. Si no está en RAM, verificar en Redis
+    const client = await getRedisClient();
+    if (!client) return false;
+    const key = `blacklist:${tokenId}`;
+    const exists = await client.exists(key);
+    const isBlacklisted = exists === 1;
+
+    // 3. Guardar resultado en RAM local por 60 segundos
+    blacklistCache.set(tokenId, isBlacklisted);
+
+    return isBlacklisted;
+  } catch (error) {
+    console.error('[REDIS] Error al verificar blacklist:', error);
+    return false;
   }
 };
 
 /**
- * Verifica si un access token está en la blacklist
- * @param {string} tokenId - JTI del token o hash único
- * @returns {Promise<boolean>} true si está blacklisteado
+ * HYBRID CACHE HELPER
+ * Busca en: RAM local → Redis → Base de datos (fetchFunction)
+ * @param {string} key - Clave del cache
+ * @param {Function} fetchFunction - Función async que obtiene datos de BD
+ * @param {number} ttl - Tiempo de vida en segundos (default: 300s = 5min)
+ * @returns {Promise<any>}
  */
-const isTokenBlacklisted = async (tokenId) => {
+const getOrSetCache = async (key, fetchFunction, ttl = 300) => {
   try {
+    // 1. Verificar en RAM local
+    const cachedValue = localCache.get(key);
+    if (cachedValue !== undefined) {
+      return cachedValue;
+    }
+
+    // 2. Verificar en Redis
     const client = await getRedisClient();
-    const key = `blacklist:${tokenId}`;
-    const exists = await client.exists(key);
-    return exists === 1;
+    if (client) {
+      const redisValue = await client.get(key);
+      if (redisValue !== null) {
+        const parsed = JSON.parse(redisValue);
+        // Guardar en RAM local para próximas peticiones
+        localCache.set(key, parsed, ttl);
+        return parsed;
+      }
+    }
+
+    // 3. Ejecutar fetchFunction (consulta a BD)
+    const freshData = await fetchFunction();
+
+    // 4. Guardar en ambos caches
+    localCache.set(key, freshData, ttl);
+    if (client) {
+      await client.setEx(key, ttl, JSON.stringify(freshData));
+    }
+
+    return freshData;
   } catch (error) {
-    console.error('[REDIS] Error al verificar blacklist:', error);
-    return false; // En caso de error, NO bloquear — fail open para no romper el sistema
+    console.error('[HYBRID CACHE] Error:', error);
+    // Fallback: ejecutar fetchFunction directamente
+    return await fetchFunction();
   }
+};
+
+/**
+ * Invalida cache en RAM y Redis
+ * @param {string} key - Clave a invalidar
+ */
+const invalidateCache = async (key) => {
+  try {
+    localCache.del(key);
+    const client = await getRedisClient();
+    if (client) {
+      await client.del(key);
+    }
+  } catch (error) {
+    console.error('[HYBRID CACHE] Error al invalidar:', error);
+  }
+};
+
+/**
+ * Limpia todo el cache local (útil para testing)
+ */
+const flushLocalCache = () => {
+  localCache.flushAll();
+  blacklistCache.flushAll();
 };
 
 module.exports = {
@@ -241,4 +306,8 @@ module.exports = {
   refreshTokenExists,
   blacklistAccessToken,
   isTokenBlacklisted,
+  // Hybrid Cache
+  getOrSetCache,
+  invalidateCache,
+  flushLocalCache,
 };

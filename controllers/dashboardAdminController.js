@@ -15,10 +15,34 @@ const logger = require('../utils/logger');
 /**
  * Obtener estadísticas del dashboard de administrador
  * GET /api/admin/dashboard-stats
+ * 
+ * DETECCIÓN DE ROL: Si es finanzas, omite queries de inventario/usuarios
  */
 const getDashboardStats = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
+    const userRole = (req.user.rol || '').toLowerCase().trim();
+    
+    // Roles que NO tienen permiso para ver dashboard de ventas/inventario
+    const rolesRestringidos = ['finanzas', 'gerente_finanzas', 'contador', 'ejecutivo_cobranza', 'encargado_credito'];
+    
+    if (rolesRestringidos.includes(userRole)) {
+      logger.warn(`⚠️ Usuario con rol ${userRole} intentó acceder a dashboard-stats sin permisos`, {
+        userId: req.user.id,
+        rol: userRole,
+        tenantId: tenant_id
+      });
+      
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permisos para acceder a estas estadísticas',
+        error: 'FORBIDDEN',
+        data: {
+          requiredPermissions: ['ventas', 'inventario'],
+          userRole: userRole
+        }
+      });
+    }
 
     // Fechas del mes actual y mes anterior
     const now = new Date();

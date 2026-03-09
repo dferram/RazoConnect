@@ -41,7 +41,7 @@ const { heavyOperationLimiter } = require('../middlewares/rateLimiter');
 router.get(
   '/rentabilidad',
   authenticate,
-  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'gerente_operaciones', 'gerente_comercial', 'contador', 'auditor_interno']),
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'gerente_operaciones', 'gerente_comercial', 'contador', 'auditor_interno']),
   heavyOperationLimiter,
   reportesController.getReporteRentabilidad
 );
@@ -83,7 +83,7 @@ router.get(
 router.get(
   '/valuacion-inventario',
   authenticate,
-  authorizeRole(['super_admin', 'admin', 'gerente_finanzas', 'gerente_operaciones', 'contador', 'auditor_interno']),
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'gerente_operaciones', 'auditor_interno']),
   heavyOperationLimiter,
   reportesController.getValuacionInventario
 );

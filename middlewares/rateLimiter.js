@@ -9,10 +9,10 @@
  * Configuración estricta con Azure Cache for Redis (TLS obligatorio)
  */
 
-const { createClient } = require('redis');
 const { rateLimit } = require('express-rate-limit');
 const { RedisStore } = require('rate-limit-redis');
 const logger = require('../utils/logger');
+const { getRedisClient, isRedisConnected } = require('../config/redisClient');
 
 // ============================================================================
 // HELPER: Extrae IP limpia (sin puerto) para Azure App Service
@@ -41,18 +41,11 @@ function getCleanIp(req) {
 // Si Redis no está listo, deja pasar la request (fail-open) para evitar 
 // que un fallo de Redis bloquee la app completa
 // ============================================================================
-function isRedisReady() {
-  try {
-    return redisClient.isReady;
-  } catch {
-    return false;
-  }
-}
 
 // Skip function: si Redis no está listo, deja pasar SIN limitear
 // Esto es "fail-open" — preferimos no limitar a bloquear toda la app
 function skipIfRedisDown(req, res) {
-  if (!isRedisReady()) {
+  if (!isRedisConnected()) {
     logger.warn('Rate limiter: Redis no disponible, skip aplicado', {
       path: req.path,
       method: req.method
@@ -63,55 +56,23 @@ function skipIfRedisDown(req, res) {
 }
 
 // ============================================================================
-// CONFIGURACIÓN ESTRICTA DE AZURE REDIS CON TLS
+// CONFIGURACIÓN DE REDIS STORE
+// Usa la instancia centralizada de config/redisClient.js
 // ============================================================================
 
-// Crear cliente de Redis con credenciales de Azure
-const redisClient = createClient({
-  password: process.env.REDIS_PASSWORD,
-  socket: {
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT || 6380,
-    tls: true, // OBLIGATORIO PARA AZURE
-    keepAlive: 30000,         // Ping cada 30 segundos para mantener la conexión viva
-    connectTimeout: 10000,    // Timeout de conexión 10 segundos
-    commandTimeout: 3000,     // CRÍTICO: máx 3 segundos por comando — evita bloqueos largos
-    reconnectStrategy: (retries) => {
-      if (retries > 10) {
-        logger.error('Redis: demasiados reintentos, abandonando reconexión');
-        return new Error('Redis reconexión abandonada después de 10 intentos');
+// Función helper para crear RedisStore con lazy loading del cliente
+const createRedisStore = (prefix) => {
+  return new RedisStore({
+    sendCommand: async (...args) => {
+      const client = await getRedisClient();
+      if (!client) {
+        throw new Error('Redis client not available');
       }
-      // Backoff exponencial: 500ms, 1s, 2s, 4s, 8s... máx 30s
-      return Math.min(500 * Math.pow(2, retries), 30000);
-    }
-  }
-});
-
-// Manejo de errores (NO crashea la app, solo logea)
-redisClient.on('error', (err) => {
-  logger.error('Rate limiter Redis error', { error: err.message });
-});
-
-redisClient.on('connect', () => {
-  logger.info('Rate limiter Redis conectado');
-});
-
-redisClient.on('ready', () => {
-  logger.info('Rate limiter Redis listo');
-});
-
-redisClient.on('reconnecting', () => {
-  logger.warn('Rate limiter Redis reconectando');
-});
-
-redisClient.on('end', () => {
-  logger.warn('Rate limiter Redis desconectado');
-});
-
-// Conectar al servidor Redis
-redisClient.connect().catch((err) => {
-  logger.error('Rate limiter Redis conexión fallida', { error: err.message });
-});
+      return client.sendCommand(args);
+    },
+    prefix,
+  });
+};
 
 // ============================================================================
 // RATE LIMITERS DISTRIBUIDOS
@@ -133,11 +94,8 @@ const globalLimiter = rateLimit({
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
   
-  // Usar RedisStore con Azure Redis (sin fallback)
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.sendCommand(args),
-    prefix: 'rl:global:', // Prefijo para keys de Redis
-  }),
+  // Usar RedisStore con instancia centralizada
+  store: createRedisStore('rl:global:'),
   
   // Mensaje de error personalizado
   handler: (req, res) => {
@@ -172,11 +130,8 @@ const authLimiter = rateLimit({
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
   
-  // Usar RedisStore con Azure Redis (sin fallback)
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.sendCommand(args),
-    prefix: 'rl:auth:', // Prefijo diferente para auth
-  }),
+  // Usar RedisStore con instancia centralizada
+  store: createRedisStore('rl:auth:'),
   
   handler: (req, res) => {
     const clientIp = getCleanIp(req);
@@ -213,10 +168,7 @@ const tenantRateLimiter = rateLimit({
     return `${cleanIp}:${tenantId}`;
   },
 
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.sendCommand(args),
-    prefix: 'rl:tenant:',
-  }),
+  store: createRedisStore('rl:tenant:'),
 
   handler: (req, res) => {
     const tenantId = req.tenantId || 'unknown';
@@ -248,10 +200,7 @@ const heavyOperationLimiter = rateLimit({
     return `${cleanIp}:${tenantId}`;
   },
 
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.sendCommand(args),
-    prefix: 'rl:heavy:',
-  }),
+  store: createRedisStore('rl:heavy:'),
 
   handler: (req, res) => {
     const tenantId = req.tenantId || 'unknown';
@@ -277,10 +226,7 @@ const registerLimiter = rateLimit({
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
   
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.sendCommand(args),
-    prefix: 'rl:register:',
-  }),
+  store: createRedisStore('rl:register:'),
   handler: (req, res) => {
     res.status(429).json({
       error: 'Demasiados intentos de registro. Por favor, espera antes de crear otra cuenta.'
@@ -298,10 +244,7 @@ const passwordResetLimiter = rateLimit({
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
   
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.sendCommand(args),
-    prefix: 'rl:password:',
-  }),
+  store: createRedisStore('rl:password:'),
   handler: (req, res) => {
     res.status(429).json({
       error: 'Demasiadas solicitudes de recuperación de contraseña. Por favor, espera antes de intentar nuevamente.'
@@ -319,10 +262,7 @@ const apiLimiter = rateLimit({
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
   
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.sendCommand(args),
-    prefix: 'rl:api:',
-  }),
+  store: createRedisStore('rl:api:'),
   handler: (req, res) => {
     res.status(429).json({
       error: 'Demasiadas peticiones. Por favor, reduce la frecuencia de tus solicitudes.'
@@ -340,10 +280,7 @@ const checkoutLimiter = rateLimit({
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
   
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.sendCommand(args),
-    prefix: 'rl:checkout:',
-  }),
+  store: createRedisStore('rl:checkout:'),
   handler: (req, res) => {
     res.status(429).json({
       error: 'Demasiadas operaciones de carrito. Por favor, espera un momento antes de continuar.'
@@ -361,10 +298,7 @@ const adminLimiter = rateLimit({
   // FIX AZURE: keyGenerator personalizado para sanitizar IP:PUERTO
   keyGenerator: (req) => getCleanIp(req),
   
-  store: new RedisStore({
-    sendCommand: (...args) => redisClient.sendCommand(args),
-    prefix: 'rl:admin:',
-  }),
+  store: createRedisStore('rl:admin:'),
   handler: (req, res) => {
     res.status(429).json({
       error: 'Límite de peticiones administrativas excedido. Por favor, espera antes de continuar.'
@@ -386,7 +320,6 @@ module.exports = {
   apiLimiter,
   checkoutLimiter,
   adminLimiter,
-  redisClient, // Exportar para uso en otros módulos si es necesario
   _skipIfRedisDown: skipIfRedisDown, // Para testing
   _getCleanIp: getCleanIp // Para testing
 };
