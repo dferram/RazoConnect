@@ -502,6 +502,79 @@ const authorizePermiso = (modulo, accion) => {
   };
 };
 
+/**
+ * Middleware RBAC - Verificación de Permisos Granulares
+ * 
+ * Verifica si el usuario tiene permiso para ejecutar una acción en un módulo específico.
+ * Usa la matriz de permisos de config/rolesConfig.js como fuente única de verdad.
+ * 
+ * REGLAS:
+ * 1. super_admin y admin tienen bypass total (acceso a todo)
+ * 2. Los demás roles se validan contra la matriz de permisos
+ * 3. Si el rol no existe en la matriz, se deniega el acceso
+ * 4. Si el módulo no está en los permisos del rol, se deniega
+ * 5. Si la acción no está permitida para ese módulo, se deniega
+ * 
+ * @param {string} modulo - Módulo del sistema (ej: 'inventario', 'productos', 'pedidos')
+ * @param {string} accion - Acción específica (ej: 'ver', 'crear', 'modificar', 'eliminar')
+ * @returns {Function} Middleware de Express
+ * 
+ * @example
+ * // Proteger ruta de ajustes de inventario
+ * router.post('/inventario/ajustes', 
+ *   authenticate, 
+ *   requirePermission('ajustes', 'crear'), 
+ *   controller.crearAjuste
+ * );
+ * 
+ * @example
+ * // Proteger ruta de validación de pagos
+ * router.put('/pagos/:id/validar', 
+ *   authenticate, 
+ *   requirePermission('validar_pagos', 'modificar'), 
+ *   controller.validarPago
+ * );
+ */
+const requirePermission = (modulo, accion) => {
+  return (req, res, next) => {
+    // 1. Verificar autenticación
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "No autenticado",
+      });
+    }
+
+    const rolUsuario = normalizeRole(req.user.rol);
+
+    // 2. Bypass para super_admin y admin (acceso total)
+    if (rolUsuario === "super_admin" || rolUsuario === "admin") {
+      return next();
+    }
+
+    // 3. Importar matriz de permisos desde config
+    const { tienePermiso } = require('../config/rolesConfig');
+
+    // 4. Verificar si el rol tiene el permiso requerido
+    const permitido = tienePermiso(rolUsuario, modulo, accion);
+
+    if (permitido) {
+      return next();
+    }
+
+    // 5. Denegar acceso con mensaje descriptivo
+    return res.status(403).json({
+      success: false,
+      message: `Acceso denegado. Se requiere permiso: ${modulo}:${accion}`,
+      rolActual: req.user.rol,
+      permisoRequerido: {
+        modulo,
+        accion
+      }
+    });
+  };
+};
+
 module.exports = {
   authenticate,
   authorize,
@@ -512,4 +585,5 @@ module.exports = {
   verifySuperAdmin,
   authorizeRole,
   authorizePermiso,
+  requirePermission, // Nueva función RBAC con matriz de permisos
 };
