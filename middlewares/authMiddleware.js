@@ -88,7 +88,10 @@ const authenticate = async (req, res, next) => {
 
     const isAgenteToken = rolFromToken === "agente";
     const isClienteToken = rolFromToken === "cliente";
-    const isAdminToken = rolFromToken === "admin" || rolFromToken === "super_admin";
+    // Roles administrativos: admin, super_admin, o cualquier rol granular (gerente_*, contador, etc.)
+    const isAdminToken = rolFromToken === "admin" || 
+                        rolFromToken === "super_admin" || 
+                        (!isAgenteToken && !isClienteToken);
 
     // 1) Si el token declara agente, validar contra agentesdeventas (activo)
     // CRÍTICO: Agentes son globales (no tienen tenant_id), validar solo por ID y estado
@@ -271,8 +274,9 @@ const authorize = (roles = []) => {
 
 /**
  * Middleware específico para verificar que el usuario es un administrador
- * Verifica que el token tenga el campo 'tipo' = 'admin' o que tenga rol admin/superadmin
- * También permite agentes con permisos de admin (EsAdmin=true) que tienen ['admin'] en roles
+ * Acepta los 7 roles base del sistema: super_admin, admin, inventarios, catalogo, finanzas, compras, agente
+ * También acepta roles granulares legacy (gerente_*, contador, etc.)
+ * RECHAZA: solo 'cliente'
  */
 const authorizeAdmin = (req, res, next) => {
   if (!req.user) {
@@ -284,19 +288,18 @@ const authorizeAdmin = (req, res, next) => {
 
   // Verificar rol principal
   const rol = normalizeRole(req.user.rol);
-  const isAdminByRol = rol === "admin" || rol === "super_admin" || rol === "superadmin";
-
-  // Verificar array de roles (para agentes con permisos de admin)
-  const userRoles = getUserRoles(req);
-  const isAdminByRoles = userRoles.includes("admin") || userRoles.includes("super_admin") || userRoles.includes("superadmin");
-
-  if (!isAdminByRol && !isAdminByRoles) {
+  
+  // CRÍTICO: Rechazar SOLO clientes - todos los demás roles son administrativos
+  const isCliente = rol === "cliente";
+  
+  if (isCliente) {
     return res.status(403).json({
       success: false,
       message: "Acceso denegado. Solo administradores",
     });
   }
 
+  // Todos los roles administrativos (super_admin, admin, inventarios, catalogo, finanzas, compras, agente, gerente_*, etc.) pasan
   next();
 };
 

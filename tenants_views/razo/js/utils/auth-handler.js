@@ -166,11 +166,22 @@ const AuthHandler = {
   },
 
   /**
-   * Verifica si el usuario es admin o superadmin
+   * Verifica si el usuario tiene rol administrativo
+   * Acepta los 7 roles base: super_admin, admin, inventarios, catalogo, finanzas, compras, agente
+   * Rechaza solo: cliente
    * @returns {boolean} true si es admin
    */
   isAdmin() {
-    return this.hasRole(['admin', 'superadmin', 'super-admin']);
+    const user = this.getUser();
+    if (!user) return false;
+
+    const rol = user.rol ? user.rol.toLowerCase() : '';
+    
+    // Rechazar SOLO clientes
+    if (rol === 'cliente') return false;
+    
+    // Todos los demás roles son administrativos
+    return true;
   }
 };
 
