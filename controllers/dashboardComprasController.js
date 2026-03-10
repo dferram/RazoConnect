@@ -22,17 +22,11 @@ const { getOrSetCache } = require('../config/redisClient');
  */
 const getComprasTotales = async (req, res) => {
   try {
-    const userRole = req.user.rol;
     const userId = req.user.id;
     const tenantId = req.tenant?.tenant_id || 1;
 
-    // Validar que solo compras, admin y super_admin puedan acceder
-    if (!['compras', 'admin', 'super_admin'].includes(userRole)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Acceso denegado. Solo usuarios de compras pueden acceder a estos totales.'
-      });
-    }
+    // Authorization is already handled by authorizeRole middleware at route level
+    // No need for redundant checks here
 
     // Clave de caché única por tenant
     const cacheKey = `compras_totales:tenant_${tenantId}`;

@@ -22,17 +22,11 @@ const { getOrSetCache } = require('../config/redisClient');
  */
 const getFinanzasTotales = async (req, res) => {
   try {
-    const userRole = req.user.rol;
     const userId = req.user.id;
     const tenantId = req.tenant?.tenant_id || 1;
 
-    // Validar que solo finanzas, admin y super_admin puedan acceder
-    if (!['finanzas', 'admin', 'super_admin'].includes(userRole)) {
-      return res.status(403).json({
-        success: false,
-        message: 'Acceso denegado. Solo usuarios de finanzas pueden acceder a estos totales.'
-      });
-    }
+    // Authorization is already handled by authorizeRole middleware at route level
+    // No need for redundant checks here
 
     // Clave de caché única por tenant
     const cacheKey = `finanzas_totales:tenant_${tenantId}`;
