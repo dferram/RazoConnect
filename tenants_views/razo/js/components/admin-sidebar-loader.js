@@ -101,7 +101,7 @@
       'catalogo': ['Principal', 'Catálogo'],
       'finanzas': ['Principal', 'Finanzas', 'Reportes'],
       'gerente_finanzas': ['Principal', 'Finanzas', 'Reportes'], // Rol de BD
-      'compras': ['Principal', 'Compras']
+      'compras': ['Principal', 'Compras', 'Reportes'] // Compras + Reportes de recepciones
     };
     
     // Mapa de links permitidos por rol dentro de secciones
@@ -111,6 +111,9 @@
       },
       'gerente_finanzas': {
         'Reportes': ['admin-reportes.html'] // Solo el reporte general
+      },
+      'compras': {
+        'Reportes': ['admin-reportes-ordenes-compra.html'] // Solo reportes de recepciones
       }
     };
 
