@@ -1414,7 +1414,7 @@ router.get(
 router.get(
   "/ordenes-compra/reportes",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras', 'jefe_almacen', 'almacenista', 'recepcionista_compras', 'contador', 'auditor_interno']),
   reportesOrdenesCompraController.getOrdenesCompraReportes
 );
 // ✅ REFACTORED: Migrado a administradoresOCController.js
@@ -1442,7 +1442,7 @@ router.get(
 router.get(
   "/ordenes-compra/:id/reporte-detallado",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras', 'jefe_almacen', 'almacenista', 'recepcionista_compras', 'contador', 'auditor_interno']),
   reportesOrdenesCompraController.getOrdenCompraReporteDetallado
 );
 // ✅ REFACTORED: Migrado a gestionOrdenCompraController.js

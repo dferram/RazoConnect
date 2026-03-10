@@ -47,7 +47,7 @@ const getComprasTotales = async (req, res) => {
             COALESCE(SUM(CASE 
               WHEN estatus IN ('Pendiente', 'En Tránsito') 
               THEN (
-                SELECT COALESCE(SUM(doc.cantidadpaquetes * doc.costounitario), 0)
+                SELECT COALESCE(SUM(doc.cantidadsolicitada * doc.costounitario), 0)
                 FROM detallesordencompra doc
                 WHERE doc.ordencompraid = ordenesdecompra.ordencompraid
               )
@@ -55,9 +55,9 @@ const getComprasTotales = async (req, res) => {
             END), 0) as valor_ordenes_activas,
             COALESCE(SUM(CASE 
               WHEN estatus = 'Recibido' 
-              AND fecharecepcionsistema >= CURRENT_DATE - INTERVAL '30 days'
+              AND fechacreacion >= CURRENT_DATE - INTERVAL '30 days'
               THEN (
-                SELECT COALESCE(SUM(doc.cantidadpaquetes * doc.costounitario), 0)
+                SELECT COALESCE(SUM(doc.cantidadsolicitada * doc.costounitario), 0)
                 FROM detallesordencompra doc
                 WHERE doc.ordencompraid = ordenesdecompra.ordencompraid
               )
@@ -69,19 +69,13 @@ const getComprasTotales = async (req, res) => {
         const ordenesResult = await db.query(ordenesQuery, [tenantId]);
         const ordenesData = ordenesResult.rows[0];
 
-        // Query 2: Estadísticas de Recepciones
-        const recepcionesQuery = `
-          SELECT 
-            COUNT(DISTINCT ordencompraid) as total_recepciones_mes,
-            COALESCE(SUM(paquetes_recibidos), 0) as total_paquetes_recibidos,
-            COALESCE(SUM(piezas_recibidas), 0) as total_piezas_recibidas,
-            COUNT(DISTINCT admin_recibe_id) as usuarios_recibiendo
-          FROM recepciones_inventario
-          WHERE fecha_recepcion >= CURRENT_DATE - INTERVAL '30 days'
-            AND tenant_id = $1
-        `;
-        const recepcionesResult = await db.query(recepcionesQuery, [tenantId]);
-        const recepcionesData = recepcionesResult.rows[0];
+        // Query 2: Estadísticas de Recepciones (calculadas desde órdenes recibidas)
+        const recepcionesData = {
+          total_recepciones_mes: parseInt(ordenesData.ordenes_recibidas || 0),
+          total_paquetes_recibidos: 0,
+          total_piezas_recibidas: 0,
+          usuarios_recibiendo: 0
+        };
 
         // Query 3: Estadísticas de Proveedores
         const proveedoresQuery = `
@@ -126,7 +120,7 @@ const getComprasTotales = async (req, res) => {
             p.nombre,
             COUNT(DISTINCT oc.ordencompraid) as total_ordenes,
             COALESCE(SUM(
-              (SELECT SUM(doc.cantidadpaquetes * doc.costounitario)
+              (SELECT SUM(doc.cantidadsolicitada * doc.costounitario)
                FROM detallesordencompra doc
                WHERE doc.ordencompraid = oc.ordencompraid)
             ), 0) as valor_total
