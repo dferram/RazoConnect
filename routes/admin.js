@@ -51,6 +51,7 @@ const medidasAdminController = require("../controllers/medidasAdminController");
 const configuracionController = require("../controllers/admin/configuracionController");
 const tamanosAdminController = require("../controllers/tamanosAdminController");
 const dashboardAdminController = require("../controllers/dashboardAdminController");
+const dashboardComprasController = require("../controllers/dashboardComprasController");
 const reportesVentasController = require("../controllers/reportesVentasController");
 const authAdminController = require("../controllers/authAdminController");
 const inventarioResumenController = require("../controllers/inventarioResumenController");
@@ -1413,7 +1414,7 @@ router.get(
 router.get(
   "/ordenes-compra/reportes",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras', 'jefe_almacen', 'almacenista', 'recepcionista_compras', 'contador', 'auditor_interno']),
   reportesOrdenesCompraController.getOrdenesCompraReportes
 );
 // ✅ REFACTORED: Migrado a administradoresOCController.js
@@ -1441,7 +1442,7 @@ router.get(
 router.get(
   "/ordenes-compra/:id/reporte-detallado",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'compras', 'jefe_almacen', 'almacenista', 'recepcionista_compras', 'contador', 'auditor_interno']),
   reportesOrdenesCompraController.getOrdenCompraReporteDetallado
 );
 // ✅ REFACTORED: Migrado a gestionOrdenCompraController.js
@@ -2260,6 +2261,30 @@ router.put(
   authenticate,
   authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'contador']),
   configuracionController.updateIvaConfig
+);
+
+/**
+ * @route   GET /api/admin/dashboard/compras-totales
+ * @desc    Obtener totales consolidados para dashboard de compras
+ * @access  Private (Compras roles)
+ */
+router.get(
+  "/dashboard/compras-totales",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'compras']),
+  dashboardComprasController.getComprasTotales
+);
+
+/**
+ * @route   POST /api/admin/dashboard/compras-totales/invalidar-cache
+ * @desc    Invalidar caché de totales de compras
+ * @access  Private (Compras roles)
+ */
+router.post(
+  "/dashboard/compras-totales/invalidar-cache",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'compras']),
+  dashboardComprasController.invalidarCacheCompras
 );
 
 module.exports = router;

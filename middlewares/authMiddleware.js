@@ -174,6 +174,12 @@ const authenticate = async (req, res, next) => {
     const tenantIdFromToken = decoded?.tenant_id || req.tenant?.tenant_id;
     
     if (!tenantIdFromToken) {
+      logger.warn('Token sin tenant_id', {
+        userId,
+        decodedTenantId: decoded?.tenant_id,
+        reqTenantId: req.tenant?.tenant_id,
+        path: req.path
+      });
       return res.status(401).json({
         success: false,
         message: "Token sin tenant_id válido",
@@ -184,6 +190,16 @@ const authenticate = async (req, res, next) => {
       "SELECT adminid, rol, activo, email, tenant_id FROM administradores WHERE adminid = $1 AND tenant_id = $2 AND activo = TRUE LIMIT 1",
       [userId, tenantIdFromToken]
     );
+    
+    // DEBUG: Log si no se encuentra el admin
+    if (!adminResult.rows.length) {
+      logger.warn('Admin no encontrado en BD', {
+        userId,
+        tenantId: tenantIdFromToken,
+        path: req.path,
+        rolFromToken: rolFromToken
+      });
+    }
 
     if (adminResult.rows.length && adminResult.rows[0].activo === true) {
       const dbRol = normalizeRole(adminResult.rows[0].rol);
@@ -421,6 +437,16 @@ const authorizeRole = (rolesPermitidos = []) => {
 
     // Verificar roles permitidos
     const rolesNormalizados = rolesPermitidos.map(normalizeRole);
+    
+    // DEBUG: Log para diagnosticar problemas de autorización
+    if (!rolesNormalizados.includes(rolUsuario)) {
+      logger.warn('Rol no autorizado', {
+        rolUsuario,
+        rolesPermitidos: rolesNormalizados,
+        path: req.path,
+        rolOriginal: req.user.rol
+      });
+    }
     
     // Verificar coincidencia exacta
     if (rolesNormalizados.includes(rolUsuario)) {

@@ -23,10 +23,16 @@ async function getOrdenesCompraReportes(req, res) {
     const userRol = req.user.rol;
 
     // Filtro por admin si no es super admin
+    // IMPORTANTE: Para rol compras, mostrar TODAS las órdenes (no filtrar por admin_creador_id)
+    // Solo filtrar para roles específicos que requieren ver solo sus propias órdenes
     let adminFilter = '';
     const queryParams = [tenant_id];
 
-    if (userRol !== 'superadmin') {
+    // Solo filtrar por admin_creador_id para roles que NO son admin/super_admin/compras
+    const rolesConAccesoTotal = ['superadmin', 'super_admin', 'admin', 'compras', 'jefe_almacen'];
+    const tieneAccesoTotal = rolesConAccesoTotal.includes(userRol);
+
+    if (!tieneAccesoTotal) {
       queryParams.push(userId);
       adminFilter = `AND oc.admin_creador_id = $${queryParams.length}`;
     }

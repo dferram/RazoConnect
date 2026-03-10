@@ -184,3 +184,8 @@ const requireAdminAuth = () => {
 
   return true;
 };
+
+// Global function to get the current admin token
+window.getEffectiveToken = function() {
+  return localStorage.getItem("razoconnect_admin_token");
+};

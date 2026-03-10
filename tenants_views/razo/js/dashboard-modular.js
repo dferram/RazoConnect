@@ -70,11 +70,12 @@
       blockedReports: ['reportes_inventario', 'conciliacion', 'reportes_recepciones']
     },
     'compras': {
-      cards: ['valorInventarioVenta'],
+      cards: [],
       fetchStats: false,
       fetchOrders: false,
       sections: ['compras'],
-      customMessage: 'Gestión de Compras'
+      customMessage: 'Gestión de Compras',
+      loadCustomStats: true
     }
   };
 
@@ -225,9 +226,38 @@
         {
           title: 'Órdenes Pendientes',
           icon: '📄',
-          value: 'Próximamente',
-          subtitle: 'Órdenes de compra sin recibir',
-          color: 'blue'
+          value: 'Cargando...',
+          subtitle: 'Órdenes sin recibir',
+          color: 'orange',
+          link: '/admin-ordenes-compra.html',
+          id: 'card-ordenes-pendientes'
+        },
+        {
+          title: 'En Tránsito',
+          icon: '🚚',
+          value: 'Cargando...',
+          subtitle: 'Órdenes en camino',
+          color: 'blue',
+          link: '/admin-ordenes-compra.html',
+          id: 'card-ordenes-transito'
+        },
+        {
+          title: 'Valor Órdenes Activas',
+          icon: '💰',
+          value: 'Cargando...',
+          subtitle: 'Inversión en tránsito',
+          color: 'turquoise',
+          link: '/admin-ordenes-compra.html',
+          id: 'card-valor-activas'
+        },
+        {
+          title: 'Recibir Inventario',
+          icon: '📥',
+          value: 'Iniciar',
+          subtitle: 'Recepciones del mes',
+          color: 'green',
+          link: '/admin-recibir-inventario.html',
+          id: 'card-recepciones'
         }
       ]
     };
@@ -528,6 +558,148 @@
   }
 
   /**
+   * Carga totales de compras desde el backend
+   * Actualiza las tarjetas con datos reales
+   */
+  async function loadComprasTotales() {
+    const userRole = getUserRole();
+    if (userRole !== 'compras') return;
+
+    const token = localStorage.getItem('razoconnect_admin_token');
+    if (!token) {
+      console.warn('⚠️ [DASHBOARD] No hay token, no se pueden cargar totales de compras');
+      return;
+    }
+
+    console.log('🔄 [DASHBOARD] Cargando totales de compras...');
+
+    try {
+      const response = await fetch('/api/admin/dashboard/compras-totales', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      if (response.status === 403) {
+        console.warn('⚠️ [DASHBOARD] 403 Forbidden en Compras - Sin permisos');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const data = result.data;
+        
+        // Actualizar Órdenes Pendientes
+        updateComprasCardValue('Órdenes Pendientes', 
+          data.ordenes.pendientes.toString(),
+          'Órdenes sin recibir'
+        );
+
+        // Actualizar En Tránsito
+        updateComprasCardValue('En Tránsito',
+          data.ordenes.enTransito.toString(),
+          'Órdenes en camino'
+        );
+
+        // Actualizar Valor Órdenes Activas
+        updateComprasCardValue('Valor Órdenes Activas',
+          `$${data.ordenes.valorActivas.toLocaleString('es-MX', {minimumFractionDigits: 2})}`,
+          'Inversión en tránsito'
+        );
+
+        // Actualizar Recepciones
+        updateComprasCardValue('Recibir Inventario',
+          `${data.recepciones.totalRecepcionesMes} recepciones`,
+          `${data.recepciones.totalPiezasRecibidas.toLocaleString('es-MX')} piezas`
+        );
+
+        console.log('✅ [DASHBOARD] Totales de compras actualizados');
+      }
+    } catch (error) {
+      console.error('❌ [DASHBOARD] Error cargando totales de compras:', error);
+    }
+  }
+
+  /**
+   * Actualiza el valor de una tarjeta de compras por su título
+   */
+  function updateComprasCardValue(title, value, subtitle) {
+    const cards = document.querySelectorAll('.admin-stat-card');
+    cards.forEach(card => {
+      const titleElement = card.querySelector('h3');
+      if (titleElement && titleElement.textContent.trim() === title) {
+        const valueElement = card.querySelector('.admin-stat-value');
+        const subtitleElement = card.querySelector('.admin-stat-change');
+        
+        if (valueElement) {
+          valueElement.textContent = value;
+        }
+        if (subtitleElement) {
+          subtitleElement.textContent = subtitle;
+        }
+        console.log(`✅ [DASHBOARD] Actualizada tarjeta de compras: ${title}`);
+      }
+    });
+  }
+
+  /**
+   * Crea panel personalizado para rol compras
+   */
+  function createComprasWelcomePanel() {
+    const userRole = getUserRole();
+    if (userRole !== 'compras') return;
+    
+    const statsGrid = document.querySelector('.admin-stats-grid');
+    if (!statsGrid) return;
+    
+    // Crear panel de bienvenida de compras
+    const welcomePanel = document.createElement('div');
+    welcomePanel.className = 'admin-stat-card';
+    welcomePanel.style.gridColumn = '1 / -1'; // Ocupar todo el ancho
+    welcomePanel.style.background = 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)';
+    welcomePanel.style.border = '2px solid #3B82F6';
+    welcomePanel.innerHTML = `
+      <div style="padding: 1.5rem;">
+        <h2 style="margin: 0 0 0.5rem 0; color: #3B82F6; font-size: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+          🏭 Panel de Gestión de Compras
+        </h2>
+        <p style="margin: 0 0 1rem 0; color: #1e40af; font-size: 0.95rem;">
+          Bienvenido al panel de compras. Gestiona órdenes de compra, proveedores y recepciones de inventario.
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+          <div style="background: white; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #f97316;">
+            <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.25rem;">Gestión</div>
+            <div style="font-weight: 600; color: #1e293b;">Órdenes de Compra</div>
+          </div>
+          <div style="background: white; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #3b82f6;">
+            <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.25rem;">Proveedores</div>
+            <div style="font-weight: 600; color: #1e293b;">Catálogo de Proveedores</div>
+          </div>
+          <div style="background: white; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #10b981;">
+            <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.25rem;">Recepción</div>
+            <div style="font-weight: 600; color: #1e293b;">Recibir Inventario</div>
+          </div>
+          <div style="background: white; padding: 1rem; border-radius: 0.5rem; border-left: 4px solid #8b5cf6;">
+            <div style="font-size: 0.875rem; color: #64748b; margin-bottom: 0.25rem;">Reportes</div>
+            <div style="font-weight: 600; color: #1e293b;">Análisis de Recepciones</div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Insertar al inicio del grid
+    statsGrid.insertBefore(welcomePanel, statsGrid.firstChild);
+    
+    // Cargar totales dinámicamente
+    loadComprasTotales();
+    
+    console.log('✅ [DASHBOARD] Panel de bienvenida creado para compras');
+  }
+
+  /**
    * Crea panel personalizado para rol finanzas
    */
   function createFinanzasWelcomePanel() {
@@ -626,6 +798,7 @@
     setupOrdersTableVisibility(roleConfig);
     createInventariosWelcomePanel(); // Panel personalizado para inventarios
     createFinanzasWelcomePanel(); // Panel personalizado para finanzas
+    createComprasWelcomePanel(); // Panel personalizado para compras
     createRolePlaceholders(roleConfig);
     interceptDataLoading(roleConfig);
     

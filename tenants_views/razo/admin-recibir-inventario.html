@@ -19,6 +19,13 @@
     <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
 
+    <!-- API Configuration -->
+    <script>
+      const API_BASE_URL = window.location.origin + '/api';
+    </script>
+
+
+
     <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
 
     <link rel="stylesheet" href="css/styles.css" />
@@ -1568,6 +1575,49 @@
         if (lblTotalVenta) {
           lblTotalVenta.textContent = `$${totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
+      };
+
+      // API call helper function
+      const apiCall = async (endpoint, options = {}) => {
+        const token = typeof getEffectiveToken === "function" ? getEffectiveToken() : null;
+        const headers = options.headers || {};
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+        if (!headers["Content-Type"] && options.method !== "GET") {
+          headers["Content-Type"] = "application/json";
+        }
+
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+          ...options,
+          headers,
+        });
+
+        let data = null;
+        try {
+          data = await response.json();
+        } catch (e) {
+          data = null;
+        }
+
+        if (response.status === 401) {
+          if (typeof clearAuthData === "function") {
+            clearAuthData();
+          }
+          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
+            await Swal.fire({
+              icon: "warning",
+              title: "Sesión Expirada",
+              text: "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+              confirmButtonColor: "#F97316",
+              allowOutsideClick: false,
+            });
+          }
+          window.location.href = "/login.html";
+          throw new Error("Sesión expirada");
+        }
+
+        return { ok: response.ok, status: response.status, data };
       };
 
       const apiCallFormData = async (endpoint, formData) => {
