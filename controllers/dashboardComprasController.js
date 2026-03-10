@@ -81,7 +81,7 @@ const getComprasTotales = async (req, res) => {
         const proveedoresQuery = `
           SELECT 
             COUNT(*) as total_proveedores,
-            COUNT(*) FILTER (WHERE activo = true) as proveedores_activos,
+            COUNT(*) as proveedores_activos,
             COUNT(DISTINCT oc.proveedorid) as proveedores_con_ordenes_activas
           FROM proveedores p
           LEFT JOIN ordenesdecompra oc ON p.proveedorid = oc.proveedorid 
@@ -99,9 +99,9 @@ const getComprasTotales = async (req, res) => {
             json_agg(
               json_build_object(
                 'ordenCompraId', ordencompraid,
-                'proveedorNombre', (SELECT nombre FROM proveedores WHERE proveedorid = ordenesdecompra.proveedorid),
+                'proveedorNombre', (SELECT nombreempresa FROM proveedores WHERE proveedorid = ordenesdecompra.proveedorid),
                 'fechaEntrega', fechaentregaesperada,
-                'diasRestantes', EXTRACT(DAY FROM (fechaentregaesperada - CURRENT_DATE))
+                'diasRestantes', (fechaentregaesperada - CURRENT_DATE)
               )
               ORDER BY fechaentregaesperada ASC
             ) FILTER (WHERE estatus IN ('Pendiente', 'En Tránsito')) as ordenes_detalle
@@ -117,7 +117,7 @@ const getComprasTotales = async (req, res) => {
         const topProveedoresQuery = `
           SELECT 
             p.proveedorid,
-            p.nombre,
+            p.nombreempresa,
             COUNT(DISTINCT oc.ordencompraid) as total_ordenes,
             COALESCE(SUM(
               (SELECT SUM(doc.cantidadsolicitada * doc.costounitario)
@@ -129,7 +129,7 @@ const getComprasTotales = async (req, res) => {
           WHERE oc.fechacreacion >= CURRENT_DATE - INTERVAL '3 months'
             AND oc.tenant_id = $1
             AND p.tenant_id = $1
-          GROUP BY p.proveedorid, p.nombre
+          GROUP BY p.proveedorid, p.nombreempresa
           ORDER BY valor_total DESC
           LIMIT 5
         `;
@@ -161,7 +161,7 @@ const getComprasTotales = async (req, res) => {
           },
           topProveedores: topProveedoresResult.rows.map(row => ({
             proveedorId: row.proveedorid,
-            nombre: row.nombre,
+            nombre: row.nombreempresa,
             totalOrdenes: parseInt(row.total_ordenes),
             valorTotal: parseFloat(row.valor_total)
           })),
