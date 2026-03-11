@@ -57,11 +57,45 @@ jobs:
       - name: Install production dependencies only
         run: npm ci --omit=dev
 
+      - name: Cleanup unnecessary files
+        run: |
+          echo "🧹 Cleaning up unnecessary files before artifact upload..."
+          # Remove temporary files and caches
+          rm -rf .npm
+          rm -rf .cache
+          rm -rf node_modules/.cache
+          # Remove documentation and development files
+          rm -rf docs/
+          rm -rf tests/
+          rm -rf scripts/
+          rm -rf Excel-templates/
+          rm -rf .azure/
+          rm -rf .git/
+          # Remove markdown and SQL files
+          find . -type f \( -name "*.md" -o -name "*.sql" \) -delete
+          # Remove other unnecessary files
+          rm -f .gitignore .gitattributes .editorconfig
+          echo "✅ Cleanup completed"
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: node-app
-          path: .
+          path: |
+            index.js
+            package.json
+            package-lock.json
+            db.js
+            startup.sh
+            config/
+            controllers/
+            middlewares/
+            routes/
+            services/
+            utils/
+            templates/
+            tenants_views/
+            node_modules/
           retention-days: 1
 
   deploy:
