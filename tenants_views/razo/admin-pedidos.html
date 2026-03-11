@@ -664,6 +664,15 @@
                         onclick="verDetallePedido(${order.pedidoId})">
                         Ver detalle
                       </button>
+                      ${!order.completamente_surtido && order.estatus !== 'Cancelado' ? `
+                        <button 
+                          class="btn btn-success" 
+                          style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                          onclick="surtirPedido(${order.pedidoId})"
+                          title="Marcar como surtido (solo si todos los productos tienen stock)">
+                          📦 Surtir pedido
+                        </button>
+                      ` : ''}
                     </div>
                   </td>
                 </tr>
@@ -704,6 +713,64 @@
         localStorage.setItem("_nav_timestamp", Date.now().toString());
         // Redirigir inmediatamente
         window.location.href = `/admin-pedido-detalle.html?id=${pedidoId}`;
+      }
+
+      // Surtir pedido (marcar como completamente surtido)
+      async function surtirPedido(pedidoId) {
+        const result = await Swal.fire({
+          icon: 'question',
+          title: '¿Surtir pedido?',
+          html: `
+            <p>¿Confirmas que todos los productos de este pedido tienen stock disponible?</p>
+            <p style="margin-top: 1rem; color: #dc2626; font-weight: 600;">
+              ⚠️ Solo se puede surtir si NINGÚN producto está marcado como "Bajo pedido"
+            </p>
+          `,
+          showCancelButton: true,
+          confirmButtonText: 'Sí, surtir pedido',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#16a34a',
+          cancelButtonColor: '#6b7280'
+        });
+
+        if (!result.isConfirmed) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/pedidos/${pedidoId}/surtir`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${adminToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Error al surtir el pedido');
+          }
+
+          await Swal.fire({
+            icon: 'success',
+            title: 'Pedido surtido',
+            text: 'El pedido ha sido marcado como completamente surtido y ahora aparecerá en Clientes y Facturación.',
+            confirmButtonColor: '#16a34a'
+          });
+
+          // Recargar la lista de pedidos
+          loadOrders();
+
+        } catch (error) {
+          console.error('Error al surtir pedido:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'No se pudo surtir el pedido. Verifica que todos los productos tengan stock disponible.',
+            confirmButtonColor: '#dc2626'
+          });
+        }
       }
 
       // Open status modal

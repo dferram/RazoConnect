@@ -663,9 +663,9 @@
             a.codigoAgente || "—"
           }</span></td>
           <td><strong style="color: var(--razo-orange);">${a.porcentajeComision || 5.00}%</strong></td>
-          <td>${a.totalVentas}</td>
-          <td><strong>$${a.montoTotalVentas.toLocaleString()}</strong></td>
-          <td><strong style="color: var(--success-color)">$${a.comisionesTotales.toLocaleString()}</strong></td>
+          <td>${a.totalClientes || 0}</td>
+          <td><strong>$${(a.ventasTotales || 0).toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
+          <td><strong style="color: var(--success-color)">$${((a.ventasTotales || 0) * (a.porcentajeComision || 0) / 100).toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
           <td>
             <span class="admin-badge warning">⏳ Por Confirmar</span>
           </td>
@@ -687,9 +687,9 @@
             a.codigoAgente || "—"
           }</span></td>
           <td><strong style="color: var(--razo-orange);">${a.porcentajeComision || 5.00}%</strong></td>
-          <td>${a.totalVentas}</td>
-          <td><strong>$${a.montoTotalVentas.toLocaleString()}</strong></td>
-          <td><strong style="color: var(--success-color)">$${a.comisionesTotales.toLocaleString()}</strong></td>
+          <td>${a.totalClientes || 0}</td>
+          <td><strong>$${(a.ventasTotales || 0).toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
+          <td><strong style="color: var(--success-color)">$${((a.ventasTotales || 0) * (a.porcentajeComision || 0) / 100).toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></td>
           <td><span class="admin-badge ${a.activo ? "success" : "danger"}">${
               a.activo ? "Activo" : "Inactivo"
             }</span></td>
