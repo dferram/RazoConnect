@@ -63,9 +63,9 @@ describe('Auth System - Redis Smart Fallback Integration', () => {
 
     test('debe normalizar payload correctamente', () => {
       const rawPayload = {
-        userId: 789,
-        roles: ['admin'],
-        tenantId: 2,
+        id: 789,
+        rol: 'admin',
+        tenant_id: 2,
         email: 'admin@example.com'
       };
 
@@ -280,6 +280,9 @@ describe('Auth System - Redis Smart Fallback Integration', () => {
 
       // Esperar expiración
       await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Limpiar caché local para forzar verificación en Redis
+      redisModule.flushLocalCache();
 
       // Verificar que expiró
       const afterExpiry = await redisModule.isTokenBlacklisted(tokenId);
