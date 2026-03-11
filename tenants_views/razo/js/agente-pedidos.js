@@ -1,6 +1,12 @@
 (function () {
   "use strict";
 
+  // Validación crítica: Verificar que API esté disponible
+  if (typeof API === 'undefined') {
+    console.error('❌ [AGENTE-PEDIDOS] Error crítico: api.js no se cargó correctamente');
+    return;
+  }
+
   if (!requireAgentAuth()) {
     return;
   }

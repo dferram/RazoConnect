@@ -10,6 +10,7 @@
 
     <!-- PROTECCIÓN DE AUTENTICACIÓN - Debe cargarse PRIMERO -->
     <script src="js/auth-guard-client.js"></script>
+<script src="js/api.js"></script>
 
     <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
 
@@ -679,9 +680,7 @@
       </div>
     </div>
 
-    <script src="js/auth-manager.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/date-helpers.js"></script>
+    <script src="js/auth-manager.js"></script><script src="js/date-helpers.js"></script>
     <script>
       // Authentication check
       const token = localStorage.getItem("razoconnect_token");

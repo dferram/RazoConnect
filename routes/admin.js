@@ -471,6 +471,14 @@ router.post(
   pedidosAdminController.confirmarPedido
 );
 
+// Surtir pedido (marcar como completamente surtido)
+router.post(
+  "/pedidos/:id/surtir",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'jefe_almacen']),
+  pedidosAdminController.surtirPedido
+);
+
 /**
  * Gestión de productos
  */

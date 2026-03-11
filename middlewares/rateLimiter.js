@@ -12,7 +12,7 @@
 const { rateLimit } = require('express-rate-limit');
 const { RedisStore } = require('rate-limit-redis');
 const logger = require('../utils/logger');
-const { getRedisClient, isRedisConnected } = require('../config/redisClient');
+const { getRedisClient, isRedisConnected, isUsingMock } = require('../config/redisClient');
 
 // ============================================================================
 // HELPER: Extrae IP limpia (sin puerto) para Azure App Service
@@ -61,7 +61,15 @@ function skipIfRedisDown(req, res) {
 // ============================================================================
 
 // Función helper para crear RedisStore con lazy loading del cliente
+// En modo desarrollo, retorna undefined para que express-rate-limit use MemoryStore
 const createRedisStore = (prefix) => {
+  // 🔍 Si estamos usando el mock de Redis, NO usar RedisStore
+  // Esto permite que express-rate-limit use su MemoryStore por defecto
+  if (isUsingMock()) {
+    return undefined; // express-rate-limit usará MemoryStore automáticamente
+  }
+  
+  // 🌐 Modo producción: usar RedisStore real
   return new RedisStore({
     sendCommand: async (...args) => {
       const client = await getRedisClient();

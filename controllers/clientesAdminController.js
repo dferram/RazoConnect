@@ -101,12 +101,12 @@ const getClienteDetalle = async (req, res) => {
         cc.limite_credito,
         cc.saldo_deudor,
         cc.dias_gracia,
-        cc.activo as credito_activo
+        cc.estado_credito
       FROM clientes c
       LEFT JOIN pedidos p ON c.clienteid = p.clienteid
       LEFT JOIN cliente_creditos cc ON c.clienteid = cc.cliente_id
       WHERE c.clienteid = $1 AND c.tenant_id = $2
-      GROUP BY c.clienteid, cc.limite_credito, cc.saldo_deudor, cc.dias_gracia, cc.activo`,
+      GROUP BY c.clienteid, cc.limite_credito, cc.saldo_deudor, cc.dias_gracia, cc.estado_credito`,
       [clienteId, tenant_id]
     );
 
@@ -135,7 +135,7 @@ const getClienteDetalle = async (req, res) => {
           limiteCredito: cliente.limite_credito ? parseFloat(cliente.limite_credito) : 0,
           saldoDeudor: cliente.saldo_deudor ? parseFloat(cliente.saldo_deudor) : 0,
           diasGracia: cliente.dias_gracia || 0,
-          activo: cliente.credito_activo || false,
+          activo: cliente.estado_credito === 'ACTIVO',
         },
       },
     });
@@ -251,21 +251,22 @@ const actualizarCreditoCliente = async (req, res) => {
     }
 
     // Upsert en cliente_creditos
+    const estadoCredito = activo !== undefined ? (activo ? 'ACTIVO' : 'INACTIVO') : 'ACTIVO';
     const result = await db.query(
-      `INSERT INTO cliente_creditos (cliente_id, limite_credito, dias_gracia, activo, tenant_id)
+      `INSERT INTO cliente_creditos (cliente_id, limite_credito, dias_gracia, estado_credito, tenant_id)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (cliente_id, tenant_id)
        DO UPDATE SET 
          limite_credito = $2,
          dias_gracia = $3,
-         activo = $4,
+         estado_credito = $4,
          ultima_actualizacion = NOW()
        RETURNING *`,
       [
         clienteId,
         limiteCredito || 0,
         diasGracia || 0,
-        activo !== undefined ? activo : true,
+        estadoCredito,
         tenant_id
       ]
     );
@@ -280,7 +281,7 @@ const actualizarCreditoCliente = async (req, res) => {
         limiteCredito: parseFloat(result.rows[0].limite_credito),
         saldoDeudor: parseFloat(result.rows[0].saldo_deudor || 0),
         diasGracia: result.rows[0].dias_gracia,
-        activo: result.rows[0].activo,
+        activo: result.rows[0].estado_credito === 'ACTIVO',
       },
     });
   } catch (error) {
@@ -327,16 +328,9 @@ const getClienteCreditoInfo = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.json({
-        success: true,
-        data: {
-          clienteId,
-          limiteCredito: 0,
-          saldoDeudor: 0,
-          diasGracia: 0,
-          activo: false,
-          creditoDisponible: 0,
-        },
+      return res.status(404).json({
+        success: false,
+        message: "Cliente no tiene línea de crédito asignada",
       });
     }
 
@@ -355,7 +349,7 @@ const getClienteCreditoInfo = async (req, res) => {
         limiteCredito,
         saldoDeudor,
         diasGracia: credito.dias_gracia,
-        activo: credito.activo,
+        activo: credito.estado_credito === 'ACTIVO',
         creditoDisponible: creditoDisponible > 0 ? creditoDisponible : 0,
         ultimaActualizacion: credito.ultima_actualizacion,
       },

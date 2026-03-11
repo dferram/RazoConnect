@@ -11,6 +11,9 @@
     <!-- SweetAlert2 para alertas mejoradas -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <!-- Auth Manager - DEBE cargarse antes de scripts inline -->
+    <script src="js/auth-manager.js"></script>
+    
     <!-- Monitor de conexión a internet (no invasivo) -->
     <script src="js/shared/network-status.js"></script>
   </head>
@@ -133,9 +136,45 @@
       </div>
     </div>
 
-    <script src="js/auth-manager.js"></script>
-    <script src="js/api.js"></script>
     <script>
+      // Utility function to show toast notifications
+      function showToast(message, type = "info") {
+        const toast = document.createElement("div");
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        toast.style.cssText = `
+          position: fixed;
+          bottom: 2rem;
+          right: 2rem;
+          background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+          color: white;
+          padding: 1rem 1.5rem;
+          border-radius: 0.5rem;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+          z-index: 10000;
+          font-weight: 500;
+          opacity: 0;
+          transform: translateY(1rem);
+          transition: all 0.3s ease;
+        `;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+          toast.style.opacity = '1';
+          toast.style.transform = 'translateY(0)';
+        }, 100);
+
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transform = 'translateY(1rem)';
+          setTimeout(() => {
+            if (toast.parentNode) {
+              document.body.removeChild(toast);
+            }
+          }, 300);
+        }, 3000);
+      }
+
       const loginForm = document.getElementById("loginForm");
       const emailInput = document.getElementById("email");
       const passwordInput = document.getElementById("password");
@@ -288,7 +327,7 @@
       }
 
       // Check if user is already logged in
-      if (isAuthenticated()) {
+      if (AuthManager && AuthManager.isAuthenticated()) {
         window.location.href = "/inicio.html";
       }
 

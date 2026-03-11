@@ -8,13 +8,9 @@
 
     <!-- Protección de autenticación -->
     <script src="js/auth-guard-admin.js"></script>
-
-    <!-- API Configuration -->
-    <script>
-      const API_BASE_URL = window.location.origin + '/api';
-    </script>
-
-
+    
+    <!-- API Object - DEBE cargarse antes de scripts inline -->
+    <script src="js/api.js"></script>
 
     <!-- FASE 2: Blindaje de rutas por rol -->
     <script src="js/route-guard.js"></script>
@@ -675,13 +671,13 @@
                   >
                     ✏️ Ajustar Pedido
                   </button>
+                  <!-- Botones de Factura y Remisión (solo para finanzas, admin, superadmin) -->
                   <button
                     type="button"
                     class="btn btn-info"
                     id="btnGenerarRemision"
-                    data-admin-only="true"
                     onclick="descargarPDFPedidoDetalle()"
-                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #17a2b8; color: white;"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #17a2b8; color: white; display: none;"
                     title="Descargar remisión en PDF"
                   >
                     📄 Generar Remisión
@@ -689,24 +685,13 @@
                   <button 
                     type="button"
                     class="btn btn-danger"
-                    id="btnDescargarFactura"
-                    data-admin-only="true"
+                    id="btnGenerarFactura"
                     onclick="descargarFacturaAdmin()"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #dc2626; color: white; display: none;"
-                    title="Generar factura PDF">
+                    title="Generar factura PDF"
+                  >
                     🧾 Generar Factura
                   </button>
-                  <div class="btn-disabled-wrapper" id="btnFacturaBloqueadaWrapper" style="display: none;">
-                    <button 
-                      type="button"
-                      class="btn"
-                      id="btnFacturaBloqueada"
-                      style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #9ca3af; color: #d1d5db; cursor: not-allowed;"
-                      disabled>
-                      🧾 Generar Factura
-                    </button>
-                    <span class="tooltip-text">Pedido pendiente por surtir</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -934,7 +919,6 @@
     <script src="js/layout.js" defer></script>
     <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/auth-manager.js"></script>
-    <script src="js/api.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Utilidades compartidas -->
@@ -996,6 +980,18 @@
       (function () {
         "use strict";
 
+        // Validación crítica: Verificar que API esté disponible
+        if (typeof API === 'undefined') {
+          console.error('❌ [PEDIDO-DETALLE] Error crítico: api.js no se cargó correctamente');
+          const errorState = document.getElementById("errorState");
+          const errorMessage = document.getElementById("errorMessage");
+          const loadingState = document.getElementById("loadingState");
+          if (loadingState) loadingState.style.display = "none";
+          if (errorMessage) errorMessage.textContent = "Error al cargar datos. Por favor, recarga la página.";
+          if (errorState) errorState.style.display = "block";
+          return;
+        }
+
         if (!requireAdminAuth()) {
           return;
         }
@@ -1009,8 +1005,33 @@
         // FASE 3 - TASK 3: Setup role-based visibility on load
         document.addEventListener("DOMContentLoaded", () => {
           setupRoleBasedVisibility();
+          setupFinanzasButtons();
           init();
         });
+
+        // Mostrar botones de Factura y Remisión solo para finanzas, admin y superadmin
+        function setupFinanzasButtons() {
+          try {
+            const adminData = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
+            const userRole = (adminData.rol || '').toLowerCase().trim();
+            
+            const rolesPermitidos = ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'];
+            const tieneAcceso = rolesPermitidos.includes(userRole);
+            
+            const btnRemision = document.getElementById('btnGenerarRemision');
+            const btnFactura = document.getElementById('btnGenerarFactura');
+            
+            if (tieneAcceso) {
+              if (btnRemision) btnRemision.style.display = 'inline-block';
+              if (btnFactura) btnFactura.style.display = 'inline-block';
+              console.log(`✅ [PEDIDO-DETALLE] Botones de Factura/Remisión habilitados para rol: ${userRole}`);
+            } else {
+              console.log(`🚫 [PEDIDO-DETALLE] Botones de Factura/Remisión ocultos para rol: ${userRole}`);
+            }
+          } catch (error) {
+            console.error('Error configurando botones de finanzas:', error);
+          }
+        }
 
         async function init() {
           const urlParams = new URLSearchParams(window.location.search);
@@ -1025,7 +1046,7 @@
             loadingState.style.display = "none";
             errorMessage.textContent = "ID de pedido inválido";
             errorState.style.display = "block";
-            showToast("ID de pedido inválido", "error");
+            if (typeof showToast === 'function') showToast("ID de pedido inválido", "error");
             return;
           }
 
@@ -1084,6 +1105,9 @@
               btnCambiarEstatus.removeAttribute("disabled");
             }
 
+            // [REMOVIDO: refactor a clientes y facturación]
+            // Lógica de botones de factura movida a admin-clientes-facturacion.html
+            /*
             // Show invoice button only for completely fulfilled orders
             const btnDescargarFactura = document.getElementById("btnDescargarFactura");
             const btnFacturaBloqueadaWrapper = document.getElementById("btnFacturaBloqueadaWrapper");
@@ -1107,6 +1131,7 @@
                 btnFacturaBloqueadaWrapper.style.display = 'inline-block';
               }
             }
+            */
 
             // Show priority badge if order is prioritized
             const prioridadBadge = document.getElementById("pedidoPrioridadBadge");
@@ -1532,70 +1557,37 @@
           }
         };
 
+        // Funciones de generación de PDF
         window.descargarPDFPedidoDetalle = async function() {
           if (!selectedOrderId) {
             showToast("No se pudo identificar el pedido", "error");
             return;
           }
-
-          const token = localStorage.getItem('razoconnect_admin_token');
-          if (!token) {
-            showToast('Debes iniciar sesión para descargar el PDF', 'error');
-            return;
-          }
-
-          // Usar UI.setButtonLoading si está disponible
-          const btn = document.getElementById('btnGenerarRemision');
-          const restore = (btn && typeof UI !== 'undefined')
-            ? UI.setButtonLoading(btn, 'Generando...')
-            : () => {};
-
+          
           try {
-            const response = await fetch(`${API_BASE_URL}/pedidos/${selectedOrderId}/pdf`, {
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/pdf`, {
               method: 'GET',
               headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                'Authorization': `Bearer ${adminToken}`
               }
             });
-
-            if (!response.ok) {
-              const contentType = response.headers.get('content-type');
-              if (contentType && contentType.includes('application/json')) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || errorData.error || 'Error al generar el PDF');
-              } else {
-                throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
-              }
-            }
-
+            
+            if (!response.ok) throw new Error('Error al generar remisión');
+            
             const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `remision-pedido-${selectedOrderId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
             
-            if (blob.size === 0) {
-              throw new Error('El PDF generado está vacío');
-            }
-            
-            const blobUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = `Remision_Pedido_${selectedOrderId}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-            
-            showToast('PDF descargado correctamente', 'success');
+            showToast("Remisión generada exitosamente", "success");
           } catch (error) {
-            console.error('Error al descargar PDF:', error);
-            // MISIÓN 5: Network error handling
-            if (error.message.includes('EAI_AGAIN') || error.message.includes('ENOTFOUND') || error.message.includes('fetch')) {
-              showToast('Error de red: No se pudo conectar al servidor. Verifica tu conexión.', 'error');
-            } else {
-              showToast(error.message || 'Error al generar el PDF. Intenta de nuevo.', 'error');
-            }
-          } finally {
-            restore(); // SIEMPRE restaurar el botón
+            console.error('Error generando remisión:', error);
+            showToast("Error al generar remisión", "error");
           }
         };
 
@@ -1604,85 +1596,8 @@
             showToast("No se pudo identificar el pedido", "error");
             return;
           }
-
-          const token = localStorage.getItem('razoconnect_admin_token');
-          if (!token) {
-            showToast('Debes iniciar sesión para descargar la factura', 'error');
-            return;
-          }
-
-          // Mostrar alerta sobre el IVA
-          const result = await Swal.fire({
-            icon: 'info',
-            title: 'Información sobre la Factura',
-            html: `
-              <div style="text-align: left;">
-                <p><strong>⚠️ Importante:</strong></p>
-                <ul style="margin-left: 1rem;">
-                  <li>Esta factura incluye el <strong>IVA (16%)</strong> aplicable.</li>
-                  <li>Es un documento interno para control administrativo.</li>
-                  <li><strong>No es un CFDI fiscal válido</strong> ante el SAT.</li>
-                </ul>
-                <p style="margin-top: 1rem;">¿Deseas continuar con la descarga?</p>
-              </div>
-            `,
-            showCancelButton: true,
-            confirmButtonText: 'Sí, descargar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#dc2626',
-            cancelButtonColor: '#6b7280'
-          });
-
-          if (!result.isConfirmed) {
-            return;
-          }
-
-          try {
-            showToast('Generando factura...', 'info');
-            
-            const response = await fetch(`${API_BASE_URL}/pedidos/${selectedOrderId}/factura`, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            });
-
-            if (!response.ok) {
-              const contentType = response.headers.get('content-type');
-              if (contentType && contentType.includes('application/json')) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || errorData.error || 'Error al generar la factura');
-              } else {
-                throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
-              }
-            }
-
-            const blob = await response.blob();
-            
-            if (blob.size === 0) {
-              throw new Error('La factura generada está vacía');
-            }
-            
-            const blobUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = `Factura-Pedido-${selectedOrderId}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-            
-            showToast('Factura descargada correctamente', 'success');
-          } catch (error) {
-            console.error('Error al descargar factura:', error);
-            if (error.message.includes('EAI_AGAIN') || error.message.includes('ENOTFOUND') || error.message.includes('fetch')) {
-              showToast('Error de red: No se pudo conectar al servidor. Verifica tu conexión.', 'error');
-            } else {
-              showToast(error.message || 'Error al generar la factura. Intenta de nuevo.', 'error');
-            }
-          }
+          
+          showToast("Función de factura en desarrollo", "info");
         };
       })();
 
