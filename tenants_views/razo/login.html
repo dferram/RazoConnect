@@ -11,6 +11,9 @@
     <!-- SweetAlert2 para alertas mejoradas -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <!-- Auth Manager - DEBE cargarse antes de scripts inline -->
+    <script src="js/auth-manager.js"></script>
+    
     <!-- Monitor de conexión a internet (no invasivo) -->
     <script src="js/shared/network-status.js"></script>
   </head>
@@ -133,8 +136,6 @@
       </div>
     </div>
 
-    <script src="js/auth-manager.js"></script>
-    <script src="js/api.js"></script>
     <script>
       const loginForm = document.getElementById("loginForm");
       const emailInput = document.getElementById("email");
@@ -288,7 +289,7 @@
       }
 
       // Check if user is already logged in
-      if (isAuthenticated()) {
+      if (AuthManager && AuthManager.isAuthenticated()) {
         window.location.href = "/inicio.html";
       }
 

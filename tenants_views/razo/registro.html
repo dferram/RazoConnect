@@ -11,6 +11,10 @@
     
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Auth Manager - DEBE cargarse antes de scripts inline -->
+    <script src="js/auth-manager.js"></script>
+    <script src="js/api.js"></script>
   </head>
   <body>
     <nav class="navbar">
@@ -179,8 +183,6 @@
       </div>
     </div>
 
-    <script src="js/auth-manager.js"></script>
-    <script src="js/api.js"></script>
     <script>
       const registroForm = document.getElementById("registroForm");
       const nombreInput = document.getElementById("nombre");
@@ -225,7 +227,7 @@
       }
 
       // Check if user is already logged in
-      if (isAuthenticated()) {
+      if (AuthManager && AuthManager.isAuthenticated()) {
         window.location.href = "/inicio.html";
       }
 

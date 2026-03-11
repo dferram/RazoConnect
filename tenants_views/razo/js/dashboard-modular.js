@@ -6,6 +6,13 @@
 (function() {
   'use strict';
 
+  // Validación crítica: Verificar que API esté disponible
+  if (typeof API === 'undefined') {
+    console.error('❌ [DASHBOARD] Error crítico: api.js no se cargó correctamente');
+    console.error('Verifica que <script src="js/api.js"></script> esté incluido en el HTML');
+    return;
+  }
+
   /**
    * Obtiene el rol del usuario actual
    */
