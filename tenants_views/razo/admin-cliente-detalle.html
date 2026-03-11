@@ -448,9 +448,10 @@
       }
 
       function renderDetalle(detalle) {
-        const { cliente, pedidos, direcciones } = detalle;
+        // El backend devuelve un objeto plano, no anidado
+        const cliente = detalle;
 
-        const nombreCompleto = `${cliente.nombre} ${cliente.apellido}`.trim();
+        const nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim();
         document.getElementById(
           "clienteSubtitle"
         ).textContent = `Consulta detalles y actividad de ${
@@ -464,8 +465,8 @@
         document.getElementById("clienteTelefono").textContent =
           cliente.telefono || "Sin teléfono";
         document.getElementById("clienteFecha").textContent =
-          cliente.fechaCreacion
-            ? new Date(cliente.fechaCreacion).toLocaleDateString("es-MX", {
+          cliente.fechaRegistro
+            ? new Date(cliente.fechaRegistro).toLocaleDateString("es-MX", {
                 year: "numeric",
                 month: "short",
                 day: "numeric",
@@ -476,8 +477,9 @@
           ? '<span class="admin-badge success">Cliente activo</span>'
           : '<span class="admin-badge danger">Cliente inactivo</span>';
 
-        renderPedidos(pedidos || []);
-        renderDirecciones(direcciones || []);
+        // Por ahora, pedidos y direcciones vacíos hasta que el backend los incluya
+        renderPedidos([]);
+        renderDirecciones([]);
         loadCreditoInfo();
       }
 

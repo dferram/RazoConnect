@@ -671,16 +671,13 @@
                   >
                     ✏️ Ajustar Pedido
                   </button>
-                  <!-- [REMOVIDO: refactor a clientes y facturación] -->
-                  <!-- Botones de Remisión y Factura movidos a admin-clientes-facturacion.html -->
-                  <!--
+                  <!-- Botones de Factura y Remisión (solo para finanzas, admin, superadmin) -->
                   <button
                     type="button"
                     class="btn btn-info"
                     id="btnGenerarRemision"
-                    data-admin-only="true"
                     onclick="descargarPDFPedidoDetalle()"
-                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #17a2b8; color: white;"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #17a2b8; color: white; display: none;"
                     title="Descargar remisión en PDF"
                   >
                     📄 Generar Remisión
@@ -688,25 +685,13 @@
                   <button 
                     type="button"
                     class="btn btn-danger"
-                    id="btnDescargarFactura"
-                    data-admin-only="true"
+                    id="btnGenerarFactura"
                     onclick="descargarFacturaAdmin()"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #dc2626; color: white; display: none;"
-                    title="Generar factura PDF">
+                    title="Generar factura PDF"
+                  >
                     🧾 Generar Factura
                   </button>
-                  <div class="btn-disabled-wrapper" id="btnFacturaBloqueadaWrapper" style="display: none;">
-                    <button 
-                      type="button"
-                      class="btn"
-                      id="btnFacturaBloqueada"
-                      style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #9ca3af; color: #d1d5db; cursor: not-allowed;"
-                      disabled>
-                      🧾 Generar Factura
-                    </button>
-                    <span class="tooltip-text">Pedido pendiente por surtir</span>
-                  </div>
-                  -->
                 </div>
               </div>
             </div>
@@ -1020,8 +1005,33 @@
         // FASE 3 - TASK 3: Setup role-based visibility on load
         document.addEventListener("DOMContentLoaded", () => {
           setupRoleBasedVisibility();
+          setupFinanzasButtons();
           init();
         });
+
+        // Mostrar botones de Factura y Remisión solo para finanzas, admin y superadmin
+        function setupFinanzasButtons() {
+          try {
+            const adminData = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
+            const userRole = (adminData.rol || '').toLowerCase().trim();
+            
+            const rolesPermitidos = ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'];
+            const tieneAcceso = rolesPermitidos.includes(userRole);
+            
+            const btnRemision = document.getElementById('btnGenerarRemision');
+            const btnFactura = document.getElementById('btnGenerarFactura');
+            
+            if (tieneAcceso) {
+              if (btnRemision) btnRemision.style.display = 'inline-block';
+              if (btnFactura) btnFactura.style.display = 'inline-block';
+              console.log(`✅ [PEDIDO-DETALLE] Botones de Factura/Remisión habilitados para rol: ${userRole}`);
+            } else {
+              console.log(`🚫 [PEDIDO-DETALLE] Botones de Factura/Remisión ocultos para rol: ${userRole}`);
+            }
+          } catch (error) {
+            console.error('Error configurando botones de finanzas:', error);
+          }
+        }
 
         async function init() {
           const urlParams = new URLSearchParams(window.location.search);
@@ -1547,12 +1557,48 @@
           }
         };
 
-        // [REMOVIDO: refactor a clientes y facturación]
-        // Funciones de generación de PDF movidas a admin-clientes-facturacion.html
-        /*
-        window.descargarPDFPedidoDetalle = async function() { ... };
-        window.descargarFacturaAdmin = async function() { ... };
-        */
+        // Funciones de generación de PDF
+        window.descargarPDFPedidoDetalle = async function() {
+          if (!selectedOrderId) {
+            showToast("No se pudo identificar el pedido", "error");
+            return;
+          }
+          
+          try {
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/pdf`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${adminToken}`
+              }
+            });
+            
+            if (!response.ok) throw new Error('Error al generar remisión');
+            
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `remision-pedido-${selectedOrderId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showToast("Remisión generada exitosamente", "success");
+          } catch (error) {
+            console.error('Error generando remisión:', error);
+            showToast("Error al generar remisión", "error");
+          }
+        };
+
+        window.descargarFacturaAdmin = async function() {
+          if (!selectedOrderId) {
+            showToast("No se pudo identificar el pedido", "error");
+            return;
+          }
+          
+          showToast("Función de factura en desarrollo", "info");
+        };
       })();
 
       // Cargar botón de volver

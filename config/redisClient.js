@@ -27,9 +27,120 @@ const blacklistCache = new NodeCache({
 
 let redisClient = null;
 let isConnected = false;
+let isDevelopmentMode = false;
+
+/**
+ * Crea un cliente mock de Redis para desarrollo local
+ * Simula los métodos básicos de Redis usando Map en memoria
+ */
+const createMockRedisClient = () => {
+  const store = new Map();
+  const expirations = new Map();
+
+  // Limpieza automática de claves expiradas cada 10 segundos
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, expireTime] of expirations.entries()) {
+      if (now >= expireTime) {
+        store.delete(key);
+        expirations.delete(key);
+      }
+    }
+  }, 10000);
+
+  return {
+    // Simular métodos de Redis
+    get: async (key) => {
+      const now = Date.now();
+      const expireTime = expirations.get(key);
+      
+      if (expireTime && now >= expireTime) {
+        store.delete(key);
+        expirations.delete(key);
+        return null;
+      }
+      
+      return store.get(key) || null;
+    },
+    
+    set: async (key, value) => {
+      store.set(key, value);
+      return 'OK';
+    },
+    
+    setEx: async (key, seconds, value) => {
+      store.set(key, value);
+      expirations.set(key, Date.now() + (seconds * 1000));
+      return 'OK';
+    },
+    
+    del: async (key) => {
+      const existed = store.has(key);
+      store.delete(key);
+      expirations.delete(key);
+      return existed ? 1 : 0;
+    },
+    
+    exists: async (key) => {
+      const now = Date.now();
+      const expireTime = expirations.get(key);
+      
+      if (expireTime && now >= expireTime) {
+        store.delete(key);
+        expirations.delete(key);
+        return 0;
+      }
+      
+      return store.has(key) ? 1 : 0;
+    },
+    
+    // Método para rate-limit-redis
+    sendCommand: async (args) => {
+      const [command, ...params] = args;
+      const cmd = command.toLowerCase();
+      
+      switch (cmd) {
+        case 'incr':
+          const current = parseInt(store.get(params[0]) || '0', 10);
+          const newVal = current + 1;
+          store.set(params[0], String(newVal));
+          return newVal;
+        
+        case 'pexpire':
+          const key = params[0];
+          const ms = parseInt(params[1], 10);
+          expirations.set(key, Date.now() + ms);
+          return 1;
+        
+        case 'pttl':
+          const expTime = expirations.get(params[0]);
+          if (!expTime) return -2; // Key doesn't exist
+          const remaining = expTime - Date.now();
+          return remaining > 0 ? remaining : -2;
+        
+        default:
+          console.warn(`⚠️ [REDIS MOCK] Comando no implementado: ${cmd}`);
+          return null;
+      }
+    },
+    
+    // Métodos de conexión (no-op en mock)
+    connect: async () => {},
+    quit: async () => {},
+    disconnect: async () => {},
+    
+    // Método para limpiar el store (útil para testing)
+    _clearAll: () => {
+      store.clear();
+      expirations.clear();
+    }
+  };
+};
 
 /**
  * Inicializa y conecta el cliente Redis
+ * En desarrollo (NODE_ENV=development), usa un mock en memoria
+ * En producción, conecta a Upstash/Azure Redis
  * @returns {Promise<RedisClient>}
  */
 const initRedisClient = async () => {
@@ -38,6 +149,24 @@ const initRedisClient = async () => {
   }
 
   try {
+    // 🔍 DETECCIÓN DE ENTORNO
+    const nodeEnv = process.env.NODE_ENV || 'development';
+    
+    // Si estamos en desarrollo, usar mock en memoria
+    if (nodeEnv === 'development') {
+      console.log('⚠️ [REDIS] Modo desarrollo activo: Usando memoria RAM local');
+      console.log('💡 [REDIS] Para usar Redis real, configura NODE_ENV=production');
+      
+      redisClient = createMockRedisClient();
+      isConnected = true;
+      isDevelopmentMode = true;
+      
+      return redisClient;
+    }
+    
+    // 🌐 MODO PRODUCCIÓN: Conectar a Redis real
+    console.log('🌐 [REDIS] Modo producción: Conectando a Redis remoto...');
+    
     const redisConfig = {};
 
     // 1. Prioridad: URL completa (Recomendado para Upstash)
@@ -87,6 +216,7 @@ const initRedisClient = async () => {
 
     // Conectar
     await redisClient.connect();
+    isDevelopmentMode = false;
 
     return redisClient;
   } catch (error) {
@@ -94,6 +224,7 @@ const initRedisClient = async () => {
     // Fail-safe: No lanzamos error para que la app no muera, 
     // el middleware de rate limit manejará el 'skip' automáticamente.
     isConnected = false;
+    isDevelopmentMode = false;
     return null;
   }
 };
@@ -113,6 +244,13 @@ const getRedisClient = async () => {
  */
 const isRedisConnected = () => {
   return isConnected && redisClient !== null;
+};
+
+/**
+ * Verifica si estamos en modo desarrollo (usando mock)
+ */
+const isUsingMock = () => {
+  return isDevelopmentMode;
 };
 
 /**
@@ -299,6 +437,7 @@ module.exports = {
   initRedisClient,
   getRedisClient,
   isRedisConnected,
+  isUsingMock,
   closeRedisConnection,
   saveRefreshToken,
   getRefreshToken,
