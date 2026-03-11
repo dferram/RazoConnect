@@ -31,7 +31,6 @@ const getAllAgentes = async (req, res) => {
         a.codigoagente,
         a.porcentaje_comision,
         a.activo,
-        a.fechacreacion,
         COUNT(DISTINCT c.clienteid) as total_clientes,
         COALESCE(SUM(p.montototal), 0) as ventas_totales
       FROM agentesdeventas a
@@ -39,7 +38,7 @@ const getAllAgentes = async (req, res) => {
       LEFT JOIN pedidos p ON p.agenteid = a.agenteid
       WHERE a.tenant_id = $1
       GROUP BY a.agenteid
-      ORDER BY a.fechacreacion DESC`,
+      ORDER BY a.agenteid DESC`,
       [tenant_id]
     );
 
@@ -55,7 +54,6 @@ const getAllAgentes = async (req, res) => {
           codigoAgente: row.codigoagente,
           porcentajeComision: parseFloat(row.porcentaje_comision || 0),
           activo: row.activo,
-          fechaCreacion: row.fechacreacion,
           totalClientes: parseInt(row.total_clientes || 0),
           ventasTotales: parseFloat(row.ventas_totales || 0)
         }))
@@ -124,7 +122,6 @@ const getAgenteDetalle = async (req, res) => {
         codigoAgente: agente.codigoagente,
         porcentajeComision: parseFloat(agente.porcentaje_comision || 0),
         activo: agente.activo,
-        fechaCreacion: agente.fechacreacion,
         totalClientes: parseInt(agente.total_clientes || 0),
         ventasTotales: parseFloat(agente.ventas_totales || 0),
         totalPedidos: parseInt(agente.total_pedidos || 0)

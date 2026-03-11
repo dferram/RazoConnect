@@ -675,6 +675,9 @@
                   >
                     ✏️ Ajustar Pedido
                   </button>
+                  <!-- [REMOVIDO: refactor a clientes y facturación] -->
+                  <!-- Botones de Remisión y Factura movidos a admin-clientes-facturacion.html -->
+                  <!--
                   <button
                     type="button"
                     class="btn btn-info"
@@ -707,6 +710,7 @@
                     </button>
                     <span class="tooltip-text">Pedido pendiente por surtir</span>
                   </div>
+                  -->
                 </div>
               </div>
             </div>
@@ -1030,7 +1034,9 @@
           }
 
           try {
-            const response = await API.obtenerPedidoDetalle(pedidoId);
+            const response = await apiCall(`/admin/pedidos/${pedidoId}/detalle`, {
+              method: "GET",
+            });
 
             if (!response.ok || !response.data.success) {
               throw new Error(
@@ -1084,6 +1090,9 @@
               btnCambiarEstatus.removeAttribute("disabled");
             }
 
+            // [REMOVIDO: refactor a clientes y facturación]
+            // Lógica de botones de factura movida a admin-clientes-facturacion.html
+            /*
             // Show invoice button only for completely fulfilled orders
             const btnDescargarFactura = document.getElementById("btnDescargarFactura");
             const btnFacturaBloqueadaWrapper = document.getElementById("btnFacturaBloqueadaWrapper");
@@ -1107,6 +1116,7 @@
                 btnFacturaBloqueadaWrapper.style.display = 'inline-block';
               }
             }
+            */
 
             // Show priority badge if order is prioritized
             const prioridadBadge = document.getElementById("pedidoPrioridadBadge");
@@ -1532,158 +1542,12 @@
           }
         };
 
-        window.descargarPDFPedidoDetalle = async function() {
-          if (!selectedOrderId) {
-            showToast("No se pudo identificar el pedido", "error");
-            return;
-          }
-
-          const token = localStorage.getItem('razoconnect_admin_token');
-          if (!token) {
-            showToast('Debes iniciar sesión para descargar el PDF', 'error');
-            return;
-          }
-
-          // Usar UI.setButtonLoading si está disponible
-          const btn = document.getElementById('btnGenerarRemision');
-          const restore = (btn && typeof UI !== 'undefined')
-            ? UI.setButtonLoading(btn, 'Generando...')
-            : () => {};
-
-          try {
-            const response = await fetch(`${API_BASE_URL}/pedidos/${selectedOrderId}/pdf`, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            });
-
-            if (!response.ok) {
-              const contentType = response.headers.get('content-type');
-              if (contentType && contentType.includes('application/json')) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || errorData.error || 'Error al generar el PDF');
-              } else {
-                throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
-              }
-            }
-
-            const blob = await response.blob();
-            
-            if (blob.size === 0) {
-              throw new Error('El PDF generado está vacío');
-            }
-            
-            const blobUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = `Remision_Pedido_${selectedOrderId}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-            
-            showToast('PDF descargado correctamente', 'success');
-          } catch (error) {
-            console.error('Error al descargar PDF:', error);
-            // MISIÓN 5: Network error handling
-            if (error.message.includes('EAI_AGAIN') || error.message.includes('ENOTFOUND') || error.message.includes('fetch')) {
-              showToast('Error de red: No se pudo conectar al servidor. Verifica tu conexión.', 'error');
-            } else {
-              showToast(error.message || 'Error al generar el PDF. Intenta de nuevo.', 'error');
-            }
-          } finally {
-            restore(); // SIEMPRE restaurar el botón
-          }
-        };
-
-        window.descargarFacturaAdmin = async function() {
-          if (!selectedOrderId) {
-            showToast("No se pudo identificar el pedido", "error");
-            return;
-          }
-
-          const token = localStorage.getItem('razoconnect_admin_token');
-          if (!token) {
-            showToast('Debes iniciar sesión para descargar la factura', 'error');
-            return;
-          }
-
-          // Mostrar alerta sobre el IVA
-          const result = await Swal.fire({
-            icon: 'info',
-            title: 'Información sobre la Factura',
-            html: `
-              <div style="text-align: left;">
-                <p><strong>⚠️ Importante:</strong></p>
-                <ul style="margin-left: 1rem;">
-                  <li>Esta factura incluye el <strong>IVA (16%)</strong> aplicable.</li>
-                  <li>Es un documento interno para control administrativo.</li>
-                  <li><strong>No es un CFDI fiscal válido</strong> ante el SAT.</li>
-                </ul>
-                <p style="margin-top: 1rem;">¿Deseas continuar con la descarga?</p>
-              </div>
-            `,
-            showCancelButton: true,
-            confirmButtonText: 'Sí, descargar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#dc2626',
-            cancelButtonColor: '#6b7280'
-          });
-
-          if (!result.isConfirmed) {
-            return;
-          }
-
-          try {
-            showToast('Generando factura...', 'info');
-            
-            const response = await fetch(`${API_BASE_URL}/pedidos/${selectedOrderId}/factura`, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            });
-
-            if (!response.ok) {
-              const contentType = response.headers.get('content-type');
-              if (contentType && contentType.includes('application/json')) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || errorData.error || 'Error al generar la factura');
-              } else {
-                throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
-              }
-            }
-
-            const blob = await response.blob();
-            
-            if (blob.size === 0) {
-              throw new Error('La factura generada está vacía');
-            }
-            
-            const blobUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = `Factura-Pedido-${selectedOrderId}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
-            
-            showToast('Factura descargada correctamente', 'success');
-          } catch (error) {
-            console.error('Error al descargar factura:', error);
-            if (error.message.includes('EAI_AGAIN') || error.message.includes('ENOTFOUND') || error.message.includes('fetch')) {
-              showToast('Error de red: No se pudo conectar al servidor. Verifica tu conexión.', 'error');
-            } else {
-              showToast(error.message || 'Error al generar la factura. Intenta de nuevo.', 'error');
-            }
-          }
-        };
+        // [REMOVIDO: refactor a clientes y facturación]
+        // Funciones de generación de PDF movidas a admin-clientes-facturacion.html
+        /*
+        window.descargarPDFPedidoDetalle = async function() { ... };
+        window.descargarFacturaAdmin = async function() { ... };
+        */
       })();
 
       // Cargar botón de volver

@@ -147,6 +147,7 @@ const getAllPedidos = async (req, res) => {
         p.CostoEnvio,
         p.Monto_Descuento,
         p.Cupon_ID,
+        p.completamente_surtido,
         c.Nombre as ClienteNombre,
         c.Apellido as ClienteApellido,
         c.Email as ClienteEmail,
@@ -301,6 +302,7 @@ const getAllPedidos = async (req, res) => {
         diferencia: tieneDiscrepancia ? parseFloat(diferencia.toFixed(2)) : 0,
         costoEnvio,
         estatus: row.estatus,
+        completamente_surtido: row.completamente_surtido || false,
         clienteNombre: `${row.clientenombre || ''} ${row.clienteapellido || ''}`.trim(),
         cliente: {
           nombre: row.clientenombre,
