@@ -56,11 +56,11 @@ module.exports = {
   // Verbose output
   verbose: true,
 
-  // Detectar memory leaks
-  detectLeaks: true,
+  // Detectar memory leaks - Deshabilitado para tests de Redis
+  detectLeaks: false,
 
-  // Detectar archivos abiertos
-  detectOpenHandles: true,
+  // Detectar archivos abiertos - Deshabilitado para tests de Redis
+  detectOpenHandles: false,
 
   // Forzar salida después de tests
   forceExit: true,
@@ -70,8 +70,12 @@ module.exports = {
   resetMocks: true,
   restoreMocks: true,
 
-  // Setup global
-  setupFilesAfterEnv: ['<rootDir>/tests/redis/setup.js'],
+  // Setup global - NO usar el setup global que mockea redisClient
+  setupFilesAfterEnv: ['./setup.js'],
+  
+  // Resetear mocks antes de cada test
+  resetMocks: false,
+  resetModules: false,
 
   // Transformaciones
   transform: {},

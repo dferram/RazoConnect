@@ -5,54 +5,48 @@
  * simulando todos los métodos básicos de Redis.
  */
 
-const { describe, test, expect, beforeEach, afterEach, jest } = require('@jest/globals');
+// Forzar modo desarrollo ANTES de cualquier import
+process.env.NODE_ENV = 'development';
 
-// Mock de process.env antes de importar redisClient
+const { describe, test, expect, beforeAll, beforeEach, afterAll } = require('@jest/globals');
+const redisModule = require('../../config/redisClient');
+
 const originalEnv = process.env.NODE_ENV;
 
 describe('Mock Redis Client - Unit Tests', () => {
-  let redisClient;
   let mockClient;
 
-  beforeEach(async () => {
-    // Forzar modo desarrollo
-    process.env.NODE_ENV = 'development';
-    
-    // Limpiar cache de módulos para forzar re-importación
-    jest.resetModules();
-    
-    const {
-      initRedisClient,
-      getRedisClient,
-      isUsingMock,
-      closeRedisConnection
-    } = require('../../config/redisClient');
-    
-    redisClient = { initRedisClient, getRedisClient, isUsingMock, closeRedisConnection };
-    
+  beforeAll(async () => {
     // Inicializar cliente mock
-    await redisClient.initRedisClient();
-    mockClient = await redisClient.getRedisClient();
+    await redisModule.initRedisClient();
+    mockClient = await redisModule.getRedisClient();
   });
 
-  afterEach(async () => {
-    // Restaurar entorno original
-    process.env.NODE_ENV = originalEnv;
-    
-    // Cerrar conexión
-    if (redisClient && redisClient.closeRedisConnection) {
-      await redisClient.closeRedisConnection();
-    }
-    
-    // Limpiar mock si tiene método de limpieza
+  beforeEach(() => {
+    // Limpiar mock antes de cada test
     if (mockClient && mockClient._clearAll) {
       mockClient._clearAll();
     }
   });
 
+  afterAll(async () => {
+    // Limpiar interval del mock client
+    if (mockClient && mockClient._cleanup) {
+      mockClient._cleanup();
+    }
+    
+    // Cerrar conexión
+    if (redisModule && redisModule.closeRedisConnection) {
+      await redisModule.closeRedisConnection();
+    }
+    
+    // Restaurar entorno original
+    process.env.NODE_ENV = originalEnv;
+  });
+
   describe('Detección de Modo Mock', () => {
     test('debe detectar que está usando mock en desarrollo', () => {
-      expect(redisClient.isUsingMock()).toBe(true);
+      expect(redisModule.isUsingMock()).toBe(true);
     });
 
     test('debe retornar un cliente válido', () => {

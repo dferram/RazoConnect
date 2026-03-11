@@ -38,7 +38,7 @@ const createMockRedisClient = () => {
   const expirations = new Map();
 
   // Limpieza automática de claves expiradas cada 10 segundos
-  setInterval(() => {
+  const cleanupInterval = setInterval(() => {
     const now = Date.now();
     for (const [key, expireTime] of expirations.entries()) {
       if (now >= expireTime) {
@@ -126,13 +126,23 @@ const createMockRedisClient = () => {
     
     // Métodos de conexión (no-op en mock)
     connect: async () => {},
-    quit: async () => {},
-    disconnect: async () => {},
+    quit: async () => {
+      // Limpiar el interval para evitar memory leaks
+      clearInterval(cleanupInterval);
+    },
+    disconnect: async () => {
+      clearInterval(cleanupInterval);
+    },
     
     // Método para limpiar el store (útil para testing)
     _clearAll: () => {
       store.clear();
       expirations.clear();
+    },
+    
+    // Método para limpiar el interval (útil para testing)
+    _cleanup: () => {
+      clearInterval(cleanupInterval);
     }
   };
 };
@@ -433,12 +443,30 @@ const flushLocalCache = () => {
   blacklistCache.flushAll();
 };
 
+/**
+ * Resetea el cliente Redis (solo para testing)
+ * Permite reinicializar el cliente en un nuevo entorno
+ */
+const resetRedisClient = async () => {
+  if (redisClient && !isDevelopmentMode) {
+    try {
+      await redisClient.quit();
+    } catch (err) {
+      // Ignorar errores al cerrar
+    }
+  }
+  redisClient = null;
+  isConnected = false;
+  isDevelopmentMode = false;
+};
+
 module.exports = {
   initRedisClient,
   getRedisClient,
   isRedisConnected,
   isUsingMock,
   closeRedisConnection,
+  resetRedisClient,
   saveRefreshToken,
   getRefreshToken,
   deleteRefreshToken,

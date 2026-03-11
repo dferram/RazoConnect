@@ -5,7 +5,7 @@
  * correctamente con el sistema de Smart Fallback de Redis.
  */
 
-const { describe, test, expect, beforeAll, afterAll, jest } = require('@jest/globals');
+const { describe, test, expect, beforeAll, afterAll } = require('@jest/globals');
 
 describe('Auth System - Redis Smart Fallback Integration', () => {
   const originalEnv = process.env.NODE_ENV;

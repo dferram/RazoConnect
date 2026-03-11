@@ -188,7 +188,7 @@ New order arrives for Variant X (qty: 10)
 | Runtime | Node.js v18+ |
 | Framework | Express.js 4.18 |
 | Database | PostgreSQL v17 (Azure Database) |
-| Cache / Sessions | Redis (rate limiting, refresh tokens) |
+| Cache / Sessions | Redis (rate limiting, refresh tokens) + **Smart Fallback** (mock en desarrollo) |
 | Authentication | JWT (access + refresh) + Passport.js (Google OAuth) |
 | File Storage | Cloudinary |
 | Payments | MercadoPago SDK |
@@ -405,9 +405,17 @@ Test structure:
 
 ```
 tests/
+├── redis/                           # Redis Smart Fallback tests (82 tests)
+│   ├── mock-client.test.js         # Mock client functionality (23 tests)
+│   ├── fallback-system.test.js     # Fallback system integration (25 tests)
+│   ├── rate-limiter.test.js        # Rate limiter with mock/real (16 tests)
+│   ├── auth-integration.test.js    # Auth system integration (18 tests)
+│   ├── jest.config.js              # Redis-specific Jest config
+│   ├── setup.js                    # Test environment setup
+│   └── README.md                   # Redis tests documentation
 ├── helpers/
-│   ├── mockAuth.js        # Token generation utilities
-│   └── mockDb.js          # Database mock factory
+│   ├── mockAuth.js                 # Token generation utilities
+│   └── mockDb.js                   # Database mock factory
 ├── integration/
 │   └── routes/
 │       ├── auth.test.js
@@ -424,7 +432,17 @@ tests/
 └── setup.js
 ```
 
-Current status: **86 tests passing across 8 suites.**
+Current status: **168+ tests passing across 12+ suites.**
+
+### Redis Smart Fallback Tests
+
+```bash
+# Run Redis tests specifically
+npm test -- tests/redis/
+
+# With coverage
+npm test -- tests/redis/ --coverage
+```
 
 ---
 
@@ -458,6 +476,8 @@ Technical documentation is maintained in `docs/`:
 |---|---|
 | `ARQUITECTURA.md` | System architecture, middleware pipeline, data model |
 | `ARCHITECTURE_AUDIT.md` | Engineering audit and refactoring decisions |
+| `REDIS_SMART_FALLBACK.md` | **Redis Smart Fallback system - mock en desarrollo** |
+| `TESTING_REDIS_FALLBACK.md` | **Guía completa de testing para Redis** |
 | `FIFO_CASOS_DE_USO.md` | FIFO allocation logic and edge cases |
 | `INVENTARIO_EXPLICACION.md` | Inventory system design |
 | `AUDITORIA_MENSUAL_INVENTARIO.md` | Physical count reconciliation process |

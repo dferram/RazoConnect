@@ -5,7 +5,7 @@
  * tanto con mock (desarrollo) como con Redis real (producción).
  */
 
-const { describe, test, expect, beforeAll, afterAll, jest } = require('@jest/globals');
+const { describe, test, expect, beforeAll, afterAll } = require('@jest/globals');
 const request = require('supertest');
 
 describe('Rate Limiter - Smart Fallback Integration', () => {
