@@ -48,7 +48,7 @@
           <!-- Título con Mes Actual -->
           <div style="margin-bottom: 1.5rem;">
             <h1 style="font-size: 1.75rem; font-weight: 600; color: #1f2937; margin: 0;">
-              Panel de control - <span id="mesActual" style="color: #F97316;">Cargando...</span>
+              Panel de control - <span id="mesActual" style="color: #F97316;"></span>
             </h1>
             <p style="color: #6b7280; margin-top: 0.5rem; font-size: 0.875rem;">
               Estadísticas del mes en curso
@@ -253,6 +253,16 @@
         
         const rolePerms = permissions[role] || [];
         return rolePerms.includes(module);
+      }
+
+      // Set current month immediately (before async calls)
+      function setCurrentMonth() {
+        const now = new Date();
+        const mesActual = now.toLocaleString('es-MX', { month: 'long', year: 'numeric' });
+        const mesActualEl = document.getElementById('mesActual');
+        if (mesActualEl) {
+          mesActualEl.textContent = mesActual;
+        }
       }
 
       // Load dashboard statistics
@@ -647,6 +657,7 @@
       });
 
       // Initialize dashboard
+      setCurrentMonth(); // Set month immediately
       loadDashboardStats();
       loadInventoryValuation();
       loadRecentOrders();

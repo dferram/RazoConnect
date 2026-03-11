@@ -17,9 +17,11 @@
     
     // VENTAS - Admin y rol 'inventarios' (para gestión de pedidos)
     'admin-pedidos.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'inventarios'],
-    'admin-pedido-detalle.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'inventarios'],
+    'admin-pedido-detalle.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'inventarios', 'finanzas', 'gerente_finanzas'],
     'admin-remisiones.html': ['super_admin', 'superadmin', 'super admin', 'admin'],
     'admin-clientes.html': ['super_admin', 'superadmin', 'super admin', 'admin'],
+    'admin-cliente-detalle.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'],
+    'admin-clientes-facturacion.html': ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'],
     'admin-agentes.html': ['super_admin', 'superadmin', 'super admin', 'admin'],
     'admin-cupones.html': ['super_admin', 'superadmin', 'super admin', 'admin'],
     'admin-comisiones.html': ['super_admin', 'superadmin', 'super admin', 'admin'],

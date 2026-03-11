@@ -99,17 +99,19 @@
       'admin': ['Principal', 'Ventas', 'Catálogo', 'Finanzas', 'Inventario', 'Compras', 'Reportes'],
       'inventarios': ['Principal', 'Inventario'], // Solo Dashboard e Inventario
       'catalogo': ['Principal', 'Catálogo'],
-      'finanzas': ['Principal', 'Finanzas', 'Reportes'],
-      'gerente_finanzas': ['Principal', 'Finanzas', 'Reportes'], // Rol de BD
+      'finanzas': ['Principal', 'Ventas', 'Finanzas', 'Reportes'], // Incluye Ventas para acceso a Clientes
+      'gerente_finanzas': ['Principal', 'Ventas', 'Finanzas', 'Reportes'], // Incluye Ventas para acceso a Clientes
       'compras': ['Principal', 'Compras', 'Reportes'] // Compras + Reportes de recepciones
     };
     
     // Mapa de links permitidos por rol dentro de secciones
     const roleLinkPermissions = {
       'finanzas': {
+        'Ventas': ['admin-clientes-facturacion.html'], // Acceso a clientes y facturación
         'Reportes': ['admin-reportes.html'] // Solo el reporte general
       },
       'gerente_finanzas': {
+        'Ventas': ['admin-clientes-facturacion.html'], // Acceso a clientes y facturación
         'Reportes': ['admin-reportes.html'] // Solo el reporte general
       },
       'compras': {
@@ -193,9 +195,12 @@
               link.style.setProperty('display', 'flex', 'important');
               link.style.visibility = 'visible';
               link.style.opacity = '1';
+              link.style.pointerEvents = 'auto';
               console.log(`✅ [SIDEBAR] Mostrando link: ${linkFile}`);
             } else {
               link.style.setProperty('display', 'none', 'important');
+              link.style.visibility = 'hidden';
+              link.style.pointerEvents = 'none';
               console.log(`🚫 [SIDEBAR] Ocultando link: ${linkFile}`);
             }
           });
@@ -203,6 +208,7 @@
       } else {
         // Ocultar sección completamente
         section.style.setProperty('display', 'none', 'important');
+        section.style.visibility = 'hidden';
         console.log(`🚫 [SIDEBAR] Ocultando sección: ${sectionTitle}`);
       }
     });

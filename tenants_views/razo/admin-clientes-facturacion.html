@@ -314,6 +314,7 @@
           const allowedRoles = [
             'super_admin',
             'admin',
+            'finanzas',
             'gerente_finanzas',
             'gerente_comercial',
             'contador',
@@ -326,19 +327,8 @@
           
           if (!hasAccess) {
             console.warn(`🚫 [CLIENTES-FACTURACIÓN] Acceso denegado para rol: ${userRole}`);
-            if (typeof Swal !== 'undefined') {
-              Swal.fire({
-                icon: 'error',
-                title: 'Acceso Denegado',
-                text: 'No tienes permisos para acceder a esta página.',
-                confirmButtonColor: '#F97316'
-              }).then(() => {
-                window.location.href = '/admin-dashboard.html';
-              });
-            } else {
-              alert('No tienes permisos para acceder a esta página.');
-              window.location.href = '/admin-dashboard.html';
-            }
+            // Redirigir a página 403 en lugar de mostrar modal
+            window.location.href = '/403.html';
             return false;
           }
           
