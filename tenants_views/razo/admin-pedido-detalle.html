@@ -1034,9 +1034,7 @@
           }
 
           try {
-            const response = await apiCall(`/admin/pedidos/${pedidoId}/detalle`, {
-              method: "GET",
-            });
+            const response = await API.obtenerPedidoDetalle(pedidoId);
 
             if (!response.ok || !response.data.success) {
               throw new Error(

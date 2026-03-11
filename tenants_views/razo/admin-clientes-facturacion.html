@@ -124,7 +124,7 @@
           <!-- Instructional Banner -->
           <div id="instructionalBanner" class="instructional-banner">
             <p>
-              � <strong>Clientes y Facturación:</strong> Gestiona tu base de clientes y genera documentos de facturación. En la pestaña de <strong>Pedidos</strong> encontrarás solo los pedidos completamente surtidos (sin productos pendientes) listos para generar remisiones y facturas. Usa los filtros para buscar por cliente, fecha o estatus.
+              &#128161; <strong>Clientes y Facturación:</strong> Gestiona tu base de clientes y genera documentos de facturación. En la pestaña de <strong>Pedidos</strong> encontrarás solo los pedidos completamente surtidos (sin productos pendientes) listos para generar remisiones y facturas. Usa los filtros para buscar por cliente, fecha o estatus.
             </p>
             <button class="instructional-banner-close" title="Cerrar">
               ×
@@ -413,7 +413,7 @@
 
           const data = await response.json();
           if (data.success) {
-            clientesData = data.data.clientes || [];
+            clientesData = data.data?.clientes || data.data || [];
             renderClientes(clientesData);
           }
         } catch (error) {
@@ -513,7 +513,7 @@
 
           const data = await response.json();
           if (data.success) {
-            const allPedidos = data.data.pedidos || [];
+            const allPedidos = data.data || [];
             
             // Filtrar solo pedidos completamente surtidos (sin productos en backorder)
             // Un pedido está completamente surtido cuando completamente_surtido = true

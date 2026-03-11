@@ -703,9 +703,9 @@ const surtirPedido = async (req, res) => {
     // Obtener pedido y sus detalles
     const pedidoQuery = `
       SELECT p.*, 
-        (SELECT COUNT(*) FROM DetallesDelPedido WHERE PedidoID = p.PedidoID AND esBackorder = true) as productos_backorder
-      FROM Pedidos p
-      WHERE p.PedidoID = $1 AND p.tenant_id = $2
+        (SELECT COUNT(*) FROM detalles_del_pedido WHERE pedidoid = p.pedidoid AND esbackorder = true) as productos_backorder
+      FROM pedidos p
+      WHERE p.pedidoid = $1 AND p.tenant_id = $2
     `;
     
     const pedidoResult = await client.query(pedidoQuery, [pedidoId, tenant_id]);
@@ -732,13 +732,13 @@ const surtirPedido = async (req, res) => {
 
     // Marcar pedido como surtido
     const updateQuery = `
-      UPDATE Pedidos 
+      UPDATE pedidos 
       SET 
-        Estatus = 'Surtido',
+        estatus = 'Surtido',
         completamente_surtido = true,
-        monto_surtido = MontoTotal,
+        monto_surtido = montototal,
         monto_backorder = 0
-      WHERE PedidoID = $1 AND tenant_id = $2
+      WHERE pedidoid = $1 AND tenant_id = $2
       RETURNING *
     `;
     
