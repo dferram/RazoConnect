@@ -118,6 +118,38 @@ const createMockRedisClient = () => {
           const remaining = expTime - Date.now();
           return remaining > 0 ? remaining : -2;
         
+        case 'script':
+          // rate-limit-redis usa SCRIPT LOAD para cargar scripts Lua
+          // En el mock, simplemente retornamos un SHA ficticio
+          const subCmd = params[0]?.toLowerCase();
+          if (subCmd === 'load') {
+            // Retornar un SHA-1 ficticio (40 caracteres hex)
+            return 'mock' + Math.random().toString(36).substring(2, 15).padEnd(36, '0');
+          }
+          return 'OK';
+        
+        case 'evalsha':
+          // rate-limit-redis usa EVALSHA para ejecutar scripts Lua
+          // Simulamos el comportamiento del script de rate limiting
+          const [sha, numKeys, ...scriptArgs] = params;
+          const rlKey = scriptArgs[0];
+          const limit = parseInt(scriptArgs[1], 10);
+          const window = parseInt(scriptArgs[2], 10);
+          
+          // Incrementar contador
+          const count = parseInt(store.get(rlKey) || '0', 10) + 1;
+          store.set(rlKey, String(count));
+          
+          // Establecer TTL si es el primer request
+          if (count === 1) {
+            expirations.set(rlKey, Date.now() + window);
+          }
+          
+          // Retornar [current_count, ttl_ms]
+          const ttl = expirations.get(rlKey);
+          const ttlRemaining = ttl ? Math.max(0, ttl - Date.now()) : window;
+          return [count, ttlRemaining];
+        
         default:
           console.warn(`⚠️ [REDIS MOCK] Comando no implementado: ${cmd}`);
           return null;
