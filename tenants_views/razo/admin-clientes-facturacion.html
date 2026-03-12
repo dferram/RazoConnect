@@ -287,6 +287,34 @@
       </main>
     </div>
 
+    <!-- Modal Reset Password -->
+    <div id="modalResetPassword" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+      <div style="background: white; border-radius: 1rem; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin: 0 0 1rem 0; color: var(--razo-orange, #f97316); font-size: 1.25rem;">
+          <i class="bi bi-key-fill"></i> Restablecer contraseña
+        </h3>
+        <p style="margin-bottom: 1.5rem; color: #6b7280;">Cliente: <strong id="resetClienteName"></strong></p>
+        
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" for="newPassword">Nueva contraseña</label>
+          <input type="text" id="newPassword" class="form-input" placeholder="Ingresa nueva contraseña" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem;">
+        </div>
+        
+        <button type="button" class="btn btn-secondary" onclick="generateRandomPassword()" style="margin-bottom: 1.5rem; padding: 0.5rem 1rem; font-size: 0.85rem;">
+          <i class="bi bi-shuffle"></i> Generar Aleatoria
+        </button>
+        
+        <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-primary" onclick="saveNewPassword()" id="btnSavePassword" style="flex: 1;">
+            Guardar Cambios
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeResetPasswordModal()" style="flex: 1;">
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script src="js/layout.js" defer></script>
     <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/auth-manager.js"></script><script src="js/instructional-banner.js"></script>
@@ -445,6 +473,12 @@
                     <a class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" href="/admin-cliente-detalle.html?id=${cliente.clienteId}">
                       Ver detalles
                     </a>
+                    <button class="btn btn-warning" style="padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="openResetPasswordModal(${cliente.clienteId}, '${nombreCompleto}')" title="Restablecer contraseña">
+                      <i class="bi bi-key-fill"></i>
+                    </button>
+                    <button class="btn ${cliente.activo ? 'btn-danger' : 'btn-success'}" style="padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="toggleEstadoCliente(${cliente.clienteId}, ${cliente.activo})">
+                      ${cliente.activo ? '🚫 Desactivar' : '✅ Activar'}
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -558,7 +592,7 @@
                 <td>${estatusBadge}</td>
                 <td>
                   <div class="action-buttons">
-                    <a class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" href="/admin-pedido-detalle.html?id=${pedido.pedidoId}">
+                    <a class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" href="/admin-pedido-detalle.html?id=${pedido.pedidoId}" onclick="setNavigationContext('clientes-facturacion')">
                       Ver detalle
                     </a>
                     <button 
@@ -791,6 +825,176 @@
           currency: "MXN",
           minimumFractionDigits: 2,
         }).format(amount);
+      }
+
+      // ════════════════════════════════════════════════════════════
+      // GESTIÓN DE CLIENTES - RESET PASSWORD Y TOGGLE ESTADO
+      // ════════════════════════════════════════════════════════════
+
+      let currentResetClienteId = null;
+
+      function openResetPasswordModal(clienteId, clienteName) {
+        currentResetClienteId = clienteId;
+        document.getElementById('resetClienteName').textContent = clienteName;
+        document.getElementById('newPassword').value = '';
+        document.getElementById('modalResetPassword').style.display = 'flex';
+      }
+
+      function closeResetPasswordModal() {
+        currentResetClienteId = null;
+        document.getElementById('modalResetPassword').style.display = 'none';
+      }
+
+      function generateRandomPassword() {
+        const year = new Date().getFullYear();
+        const randomNum = Math.floor(Math.random() * 9000) + 1000;
+        const password = `Cliente${year}${randomNum}`;
+        document.getElementById('newPassword').value = password;
+      }
+
+      async function saveNewPassword() {
+        const newPassword = document.getElementById('newPassword').value.trim();
+        
+        if (!newPassword) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Campo requerido',
+            text: 'Por favor ingresa una nueva contraseña',
+          });
+          return;
+        }
+
+        if (newPassword.length < 6) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Contraseña muy corta',
+            text: 'La contraseña debe tener al menos 6 caracteres',
+          });
+          return;
+        }
+
+        const btnSave = document.getElementById('btnSavePassword');
+        const btnOriginal = btnSave.innerHTML;
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<div class="spinner" style="width: 16px; height: 16px;"></div>';
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/clientes/${currentResetClienteId}/reset-password`,
+            {
+              method: 'PUT',
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ newPassword }),
+            }
+          );
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Error al restablecer contraseña');
+          }
+
+          Swal.fire({
+            icon: 'success',
+            title: 'Contraseña actualizada',
+            text: 'La contraseña ha sido restablecida correctamente',
+            timer: 2000,
+            showConfirmButton: false,
+          });
+
+          closeResetPasswordModal();
+        } catch (error) {
+          console.error('Error resetting password:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'No se pudo restablecer la contraseña',
+          });
+        } finally {
+          btnSave.disabled = false;
+          btnSave.innerHTML = btnOriginal;
+        }
+      }
+
+      async function toggleEstadoCliente(clienteId, activoActual) {
+        const mensaje = `¿Seguro que deseas ${
+          activoActual ? "desactivar" : "activar"
+        } este cliente?`;
+
+        const result = await Swal.fire({
+          icon: activoActual ? "warning" : "question",
+          title: activoActual ? "Desactivar cliente" : "Activar cliente",
+          text: mensaje,
+          showCancelButton: true,
+          confirmButtonText: activoActual ? "Sí, desactivar" : "Sí, activar",
+          cancelButtonText: "Cancelar",
+          confirmButtonColor: activoActual ? "#dc3545" : "#16a34a",
+          cancelButtonColor: "#6b7280",
+        });
+
+        if (!result.isConfirmed) return;
+
+        const btn = event.currentTarget;
+        const btnOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML =
+          '<div class="spinner" style="width: 16px; height: 16px;"></div>';
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/admin/clientes/${clienteId}/estado`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${adminToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ activo: !activoActual }),
+            }
+          );
+
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            throw new Error(
+              data.message || "Error al actualizar estado del cliente"
+            );
+          }
+
+          showToast("Estado del cliente actualizado", "success");
+          await loadClientes();
+        } catch (error) {
+          console.error("Error toggling cliente:", error);
+          showToast(
+            error.message || "No se pudo actualizar el cliente",
+            "error"
+          );
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = btnOriginal;
+        }
+      }
+
+      // Cerrar modal al hacer clic fuera
+      document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('modalResetPassword');
+        if (modal) {
+          modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+              closeResetPasswordModal();
+            }
+          });
+        }
+      });
+
+      // ════════════════════════════════════════════════════════════
+      // SISTEMA DE CONTEXTO PARA BOTONES CONDICIONALES
+      // ════════════════════════════════════════════════════════════
+
+      function setNavigationContext(source) {
+        sessionStorage.setItem('pedido_detalle_source', source);
+        console.log(`🔗 [NAVEGACIÓN] Contexto establecido: ${source}`);
       }
 
       // ════════════════════════════════════════════════════════════

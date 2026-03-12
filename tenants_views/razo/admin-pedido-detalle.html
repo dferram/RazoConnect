@@ -1009,11 +1009,18 @@
           init();
         });
 
-        // Mostrar botones de Factura y Remisión solo para finanzas, admin y superadmin
+        // Mostrar botones de Factura y Remisión solo si se accede desde clientes-facturacion
         function setupFinanzasButtons() {
           try {
             const adminData = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
             const userRole = (adminData.rol || '').toLowerCase().trim();
+            
+            // Verificar contexto de navegación
+            const navigationSource = sessionStorage.getItem('pedido_detalle_source');
+            const isFromClientesFacturacion = navigationSource === 'clientes-facturacion';
+            
+            // Limpiar el contexto después de usarlo
+            sessionStorage.removeItem('pedido_detalle_source');
             
             const rolesPermitidos = ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'];
             const tieneAcceso = rolesPermitidos.includes(userRole);
@@ -1021,12 +1028,17 @@
             const btnRemision = document.getElementById('btnGenerarRemision');
             const btnFactura = document.getElementById('btnGenerarFactura');
             
-            if (tieneAcceso) {
+            // Solo mostrar botones si: (1) tiene el rol correcto Y (2) viene de clientes-facturacion
+            if (tieneAcceso && isFromClientesFacturacion) {
               if (btnRemision) btnRemision.style.display = 'inline-block';
               if (btnFactura) btnFactura.style.display = 'inline-block';
-              console.log(`✅ [PEDIDO-DETALLE] Botones de Factura/Remisión habilitados para rol: ${userRole}`);
+              console.log(`✅ [PEDIDO-DETALLE] Botones de Factura/Remisión habilitados (rol: ${userRole}, source: ${navigationSource})`);
             } else {
-              console.log(`🚫 [PEDIDO-DETALLE] Botones de Factura/Remisión ocultos para rol: ${userRole}`);
+              if (!isFromClientesFacturacion) {
+                console.log(`🚫 [PEDIDO-DETALLE] Botones ocultos - No viene de clientes-facturacion (source: ${navigationSource})`);
+              } else {
+                console.log(`🚫 [PEDIDO-DETALLE] Botones ocultos - Rol sin acceso: ${userRole}`);
+              }
             }
           } catch (error) {
             console.error('Error configurando botones de finanzas:', error);
