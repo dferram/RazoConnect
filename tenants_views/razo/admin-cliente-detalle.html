@@ -366,11 +366,11 @@
             confirmButtonText: "Ir al listado",
             confirmButtonColor: "#F97316",
           }).then(() => {
-            window.location.href = "/admin-clientes.html";
+            window.location.href = "/admin-clientes-facturacion.html";
           });
         } else {
           console.warn("Cliente no válido. Redirigiendo al listado de clientes...");
-          window.location.href = "/admin-clientes.html";
+          window.location.href = "/admin-clientes-facturacion.html";
         }
       }
 
@@ -795,7 +795,7 @@
       // Cargar botón de volver
       window.addEventListener('DOMContentLoaded', function() {
         loadBackButton({
-          backUrl: '/admin-clientes.html',
+          backUrl: '/admin-clientes-facturacion.html',
           backText: 'Volver a clientes'
         });
       });
