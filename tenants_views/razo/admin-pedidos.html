@@ -484,11 +484,35 @@
     <script src="js/admin-ajuste-pedidos.js"></script>
     <script src="js/instructional-banner.js"></script>
     <script>
-      // Authentication check
-      const adminToken = localStorage.getItem("razoconnect_admin_token");
-      if (!adminToken) {
-        window.location.href = "/login.html";
+      // Authentication check - Wait for auth guard to complete
+      function checkAuthBeforeLoad() {
+        const adminToken = localStorage.getItem("razoconnect_admin_token");
+        if (!adminToken) {
+          window.location.href = "/login.html";
+          return false;
+        }
+        return true;
       }
+
+      // Wait for auth verification to complete before loading data
+      function waitForAuthThenLoad() {
+        if (!checkAuthBeforeLoad()) return;
+        
+        // Check if auth verification is complete
+        if (window.adminAuthVerified) {
+          // Auth verified, safe to load
+          return;
+        } else if (window.adminAuthVerifying) {
+          // Still verifying, wait a bit
+          setTimeout(waitForAuthThenLoad, 100);
+        } else {
+          // Auth guard hasn't started yet, wait
+          setTimeout(waitForAuthThenLoad, 100);
+        }
+      }
+
+      // Start the auth check process
+      waitForAuthThenLoad();
 
       // FASE 3 - TASK 2: Get user role
       function getUserRole() {
@@ -669,6 +693,13 @@
                           onclick="surtirPedido(${order.pedidoId})"
                           title="Marcar como surtido (solo si todos los productos tienen stock)">
                           Surtir pedido
+                        </button>
+                        <button 
+                          class="btn btn-warning" 
+                          style="padding: 0.5rem 1rem; font-size: 0.875rem;"
+                          onclick="abrirModalGenerarRemision(${order.pedidoId})"
+                          title="Generar remisión parcial o completa">
+                          📝 Generar Remisión
                         </button>
                       ` : ''}
                     </div>
