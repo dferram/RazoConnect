@@ -934,6 +934,7 @@
       // Global variables for order ID (needed by modal functions)
       let selectedOrderId = null;
       let selectedOrderStatus = null;
+      let adminToken = null; // Global token for PDF/Factura functions
 
       // FASE 3 - TASK 3: Get user role
       function getUserRole() {
@@ -996,7 +997,8 @@
           return;
         }
 
-        const adminToken = localStorage.getItem("razoconnect_admin_token");
+        // Assign to global variable for PDF/Factura functions
+        adminToken = localStorage.getItem("razoconnect_admin_token");
         if (!adminToken) {
           window.location.href = "/login.html";
           return;
@@ -1027,12 +1029,16 @@
             
             const btnRemision = document.getElementById('btnGenerarRemision');
             const btnFactura = document.getElementById('btnGenerarFactura');
+            const btnAjustarPedido = document.getElementById('btnAjustarPedido');
             
             // Solo mostrar botones si: (1) tiene el rol correcto Y (2) viene de clientes-facturacion
             if (tieneAcceso && isFromClientesFacturacion) {
               if (btnRemision) btnRemision.style.display = 'inline-block';
               if (btnFactura) btnFactura.style.display = 'inline-block';
+              // OCULTAR botón de ajustar pedido cuando viene de clientes/facturación
+              if (btnAjustarPedido) btnAjustarPedido.style.display = 'none';
               console.log(`✅ [PEDIDO-DETALLE] Botones de Factura/Remisión habilitados (rol: ${userRole}, source: ${navigationSource})`);
+              console.log(`🚫 [PEDIDO-DETALLE] Botón Ajustar Pedido oculto - Acceso desde clientes/facturación`);
             } else {
               if (!isFromClientesFacturacion) {
                 console.log(`🚫 [PEDIDO-DETALLE] Botones ocultos - No viene de clientes-facturacion (source: ${navigationSource})`);

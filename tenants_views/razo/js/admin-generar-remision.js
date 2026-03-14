@@ -1,10 +1,21 @@
 /**
  * MÓDULO DE GENERACIÓN DE REMISIONES
  * Permite seleccionar items de un pedido y generar remisiones parciales o completas
+ * Versión dinámica: Oculta precios automáticamente para rol 'inventarios'
  */
 
 let pedidoActual = null;
 let itemsPendientes = [];
+
+// Función para obtener el rol del usuario
+function getUserRole() {
+    try {
+        const adminData = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
+        return (adminData.rol || adminData.role || '').toString().toLowerCase().trim();
+    } catch (error) {
+        return 'admin';
+    }
+}
 
 async function abrirModalGenerarRemision(pedidoId) {
     try {
@@ -48,6 +59,10 @@ async function abrirModalGenerarRemision(pedidoId) {
 }
 
 function mostrarModalRemision() {
+    // Detectar rol del usuario para ocultar precios si es necesario
+    const userRole = getUserRole();
+    const isInventarios = userRole === 'inventarios';
+    
     const itemsHTML = itemsPendientes.map(item => {
         const disponible = Math.min(item.cantidad_pendiente, Math.floor(item.stock_piezas / (item.tamanopaquete || 1)));
         
@@ -88,9 +103,11 @@ function mostrarModalRemision() {
                            ${disponible > 0 ? '' : 'disabled'}
                            data-detalle-id="${item.detalleid}">
                 </td>
+                ${!isInventarios ? `
                 <td class="text-end">
                     <strong>$${parseFloat(item.preciounitario).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong>
                 </td>
+                ` : ''}
             </tr>
         `;
     }).join('');
@@ -107,7 +124,7 @@ function mostrarModalRemision() {
                 <div class="alert alert-info mb-3">
                     <i class="bi bi-info-circle"></i>
                     <strong>Entregas Parciales:</strong> Puedes generar múltiples remisiones para un mismo pedido.
-                    Solo se cobrará (CXC) por los productos incluidos en cada remisión.
+                    ${!isInventarios ? 'Solo se cobrará (CXC) por los productos incluidos en cada remisión.' : 'Los productos se marcarán como surtidos en el inventario.'}
                 </div>
 
                 <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
@@ -126,7 +143,7 @@ function mostrarModalRemision() {
                                 <th class="text-center">Pendiente</th>
                                 <th class="text-center">Disponible</th>
                                 <th>Cantidad a Surtir</th>
-                                <th class="text-end">Precio Unit.</th>
+                                ${!isInventarios ? '<th class="text-end">Precio Unit.</th>' : ''}
                             </tr>
                         </thead>
                         <tbody>
@@ -141,6 +158,7 @@ function mostrarModalRemision() {
                               placeholder="Ej: Entrega parcial - Resto en backorder"></textarea>
                 </div>
 
+                ${!isInventarios ? `
                 <div class="mt-3 p-3 bg-light rounded">
                     <div class="d-flex justify-content-between align-items-center">
                         <span><strong>Total de la Remisión:</strong></span>
@@ -148,6 +166,7 @@ function mostrarModalRemision() {
                     </div>
                     <small class="text-muted">Este monto se registrará en CXC si el cliente es de crédito</small>
                 </div>
+                ` : ''}
             </div>
         `,
         width: '90%',
@@ -157,8 +176,12 @@ function mostrarModalRemision() {
         confirmButtonColor: '#F97316',
         cancelButtonColor: '#6c757d',
         didOpen: () => {
+            const userRole = getUserRole();
+            const isInventarios = userRole === 'inventarios';
             configurarEventosModal();
-            calcularTotalRemision();
+            if (!isInventarios) {
+                calcularTotalRemision();
+            }
         },
         preConfirm: () => {
             return validarYObtenerDatos();
@@ -171,6 +194,9 @@ function mostrarModalRemision() {
 }
 
 function configurarEventosModal() {
+    const userRole = getUserRole();
+    const isInventarios = userRole === 'inventarios';
+    
     const selectAll = document.getElementById('select-all');
     const checkboxes = document.querySelectorAll('.item-checkbox');
     const cantidadInputs = document.querySelectorAll('.cantidad-input');
@@ -181,15 +207,25 @@ function configurarEventosModal() {
                 cb.checked = e.target.checked;
             }
         });
-        calcularTotalRemision();
+        if (!isInventarios) {
+            calcularTotalRemision();
+        }
     });
 
     checkboxes.forEach(cb => {
-        cb.addEventListener('change', calcularTotalRemision);
+        cb.addEventListener('change', () => {
+            if (!isInventarios) {
+                calcularTotalRemision();
+            }
+        });
     });
 
     cantidadInputs.forEach(input => {
-        input.addEventListener('input', calcularTotalRemision);
+        input.addEventListener('input', () => {
+            if (!isInventarios) {
+                calcularTotalRemision();
+            }
+        });
         input.addEventListener('change', (e) => {
             const max = parseInt(e.target.max);
             const value = parseInt(e.target.value);
@@ -199,7 +235,9 @@ function configurarEventosModal() {
             if (value < 1) {
                 e.target.value = 1;
             }
-            calcularTotalRemision();
+            if (!isInventarios) {
+                calcularTotalRemision();
+            }
         });
     });
 }
@@ -303,17 +341,20 @@ async function generarRemisionAPI(datos) {
             throw new Error(result.error || 'Error al generar remisión');
         }
 
+        const userRole = getUserRole();
+        const isInventarios = userRole === 'inventarios';
+
         await Swal.fire({
             icon: 'success',
             title: '¡Remisión Generada!',
             html: `
                 <div class="text-start">
                     <p><strong>Folio:</strong> ${result.remision.folio}</p>
-                    <p><strong>Total:</strong> $${parseFloat(result.remision.total_remision).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>
+                    ${!isInventarios ? `<p><strong>Total:</strong> $${parseFloat(result.remision.total_remision).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</p>` : ''}
                     <p><strong>Items surtidos:</strong> ${result.remision.items_surtidos}</p>
-                    ${result.remision.cxc_generado ? 
+                    ${!isInventarios && result.remision.cxc_generado ? 
                         '<p class="text-success"><i class="bi bi-check-circle"></i> Movimiento de CXC registrado</p>' : 
-                        '<p class="text-muted">Cliente de contado - Sin CXC</p>'
+                        !isInventarios ? '<p class="text-muted">Cliente de contado - Sin CXC</p>' : ''
                     }
                 </div>
             `,
