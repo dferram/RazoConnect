@@ -1084,6 +1084,18 @@
             const btnFactura = document.getElementById('btnGenerarFactura');
             const btnAjustarPedido = document.getElementById('btnAjustarPedido');
             
+            // Generar Remisión: Available for inventarios, finanzas, and admin roles
+            const rolesConRemision = ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas', 'inventarios'];
+            if (btnRemision) {
+              btnRemision.style.display = rolesConRemision.includes(userRole) ? 'inline-block' : 'none';
+            }
+            
+            // Generar Factura: Only for finanzas and admin roles
+            const rolesConFactura = ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'];
+            if (btnFactura) {
+              btnFactura.style.display = rolesConFactura.includes(userRole) ? 'inline-block' : 'none';
+            }  
+            
             // Solo mostrar botones si: (1) tiene el rol correcto Y (2) viene de clientes-facturacion
             if (tieneAcceso && isFromClientesFacturacion) {
               if (btnRemision) btnRemision.style.display = 'inline-block';
@@ -1696,12 +1708,36 @@
           }
           
           try {
-            // Check if user is inventarios to hide prices in PDF
+            // Get admin token
+            const adminToken = localStorage.getItem("razoconnect_admin_token");
+            if (!adminToken) {
+              console.error("No admin token found");
+              window.location.href = "/login.html";
+              return;
+            }
+
+            // Check user role for dynamic PDF generation
             const userRole = getUserRole();
             const isInventarios = userRole === 'inventarios';
-            const queryParam = isInventarios ? '?mostrarPrecios=false' : '';
+            const isFinanzas = userRole === 'finanzas' || userRole === 'gerente_finanzas';
             
-            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/pdf${queryParam}`, {
+            // Build query params based on role
+            let queryParams = [];
+            
+            if (isInventarios) {
+              // Inventarios: No prices, only backorder items
+              queryParams.push('mostrarPrecios=false');
+              queryParams.push('filtrarPorRol=true');
+            } else if (isFinanzas) {
+              // Finanzas: With prices, only in-stock items
+              queryParams.push('mostrarPrecios=true');
+              queryParams.push('filtrarPorRol=true');
+            }
+            // Admin/other roles: Show everything with prices (default behavior)
+            
+            const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : '';
+            
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/pdf${queryString}`, {
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${adminToken}`

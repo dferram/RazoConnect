@@ -11,6 +11,9 @@ async function generarPDFPedido(req, res) {
     // Support for hiding prices (for inventarios role)
     const mostrarPrecios = req.query.mostrarPrecios !== 'false';
     
+    // Support for role-based filtering (inventarios vs finanzas)
+    const filtrarPorRol = req.query.filtrarPorRol === 'true';
+    
     // Normalizar userId — forzar a número para comparaciones con la DB
     const userIdRaw = req.user?.userId 
         ?? req.user?.clienteid 
@@ -248,18 +251,34 @@ async function generarPDFPedido(req, res) {
         renderHeader(doc, pedido, logoPath, logoExists);
 
         // Separate items by REAL stock availability (FIXED CALCULATION)
-        const itemsEnExistencia = detalles.filter(item => {
+        let itemsEnExistencia = detalles.filter(item => {
             const stockActual = parseInt(item.stock_actual_variante) || 0;
             const cantidadRequerida = parseInt(item.cantidad) * parseInt(item.tamano_cantidad || 1);
             const esBajoPedido = stockActual < cantidadRequerida;
             return !esBajoPedido;
         });
-        const itemsBajoPedido = detalles.filter(item => {
+        let itemsBajoPedido = detalles.filter(item => {
             const stockActual = parseInt(item.stock_actual_variante) || 0;
             const cantidadRequerida = parseInt(item.cantidad) * parseInt(item.tamano_cantidad || 1);
             const esBajoPedido = stockActual < cantidadRequerida;
             return esBajoPedido;
         });
+
+        // ROLE-BASED FILTERING: Apply filtering if requested
+        if (filtrarPorRol) {
+            const isInventarios = userRole === 'inventarios';
+            const isFinanzas = ['finanzas', 'gerente_finanzas'].includes(userRole);
+            
+            if (isInventarios) {
+                // Inventarios only sees BACKORDER items (without prices)
+                itemsEnExistencia = [];
+                // itemsBajoPedido stays as is
+            } else if (isFinanzas) {
+                // Finanzas only sees IN-STOCK items (with prices)
+                itemsBajoPedido = [];
+                // itemsEnExistencia stays as is
+            }
+        }
 
         let yPosition = 260;
         const rowHeight = 25;
