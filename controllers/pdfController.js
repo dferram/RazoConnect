@@ -8,6 +8,9 @@ async function generarPDFPedido(req, res) {
     const pedidoId = parseInt(req.params.id);
     const { tenant_id } = req.tenant;
     
+    // Support for hiding prices (for inventarios role)
+    const mostrarPrecios = req.query.mostrarPrecios !== 'false';
+    
     // Normalizar userId — forzar a número para comparaciones con la DB
     const userIdRaw = req.user?.userId 
         ?? req.user?.clienteid 
@@ -280,373 +283,402 @@ async function generarPDFPedido(req, res) {
                .fillColor(headerColor)
                .text(title, 50, yPos);
 
-            const headerY = yPos + 25;
-            doc.fontSize(9)
-               .font('Helvetica-Bold')
-               .fillColor('#FFFFFF')
-               .rect(50, headerY, 512, 20)
-               .fillAndStroke(headerColor, headerColor);
+    const headerY = yPos + 25;
+    doc.fontSize(9)
+       .font('Helvetica-Bold')
+       .fillColor('#FFFFFF')
+       .rect(50, headerY, 512, 20)
+       .fillAndStroke(headerColor, headerColor);
 
-            doc.fillColor('#FFFFFF')
-               .text('CANT.', 55, headerY + 6)
-               .text('DESCRIPCIÓN', 110, headerY + 6)
-               .text('TAMAÑO', 290, headerY + 6)
-               .text('ESTADO', 350, headerY + 6)
-               .text('P. UNIT.', 420, headerY + 6)
-               .text('TOTAL', 480, headerY + 6, { align: 'right', width: 75 });
+    doc.fillColor('#FFFFFF')
+       .text('CANT.', 55, headerY + 6)
+       .text('DESCRIPCIÓN', 110, headerY + 6)
+       .text('TAMAÑO', 290, headerY + 6)
+       .text('ESTADO', 350, headerY + 6);
+    
+    // Only show price columns if mostrarPrecios is true
+    if (mostrarPrecios) {
+        doc.text('P. UNIT.', 420, headerY + 6)
+           .text('TOTAL', 480, headerY + 6, { align: 'right', width: 75 });
+    }
 
-            return headerY + 30;
-        };
+    return headerY + 30;
+};
 
-        // Helper function to render items (SMART PAGINATION)
-        const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = '') => {
-            let currentY = startY;
-            doc.font('Helvetica').fillColor('#333333');
+// Helper function to render items (SMART PAGINATION)
+// Pass mostrarPrecios to control price visibility
+const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = '', mostrarPrecios = true) => {
+    let currentY = startY;
+    doc.font('Helvetica').fillColor('#333333');
 
-            items.forEach((item, index) => {
-                // Check if there's space for complete item block (row height + padding = ~30pts)
-                // Use 730 as threshold to ensure we have at least 30pts before page end (760)
-                if (currentY + rowHeight > 730) {
-                    doc.addPage();
-                    currentY = 260; // Start below header on new page
-                }
-
-                if (index % 2 === 0) {
-                    doc.rect(50, currentY - 5, 512, rowHeight)
-                       .fillAndStroke(alternateColor, alternateColor);
-                }
-
-                const descripcionLinea1 = `${item.producto_nombre}`;
-                const descripcionLinea2 = item.color_nombre 
-                    ? `${item.variante_nombre} - Color: ${item.color_nombre}`
-                    : `${item.variante_nombre}`;
-
-                // 🚨 MISIÓN 4: Use Math.round() to prevent decimal issues in cantidad
-                const cantidadSegura = Math.round(parseInt(item.cantidad) || 0);
-                const tamanoSeguro = Math.round(parseInt(item.tamano_cantidad) || 1);
-                
-                // Determinar estado del badge
-                const stockActual = parseInt(item.stock_actual_variante) || 0;
-                const cantidadRequerida = cantidadSegura * tamanoSeguro;
-                const hayStockSuficiente = stockActual >= cantidadRequerida;
-                
-                // Determinar si el pedido ya fue procesado/surtido por su estatus real
-                // Los estatus que indican que el pedido ya fue atendido:
-                const estatusSurtido = ['surtido', 'enviado', 'entregado', 'confirmado'];
-                const pedidoProcesado = pedidoEstatus && estatusSurtido.includes(pedidoEstatus.toLowerCase().trim());
-                
-                let badgeColor, badgeText;
-                if (!hayStockSuficiente) {
-                    // Sin stock suficiente al momento del pedido → Bajo Pedido
-                    badgeColor = '#DC2626'; // Rojo
-                    badgeText = 'BAJO PEDIDO';
-                } else if (pedidoProcesado) {
-                    // El pedido ya fue surtido/enviado/entregado → Surtido
-                    badgeColor = '#F97316'; // Naranja
-                    badgeText = 'SURTIDO';
-                } else {
-                    // Hay stock y el pedido aún está pendiente → Con Stock
-                    badgeColor = '#16A34A'; // Verde
-                    badgeText = 'CON STOCK';
-                }
-                
-                doc.fillColor('#333333')
-                   .fontSize(9)
-                   .font('Helvetica')
-                   .text(cantidadSegura, 55, currentY)
-                   .text(descripcionLinea1, 110, currentY, { width: 170 })
-                   .text(descripcionLinea2, 110, currentY + 10, { width: 170 })
-                   .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unit.', 290, currentY);
-                
-                // Badge de estado con color
-                doc.save();
-                doc.roundedRect(350, currentY - 2, 60, 12, 3)
-                   .fillAndStroke(badgeColor, badgeColor);
-                doc.restore();
-                
-                doc.fontSize(7)
-                   .font('Helvetica-Bold')
-                   .fillColor('#FFFFFF')
-                   .text(badgeText, 350, currentY + 1, { width: 60, align: 'center' });
-                
-                doc.fillColor('#333333')
-                   .fontSize(9)
-                   .font('Helvetica')
-                   .text(`$${parseFloat(item.preciounitario).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 420, currentY)
-                   .text(`$${parseFloat(item.subtotal).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 480, currentY, { align: 'right', width: 75 });
-
-                currentY += rowHeight;
-            });
-
-            return currentY;
-        };
-
-        // Render IN-STOCK items section
-        if (itemsEnExistencia.length > 0) {
-            yPosition = renderTableHeader('PRODUCTOS LISTOS PARA ENTREGA', yPosition, '#F97316');
-            yPosition = renderItems(itemsEnExistencia, yPosition, '#F9F9F9', pedido.estatus);
-            yPosition += 10;
-        }
-
-        // Render BACKORDER items section with distinct styling
-        if (itemsBajoPedido.length > 0) {
-            // Add minimal spacing if there were in-stock items
-            if (itemsEnExistencia.length > 0) {
-                yPosition += 5;
-            }
-
-            yPosition = renderTableHeader('PRODUCTOS BAJO PEDIDO (PENDIENTES)', yPosition, '#DC2626');
-            yPosition = renderItems(itemsBajoPedido, yPosition, '#FEE2E2', pedido.estatus);
-            
-            // Add informative note immediately after backorder table
-            yPosition += 5;
-            
-            // Dashed border box for the note
-            doc.save();
-            doc.strokeColor('#DC2626')
-               .lineWidth(1)
-               .dash(5, { space: 3 })
-               .rect(50, yPosition, 512, 50)
-               .stroke();
-            doc.restore();
-
-            doc.fontSize(8)
-               .font('Helvetica-Bold')
-               .fillColor('#DC2626')
-               .text('NOTA IMPORTANTE:', 60, yPosition + 10);
-            
-            doc.fontSize(8)
-               .font('Helvetica')
-               .fillColor('#666666')
-               .text(
-                   'Los productos marcados como BAJO PEDIDO tienen un tiempo estimado de fabricación de 7-15 días hábiles. ' +
-                   'Se le notificará vía correo electrónico cuando estén listos para su entrega.',
-                   60,
-                   yPosition + 25,
-                   { width: 492, align: 'left', lineGap: 2 }
-               );
-            
-            yPosition += 55;
-        }
-
-        yPosition += 5;
-
-        doc.moveTo(50, yPosition)
-           .lineTo(562, yPosition)
-           .strokeColor('#CCCCCC')
-           .lineWidth(1)
-           .stroke();
-
-        yPosition += 10;
-
-        // Calculate totals by stock status - FORCED RECALCULATION WITH CORRECT FORMULA
-        let totalEnStock = 0;
-        let totalSinStock = 0;
-        let totalPiezasEntregadas = 0;
-
-        detalles.forEach((item) => {
-            // CORRECT SUBTOTAL CALCULATION: (precioUnitario * tamano_cantidad) * cantidad
-            const precioUnitario = parseFloat(item.preciounitario) || 0;
-            const tamanoCantidad = parseInt(item.tamano_cantidad || 1);
-            const cantidad = parseInt(item.cantidad) || 0;
-            const itemSubtotal = parseFloat(((precioUnitario * tamanoCantidad) * cantidad).toFixed(2));
-            const piezasTotales = parseInt(item.piezastotales) || 0;
-            
-            // Use REAL stock to determine backorder status
-            const stockActual = parseInt(item.stock_actual_variante) || 0;
-            const cantidadRequerida = cantidad * tamanoCantidad;
-            const esBajoPedido = stockActual < cantidadRequerida;
-            
-            if (esBajoPedido) {
-                totalSinStock += itemSubtotal;
-            } else {
-                totalEnStock += itemSubtotal;
-            }
-            
-            totalPiezasEntregadas += piezasTotales;
-        });
-
-        // Recalculate subtotal from actual items (DO NOT trust database montototal)
-        const subtotalProductos = parseFloat((totalEnStock + totalSinStock).toFixed(2));
-        
-        // Parse shipping with fallback to 0
-        const costoEnvio = parseFloat(pedido.costoenvio) || 0;
-        
-        // CRITICAL FIX: Only apply discount if there's a valid coupon ID (must be a positive integer)
-        // This prevents 'phantom discounts' on orders without promotions
-        const cuponIdNumerico = parseInt(pedido.cupon_id);
-        const tieneCupon = !isNaN(cuponIdNumerico) && cuponIdNumerico > 0;
-        const montoDescuento = tieneCupon ? (parseFloat(pedido.monto_descuento) || 0) : 0;
-        
-        // Calculate REAL total: Subtotal + Shipping - Discount (only if coupon exists)
-        const totalCalculado = parseFloat((subtotalProductos + costoEnvio - montoDescuento).toFixed(2));
-
-        // Financial Summary Box - Dynamic height based on content
-        const boxX = 350;
-        const boxWidth = 212;
-        let boxHeight = 28; // Base height for title
-        
-        // Calculate dynamic height
-        boxHeight += 12; // Total Piezas
-        boxHeight += 12; // Total En Stock
-        boxHeight += 12; // Total Backorder
-        boxHeight += 6;  // Separator
-        boxHeight += 12; // Subtotal
-        if (costoEnvio > 0) boxHeight += 12;
-        if (tieneCupon && montoDescuento > 0) boxHeight += 12;
-        boxHeight += 6;  // Separator before total
-        boxHeight += 14; // Total final
-        
-        // Check if we need a new page for the financial summary box + footer text (~50px extra)
-        const spaceNeeded = boxHeight + 50;
-        if (yPosition + spaceNeeded > 750) {
+    items.forEach((item, index) => {
+        // Check if there's space for complete item block (row height + padding = ~30pts)
+        // Use 730 as threshold to ensure we have at least 30pts before page end (760)
+        if (currentY + rowHeight > 730) {
             doc.addPage();
-            yPosition = 260; // Start below header on new page
+            currentY = 260; // Start below header on new page
+        }
+
+        if (index % 2 === 0) {
+            doc.rect(50, currentY - 5, 512, rowHeight)
+               .fillAndStroke(alternateColor, alternateColor);
+        }
+
+        const descripcionLinea1 = `${item.producto_nombre}`;
+        const descripcionLinea2 = item.color_nombre 
+            ? `${item.variante_nombre} - Color: ${item.color_nombre}`
+            : `${item.variante_nombre}`;
+
+        // 🚨 MISIÓN 4: Use Math.round() to prevent decimal issues in cantidad
+        const cantidadSegura = Math.round(parseInt(item.cantidad) || 0);
+        const tamanoSeguro = Math.round(parseInt(item.tamano_cantidad) || 1);
+        
+        // Determinar estado del badge
+        const stockActual = parseInt(item.stock_actual_variante) || 0;
+        const cantidadRequerida = cantidadSegura * tamanoSeguro;
+        const hayStockSuficiente = stockActual >= cantidadRequerida;
+        
+        // Determinar si el pedido ya fue procesado/surtido por su estatus real
+        // Los estatus que indican que el pedido ya fue atendido:
+        const estatusSurtido = ['surtido', 'enviado', 'entregado', 'confirmado'];
+        const pedidoProcesado = pedidoEstatus && estatusSurtido.includes(pedidoEstatus.toLowerCase().trim());
+        
+        let badgeColor, badgeText;
+        if (!hayStockSuficiente) {
+            // Sin stock suficiente al momento del pedido → Bajo Pedido
+            badgeColor = '#DC2626'; // Rojo
+            badgeText = 'BAJO PEDIDO';
+        } else if (pedidoProcesado) {
+            // El pedido ya fue surtido/enviado/entregado → Surtido
+            badgeColor = '#F97316'; // Naranja
+            badgeText = 'SURTIDO';
+        } else {
+            // Hay stock y el pedido aún está pendiente → Con Stock
+            badgeColor = '#16A34A'; // Verde
+            badgeText = 'CON STOCK';
         }
         
+        doc.fillColor('#333333')
+           .fontSize(9)
+           .font('Helvetica')
+           .text(cantidadSegura, 55, currentY)
+           .text(descripcionLinea1, 110, currentY, { width: 170 })
+           .text(descripcionLinea2, 110, currentY + 10, { width: 170 })
+           .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unit.', 290, currentY);
+        
+        // Badge de estado con color
         doc.save();
-        doc.roundedRect(boxX, yPosition, boxWidth, boxHeight, 5)
-           .fillAndStroke('#FFF7ED', '#F97316');
+        doc.roundedRect(350, currentY - 2, 60, 12, 3)
+           .fillAndStroke(badgeColor, badgeColor);
         doc.restore();
         
-        // Box Title
-        doc.fontSize(11)
+        doc.fontSize(7)
            .font('Helvetica-Bold')
-           .fillColor('#F97316')
-           .text('RESUMEN FINANCIERO', boxX + 5, yPosition + 8, { width: boxWidth - 10, align: 'center' });
+           .fillColor('#FFFFFF')
+           .text(badgeText, 350, currentY + 1, { width: 60, align: 'center' });
         
-        // Separator line
-        doc.moveTo(boxX + 10, yPosition + 22)
-           .lineTo(boxX + boxWidth - 10, yPosition + 22)
-           .strokeColor('#F97316')
-           .lineWidth(0.5)
-           .stroke();
-        
-        let lineY = yPosition + 28;
-        
-        // Total Pieces
-        doc.fontSize(9)
-           .font('Helvetica')
-           .fillColor('#666666')
-           .text('Total Piezas:', boxX + 10, lineY);
-        
-        doc.font('Helvetica-Bold')
-           .fillColor('#333333')
-           .text(`${totalPiezasEntregadas.toLocaleString('es-MX')} pzas`, boxX + boxWidth - 70, lineY, { width: 60, align: 'right' });
-        
-        lineY += 12;
-        
-        // Total En Stock (green)
-        doc.fontSize(8)
-           .font('Helvetica')
-           .fillColor('#666666')
-           .text('Productos en Stock:', boxX + 10, lineY);
-        
-        doc.font('Helvetica-Bold')
-           .fillColor('#10B981')
-           .text(`$${totalEnStock.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
-        
-        lineY += 12;
-        
-        // Total Backorder (red)
-        doc.fontSize(8)
-           .font('Helvetica')
-           .fillColor('#666666')
-           .text('Productos Backorder:', boxX + 10, lineY);
-        
-        doc.font('Helvetica-Bold')
-           .fillColor('#DC2626')
-           .text(`$${totalSinStock.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
-        
-        lineY += 12;
-        
-        // Separator
-        doc.moveTo(boxX + 10, lineY)
-           .lineTo(boxX + boxWidth - 10, lineY)
-           .strokeColor('#E5E7EB')
-           .lineWidth(0.3)
-           .stroke();
-        
-        lineY += 6;
-        
-        // Subtotal
-        doc.fontSize(9)
-           .font('Helvetica')
-           .fillColor('#666666')
-           .text('Subtotal:', boxX + 10, lineY);
-        
-        doc.font('Helvetica-Bold')
-           .fillColor('#333333')
-           .text(`$${subtotalProductos.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
-        
-        lineY += 12;
-        
-        // Shipping (if applicable)
-        if (costoEnvio > 0) {
-            doc.fontSize(9)
+        // Only show prices if mostrarPrecios is true
+        if (mostrarPrecios) {
+            doc.fillColor('#333333')
+               .fontSize(9)
                .font('Helvetica')
-               .fillColor('#666666')
-               .text('Envío:', boxX + 10, lineY);
-            
-            doc.font('Helvetica-Bold')
-               .fillColor('#333333')
-               .text(`$${costoEnvio.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
-            
-            lineY += 12;
+               .text(`$${parseFloat(item.preciounitario).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 420, currentY)
+               .text(`$${parseFloat(item.subtotal).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 480, currentY, { align: 'right', width: 75 });
         }
-        
-        // Discount (if applicable)
-        if (tieneCupon && montoDescuento > 0) {
-            doc.fontSize(9)
-               .font('Helvetica')
-               .fillColor('#DC2626')
-               .text('Descuento:', boxX + 10, lineY);
-            
-            doc.font('Helvetica-Bold')
-               .fillColor('#DC2626')
-               .text(`-$${montoDescuento.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
-            
-            lineY += 12;
-        }
-        
-        // Separator before total
-        doc.moveTo(boxX + 10, lineY)
-           .lineTo(boxX + boxWidth - 10, lineY)
-           .strokeColor('#F97316')
-           .lineWidth(1)
-           .stroke();
-        
-        lineY += 8;
-        
-        // Total
-        doc.fontSize(11)
-           .font('Helvetica-Bold')
-           .fillColor('#F97316')
-           .text('TOTAL:', boxX + 10, lineY);
-        
-        doc.fontSize(12)
-           .fillColor('#F97316')
-           .text(`$${totalCalculado.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN`, boxX + boxWidth - 110, lineY, { width: 100, align: 'right' });
 
-        yPosition += boxHeight + 5;
+        currentY += rowHeight;
+    });
 
-        yPosition += 25;
+    return currentY;
+};
 
-        doc.fontSize(8)
-           .font('Helvetica')
-           .fillColor('#666666')
-           .text('Este documento es una remisión de venta. Conserve este comprobante para cualquier aclaración.', 50, yPosition, {
-               width: 512,
-               align: 'center'
-           });
+// Render IN-STOCK items section
+if (itemsEnExistencia.length > 0) {
+    yPosition = renderTableHeader('PRODUCTOS LISTOS PARA ENTREGA', yPosition, '#F97316');
+    yPosition = renderItems(itemsEnExistencia, yPosition, '#F9F9F9', pedido.estatus, mostrarPrecios);
+    yPosition += 10;
+}
 
-        yPosition += 15;
-        doc.text('Gracias por su preferencia.', 50, yPosition, {
-            width: 512,
-            align: 'center'
-        });
+// Render BACKORDER items section with distinct styling
+if (itemsBajoPedido.length > 0) {
+    // Add minimal spacing if there were in-stock items
+    if (itemsEnExistencia.length > 0) {
+        yPosition += 5;
+    }
 
-        doc.end();
+    yPosition = renderTableHeader('PRODUCTOS BAJO PEDIDO (PENDIENTES)', yPosition, '#DC2626');
+    yPosition = renderItems(itemsBajoPedido, yPosition, '#FEE2E2', pedido.estatus, mostrarPrecios);
+    
+    // Add informative note immediately after backorder table
+    yPosition += 5;
+    
+    // Dashed border box for the note
+    doc.save();
+    doc.strokeColor('#DC2626')
+       .lineWidth(1)
+       .dash(5, { space: 3 })
+       .rect(50, yPosition, 512, 50)
+       .stroke();
+    doc.restore();
+
+    doc.fontSize(8)
+       .font('Helvetica-Bold')
+       .fillColor('#DC2626')
+       .text('NOTA IMPORTANTE:', 60, yPosition + 10);
+    
+    doc.fontSize(8)
+       .font('Helvetica')
+       .fillColor('#666666')
+       .text(
+           'Los productos marcados como BAJO PEDIDO tienen un tiempo estimado de fabricación de 7-15 días hábiles. ' +
+           'Se le notificará vía correo electrónico cuando estén listos para su entrega.',
+           60,
+           yPosition + 25,
+           { width: 492, align: 'left', lineGap: 2 }
+       );
+    
+    yPosition += 55;
+}
+
+yPosition += 5;
+
+doc.moveTo(50, yPosition)
+   .lineTo(562, yPosition)
+   .strokeColor('#CCCCCC')
+   .lineWidth(1)
+   .stroke();
+
+yPosition += 10;
+
+// Only render financial summary if mostrarPrecios is true
+if (!mostrarPrecios) {
+    // Add note for inventory users
+    doc.fontSize(10)
+       .font('Helvetica')
+       .fillColor('#666666')
+       .text('Este documento es una remisión de inventario. Los precios han sido omitidos.', 50, yPosition, {
+           width: 512,
+           align: 'center'
+       });
+    
+    yPosition += 20;
+    doc.text('Gracias por su colaboración.', 50, yPosition, {
+        width: 512,
+        align: 'center'
+    });
+    
+    doc.end();
+    return;
+}
+
+// Calculate totals by stock status - FORCED RECALCULATION WITH CORRECT FORMULA
+let totalEnStock = 0;
+let totalSinStock = 0;
+let totalPiezasEntregadas = 0;
+
+detalles.forEach((item) => {
+    // CORRECT SUBTOTAL CALCULATION: (precioUnitario * tamano_cantidad) * cantidad
+    const precioUnitario = parseFloat(item.preciounitario) || 0;
+    const tamanoCantidad = parseInt(item.tamano_cantidad || 1);
+    const cantidad = parseInt(item.cantidad) || 0;
+    const itemSubtotal = parseFloat(((precioUnitario * tamanoCantidad) * cantidad).toFixed(2));
+    const piezasTotales = parseInt(item.piezastotales) || 0;
+    
+    // Use REAL stock to determine backorder status
+    const stockActual = parseInt(item.stock_actual_variante) || 0;
+    const cantidadRequerida = cantidad * tamanoCantidad;
+    const esBajoPedido = stockActual < cantidadRequerida;
+    
+    if (esBajoPedido) {
+        totalSinStock += itemSubtotal;
+    } else {
+        totalEnStock += itemSubtotal;
+    }
+    
+    totalPiezasEntregadas += piezasTotales;
+});
+
+// Recalculate subtotal from actual items (DO NOT trust database montototal)
+const subtotalProductos = parseFloat((totalEnStock + totalSinStock).toFixed(2));
+
+// Parse shipping with fallback to 0
+const costoEnvio = parseFloat(pedido.costoenvio) || 0;
+
+// CRITICAL FIX: Only apply discount if there's a valid coupon ID (must be a positive integer)
+// This prevents 'phantom discounts' on orders without promotions
+const cuponIdNumerico = parseInt(pedido.cupon_id);
+const tieneCupon = !isNaN(cuponIdNumerico) && cuponIdNumerico > 0;
+const montoDescuento = tieneCupon ? (parseFloat(pedido.monto_descuento) || 0) : 0;
+
+// Calculate REAL total: Subtotal + Shipping - Discount (only if coupon exists)
+const totalCalculado = parseFloat((subtotalProductos + costoEnvio - montoDescuento).toFixed(2));
+
+// Financial Summary Box - Dynamic height based on content
+const boxX = 350;
+const boxWidth = 212;
+let boxHeight = 28; // Base height for title
+
+// Calculate dynamic height
+boxHeight += 12; // Total Piezas
+boxHeight += 12; // Total En Stock
+boxHeight += 12; // Total Backorder
+boxHeight += 6;  // Separator
+boxHeight += 12; // Subtotal
+if (costoEnvio > 0) boxHeight += 12;
+if (tieneCupon && montoDescuento > 0) boxHeight += 12;
+boxHeight += 6;  // Separator before total
+boxHeight += 14; // Total final
+
+// Check if we need a new page for the financial summary box + footer text (~50px extra)
+const spaceNeeded = boxHeight + 50;
+if (yPosition + spaceNeeded > 750) {
+    doc.addPage();
+    yPosition = 260; // Start below header on new page
+}
+
+doc.save();
+doc.roundedRect(boxX, yPosition, boxWidth, boxHeight, 5)
+   .fillAndStroke('#FFF7ED', '#F97316');
+doc.restore();
+
+// Box Title
+doc.fontSize(11)
+   .font('Helvetica-Bold')
+   .fillColor('#F97316')
+   .text('RESUMEN FINANCIERO', boxX + 5, yPosition + 8, { width: boxWidth - 10, align: 'center' });
+
+// Separator line
+doc.moveTo(boxX + 10, yPosition + 22)
+   .lineTo(boxX + boxWidth - 10, yPosition + 22)
+   .strokeColor('#F97316')
+   .lineWidth(0.5)
+   .stroke();
+
+let lineY = yPosition + 28;
+
+// Total Pieces
+doc.fontSize(9)
+   .font('Helvetica')
+   .fillColor('#666666')
+   .text('Total Piezas:', boxX + 10, lineY);
+
+doc.font('Helvetica-Bold')
+   .fillColor('#333333')
+   .text(`${totalPiezasEntregadas.toLocaleString('es-MX')} pzas`, boxX + boxWidth - 70, lineY, { width: 60, align: 'right' });
+
+lineY += 12;
+
+// Total En Stock (green)
+doc.fontSize(8)
+   .font('Helvetica')
+   .fillColor('#666666')
+   .text('Productos en Stock:', boxX + 10, lineY);
+
+doc.font('Helvetica-Bold')
+   .fillColor('#10B981')
+   .text(`$${totalEnStock.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+
+lineY += 12;
+
+// Total Backorder (red)
+doc.fontSize(8)
+   .font('Helvetica')
+   .fillColor('#666666')
+   .text('Productos Backorder:', boxX + 10, lineY);
+
+doc.font('Helvetica-Bold')
+   .fillColor('#DC2626')
+   .text(`$${totalSinStock.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+
+lineY += 12;
+
+// Separator
+doc.moveTo(boxX + 10, lineY)
+   .lineTo(boxX + boxWidth - 10, lineY)
+   .strokeColor('#E5E7EB')
+   .lineWidth(0.3)
+   .stroke();
+
+lineY += 6;
+
+// Subtotal
+doc.fontSize(9)
+   .font('Helvetica')
+   .fillColor('#666666')
+   .text('Subtotal:', boxX + 10, lineY);
+
+doc.font('Helvetica-Bold')
+   .fillColor('#333333')
+   .text(`$${subtotalProductos.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+
+lineY += 12;
+
+// Shipping (if applicable)
+if (costoEnvio > 0) {
+    doc.fontSize(9)
+       .font('Helvetica')
+       .fillColor('#666666')
+       .text('Envío:', boxX + 10, lineY);
+    
+    doc.font('Helvetica-Bold')
+       .fillColor('#333333')
+       .text(`$${costoEnvio.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+    
+    lineY += 12;
+}
+
+// Discount (if applicable)
+if (tieneCupon && montoDescuento > 0) {
+    doc.fontSize(9)
+       .font('Helvetica')
+       .fillColor('#DC2626')
+       .text('Descuento:', boxX + 10, lineY);
+    
+    doc.font('Helvetica-Bold')
+       .fillColor('#DC2626')
+       .text(`-$${montoDescuento.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+    
+    lineY += 12;
+}
+
+// Separator before total
+doc.moveTo(boxX + 10, lineY)
+   .lineTo(boxX + boxWidth - 10, lineY)
+   .strokeColor('#F97316')
+   .lineWidth(1)
+   .stroke();
+
+lineY += 8;
+
+// Total
+doc.fontSize(11)
+   .font('Helvetica-Bold')
+   .fillColor('#F97316')
+   .text('TOTAL:', boxX + 10, lineY);
+
+doc.fontSize(12)
+   .fillColor('#F97316')
+   .text(`$${totalCalculado.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN`, boxX + boxWidth - 110, lineY, { width: 100, align: 'right' });
+
+yPosition += boxHeight + 5;
+
+yPosition += 25;
+
+doc.fontSize(8)
+   .font('Helvetica')
+   .fillColor('#666666')
+   .text('Este documento es una remisión de venta. Conserve este comprobante para cualquier aclaración.', 50, yPosition, {
+       width: 512,
+       align: 'center'
+   });
+
+yPosition += 15;
+doc.text('Gracias por su preferencia.', 50, yPosition, {
+    width: 512,
+    align: 'center'
+});
+
+doc.end();
 
     } catch (error) {
         logger.error('Error generando PDF', {
