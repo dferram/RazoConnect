@@ -83,10 +83,13 @@ async function generarPDFPedido(req, res) {
         const pedido = pedidoQuery.rows[0];
 
         // Verificación de permisos CORREGIDA
-        // admin y super_admin incluyen todas las variantes posibles del rol
-        const isAdmin = userRoles.some(r => 
-            ['admin', 'superadmin', 'super_admin', 'super-admin'].includes(r)
-        );
+        // Incluir TODOS los roles de admin que tienen acceso a PDFs
+        const adminRoles = [
+            'admin', 'superadmin', 'super_admin', 'super-admin',
+            'inventarios', 'finanzas', 'gerente_finanzas', 'gerente_comercial',
+            'gerente_operaciones', 'jefe_almacen'
+        ];
+        const isAdmin = userRoles.some(r => adminRoles.includes(r));
         
         // Comparación de números para evitar mismatch de tipos (string vs integer de DB)
         const pedidoClienteIdNum = parseInt(pedido.clienteid, 10);
