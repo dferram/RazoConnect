@@ -687,8 +687,9 @@ const confirmarPedido = async (req, res) => {
 };
 
 /**
- * Surtir pedido (marcar como completamente surtido)
- * Solo si todos los productos tienen stock disponible
+ * Surtir pedido (marcar como listo para surtir)
+ * Usado por inventarios para marcar productos como preparados
+ * NO reduce stock - eso lo hace finanzas al confirmar
  * POST /api/admin/pedidos/:id/surtir
  */
 const surtirPedido = async (req, res) => {
@@ -697,13 +698,15 @@ const surtirPedido = async (req, res) => {
   try {
     const { id: pedidoId } = req.params;
     const { tenant_id } = req.tenant;
+    const userRole = (req.user?.rol || req.user?.role || '').toLowerCase().trim();
 
     await client.query('BEGIN');
 
-    // Obtener pedido y sus detalles
+    // Obtener pedido
     const pedidoQuery = `
       SELECT p.*, 
-        (SELECT COUNT(*) FROM detalles_del_pedido WHERE pedidoid = p.pedidoid AND esbackorder = true) as productos_backorder
+        (SELECT COUNT(*) FROM detallesdelpedido WHERE pedidoid = p.pedidoid) as total_productos,
+        (SELECT COUNT(*) FROM detallesdelpedido WHERE pedidoid = p.pedidoid AND esbackorder = true) as productos_backorder
       FROM pedidos p
       WHERE p.pedidoid = $1 AND p.tenant_id = $2
     `;
@@ -720,45 +723,67 @@ const surtirPedido = async (req, res) => {
 
     const pedido = pedidoResult.rows[0];
     const productosBackorder = parseInt(pedido.productos_backorder || 0);
+    const totalProductos = parseInt(pedido.total_productos || 0);
+    const productosSurtidos = totalProductos - productosBackorder;
 
-    // Validar que NO haya productos en backorder
-    if (productosBackorder > 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({
-        success: false,
-        message: `No se puede surtir el pedido. Hay ${productosBackorder} producto(s) marcado(s) como "Bajo pedido". Todos los productos deben tener stock disponible.`
-      });
+    // Marcar productos con stock como surtidos (NO reduce inventario)
+    // Solo marca los productos que NO son backorder
+    const marcarSurtidosQuery = `
+      UPDATE detallesdelpedido
+      SET cantidadsurtida = cantidadpaquetes
+      WHERE pedidoid = $1 
+        AND esbackorder = false
+        AND tenant_id = $2
+    `;
+    
+    await client.query(marcarSurtidosQuery, [pedidoId, tenant_id]);
+
+    // Actualizar estatus del pedido a "Listo para Surtir" o "Parcialmente Surtido"
+    let nuevoEstatus = 'Listo para Surtir';
+    let completamenteSurtido = false;
+    
+    if (productosBackorder === 0) {
+      // Todos los productos están listos
+      nuevoEstatus = 'Listo para Surtir';
+      completamenteSurtido = true;
+    } else if (productosSurtidos > 0) {
+      // Algunos productos listos, otros en backorder
+      nuevoEstatus = 'Parcialmente Surtido';
+      completamenteSurtido = false;
     }
 
-    // Marcar pedido como surtido
     const updateQuery = `
       UPDATE pedidos 
       SET 
-        estatus = 'Surtido',
-        completamente_surtido = true,
-        monto_surtido = montototal,
-        monto_backorder = 0
+        estatus = $3,
+        completamente_surtido = $4
       WHERE pedidoid = $1 AND tenant_id = $2
       RETURNING *
     `;
     
-    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id]);
+    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, nuevoEstatus, completamenteSurtido]);
 
     await client.query('COMMIT');
 
-    logger.info('Pedido marcado como surtido:', {
+    logger.info('Pedido marcado como listo para surtir (sin reducir stock):', {
       pedidoId,
+      nuevoEstatus,
+      productosSurtidos,
+      productosBackorder,
+      userRole,
       tenantId: tenant_id,
       requestId: req.requestId
     });
 
     res.json({
       success: true,
-      message: 'Pedido marcado como surtido correctamente',
+      message: `Pedido marcado como "${nuevoEstatus}". ${productosSurtidos} producto(s) listo(s), ${productosBackorder} en backorder.`,
       data: {
         pedidoId: updateResult.rows[0].pedidoid,
         estatus: updateResult.rows[0].estatus,
-        completamente_surtido: updateResult.rows[0].completamente_surtido
+        completamente_surtido: updateResult.rows[0].completamente_surtido,
+        productosSurtidos,
+        productosBackorder
       }
     });
 
@@ -780,9 +805,175 @@ const surtirPedido = async (req, res) => {
   }
 };
 
+/**
+ * Confirmar surtido y reducir inventario (finanzas)
+ * Usado por finanzas para confirmar que el pedido está listo y reducir stock
+ * POST /api/admin/pedidos/:id/confirmar-surtido
+ */
+const confirmarSurtidoFinanzas = async (req, res) => {
+  const client = await db.connect();
+  
+  try {
+    const { id: pedidoId } = req.params;
+    const { tenant_id } = req.tenant;
+    const userId = req.user?.id || req.user?.adminid;
+
+    await client.query('BEGIN');
+
+    // Obtener pedido y verificar que está listo para surtir
+    const pedidoQuery = `
+      SELECT p.*, 
+        (SELECT COUNT(*) FROM detallesdelpedido WHERE pedidoid = p.pedidoid AND esbackorder = false) as productos_con_stock
+      FROM pedidos p
+      WHERE p.pedidoid = $1 AND p.tenant_id = $2
+    `;
+    
+    const pedidoResult = await client.query(pedidoQuery, [pedidoId, tenant_id]);
+    
+    if (pedidoResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        message: 'Pedido no encontrado'
+      });
+    }
+
+    const pedido = pedidoResult.rows[0];
+    const estatusActual = (pedido.estatus || '').toLowerCase().trim();
+    
+    // Validar que el pedido está en estado correcto
+    if (!['listo para surtir', 'parcialmente surtido', 'parcialmente_surtido'].includes(estatusActual)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: `No se puede confirmar. El pedido debe estar en estado "Listo para Surtir" o "Parcialmente Surtido". Estado actual: ${pedido.estatus}`
+      });
+    }
+
+    // Obtener solo productos que NO son backorder (los que tienen stock)
+    const productosQuery = `
+      SELECT 
+        dp.detalleid,
+        dp.varianteid,
+        dp.piezastotales,
+        dp.cantidadsurtida,
+        dp.esbackorder,
+        pv.sku,
+        pr.nombreproducto
+      FROM detallesdelpedido dp
+      INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
+      INNER JOIN productos pr ON pv.productoid = pr.productoid
+      WHERE dp.pedidoid = $1 
+        AND dp.esbackorder = false
+        AND dp.tenant_id = $2
+    `;
+    
+    const productosResult = await client.query(productosQuery, [pedidoId, tenant_id]);
+    
+    if (productosResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: 'No hay productos con stock para confirmar'
+      });
+    }
+
+    const motivo = `Confirmación surtido Pedido #${pedidoId}`;
+    let productosConfirmados = 0;
+
+    // Reducir inventario solo para productos con stock
+    for (const item of productosResult.rows) {
+      const varianteId = parseInt(item.varianteid);
+      const piezasTotales = parseInt(item.piezastotales || 0);
+
+      if (piezasTotales <= 0) continue;
+
+      try {
+        await inventoryService.registrarMovimiento(client, {
+          varianteId,
+          cantidadDelta: -1 * piezasTotales,
+          motivo,
+          usuarioId: userId,
+          esExcepcion: false,
+        });
+        productosConfirmados++;
+      } catch (invError) {
+        await client.query('ROLLBACK');
+
+        const nombre = (item.nombreproducto || 'Producto').toString().trim();
+        const sku = (item.sku || '').toString().trim();
+        const ref = sku ? `${nombre} (${sku})` : nombre;
+
+        if (invError && invError.code === 'STOCK_INSUFICIENTE') {
+          return res.status(400).json({
+            success: false,
+            message: `Stock insuficiente para el producto ${ref}`,
+            code: invError.code,
+          });
+        }
+
+        return res.status(500).json({
+          success: false,
+          message: `Error al descontar inventario para ${ref}`,
+          code: invError.code,
+        });
+      }
+    }
+
+    // Actualizar pedido a Surtido
+    const updateQuery = `
+      UPDATE pedidos 
+      SET 
+        estatus = 'Surtido',
+        completamente_surtido = true
+      WHERE pedidoid = $1 AND tenant_id = $2
+      RETURNING *
+    `;
+    
+    await client.query(updateQuery, [pedidoId, tenant_id]);
+
+    await client.query('COMMIT');
+
+    logger.info('Pedido confirmado y stock reducido:', {
+      pedidoId,
+      productosConfirmados,
+      tenantId: tenant_id,
+      userId,
+      requestId: req.requestId
+    });
+
+    res.json({
+      success: true,
+      message: `Pedido confirmado. ${productosConfirmados} producto(s) descontado(s) del inventario.`,
+      data: {
+        pedidoId,
+        estatus: 'Surtido',
+        productosConfirmados
+      }
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Error al confirmar surtido:', {
+      error: error.message,
+      stack: error.stack,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
+    res.status(500).json({
+      success: false,
+      message: 'Error al confirmar el surtido',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   getAllPedidos,
   getPedidoDetalle,
   confirmarPedido,
-  surtirPedido
+  surtirPedido,
+  confirmarSurtidoFinanzas
 };

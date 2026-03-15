@@ -45,6 +45,7 @@ const cxcAdminController = require("../controllers/cxcAdminController");
 const agentesAdminController = require("../controllers/agentesAdminController");
 const comisionesAdminController = require("../controllers/comisionesAdminController");
 const pedidosAdminController = require("../controllers/pedidosAdminController");
+const pdfController = require("../controllers/pdfController");
 const cxpAdminController = require("../controllers/cxpAdminController");
 const movimientosInventarioController = require("../controllers/movimientosInventarioController");
 const medidasAdminController = require("../controllers/medidasAdminController");
@@ -471,12 +472,41 @@ router.post(
   pedidosAdminController.confirmarPedido
 );
 
-// Surtir pedido (marcar como completamente surtido)
+// Surtir pedido (marcar como listo para surtir - inventarios)
 router.post(
   "/pedidos/:id/surtir",
   authenticate,
-  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'jefe_almacen']),
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'gerente_operaciones', 'jefe_almacen']),
   pedidosAdminController.surtirPedido
+);
+
+// Confirmar surtido y reducir inventario (finanzas)
+router.post(
+  "/pedidos/:id/confirmar-surtido",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas']),
+  pedidosAdminController.confirmarSurtidoFinanzas
+);
+
+// Generar PDF de remisión para pedido (admin)
+// Supports ?mostrarPrecios=false query param for inventarios role
+router.get(
+  "/pedidos/:id/pdf",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'finanzas', 'gerente_comercial', 'gerente_finanzas']),
+  heavyOperationLimiter,
+  pdfController.generarPDFPedido
+);
+
+// Generar factura PDF para pedido (admin)
+// Available for admin and finanzas roles
+const facturaController = require("../controllers/facturaController");
+router.get(
+  "/pedidos/:id/factura",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas']),
+  heavyOperationLimiter,
+  facturaController.descargarFactura
 );
 
 /**

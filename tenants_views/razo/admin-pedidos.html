@@ -53,7 +53,7 @@
             </button>
           </div>
 
-          <!-- Priority System Info Panel -->
+          <!-- Priority System Info Panel
           <div class="admin-table-container" style="margin-bottom: 1.5rem; padding: 1.5rem; background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); border-left: 4px solid var(--razo-orange);">
             <div style="display: flex; align-items: start; gap: 1rem;">
               <div style="font-size: 2rem; flex-shrink: 0;">⭐</div>
@@ -77,7 +77,7 @@
                 </div>
               </div>
             </div>
-          </div>
+          </div> -->
 
           <!-- Filters -->
           <div
@@ -564,6 +564,14 @@
 
       // Load orders
       async function loadOrders() {
+        // CRITICAL FIX: Get admin token from localStorage
+        const adminToken = localStorage.getItem("razoconnect_admin_token");
+        if (!adminToken) {
+          console.error("No admin token found");
+          window.location.href = "/login.html";
+          return;
+        }
+
         document.getElementById("loadingOrders").style.display = "flex";
         document.getElementById("ordersTable").style.display = "none";
         document.getElementById("emptyOrders").style.display = "none";
@@ -686,22 +694,7 @@
                         onclick="verDetallePedido(${order.pedidoId})">
                         Ver detalle
                       </button>
-                      ${!order.completamente_surtido && order.estatus !== 'Cancelado' ? `
-                        <button 
-                          class="btn btn-success" 
-                          style="padding: 0.5rem 1rem; font-size: 0.875rem;"
-                          onclick="surtirPedido(${order.pedidoId})"
-                          title="Marcar como surtido (solo si todos los productos tienen stock)">
-                          Surtir pedido
-                        </button>
-                        <button 
-                          class="btn btn-warning" 
-                          style="padding: 0.5rem 1rem; font-size: 0.875rem;"
-                          onclick="abrirModalGenerarRemision(${order.pedidoId})"
-                          title="Generar remisión parcial o completa">
-                          📝 Generar Remisión
-                        </button>
-                      ` : ''}
+                      
                     </div>
                   </td>
                 </tr>
@@ -746,6 +739,14 @@
 
       // Surtir pedido (marcar como completamente surtido)
       async function surtirPedido(pedidoId) {
+        // CRITICAL FIX: Get admin token from localStorage
+        const adminToken = localStorage.getItem("razoconnect_admin_token");
+        if (!adminToken) {
+          console.error("No admin token found");
+          window.location.href = "/login.html";
+          return;
+        }
+
         const result = await Swal.fire({
           icon: 'question',
           title: '¿Surtir pedido?',
@@ -1156,6 +1157,14 @@
       */
 
       async function generarRemision(pedidoId) {
+        // CRITICAL FIX: Get admin token from localStorage
+        const adminToken = localStorage.getItem("razoconnect_admin_token");
+        if (!adminToken) {
+          console.error("No admin token found");
+          window.location.href = "/login.html";
+          return;
+        }
+
         try {
           const response = await fetch(
             `${API_BASE_URL}/admin/pedidos/${pedidoId}/remision`,
@@ -1199,7 +1208,7 @@
           console.log('Using admin token:', token.substring(0, 20) + '...');
           
           // Hacer petición con token de autenticación de admin
-          const response = await fetch(`${API_BASE_URL}/pedidos/${pedidoId}/pdf`, {
+          const response = await fetch(`${API_BASE_URL}/admin/pedidos/${pedidoId}/pdf`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -1285,7 +1294,7 @@
         try {
           showToast('Generando factura...', 'info');
           
-          const response = await fetch(`${API_BASE_URL}/pedidos/${pedidoId}/factura`, {
+          const response = await fetch(`${API_BASE_URL}/admin/pedidos/${pedidoId}/factura`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,

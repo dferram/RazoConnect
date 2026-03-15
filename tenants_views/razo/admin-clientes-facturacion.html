@@ -673,7 +673,7 @@
         try {
           showToast('Generando remisión...', 'info');
           
-          const response = await fetch(`${API_BASE_URL}/pedidos/${pedidoId}/pdf`, {
+          const response = await fetch(`${API_BASE_URL}/admin/pedidos/${pedidoId}/pdf`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -754,7 +754,7 @@
         try {
           showToast('Generando factura...', 'info');
           
-          const response = await fetch(`${API_BASE_URL}/pedidos/${pedidoId}/factura`, {
+          const response = await fetch(`${API_BASE_URL}/admin/pedidos/${pedidoId}/factura`, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`,

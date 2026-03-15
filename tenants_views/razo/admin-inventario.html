@@ -219,11 +219,11 @@
                     >0</span
                   >
                 </div>
-                <div class="detalle-metric-card outline-card">
+                <div class="detalle-metric-card outline-card" id="detallePrecioDesdeCard">
                   <span class="metric-label">Precio más bajo</span>
                   <span class="metric-value" id="detallePrecioDesde">—</span>
                 </div>
-                <div class="detalle-metric-card outline-card">
+                <div class="detalle-metric-card outline-card" id="detallePrecioHastaCard">
                   <span class="metric-label">Precio más alto</span>
                   <span class="metric-value" id="detallePrecioHasta">—</span>
                 </div>
@@ -279,7 +279,7 @@
                   <tr>
                     <th>SKU</th>
                     <th>Dimensiones</th>
-                    <th>Precio/Paquete</th>
+                    <th id="thPrecioPaquete">Precio/Paquete</th>
                     <th>Stock</th>
                     <th>Estado</th>
                     <th class="text-center">Acciones</th>
@@ -757,6 +757,20 @@
       } else {
         console.log("✅ Token encontrado, continuando carga de página");
       }
+
+      // Get user role for price visibility
+      function getUserRole() {
+        try {
+          const adminData = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
+          return (adminData.rol || adminData.role || '').toString().toLowerCase().trim();
+        } catch (error) {
+          return 'admin';
+        }
+      }
+
+      const userRole = getUserRole();
+      const isInventarios = userRole === 'inventarios';
+      console.log('👤 Rol de usuario:', userRole, '| Ocultar precios:', isInventarios);
 
       let allProducts = [];
       let selectedProduct = null;
@@ -1509,6 +1523,17 @@
           precioDesdeEl.textContent = precioDesde ? formatCurrency(precioDesde) : "—";
           precioHastaEl.textContent = precioHasta ? formatCurrency(precioHasta) : "—";
 
+          // Hide price cards for inventarios role
+          const precioDesdeCard = document.getElementById('detallePrecioDesdeCard');
+          const precioHastaCard = document.getElementById('detallePrecioHastaCard');
+          if (isInventarios) {
+            if (precioDesdeCard) precioDesdeCard.style.display = 'none';
+            if (precioHastaCard) precioHastaCard.style.display = 'none';
+          } else {
+            if (precioDesdeCard) precioDesdeCard.style.display = 'block';
+            if (precioHastaCard) precioHastaCard.style.display = 'block';
+          }
+
           summaryCard.style.display = "block";
 
           // Renderizar tabla de variantes
@@ -1554,6 +1579,12 @@
         detalleModalFeedback.style.display = "none";
         detalleModalTableWrapper.style.display = "block";
 
+        // Hide price column header for inventarios role
+        const thPrecioPaquete = document.getElementById('thPrecioPaquete');
+        if (thPrecioPaquete) {
+          thPrecioPaquete.style.display = isInventarios ? 'none' : 'table-cell';
+        }
+
         tablaVariantesBody.innerHTML = variantes
           .map((variant) => {
             const precio = formatCurrency(variant.precio || 0);
@@ -1561,11 +1592,14 @@
             const stockColor = stock > 0 ? "#16a34a" : "#dc2626";
             const stockWeight = stock > 0 ? "600" : "500";
 
+            // Build price cell only if not inventarios role
+            const precioCell = isInventarios ? '' : `<td style="font-weight: 600; color: #f97316;">${precio}</td>`;
+
             return `
               <tr>
                 <td style="font-weight: 600;">${escapeHtml(variant.sku)}</td>
                 <td>${escapeHtml(variant.caracteristica)}</td>
-                <td style="font-weight: 600; color: #f97316;">${precio}</td>
+                ${precioCell}
                 <td class="stock-variante-${variant.varianteId}" style="font-weight: ${stockWeight}; color: ${stockColor};">
                   ${renderStockCell(variant, stock)}
                 </td>
