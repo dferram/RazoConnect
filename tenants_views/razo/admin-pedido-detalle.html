@@ -568,6 +568,7 @@
                       id="pedidoPrioridadBadge"
                       style="display: none; padding: 0.4rem 0.8rem; border-radius: 2rem; font-weight: 600; font-size: 0.85rem; background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); color: var(--razo-orange); border: 2px solid var(--razo-orange);"
                       title="Este pedido tiene prioridad VIP y se surtirá antes que pedidos más antiguos"
+                      data-admin-only="true"
                     >
                       ⭐ PRIORITARIO
                     </span>
@@ -668,8 +669,19 @@
                     onclick="abrirModalAjusteDetalle()"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #ffc107; color: #000;"
                     title="Ajustar productos del pedido"
+                    data-admin-only="true"
                   >
                     ✏️ Ajustar Pedido
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-success"
+                    id="btnSurtirPedido"
+                    onclick="surtirPedidoInventarios()"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #16a34a; color: white; display: none;"
+                    title="Marcar pedido como surtido"
+                  >
+                    ✅ Surtir Pedido
                   </button>
                   <!-- Botones de Factura y Remisión (solo para finanzas, admin, superadmin) -->
                   <button
@@ -953,10 +965,20 @@
         
         if (!isInventarios) {
           console.log('✅ [PEDIDO-DETALLE] Rol admin - Mostrando todos los datos');
+          // Hide Surtir Pedido button for non-inventarios roles
+          const btnSurtir = document.getElementById('btnSurtirPedido');
+          if (btnSurtir) btnSurtir.style.display = 'none';
           return; // Admin sees everything
         }
         
-        console.log('🚫 [PEDIDO-DETALLE] Rol inventarios - Ocultando datos financieros');
+        console.log('🚫 [PEDIDO-DETALLE] Rol inventarios - Ocultando datos financieros y mostrando botón Surtir');
+        
+        // Show Surtir Pedido button for inventarios role
+        const btnSurtir = document.getElementById('btnSurtirPedido');
+        if (btnSurtir) {
+          btnSurtir.style.display = 'inline-block';
+          console.log('✅ [PEDIDO-DETALLE] Botón Surtir Pedido habilitado para inventarios');
+        }
         
         // Hide financial sections
         const montoTotalSection = document.getElementById('montoTotalSection');
@@ -1159,6 +1181,35 @@
               prioridadBadge.style.display = "none";
             }
 
+            // Update Surtir Pedido button for inventarios role
+            const btnSurtir = document.getElementById('btnSurtirPedido');
+            const btnRemision = document.getElementById('btnGenerarRemision');
+            const estaSurtido = ['surtido', 'enviado', 'entregado'].includes(estatusValor);
+            
+            if (btnSurtir && getUserRole() === 'inventarios') {
+              if (estaSurtido) {
+                // Already fulfilled - show as completed
+                btnSurtir.innerHTML = '✅ Pedido Surtido';
+                btnSurtir.style.background = '#10b981';
+                btnSurtir.disabled = true;
+                btnSurtir.style.display = 'inline-block';
+              } else if (estatusValor === 'pendiente' || estatusValor === 'confirmado') {
+                // Can be fulfilled - show active button
+                btnSurtir.innerHTML = '✅ Surtir Pedido';
+                btnSurtir.style.background = '#16a34a';
+                btnSurtir.disabled = false;
+                btnSurtir.style.display = 'inline-block';
+              } else {
+                // Other status - hide button
+                btnSurtir.style.display = 'none';
+              }
+            }
+            
+            // Update Generar Remisión button text if order is fulfilled
+            if (btnRemision && estaSurtido) {
+              btnRemision.innerHTML = '📄 Descargar Remisión';
+            }
+
             document.getElementById("pedidoMonto").textContent = formatCurrency(
               pedido.montoTotal
             );
@@ -1216,9 +1267,6 @@
 
             // Render items
             // FASE 3 - TASK 3: Check if user is inventarios to hide pricing
-            const userRole = getUserRole();
-            const isInventarios = userRole === 'inventarios';
-            
             const itemsContainer = document.getElementById("itemsContainer");
             itemsContainer.innerHTML = productos
               .map(
@@ -1258,6 +1306,8 @@
                     badgeText = 'CON STOCK';
                   }
                   
+                  const isInventariosRole = getUserRole() === 'inventarios';
+                  
                   return `
               <div class="item-row">
                 ${
@@ -1280,7 +1330,7 @@
                     <span><span class="${badgeClass}">${badgeText}</span></span>
                   </p>
                 </div>
-                ${!isInventarios ? `
+                ${!isInventariosRole ? `
                 <div class="item-pricing">
                   <p class="item-subtotal">${formatCurrency(item.subtotal)}</p>
                   <p class="item-unit-price">${
@@ -1583,7 +1633,12 @@
           }
           
           try {
-            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/pdf`, {
+            // Check if user is inventarios to hide prices in PDF
+            const userRole = getUserRole();
+            const isInventarios = userRole === 'inventarios';
+            const queryParam = isInventarios ? '?mostrarPrecios=false' : '';
+            
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/pdf${queryParam}`, {
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${adminToken}`
@@ -1616,6 +1671,71 @@
           }
           
           showToast("Función de factura en desarrollo", "info");
+        };
+
+        // Function to mark order as fulfilled (for inventarios role)
+        window.surtirPedidoInventarios = async function() {
+          if (!selectedOrderId) {
+            showToast("No se pudo identificar el pedido", "error");
+            return;
+          }
+
+          const btnSurtir = document.getElementById('btnSurtirPedido');
+          if (!btnSurtir) return;
+
+          // Confirm action
+          const confirmed = await Swal.fire({
+            icon: 'question',
+            title: '¿Surtir pedido?',
+            text: 'Se marcará el pedido como completamente surtido. Esta acción no se puede deshacer.',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, surtir',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#16a34a',
+            cancelButtonColor: '#6c757d'
+          });
+
+          if (!confirmed.isConfirmed) return;
+
+          const originalText = btnSurtir.innerHTML;
+          btnSurtir.disabled = true;
+          btnSurtir.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Surtiendo...';
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/surtir`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${adminToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+              await Swal.fire({
+                icon: 'success',
+                title: 'Pedido surtido',
+                text: data.message || 'El pedido ha sido marcado como surtido correctamente',
+                confirmButtonColor: '#16a34a'
+              });
+              
+              // Update button text and disable it
+              btnSurtir.innerHTML = '✅ Pedido Surtido';
+              btnSurtir.style.background = '#10b981';
+              btnSurtir.disabled = true;
+              
+              // Reload page to reflect changes
+              window.location.reload();
+            } else {
+              throw new Error(data.message || 'Error al surtir pedido');
+            }
+          } catch (error) {
+            console.error('Error surtiendo pedido:', error);
+            showToast(error.message || 'Error al surtir el pedido', 'error');
+            btnSurtir.disabled = false;
+            btnSurtir.innerHTML = originalText;
+          }
         };
       })();
 
