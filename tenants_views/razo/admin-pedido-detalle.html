@@ -963,42 +963,72 @@
       function setupRoleBasedVisibility() {
         const userRole = getUserRole();
         const isInventarios = userRole === 'inventarios';
+        const isFinanzas = userRole === 'finanzas' || userRole === 'gerente_finanzas';
         
-        if (!isInventarios) {
-          console.log('✅ [PEDIDO-DETALLE] Rol admin - Mostrando todos los datos');
-          // Hide Surtir Pedido button for non-inventarios roles
-          const btnSurtir = document.getElementById('btnSurtirPedido');
-          if (btnSurtir) btnSurtir.style.display = 'none';
-          return; // Admin sees everything
-        }
-        
-        console.log('🚫 [PEDIDO-DETALLE] Rol inventarios - Ocultando datos financieros y mostrando botón Surtir');
-        
-        // Show Surtir Pedido button for inventarios role
         const btnSurtir = document.getElementById('btnSurtirPedido');
-        if (btnSurtir) {
-          btnSurtir.style.display = 'inline-block';
-          console.log('✅ [PEDIDO-DETALLE] Botón Surtir Pedido habilitado para inventarios');
+        const btnAjustar = document.getElementById('btnAjustarPedido');
+        const btnConfirmar = document.getElementById('btnConfirmarSurtido');
+        
+        if (isInventarios) {
+          console.log('� [PEDIDO-DETALLE] Rol inventarios - Configurando vista');
+          
+          // Show Surtir Pedido button for inventarios
+          if (btnSurtir) {
+            btnSurtir.style.display = 'inline-block';
+            console.log('✅ [PEDIDO-DETALLE] Botón Surtir Pedido habilitado');
+          }
+          
+          // Show Ajustar Pedido button for inventarios
+          if (btnAjustar) {
+            btnAjustar.style.display = 'inline-block';
+            console.log('✅ [PEDIDO-DETALLE] Botón Ajustar Pedido habilitado');
+          }
+          
+          // Hide Confirmar button for inventarios
+          if (btnConfirmar) btnConfirmar.style.display = 'none';
+          
+          // Hide financial sections
+          const montoTotalSection = document.getElementById('montoTotalSection');
+          const itemsTotalSection = document.getElementById('itemsTotalSection');
+          
+          if (montoTotalSection) montoTotalSection.style.display = 'none';
+          if (itemsTotalSection) itemsTotalSection.style.display = 'none';
+          
+          // Hide admin-only buttons (like Cambiar estatus)
+          const adminOnlyButtons = document.querySelectorAll('[data-admin-only="true"]');
+          adminOnlyButtons.forEach(button => {
+            button.style.display = 'none';
+            console.log(`🚫 [PEDIDO-DETALLE] Ocultando botón: ${button.id}`);
+          });
+          
+          return;
         }
         
-        // Hide financial sections
-        const montoTotalSection = document.getElementById('montoTotalSection');
-        const itemsTotalSection = document.getElementById('itemsTotalSection');
-        
-        if (montoTotalSection) {
-          montoTotalSection.style.display = 'none';
+        if (isFinanzas) {
+          console.log('💰 [PEDIDO-DETALLE] Rol finanzas - Configurando vista');
+          
+          // Hide Surtir Pedido button for finanzas
+          if (btnSurtir) btnSurtir.style.display = 'none';
+          
+          // Hide Ajustar Pedido button for finanzas
+          if (btnAjustar) {
+            btnAjustar.style.display = 'none';
+            console.log('🚫 [PEDIDO-DETALLE] Botón Ajustar Pedido oculto para finanzas');
+          }
+          
+          // Show Confirmar Surtido button for finanzas
+          if (btnConfirmar) {
+            btnConfirmar.style.display = 'inline-block';
+            console.log('✅ [PEDIDO-DETALLE] Botón Confirmar Surtido habilitado para finanzas');
+          }
+          
+          return;
         }
         
-        if (itemsTotalSection) {
-          itemsTotalSection.style.display = 'none';
-        }
-        
-        // Hide admin-only buttons
-        const adminOnlyButtons = document.querySelectorAll('[data-admin-only="true"]');
-        adminOnlyButtons.forEach(button => {
-          button.style.display = 'none';
-          console.log(`🚫 [PEDIDO-DETALLE] Ocultando botón: ${button.id}`);
-        });
+        // Admin and other roles see everything
+        console.log('✅ [PEDIDO-DETALLE] Rol admin - Mostrando todos los datos');
+        if (btnSurtir) btnSurtir.style.display = 'none';
+        if (btnConfirmar) btnConfirmar.style.display = 'none';
       }
 
       (function () {
@@ -1187,7 +1217,7 @@
             if (btnSurtir && currentRole === 'inventarios') {
               if (estaSurtido) {
                 // Already confirmed by finanzas
-                btnSurtir.innerHTML = '✅ Confirmado';
+                btnSurtir.innerHTML = '✅ Pedido Surtido';
                 btnSurtir.style.background = '#10b981';
                 btnSurtir.disabled = true;
                 btnSurtir.style.display = 'inline-block';
