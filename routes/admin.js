@@ -493,9 +493,20 @@ router.post(
 router.get(
   "/pedidos/:id/pdf",
   authenticate,
-  authorizeRole(['super_admin', 'admin', 'inventarios', 'finanzas', 'gerente_comercial']),
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'finanzas', 'gerente_comercial', 'gerente_finanzas']),
   heavyOperationLimiter,
   pdfController.generarPDFPedido
+);
+
+// Generar factura PDF para pedido (admin)
+// Available for admin and finanzas roles
+const facturaController = require("../controllers/facturaController");
+router.get(
+  "/pedidos/:id/factura",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas']),
+  heavyOperationLimiter,
+  facturaController.descargarFactura
 );
 
 /**
