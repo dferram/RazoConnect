@@ -472,12 +472,20 @@ router.post(
   pedidosAdminController.confirmarPedido
 );
 
-// Surtir pedido (marcar como completamente surtido)
+// Surtir pedido (marcar como listo para surtir - inventarios)
 router.post(
   "/pedidos/:id/surtir",
   authenticate,
   authorizeRole(['super_admin', 'admin', 'inventarios', 'gerente_operaciones', 'jefe_almacen']),
   pedidosAdminController.surtirPedido
+);
+
+// Confirmar surtido y reducir inventario (finanzas)
+router.post(
+  "/pedidos/:id/confirmar-surtido",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas']),
+  pedidosAdminController.confirmarSurtidoFinanzas
 );
 
 // Generar PDF de remisión para pedido (admin)

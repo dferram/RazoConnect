@@ -565,14 +565,6 @@
                   </div>
                   <div class="d-flex align-items-center gap-2">
                     <span
-                      id="pedidoPrioridadBadge"
-                      style="display: none; padding: 0.4rem 0.8rem; border-radius: 2rem; font-weight: 600; font-size: 0.85rem; background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); color: var(--razo-orange); border: 2px solid var(--razo-orange);"
-                      title="Este pedido tiene prioridad VIP y se surtirá antes que pedidos más antiguos"
-                      data-admin-only="true"
-                    >
-                      ⭐ PRIORITARIO
-                    </span>
-                    <span
                       class="pedido-estatus-badge pendiente"
                       id="pedidoEstatus"
                       >--</span
@@ -669,7 +661,6 @@
                     onclick="abrirModalAjusteDetalle()"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #ffc107; color: #000;"
                     title="Ajustar productos del pedido"
-                    data-admin-only="true"
                   >
                     ✏️ Ajustar Pedido
                   </button>
@@ -679,9 +670,19 @@
                     id="btnSurtirPedido"
                     onclick="surtirPedidoInventarios()"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #16a34a; color: white; display: none;"
-                    title="Marcar pedido como surtido"
+                    title="Marcar productos como listos para surtir"
                   >
-                    ✅ Surtir Pedido
+                    ✅ Marcar Listo
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    id="btnConfirmarSurtido"
+                    onclick="confirmarSurtidoFinanzas()"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #0d6efd; color: white; display: none;"
+                    title="Confirmar surtido y reducir inventario"
+                  >
+                    ✅ Confirmar Surtido
                   </button>
                   <!-- Botones de Factura y Remisión (solo para finanzas, admin, superadmin) -->
                   <button
@@ -1173,35 +1174,56 @@
             }
             */
 
-            // Show priority badge if order is prioritized
-            const prioridadBadge = document.getElementById("pedidoPrioridadBadge");
-            if (pedido.es_prioritario === true) {
-              prioridadBadge.style.display = "inline-block";
-            } else {
-              prioridadBadge.style.display = "none";
-            }
-
-            // Update Surtir Pedido button for inventarios role
+            // Update buttons based on role and order status
             const btnSurtir = document.getElementById('btnSurtirPedido');
+            const btnConfirmar = document.getElementById('btnConfirmarSurtido');
             const btnRemision = document.getElementById('btnGenerarRemision');
+            const currentRole = getUserRole();
             const estaSurtido = ['surtido', 'enviado', 'entregado'].includes(estatusValor);
+            const estaListoParaSurtir = estatusValor === 'listo para surtir';
+            const estaParcialmenteSurtido = estatusValor === 'parcialmente surtido' || estatusValor === 'parcialmente_surtido';
             
-            if (btnSurtir && getUserRole() === 'inventarios') {
+            // Inventarios role - Surtir button
+            if (btnSurtir && currentRole === 'inventarios') {
               if (estaSurtido) {
-                // Already fulfilled - show as completed
-                btnSurtir.innerHTML = '✅ Pedido Surtido';
+                // Already confirmed by finanzas
+                btnSurtir.innerHTML = '✅ Confirmado';
                 btnSurtir.style.background = '#10b981';
                 btnSurtir.disabled = true;
                 btnSurtir.style.display = 'inline-block';
+              } else if (estaListoParaSurtir || estaParcialmenteSurtido) {
+                // Already marked as ready, waiting for finanzas
+                btnSurtir.innerHTML = '⏳ Esperando Confirmación';
+                btnSurtir.style.background = '#6c757d';
+                btnSurtir.disabled = true;
+                btnSurtir.style.display = 'inline-block';
               } else if (estatusValor === 'pendiente' || estatusValor === 'confirmado') {
-                // Can be fulfilled - show active button
-                btnSurtir.innerHTML = '✅ Surtir Pedido';
+                // Can be marked as ready
+                btnSurtir.innerHTML = '✅ Marcar Listo';
                 btnSurtir.style.background = '#16a34a';
                 btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';
               } else {
-                // Other status - hide button
                 btnSurtir.style.display = 'none';
+              }
+            }
+            
+            // Finanzas role - Confirmar button
+            if (btnConfirmar && (currentRole === 'finanzas' || currentRole === 'gerente_finanzas')) {
+              if (estaSurtido) {
+                // Already confirmed
+                btnConfirmar.innerHTML = '✅ Confirmado';
+                btnConfirmar.style.background = '#10b981';
+                btnConfirmar.disabled = true;
+                btnConfirmar.style.display = 'inline-block';
+              } else if (estaListoParaSurtir || estaParcialmenteSurtido) {
+                // Ready to confirm
+                btnConfirmar.innerHTML = '✅ Confirmar Surtido';
+                btnConfirmar.style.background = '#0d6efd';
+                btnConfirmar.disabled = false;
+                btnConfirmar.style.display = 'inline-block';
+              } else {
+                btnConfirmar.style.display = 'none';
               }
             }
             
@@ -1267,8 +1289,19 @@
 
             // Render items
             // FASE 3 - TASK 3: Check if user is inventarios to hide pricing
+            // Filter out backorder products for finanzas role
+            const currentUserRole = getUserRole();
+            const isFinanzasRole = currentUserRole === 'finanzas' || currentUserRole === 'gerente_finanzas';
+            
+            let productosToRender = productos;
+            if (isFinanzasRole) {
+              // Finanzas only sees products with stock (not backorder)
+              productosToRender = productos.filter(item => !item.esBackorder);
+              console.log(`💰 [FINANZAS] Filtrando productos: ${productos.length} total, ${productosToRender.length} con stock, ${productos.length - productosToRender.length} backorder ocultos`);
+            }
+            
             const itemsContainer = document.getElementById("itemsContainer");
-            itemsContainer.innerHTML = productos
+            itemsContainer.innerHTML = productosToRender
               .map(
                 (item) => {
                   // Calculate stock availability
@@ -1686,10 +1719,10 @@
           // Confirm action
           const confirmed = await Swal.fire({
             icon: 'question',
-            title: '¿Surtir pedido?',
-            text: 'Se marcará el pedido como completamente surtido. Esta acción no se puede deshacer.',
+            title: '¿Marcar como listo?',
+            text: 'Los productos con stock se marcarán como listos para surtir. NO se reducirá el inventario hasta que finanzas confirme.',
             showCancelButton: true,
-            confirmButtonText: 'Sí, surtir',
+            confirmButtonText: 'Sí, marcar listo',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#16a34a',
             cancelButtonColor: '#6c757d'
@@ -1699,7 +1732,7 @@
 
           const originalText = btnSurtir.innerHTML;
           btnSurtir.disabled = true;
-          btnSurtir.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Surtiendo...';
+          btnSurtir.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Marcando...';
 
           try {
             const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/surtir`, {
@@ -1715,15 +1748,10 @@
             if (response.ok && data.success) {
               await Swal.fire({
                 icon: 'success',
-                title: 'Pedido surtido',
-                text: data.message || 'El pedido ha sido marcado como surtido correctamente',
+                title: 'Productos marcados',
+                text: data.message || 'Los productos han sido marcados como listos para surtir',
                 confirmButtonColor: '#16a34a'
               });
-              
-              // Update button text and disable it
-              btnSurtir.innerHTML = '✅ Pedido Surtido';
-              btnSurtir.style.background = '#10b981';
-              btnSurtir.disabled = true;
               
               // Reload page to reflect changes
               window.location.reload();
@@ -1735,6 +1763,66 @@
             showToast(error.message || 'Error al surtir el pedido', 'error');
             btnSurtir.disabled = false;
             btnSurtir.innerHTML = originalText;
+          }
+        };
+
+        // Function to confirm fulfillment and reduce stock (for finanzas role)
+        window.confirmarSurtidoFinanzas = async function() {
+          if (!selectedOrderId) {
+            showToast("No se pudo identificar el pedido", "error");
+            return;
+          }
+
+          const btnConfirmar = document.getElementById('btnConfirmarSurtido');
+          if (!btnConfirmar) return;
+
+          // Confirm action
+          const confirmed = await Swal.fire({
+            icon: 'warning',
+            title: '¿Confirmar surtido?',
+            html: 'Esta acción:<br>• Reducirá el inventario<br>• Marcará el pedido como Surtido<br>• NO se puede deshacer',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, confirmar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0d6efd',
+            cancelButtonColor: '#6c757d'
+          });
+
+          if (!confirmed.isConfirmed) return;
+
+          const originalText = btnConfirmar.innerHTML;
+          btnConfirmar.disabled = true;
+          btnConfirmar.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Confirmando...';
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/confirmar-surtido`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${adminToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+              await Swal.fire({
+                icon: 'success',
+                title: 'Pedido confirmado',
+                text: data.message || 'El pedido ha sido confirmado y el inventario reducido',
+                confirmButtonColor: '#0d6efd'
+              });
+              
+              // Reload page to reflect changes
+              window.location.reload();
+            } else {
+              throw new Error(data.message || 'Error al confirmar pedido');
+            }
+          } catch (error) {
+            console.error('Error confirmando pedido:', error);
+            showToast(error.message || 'Error al confirmar el pedido', 'error');
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerHTML = originalText;
           }
         };
       })();
