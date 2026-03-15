@@ -1725,13 +1725,11 @@
             let queryParams = [];
             
             if (isInventarios) {
-              // Inventarios: No prices, only backorder items
+              // Inventarios: No prices, show all products
               queryParams.push('mostrarPrecios=false');
-              queryParams.push('filtrarPorRol=true');
             } else if (isFinanzas) {
-              // Finanzas: With prices, only in-stock items
+              // Finanzas: With prices, show all products
               queryParams.push('mostrarPrecios=true');
-              queryParams.push('filtrarPorRol=true');
             }
             // Admin/other roles: Show everything with prices (default behavior)
             
