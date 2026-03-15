@@ -31,47 +31,75 @@
       return;
     }
 
-    // Cargar el componente
-    fetch('/components/back-button.html')
-      .then(response => {
-        if (!response.ok) throw new Error('Error al cargar back-button.html');
-        return response.text();
-      })
-      .then(html => {
-        container.innerHTML = html;
+    // Crear el componente directamente sin fetch para evitar errores 403
+    const html = `
+      <!-- Botón de Volver Estandarizado -->
+      <div class="back-button-container">
+        <button type="button" class="btn-back-standard" id="btnVolverStandard">
+          <i class="bi bi-arrow-left"></i>
+          <span class="back-text">${backText}</span>
+        </button>
+      </div>
 
-        // Configurar el texto del botón
-        const backTextElement = container.querySelector('.back-text');
-        if (backTextElement && backText !== 'Volver') {
-          backTextElement.textContent = backText;
+      <style>
+        .back-button-container {
+          margin-bottom: 1.5rem;
+          padding: 0;
         }
 
-        // Configurar el evento click
-        const btnBack = container.querySelector('#btnVolverStandard');
-        if (btnBack) {
-          btnBack.addEventListener('click', function() {
-            // Marcar navegación para evitar alertas de cambios no guardados
-            sessionStorage.setItem('_navigating', 'true');
-            localStorage.setItem('_nav_timestamp', Date.now().toString());
-            
-            // Navegar a la URL especificada
-            window.location.href = backUrl;
-          });
+        .btn-back-standard {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.6rem 1.25rem;
+          background: white;
+          border: 1px solid #e5e7eb;
+          border-radius: 0.5rem;
+          color: #374151;
+          font-size: 0.9375rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-decoration: none;
         }
 
-        console.log(`✅ [Back Button] Cargado correctamente - Destino: ${backUrl}`);
-      })
-      .catch(error => {
-        console.error('❌ [Back Button] Error al cargar:', error);
-        // Fallback: crear botón básico
-        container.innerHTML = `
-          <div class="back-button-container">
-            <button type="button" class="btn btn-secondary" onclick="window.location.href='${backUrl}'">
-              <i class="bi bi-arrow-left"></i> ${backText}
-            </button>
-          </div>
-        `;
+        .btn-back-standard:hover {
+          background: #f9fafb;
+          border-color: var(--razo-orange, #F97316);
+          color: var(--razo-orange, #F97316);
+          transform: translateX(-2px);
+        }
+
+        .btn-back-standard:active {
+          transform: translateX(-2px) scale(0.98);
+        }
+
+        .btn-back-standard i {
+          font-size: 1rem;
+        }
+
+        .back-text {
+          line-height: 1;
+        }
+      </style>
+    `;
+
+    container.innerHTML = html;
+
+    // Configurar el evento click
+    const btnBack = container.querySelector('#btnVolverStandard');
+    if (btnBack) {
+      btnBack.addEventListener('click', function() {
+        // Marcar navegación para evitar alertas de cambios no guardados
+        sessionStorage.setItem('_navigating', 'true');
+        localStorage.setItem('_nav_timestamp', Date.now().toString());
+        
+        // Navegar a la URL especificada
+        window.location.href = backUrl;
       });
+    }
+
+    console.log(`✅ [Back Button] Cargado correctamente - Destino: ${backUrl}`);
   };
 
   console.log('✅ [Back Button Loader] Módulo cargado');

@@ -88,11 +88,11 @@ const createRedisStore = (prefix) => {
 
 /**
  * Rate Limiter Global para todas las rutas /api
- * 300 peticiones por 15 minutos
+ * 1000 peticiones por 15 minutos
  */
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 300, // 300 peticiones por ventana
+  max: 1000, // 1000 peticiones por ventana
   standardHeaders: true, // Retornar info en headers `RateLimit-*`
   legacyHeaders: false, // Deshabilitar headers `X-RateLimit-*`
   
@@ -158,11 +158,11 @@ const authLimiter = rateLimit({
  * Rate Limiter por Tenant
  * Limita peticiones por combinación IP + tenant_id
  * Evita que un tenant abusivo afecte a otros en el SaaS
- * 100 peticiones por 15 minutos por tenant
+ * 500 peticiones por 15 minutos por tenant
  */
 const tenantRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
 
@@ -190,11 +190,11 @@ const tenantRateLimiter = rateLimit({
 
 /**
  * Rate Limiter para endpoints de alto costo (PDFs, reportes, imágenes)
- * 20 peticiones por hora
+ * 50 peticiones por hora
  */
 const heavyOperationLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hora
-  max: 20,
+  max: 50,
   standardHeaders: true,
   legacyHeaders: false,
 
@@ -262,7 +262,7 @@ const passwordResetLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 500,
   
   // CRÍTICO: skip si Redis no está disponible (fail-open)
   skip: skipIfRedisDown,
@@ -280,7 +280,7 @@ const apiLimiter = rateLimit({
 
 const checkoutLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  max: 30,
+  max: 100,
   
   // CRÍTICO: skip si Redis no está disponible (fail-open)
   skip: skipIfRedisDown,
@@ -298,7 +298,7 @@ const checkoutLimiter = rateLimit({
 
 const adminLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 800,
   
   // CRÍTICO: skip si Redis no está disponible (fail-open)
   skip: skipIfRedisDown,
