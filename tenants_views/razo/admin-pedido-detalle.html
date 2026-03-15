@@ -565,13 +565,6 @@
                   </div>
                   <div class="d-flex align-items-center gap-2">
                     <span
-                      id="pedidoPrioridadBadge"
-                      style="display: none; padding: 0.4rem 0.8rem; border-radius: 2rem; font-weight: 600; font-size: 0.85rem; background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%); color: var(--razo-orange); border: 2px solid var(--razo-orange);"
-                      title="Este pedido tiene prioridad VIP y se surtirá antes que pedidos más antiguos"
-                    >
-                      ⭐ PRIORITARIO
-                    </span>
-                    <span
                       class="pedido-estatus-badge pendiente"
                       id="pedidoEstatus"
                       >--</span
@@ -670,6 +663,26 @@
                     title="Ajustar productos del pedido"
                   >
                     ✏️ Ajustar Pedido
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-success"
+                    id="btnSurtirPedido"
+                    onclick="surtirPedidoInventarios()"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #16a34a; color: white; display: none;"
+                    title="Marcar productos como listos para surtir"
+                  >
+                    ✅ Marcar Listo
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    id="btnConfirmarSurtido"
+                    onclick="confirmarSurtidoFinanzas()"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #0d6efd; color: white; display: none;"
+                    title="Confirmar surtido y reducir inventario"
+                  >
+                    ✅ Confirmar Surtido
                   </button>
                   <!-- Botones de Factura y Remisión (solo para finanzas, admin, superadmin) -->
                   <button
@@ -950,32 +963,72 @@
       function setupRoleBasedVisibility() {
         const userRole = getUserRole();
         const isInventarios = userRole === 'inventarios';
+        const isFinanzas = userRole === 'finanzas' || userRole === 'gerente_finanzas';
         
-        if (!isInventarios) {
-          console.log('✅ [PEDIDO-DETALLE] Rol admin - Mostrando todos los datos');
-          return; // Admin sees everything
+        const btnSurtir = document.getElementById('btnSurtirPedido');
+        const btnAjustar = document.getElementById('btnAjustarPedido');
+        const btnConfirmar = document.getElementById('btnConfirmarSurtido');
+        
+        if (isInventarios) {
+          console.log('� [PEDIDO-DETALLE] Rol inventarios - Configurando vista');
+          
+          // Show Surtir Pedido button for inventarios
+          if (btnSurtir) {
+            btnSurtir.style.display = 'inline-block';
+            console.log('✅ [PEDIDO-DETALLE] Botón Surtir Pedido habilitado');
+          }
+          
+          // Show Ajustar Pedido button for inventarios
+          if (btnAjustar) {
+            btnAjustar.style.display = 'inline-block';
+            console.log('✅ [PEDIDO-DETALLE] Botón Ajustar Pedido habilitado');
+          }
+          
+          // Hide Confirmar button for inventarios
+          if (btnConfirmar) btnConfirmar.style.display = 'none';
+          
+          // Hide financial sections
+          const montoTotalSection = document.getElementById('montoTotalSection');
+          const itemsTotalSection = document.getElementById('itemsTotalSection');
+          
+          if (montoTotalSection) montoTotalSection.style.display = 'none';
+          if (itemsTotalSection) itemsTotalSection.style.display = 'none';
+          
+          // Hide admin-only buttons (like Cambiar estatus)
+          const adminOnlyButtons = document.querySelectorAll('[data-admin-only="true"]');
+          adminOnlyButtons.forEach(button => {
+            button.style.display = 'none';
+            console.log(`🚫 [PEDIDO-DETALLE] Ocultando botón: ${button.id}`);
+          });
+          
+          return;
         }
         
-        console.log('🚫 [PEDIDO-DETALLE] Rol inventarios - Ocultando datos financieros');
-        
-        // Hide financial sections
-        const montoTotalSection = document.getElementById('montoTotalSection');
-        const itemsTotalSection = document.getElementById('itemsTotalSection');
-        
-        if (montoTotalSection) {
-          montoTotalSection.style.display = 'none';
+        if (isFinanzas) {
+          console.log('💰 [PEDIDO-DETALLE] Rol finanzas - Configurando vista');
+          
+          // Hide Surtir Pedido button for finanzas
+          if (btnSurtir) btnSurtir.style.display = 'none';
+          
+          // Hide Ajustar Pedido button for finanzas
+          if (btnAjustar) {
+            btnAjustar.style.display = 'none';
+            console.log('🚫 [PEDIDO-DETALLE] Botón Ajustar Pedido oculto para finanzas');
+          }
+          
+          // Show Confirmar Surtido button for finanzas
+          if (btnConfirmar) {
+            btnConfirmar.style.display = 'inline-block';
+            console.log('✅ [PEDIDO-DETALLE] Botón Confirmar Surtido habilitado para finanzas');
+          }
+          
+          return;
         }
         
-        if (itemsTotalSection) {
-          itemsTotalSection.style.display = 'none';
-        }
-        
-        // Hide admin-only buttons
-        const adminOnlyButtons = document.querySelectorAll('[data-admin-only="true"]');
-        adminOnlyButtons.forEach(button => {
-          button.style.display = 'none';
-          console.log(`🚫 [PEDIDO-DETALLE] Ocultando botón: ${button.id}`);
-        });
+        // Admin and other roles see everything
+        console.log('✅ [PEDIDO-DETALLE] Rol admin - Mostrando todos los datos');
+        if (btnSurtir) btnSurtir.style.display = 'none';
+        if (btnConfirmar) btnConfirmar.style.display = 'none';
       }
 
       (function () {
@@ -1030,6 +1083,18 @@
             const btnRemision = document.getElementById('btnGenerarRemision');
             const btnFactura = document.getElementById('btnGenerarFactura');
             const btnAjustarPedido = document.getElementById('btnAjustarPedido');
+            
+            // Generar Remisión: Available for inventarios, finanzas, and admin roles
+            const rolesConRemision = ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas', 'inventarios'];
+            if (btnRemision) {
+              btnRemision.style.display = rolesConRemision.includes(userRole) ? 'inline-block' : 'none';
+            }
+            
+            // Generar Factura: Only for finanzas and admin roles
+            const rolesConFactura = ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas'];
+            if (btnFactura) {
+              btnFactura.style.display = rolesConFactura.includes(userRole) ? 'inline-block' : 'none';
+            }  
             
             // Solo mostrar botones si: (1) tiene el rol correcto Y (2) viene de clientes-facturacion
             if (tieneAcceso && isFromClientesFacturacion) {
@@ -1151,12 +1216,62 @@
             }
             */
 
-            // Show priority badge if order is prioritized
-            const prioridadBadge = document.getElementById("pedidoPrioridadBadge");
-            if (pedido.es_prioritario === true) {
-              prioridadBadge.style.display = "inline-block";
-            } else {
-              prioridadBadge.style.display = "none";
+            // Update buttons based on role and order status
+            const btnSurtir = document.getElementById('btnSurtirPedido');
+            const btnConfirmar = document.getElementById('btnConfirmarSurtido');
+            const btnRemision = document.getElementById('btnGenerarRemision');
+            const currentRole = getUserRole();
+            const estaSurtido = ['surtido', 'enviado', 'entregado'].includes(estatusValor);
+            const estaListoParaSurtir = estatusValor === 'listo para surtir';
+            const estaParcialmenteSurtido = estatusValor === 'parcialmente surtido' || estatusValor === 'parcialmente_surtido';
+            
+            // Inventarios role - Surtir button
+            if (btnSurtir && currentRole === 'inventarios') {
+              if (estaSurtido) {
+                // Already confirmed by finanzas
+                btnSurtir.innerHTML = '✅ Pedido Surtido';
+                btnSurtir.style.background = '#10b981';
+                btnSurtir.disabled = true;
+                btnSurtir.style.display = 'inline-block';
+              } else if (estaListoParaSurtir || estaParcialmenteSurtido) {
+                // Already marked as ready, waiting for finanzas
+                btnSurtir.innerHTML = '⏳ Esperando Confirmación';
+                btnSurtir.style.background = '#6c757d';
+                btnSurtir.disabled = true;
+                btnSurtir.style.display = 'inline-block';
+              } else if (estatusValor === 'pendiente' || estatusValor === 'confirmado') {
+                // Can be marked as ready
+                btnSurtir.innerHTML = '✅ Marcar Listo';
+                btnSurtir.style.background = '#16a34a';
+                btnSurtir.disabled = false;
+                btnSurtir.style.display = 'inline-block';
+              } else {
+                btnSurtir.style.display = 'none';
+              }
+            }
+            
+            // Finanzas role - Confirmar button
+            if (btnConfirmar && (currentRole === 'finanzas' || currentRole === 'gerente_finanzas')) {
+              if (estaSurtido) {
+                // Already confirmed
+                btnConfirmar.innerHTML = '✅ Confirmado';
+                btnConfirmar.style.background = '#10b981';
+                btnConfirmar.disabled = true;
+                btnConfirmar.style.display = 'inline-block';
+              } else if (estaListoParaSurtir || estaParcialmenteSurtido) {
+                // Ready to confirm
+                btnConfirmar.innerHTML = '✅ Confirmar Surtido';
+                btnConfirmar.style.background = '#0d6efd';
+                btnConfirmar.disabled = false;
+                btnConfirmar.style.display = 'inline-block';
+              } else {
+                btnConfirmar.style.display = 'none';
+              }
+            }
+            
+            // Update Generar Remisión button text if order is fulfilled
+            if (btnRemision && estaSurtido) {
+              btnRemision.innerHTML = '📄 Descargar Remisión';
             }
 
             document.getElementById("pedidoMonto").textContent = formatCurrency(
@@ -1216,11 +1331,19 @@
 
             // Render items
             // FASE 3 - TASK 3: Check if user is inventarios to hide pricing
-            const userRole = getUserRole();
-            const isInventarios = userRole === 'inventarios';
+            // Filter out backorder products for finanzas role
+            const currentUserRole = getUserRole();
+            const isFinanzasRole = currentUserRole === 'finanzas' || currentUserRole === 'gerente_finanzas';
+            
+            let productosToRender = productos;
+            if (isFinanzasRole) {
+              // Finanzas only sees products with stock (not backorder)
+              productosToRender = productos.filter(item => !item.esBackorder);
+              console.log(`💰 [FINANZAS] Filtrando productos: ${productos.length} total, ${productosToRender.length} con stock, ${productos.length - productosToRender.length} backorder ocultos`);
+            }
             
             const itemsContainer = document.getElementById("itemsContainer");
-            itemsContainer.innerHTML = productos
+            itemsContainer.innerHTML = productosToRender
               .map(
                 (item) => {
                   // Calculate stock availability
@@ -1258,6 +1381,8 @@
                     badgeText = 'CON STOCK';
                   }
                   
+                  const isInventariosRole = getUserRole() === 'inventarios';
+                  
                   return `
               <div class="item-row">
                 ${
@@ -1280,7 +1405,7 @@
                     <span><span class="${badgeClass}">${badgeText}</span></span>
                   </p>
                 </div>
-                ${!isInventarios ? `
+                ${!isInventariosRole ? `
                 <div class="item-pricing">
                   <p class="item-subtotal">${formatCurrency(item.subtotal)}</p>
                   <p class="item-unit-price">${
@@ -1583,7 +1708,34 @@
           }
           
           try {
-            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/pdf`, {
+            // Get admin token
+            const adminToken = localStorage.getItem("razoconnect_admin_token");
+            if (!adminToken) {
+              console.error("No admin token found");
+              window.location.href = "/login.html";
+              return;
+            }
+
+            // Check user role for dynamic PDF generation
+            const userRole = getUserRole();
+            const isInventarios = userRole === 'inventarios';
+            const isFinanzas = userRole === 'finanzas' || userRole === 'gerente_finanzas';
+            
+            // Build query params based on role
+            let queryParams = [];
+            
+            if (isInventarios) {
+              // Inventarios: No prices, show all products
+              queryParams.push('mostrarPrecios=false');
+            } else if (isFinanzas) {
+              // Finanzas: With prices, show all products
+              queryParams.push('mostrarPrecios=true');
+            }
+            // Admin/other roles: Show everything with prices (default behavior)
+            
+            const queryString = queryParams.length > 0 ? '?' + queryParams.join('&') : '';
+            
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/pdf${queryString}`, {
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${adminToken}`
@@ -1616,6 +1768,126 @@
           }
           
           showToast("Función de factura en desarrollo", "info");
+        };
+
+        // Function to mark order as fulfilled (for inventarios role)
+        window.surtirPedidoInventarios = async function() {
+          if (!selectedOrderId) {
+            showToast("No se pudo identificar el pedido", "error");
+            return;
+          }
+
+          const btnSurtir = document.getElementById('btnSurtirPedido');
+          if (!btnSurtir) return;
+
+          // Confirm action
+          const confirmed = await Swal.fire({
+            icon: 'question',
+            title: '¿Marcar como listo?',
+            text: 'Los productos con stock se marcarán como listos para surtir. NO se reducirá el inventario hasta que finanzas confirme.',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, marcar listo',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#16a34a',
+            cancelButtonColor: '#6c757d'
+          });
+
+          if (!confirmed.isConfirmed) return;
+
+          const originalText = btnSurtir.innerHTML;
+          btnSurtir.disabled = true;
+          btnSurtir.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Marcando...';
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/surtir`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${adminToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+              await Swal.fire({
+                icon: 'success',
+                title: 'Productos marcados',
+                text: data.message || 'Los productos han sido marcados como listos para surtir',
+                confirmButtonColor: '#16a34a'
+              });
+              
+              // Reload page to reflect changes
+              window.location.reload();
+            } else {
+              throw new Error(data.message || 'Error al surtir pedido');
+            }
+          } catch (error) {
+            console.error('Error surtiendo pedido:', error);
+            showToast(error.message || 'Error al surtir el pedido', 'error');
+            btnSurtir.disabled = false;
+            btnSurtir.innerHTML = originalText;
+          }
+        };
+
+        // Function to confirm fulfillment and reduce stock (for finanzas role)
+        window.confirmarSurtidoFinanzas = async function() {
+          if (!selectedOrderId) {
+            showToast("No se pudo identificar el pedido", "error");
+            return;
+          }
+
+          const btnConfirmar = document.getElementById('btnConfirmarSurtido');
+          if (!btnConfirmar) return;
+
+          // Confirm action
+          const confirmed = await Swal.fire({
+            icon: 'warning',
+            title: '¿Confirmar surtido?',
+            html: 'Esta acción:<br>• Reducirá el inventario<br>• Marcará el pedido como Surtido<br>• NO se puede deshacer',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, confirmar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0d6efd',
+            cancelButtonColor: '#6c757d'
+          });
+
+          if (!confirmed.isConfirmed) return;
+
+          const originalText = btnConfirmar.innerHTML;
+          btnConfirmar.disabled = true;
+          btnConfirmar.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Confirmando...';
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/confirmar-surtido`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${adminToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+              await Swal.fire({
+                icon: 'success',
+                title: 'Pedido confirmado',
+                text: data.message || 'El pedido ha sido confirmado y el inventario reducido',
+                confirmButtonColor: '#0d6efd'
+              });
+              
+              // Reload page to reflect changes
+              window.location.reload();
+            } else {
+              throw new Error(data.message || 'Error al confirmar pedido');
+            }
+          } catch (error) {
+            console.error('Error confirmando pedido:', error);
+            showToast(error.message || 'Error al confirmar el pedido', 'error');
+            btnConfirmar.disabled = false;
+            btnConfirmar.innerHTML = originalText;
+          }
         };
       })();
 

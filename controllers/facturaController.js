@@ -44,7 +44,7 @@ async function descargarFactura(req, res) {
           AND c.agentedeventasid = $3
       `;
       queryParams = [pedidoId, tenant_id, userId];
-    } else if (rol === 'admin' || rol === 'super_admin') {
+    } else if (['admin', 'super_admin', 'superadmin', 'finanzas', 'gerente_finanzas', 'inventarios', 'gerente_comercial'].includes(rol)) {
       pedidoQuery = `
         SELECT p.pedidoid, p.estatus, p.clienteid
         FROM pedidos p

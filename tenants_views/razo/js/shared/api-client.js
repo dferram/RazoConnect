@@ -12,7 +12,7 @@ const ApiClient = (() => {
    */
   const getToken = () => {
     try {
-      return localStorage.getItem('adminToken') || localStorage.getItem('token') || null;
+      return localStorage.getItem('razoconnect_admin_token') || localStorage.getItem('adminToken') || localStorage.getItem('token') || null;
     } catch {
       return null;
     }
@@ -73,6 +73,7 @@ const ApiClient = (() => {
 
       // Manejar 401 globalmente — redirigir al login
       if (response.status === 401) {
+        localStorage.removeItem('razoconnect_admin_token');
         localStorage.removeItem('adminToken');
         localStorage.removeItem('token');
         window.location.href = '/login.html';
