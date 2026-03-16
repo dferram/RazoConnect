@@ -224,7 +224,8 @@ exports.generarRemision = async (req, res) => {
     const folio = folioResult.rows[0].folio;
 
     // 5. Insertar remisión
-    const estadoInicial = emitir_inmediatamente ? 'EMITIDA' : 'BORRADOR';
+    // Estados: BORRADOR → PENDIENTE_REVISION → CONFIRMADA → EMPACADA → ENVIADA
+    const estadoInicial = emitir_inmediatamente ? 'PENDIENTE_REVISION' : 'BORRADOR';
     
     const remisionInsert = await client.query(
       `INSERT INTO remisiones 
@@ -409,8 +410,10 @@ exports.generarRemision = async (req, res) => {
       [completamenteSurtido, nuevoEstatus, nuevoMontoSurtido, montoBackorder, pedido_id, tenant_id]
     );
 
-    // 9. CRÍTICO: Generar movimiento en CXC solo si la remisión se emite y el cliente es de crédito
-    if (emitir_inmediatamente && pedido.es_credito) {
+    // 9. CRÍTICO: NO generar CXC hasta que finanzas confirme
+    // El CXC se generará en el endpoint confirmar-finanzas
+    // Por ahora solo registramos la remisión en estado PENDIENTE_REVISION
+    if (false && emitir_inmediatamente && pedido.es_credito) {
       // Obtener información de crédito del cliente
       const creditoQuery = await client.query(
         `SELECT credito_id, saldo_deudor, limite_credito
@@ -828,14 +831,95 @@ exports.cancelarRemision = async (req, res) => {
       [id, tenant_id]
     );
 
-    // Revertir cantidades surtidas en detallesdelpedido
+    // CRÍTICO: Obtener admin_id para devolver stock al inventario correcto
+    const pedidoAdminQuery = await client.query(
+      `SELECT agenteid FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2`,
+      [remision.pedido_id, tenant_id]
+    );
+    
+    let adminIdStock = 1; // Default admin
+    if (pedidoAdminQuery.rows.length > 0 && pedidoAdminQuery.rows[0].agenteid) {
+      const agenteQuery = await client.query(
+        `SELECT admin_id FROM agentesdeventas WHERE agenteid = $1`,
+        [pedidoAdminQuery.rows[0].agenteid]
+      );
+      if (agenteQuery.rows.length > 0 && agenteQuery.rows[0].admin_id) {
+        adminIdStock = agenteQuery.rows[0].admin_id;
+      }
+    }
+
+    // Revertir cantidades surtidas en detallesdelpedido Y devolver stock
     for (const detalle of detallesQuery.rows) {
+      // 1. Revertir cantidad surtida en pedido
       await client.query(
         `UPDATE detallesdelpedido 
          SET cantidad_surtida_remisiones = GREATEST(0, COALESCE(cantidad_surtida_remisiones, 0) - $1)
          WHERE detalleid = $2 AND tenant_id = $3`,
         [detalle.cantidad_paquetes_surtidos, detalle.detalle_pedido_id, tenant_id]
       );
+
+      // 2. DEVOLVER STOCK: Incrementar cantidad física y reservada
+      const stockReturnResult = await client.query(
+        `UPDATE stock_admin 
+         SET cantidad = cantidad + $1,
+             cantidad_reservada = cantidad_reservada + $1,
+             updated_at = NOW()
+         WHERE variante_id = $2 
+           AND admin_id = $3 
+           AND tenant_id = $4
+         RETURNING stockadminid, cantidad, cantidad_reservada`,
+        [detalle.piezas_surtidas, detalle.variante_id, adminIdStock, tenant_id]
+      );
+
+      if (stockReturnResult.rows.length > 0) {
+        const stockInfo = stockReturnResult.rows[0];
+        
+        // 3. Registrar reversión en log de auditoría
+        await client.query(
+          `INSERT INTO inventario_reservas_log (
+             stockadminid, variante_id, admin_id, pedido_id, detalle_id,
+             cantidad_reservada, accion, cantidad_antes, cantidad_despues,
+             usuario_id, tenant_id
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, 'REVERTIR_CANCELACION', $7, $8, $9, $10)`,
+          [
+            stockInfo.stockadminid,
+            detalle.variante_id,
+            adminIdStock,
+            remision.pedido_id,
+            detalle.detalle_pedido_id,
+            detalle.piezas_surtidas,
+            stockInfo.cantidad_reservada - detalle.piezas_surtidas,
+            stockInfo.cantidad_reservada,
+            req.user?.id || null,
+            tenant_id
+          ]
+        );
+      }
+
+      // 4. REVERTIR MOVIMIENTO EN KARDEX
+      try {
+        await kardexService.registrarMovimiento({
+          varianteId: detalle.variante_id,
+          adminId: adminIdStock,
+          tenantId: tenant_id,
+          tipo: 'ENTRADA',
+          cantidad: detalle.piezas_surtidas, // Positivo para entradas
+          motivo: 'DEVOLUCION',
+          referenciaTipo: 'CANCELACION_REMISION',
+          referenciaId: `REM-${id}`,
+          observaciones: `Devolución por cancelación de remisión ${remision.folio}. Motivo: ${motivo || 'No especificado'}`,
+          ipOrigen: null
+        }, client);
+      } catch (kardexError) {
+        logger.error('Error al revertir movimiento en Kardex', {
+          error: kardexError.message,
+          remisionId: id,
+          varianteId: detalle.variante_id,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
+      }
     }
 
     // Actualizar estado de la remisión
@@ -954,6 +1038,410 @@ exports.obtenerItemsPendientesSurtir = async (req, res) => {
       success: false,
       message: 'Error al obtener items pendientes'
     });
+  }
+};
+
+/**
+ * PUT /api/remisiones/:id/corregir
+ * Corrige items de una remisión sin cancelarla
+ * Permite ajustar cantidades, agregar/quitar items
+ */
+exports.corregirRemision = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    const { id } = req.params;
+    const { tenant_id } = req.tenant;
+    const { items_corregir, motivo_correccion } = req.body;
+    const userId = req.user?.id || req.user?.userId;
+
+    if (!items_corregir || !Array.isArray(items_corregir) || items_corregir.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requiere array de items_corregir'
+      });
+    }
+
+    await client.query('BEGIN');
+
+    // Verificar remisión
+    const remisionQuery = await client.query(
+      `SELECT * FROM remisiones WHERE remision_id = $1 AND tenant_id = $2 FOR UPDATE`,
+      [id, tenant_id]
+    );
+
+    if (remisionQuery.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, error: 'Remisión no encontrada' });
+    }
+
+    const remision = remisionQuery.rows[0];
+
+    if (!['PENDIENTE_REVISION', 'CONFIRMADA'].includes(remision.estado)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        error: `No se puede corregir en estado ${remision.estado}`
+      });
+    }
+
+    let totalNuevo = 0;
+    const cambios = [];
+
+    // Procesar correcciones
+    for (const item of items_corregir) {
+      const { detalle_remision_id, nueva_cantidad_paquetes } = item;
+
+      const detalleQuery = await client.query(
+        `SELECT dr.*, pv.sku, p.nombre as producto_nombre
+         FROM detalles_remision dr
+         INNER JOIN producto_variantes pv ON dr.variante_id = pv.varianteid
+         INNER JOIN productos p ON pv.productoid = p.productoid
+         WHERE dr.detalle_remision_id = $1 AND dr.remision_id = $2 AND dr.tenant_id = $3
+         FOR UPDATE`,
+        [detalle_remision_id, id, tenant_id]
+      );
+
+      if (detalleQuery.rows.length === 0) continue;
+
+      const detalle = detalleQuery.rows[0];
+      const cantidadAnterior = parseInt(detalle.cantidad_paquetes_surtidos);
+      const diferencia = nueva_cantidad_paquetes - cantidadAnterior;
+
+      if (diferencia !== 0) {
+        const piezasPorPaquete = Math.floor(detalle.piezas_surtidas / cantidadAnterior);
+        const nuevasPiezas = nueva_cantidad_paquetes * piezasPorPaquete;
+        const nuevoSubtotal = detalle.precio_unitario * nuevasPiezas;
+
+        // Actualizar detalle
+        await client.query(
+          `UPDATE detalles_remision
+           SET cantidad_paquetes_surtidos = $1,
+               piezas_surtidas = $2,
+               subtotal = $3
+           WHERE detalle_remision_id = $4`,
+          [nueva_cantidad_paquetes, nuevasPiezas, nuevoSubtotal, detalle_remision_id]
+        );
+
+        totalNuevo += nuevoSubtotal;
+
+        cambios.push({
+          sku: detalle.sku,
+          producto: detalle.producto_nombre,
+          cantidad_anterior: cantidadAnterior,
+          cantidad_nueva: nueva_cantidad_paquetes,
+          diferencia
+        });
+      } else {
+        totalNuevo += parseFloat(detalle.subtotal);
+      }
+    }
+
+    // Actualizar total de remisión
+    await client.query(
+      `UPDATE remisiones
+       SET total_remision = $1,
+           notas = COALESCE(notas || E'\n\n', '') || 'CORREGIDO: ' || $2
+       WHERE remision_id = $3`,
+      [totalNuevo.toFixed(2), motivo_correccion || 'Ajuste de cantidades', id]
+    );
+
+    // Registrar en historial
+    await client.query(
+      `INSERT INTO historial_remisiones (
+        remision_id, accion, usuario_id, detalles, tenant_id
+      ) VALUES ($1, 'CORRECCION', $2, $3, $4)`,
+      [id, userId, JSON.stringify({ cambios, motivo: motivo_correccion }), tenant_id]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: 'Remisión corregida exitosamente',
+      cambios,
+      total_nuevo: totalNuevo.toFixed(2)
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Error al corregir remisión:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
+    res.status(500).json({ success: false, message: 'Error al corregir remisión' });
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * POST /api/remisiones/:id/confirmar-finanzas
+ * Confirmación final por finanzas - afecta CxC definitivamente
+ * Solo para rol finanzas
+ */
+exports.confirmarRemisionFinanzas = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    const { id } = req.params;
+    const { tenant_id } = req.tenant;
+    const userId = req.user?.id || req.user?.userId;
+
+    await client.query('BEGIN');
+
+    // Verificar remisión
+    const remisionQuery = await client.query(
+      `SELECT r.*, p.pedidoid, p.clienteid, p.es_credito, p.montototal
+       FROM remisiones r
+       INNER JOIN pedidos p ON r.pedido_id = p.pedidoid
+       WHERE r.remision_id = $1 AND r.tenant_id = $2
+       FOR UPDATE`,
+      [id, tenant_id]
+    );
+
+    if (remisionQuery.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, error: 'Remisión no encontrada' });
+    }
+
+    const remision = remisionQuery.rows[0];
+
+    if (remision.estado !== 'CONFIRMADA') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        error: `No se puede confirmar finanzas. Estado actual: ${remision.estado}. Se requiere CONFIRMADA`
+      });
+    }
+
+    // Actualizar estado a EMITIDA
+    await client.query(
+      `UPDATE remisiones
+       SET estado = 'EMITIDA',
+           fecha_emision_final = NOW(),
+           confirmado_por_finanzas = $1
+       WHERE remision_id = $2`,
+      [userId, id]
+    );
+
+    // AHORA SÍ: Generar movimiento en CXC si es crédito
+    if (remision.es_credito) {
+      const creditoQuery = await client.query(
+        `SELECT credito_id, saldo_deudor, limite_credito
+         FROM cliente_creditos
+         WHERE cliente_id = $1
+         FOR UPDATE`,
+        [remision.clienteid]
+      );
+
+      if (creditoQuery.rows.length > 0) {
+        const creditoInfo = creditoQuery.rows[0];
+        const saldoActual = parseFloat(creditoInfo.saldo_deudor || 0);
+        const montoRemision = parseFloat(remision.total_remision);
+        
+        // Liberar reserva del pedido completo y sumar cargo real
+        const saldoSinReserva = parseFloat((saldoActual - remision.montototal).toFixed(2));
+        const nuevoSaldo = parseFloat((saldoSinReserva + montoRemision).toFixed(2));
+
+        await client.query(
+          `UPDATE cliente_creditos
+           SET saldo_deudor = $1, ultima_actualizacion = NOW()
+           WHERE credito_id = $2`,
+          [nuevoSaldo, creditoInfo.credito_id]
+        );
+
+        // Registrar AJUSTE (quitar reserva)
+        await client.query(
+          `INSERT INTO credito_movimientos (
+             credito_id, tipo_movimiento, monto, referencia_id, 
+             descripcion, saldo_despues_movimiento, tenant_id
+           )
+           VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6)`,
+          [
+            creditoInfo.credito_id,
+            (-remision.montototal).toFixed(2),
+            `PED-${remision.pedidoid}`,
+            `Liberación de reserva del pedido #${remision.pedidoid}`,
+            saldoSinReserva.toFixed(2),
+            tenant_id
+          ]
+        );
+
+        // Registrar CARGO (cargo real)
+        await client.query(
+          `INSERT INTO credito_movimientos (
+             credito_id, tipo_movimiento, monto, referencia_id,
+             descripcion, saldo_despues_movimiento, tenant_id
+           )
+           VALUES ($1, 'CARGO', $2, $3, $4, $5, $6)`,
+          [
+            creditoInfo.credito_id,
+            montoRemision.toFixed(2),
+            `REM-${id}`,
+            `Cargo confirmado por remisión ${remision.folio} (Pedido #${remision.pedidoid})`,
+            nuevoSaldo.toFixed(2),
+            tenant_id
+          ]
+        );
+
+        // Crear registro en CXC
+        await client.query(
+          `INSERT INTO cuentas_por_cobrar 
+           (pedido_id, cliente_id, remision_id, tipo_movimiento, monto, descripcion, tenant_id)
+           VALUES ($1, $2, $3, 'CARGO', $4, $5, $6)`,
+          [
+            remision.pedidoid,
+            remision.clienteid,
+            id,
+            montoRemision.toFixed(2),
+            `Remisión ${remision.folio}`,
+            tenant_id
+          ]
+        );
+      }
+    }
+
+    // Registrar en historial
+    await client.query(
+      `INSERT INTO historial_remisiones (
+        remision_id, accion, usuario_id, detalles, tenant_id
+      ) VALUES ($1, 'CONFIRMACION_FINANZAS', $2, $3, $4)`,
+      [
+        id,
+        userId,
+        JSON.stringify({
+          cxc_generado: remision.es_credito,
+          monto: remision.total_remision,
+          timestamp: new Date().toISOString()
+        }),
+        tenant_id
+      ]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: 'Remisión confirmada por finanzas y CxC generado',
+      remision: {
+        remision_id: parseInt(id),
+        estado: 'EMITIDA',
+        cxc_generado: remision.es_credito
+      }
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Error al confirmar remisión por finanzas:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
+    res.status(500).json({ success: false, message: 'Error al confirmar remisión' });
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * POST /api/remisiones/:id/confirmar-almacen
+ * Confirma una remisión después de verificación física por personal de inventarios
+ * Solo para rol inventarios
+ */
+exports.confirmarRemisionAlmacen = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    const { id } = req.params;
+    const { tenant_id } = req.tenant;
+    const { notas_almacen, discrepancias } = req.body;
+    const userId = req.user?.id || req.user?.userId;
+
+    await client.query('BEGIN');
+
+    // Verificar que la remisión existe y está en estado correcto
+    const remisionQuery = await client.query(
+      `SELECT r.*, p.pedidoid, p.clienteid
+       FROM remisiones r
+       INNER JOIN pedidos p ON r.pedido_id = p.pedidoid
+       WHERE r.remision_id = $1 AND r.tenant_id = $2
+       FOR UPDATE`,
+      [id, tenant_id]
+    );
+
+    if (remisionQuery.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ 
+        success: false,
+        error: 'Remisión no encontrada' 
+      });
+    }
+
+    const remision = remisionQuery.rows[0];
+
+    if (remision.estado !== 'PENDIENTE_REVISION') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        success: false,
+        error: `No se puede confirmar. Estado actual: ${remision.estado}. Se requiere estado PENDIENTE_REVISION` 
+      });
+    }
+
+    // Actualizar estado a CONFIRMADA
+    await client.query(
+      `UPDATE remisiones 
+       SET estado = 'CONFIRMADA',
+           notas = COALESCE(notas || E'\n\n', '') || 'CONFIRMADO POR ALMACÉN: ' || $1,
+           fecha_confirmacion_almacen = NOW(),
+           confirmado_por_almacen = $2
+       WHERE remision_id = $3 AND tenant_id = $4`,
+      [notas_almacen || 'Sin observaciones', userId, id, tenant_id]
+    );
+
+    // Registrar en historial
+    await client.query(
+      `INSERT INTO historial_remisiones (
+        remision_id, accion, usuario_id, detalles, tenant_id
+      ) VALUES ($1, 'CONFIRMACION_ALMACEN', $2, $3, $4)`,
+      [
+        id,
+        userId,
+        JSON.stringify({
+          notas: notas_almacen,
+          discrepancias: discrepancias || [],
+          timestamp: new Date().toISOString()
+        }),
+        tenant_id
+      ]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: 'Remisión confirmada por almacén exitosamente',
+      remision: {
+        remision_id: parseInt(id),
+        estado: 'CONFIRMADA',
+        notas_almacen
+      }
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Error al confirmar remisión por almacén:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
+    res.status(500).json({ 
+      success: false,
+      message: 'Error al confirmar remisión'
+    });
+  } finally {
+    client.release();
   }
 };
 

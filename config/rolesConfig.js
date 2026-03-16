@@ -44,6 +44,7 @@ const ROLES_PERMISOS = {
     recibir_inventario: ['ver', 'modificar'],
     productos: ['ver'], // Solo consulta para verificar stock
     pedidos: ['ver', 'modificar'], // Ver pedidos y marcar como surtido
+    remisiones: ['ver', 'confirmar', 'corregir'], // Ver, confirmar y corregir remisiones
   },
 
   /**
@@ -196,7 +197,7 @@ function getDescripcionRol(rol) {
   const descripciones = {
     super_admin: 'Super Administrador (Acceso Total en su Tenant)',
     admin: 'Administrador (Acceso Total en su Tenant)',
-    inventarios: 'Gestión de Inventarios y Auditorías',
+    inventarios: 'Gestión de Inventarios, Auditorías y Surtido',
     catalogo: 'Gestión de Productos y Catálogo',
     finanzas: 'Gestión Financiera y Créditos',
     compras: 'Gestión de Compras y Proveedores',
