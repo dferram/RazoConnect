@@ -124,7 +124,7 @@
           <!-- Instructional Banner -->
           <div id="instructionalBanner" class="instructional-banner">
             <p>
-              &#128161; <strong>Clientes y Facturación:</strong> Gestiona tu base de clientes y genera documentos de facturación. En la pestaña de <strong>Pedidos</strong> encontrarás solo los pedidos completamente surtidos (sin productos pendientes) listos para generar remisiones y facturas. Usa los filtros para buscar por cliente, fecha o estatus.
+              &#128161; <strong>Clientes y Facturación:</strong> Gestiona tu base de clientes y genera documentos de facturación. En la pestaña de <strong>Pedidos</strong> encontrarás los pedidos separados en <strong>Pendientes</strong> (en proceso) y <strong>Surtidos</strong> (listos para facturar). Los pedidos 100% surtidos se marcan automáticamente como <strong>Históricos</strong> y puedes filtrarlos usando el selector "Estado". Usa los filtros para buscar por cliente, fecha o tipo de pedido.
             </p>
             <button class="instructional-banner-close" title="Cerrar">
               ×
@@ -227,6 +227,14 @@
                     <option value="">Todos</option>
                     <option value="pendientes">Pendientes</option>
                     <option value="surtidos">Surtidos</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <label class="filter-label">Estado</label>
+                  <select id="filterPedidoHistorico" class="filter-input" onchange="filterPedidos()">
+                    <option value="">Todos</option>
+                    <option value="activos">Activos</option>
+                    <option value="historicos">Históricos</option>
                   </select>
                 </div>
                 <div class="filter-group">
@@ -646,11 +654,13 @@
             const estatusBadge = getEstatusBadge(pedido.estatus);
             const fecha = new Date(pedido.fechaPedido).toLocaleDateString("es-MX");
             const monto = formatCurrency(pedido.montoTotal);
+            const esHistorico = pedido.es_historico === true;
+            const historicoBadge = esHistorico ? '<span class="admin-badge secondary" style="margin-left: 0.5rem; font-size: 0.7rem;">📚 Histórico</span>' : '';
 
             return `
-              <tr>
+              <tr${esHistorico ? ' style="background-color: #f9fafb;"' : ''}>
                 <td>
-                  <div style="font-weight: 600; color: var(--razo-gray-dark);">#${String(pedido.pedidoId).padStart(6, "0")}</div>
+                  <div style="font-weight: 600; color: var(--razo-gray-dark);">#${String(pedido.pedidoId).padStart(6, "0")}${historicoBadge}</div>
                 </td>
                 <td>${pedido.clienteNombre || "-"}</td>
                 <td>${fecha}</td>
@@ -689,12 +699,21 @@
         const idFilter = document.getElementById("filterPedidoId").value.toLowerCase();
         const clienteFilter = document.getElementById("filterPedidoCliente").value.toLowerCase();
         const tipoFilter = document.getElementById("filterPedidoTipo").value;
+        const historicoFilter = document.getElementById("filterPedidoHistorico").value;
         const fechaDesde = document.getElementById("filterPedidoFechaDesde").value;
         const fechaHasta = document.getElementById("filterPedidoFechaHasta").value;
 
         const filtered = pedidosData.filter((pedido) => {
           const matchesId = !idFilter || String(pedido.pedidoId).includes(idFilter);
           const matchesCliente = !clienteFilter || (pedido.clienteNombre || "").toLowerCase().includes(clienteFilter);
+          
+          // Filter by historical status
+          let matchesHistorico = true;
+          if (historicoFilter === 'activos') {
+            matchesHistorico = !pedido.es_historico;
+          } else if (historicoFilter === 'historicos') {
+            matchesHistorico = pedido.es_historico === true;
+          }
           
           let matchesFecha = true;
           if (fechaDesde || fechaHasta) {
@@ -707,7 +726,7 @@
             }
           }
 
-          return matchesId && matchesCliente && matchesFecha;
+          return matchesId && matchesCliente && matchesHistorico && matchesFecha;
         });
 
         // Separate into pendientes and surtidos
