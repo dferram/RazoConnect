@@ -480,11 +480,11 @@ router.post(
   pedidosAdminController.surtirPedido
 );
 
-// Confirmar surtido y reducir inventario (finanzas)
+// Confirmar surtido y reducir inventario (finanzas y secretaria)
 router.post(
   "/pedidos/:id/confirmar-surtido",
   authenticate,
-  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas']),
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'secretaria']),
   pedidosAdminController.confirmarSurtidoFinanzas
 );
 

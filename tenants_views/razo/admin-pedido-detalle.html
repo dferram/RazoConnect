@@ -646,20 +646,10 @@
                 <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                   <button
                     type="button"
-                    class="btn btn-primary"
-                    id="btnCambiarEstatus"
-                    data-admin-only="true"
-                    onclick="openStatusModalFromDetalle()"
-                    style="padding: 0.5rem 1rem; font-size: 0.875rem;"
-                  >
-                    Cambiar estatus
-                  </button>
-                  <button
-                    type="button"
                     class="btn btn-warning"
                     id="btnAjustarPedido"
                     onclick="abrirModalAjusteDetalle()"
-                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #ffc107; color: #000;"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #ffc107; color: #000; display: none;"
                     title="Ajustar productos del pedido"
                   >
                     ✏️ Ajustar Pedido
@@ -704,6 +694,17 @@
                     title="Generar factura PDF"
                   >
                     🧾 Generar Factura
+                  </button>
+                  <!-- Cambiar estatus button moved to the end -->
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    id="btnCambiarEstatus"
+                    data-admin-only="true"
+                    onclick="openStatusModalFromDetalle()"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; display: none;"
+                  >
+                    Cambiar estatus
                   </button>
                 </div>
               </div>
@@ -964,13 +965,15 @@
         const userRole = getUserRole();
         const isInventarios = userRole === 'inventarios';
         const isFinanzas = userRole === 'finanzas' || userRole === 'gerente_finanzas';
+        const isSecretaria = userRole === 'secretaria';
         
         const btnSurtir = document.getElementById('btnSurtirPedido');
         const btnAjustar = document.getElementById('btnAjustarPedido');
         const btnConfirmar = document.getElementById('btnConfirmarSurtido');
+        const btnCambiarEstatus = document.getElementById('btnCambiarEstatus');
         
         if (isInventarios) {
-          console.log('� [PEDIDO-DETALLE] Rol inventarios - Configurando vista');
+          console.log('📦 [PEDIDO-DETALLE] Rol inventarios - Configurando vista');
           
           // Show Surtir Pedido button for inventarios
           if (btnSurtir) {
@@ -1004,22 +1007,22 @@
           return;
         }
         
-        if (isFinanzas) {
-          console.log('💰 [PEDIDO-DETALLE] Rol finanzas - Configurando vista');
+        if (isFinanzas || isSecretaria) {
+          console.log(`💰 [PEDIDO-DETALLE] Rol ${userRole} - Configurando vista`);
           
-          // Hide Surtir Pedido button for finanzas
+          // Hide Surtir Pedido button for finanzas/secretaria
           if (btnSurtir) btnSurtir.style.display = 'none';
           
-          // Hide Ajustar Pedido button for finanzas
+          // Hide Ajustar Pedido button for finanzas/secretaria
           if (btnAjustar) {
             btnAjustar.style.display = 'none';
-            console.log('🚫 [PEDIDO-DETALLE] Botón Ajustar Pedido oculto para finanzas');
+            console.log(`🚫 [PEDIDO-DETALLE] Botón Ajustar Pedido oculto para ${userRole}`);
           }
           
-          // Show Confirmar Surtido button for finanzas
+          // Show Confirmar Surtido button for finanzas and secretaria
           if (btnConfirmar) {
             btnConfirmar.style.display = 'inline-block';
-            console.log('✅ [PEDIDO-DETALLE] Botón Confirmar Surtido habilitado para finanzas');
+            console.log(`✅ [PEDIDO-DETALLE] Botón Confirmar Surtido habilitado para ${userRole}`);
           }
           
           return;
@@ -1029,6 +1032,7 @@
         console.log('✅ [PEDIDO-DETALLE] Rol admin - Mostrando todos los datos');
         if (btnSurtir) btnSurtir.style.display = 'none';
         if (btnConfirmar) btnConfirmar.style.display = 'none';
+        if (btnCambiarEstatus) btnCambiarEstatus.style.display = 'inline-block';
       }
 
       (function () {
@@ -1250,8 +1254,8 @@
               }
             }
             
-            // Finanzas role - Confirmar button
-            if (btnConfirmar && (currentRole === 'finanzas' || currentRole === 'gerente_finanzas')) {
+            // Finanzas and Secretaria role - Confirmar button
+            if (btnConfirmar && (currentRole === 'finanzas' || currentRole === 'gerente_finanzas' || currentRole === 'secretaria')) {
               if (estaSurtido) {
                 // Already confirmed
                 btnConfirmar.innerHTML = '✅ Confirmado';

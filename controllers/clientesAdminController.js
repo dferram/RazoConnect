@@ -119,6 +119,39 @@ const getClienteDetalle = async (req, res) => {
 
     const cliente = clienteResult.rows[0];
 
+    const pedidosResult = await db.query(
+      `SELECT 
+        pedidoid,
+        fechapedido,
+        montototal,
+        estatus,
+        direccionenvioid
+      FROM pedidos
+      WHERE clienteid = $1 AND tenant_id = $2
+      ORDER BY fechapedido DESC
+      LIMIT 50`,
+      [clienteId, tenant_id]
+    );
+
+    const direccionesResult = await db.query(
+      `SELECT 
+        direccionid,
+        receptor,
+        calle,
+        numeroext,
+        numeroint,
+        colonia,
+        ciudad,
+        estadoid,
+        codigopostal,
+        telefonocontacto,
+        etiqueta
+      FROM cliente_direcciones
+      WHERE clienteid = $1 AND tenant_id = $2
+      ORDER BY direccionid DESC`,
+      [clienteId, tenant_id]
+    );
+
     res.json({
       success: true,
       data: {
@@ -137,6 +170,26 @@ const getClienteDetalle = async (req, res) => {
           diasGracia: cliente.dias_gracia || 0,
           activo: cliente.estado_credito === 'ACTIVO',
         },
+        pedidos: pedidosResult.rows.map(p => ({
+          pedidoId: p.pedidoid,
+          fechaPedido: p.fechapedido,
+          montoTotal: parseFloat(p.montototal),
+          estatus: p.estatus,
+          direccionEnvioId: p.direccionenvioid
+        })),
+        direcciones: direccionesResult.rows.map(d => ({
+          direccionId: d.direccionid,
+          receptor: d.receptor,
+          calle: d.calle,
+          numeroExt: d.numeroext,
+          numeroInt: d.numeroint,
+          colonia: d.colonia,
+          ciudad: d.ciudad,
+          estadoId: d.estadoid,
+          codigoPostal: d.codigopostal,
+          telefonoContacto: d.telefonocontacto,
+          etiqueta: d.etiqueta
+        }))
       },
     });
   } catch (error) {

@@ -477,9 +477,8 @@
           ? '<span class="admin-badge success">Cliente activo</span>'
           : '<span class="admin-badge danger">Cliente inactivo</span>';
 
-        // Por ahora, pedidos y direcciones vacíos hasta que el backend los incluya
-        renderPedidos([]);
-        renderDirecciones([]);
+        renderPedidos(cliente.pedidos || []);
+        renderDirecciones(cliente.direcciones || []);
         loadCreditoInfo();
       }
 
