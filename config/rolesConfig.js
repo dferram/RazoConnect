@@ -173,7 +173,8 @@ function getRolesValidos() {
     'catalogo',
     'finanzas',
     'compras',
-    'agente'
+    'agente',
+    'almacenista'
   ];
 }
 
@@ -200,12 +201,25 @@ function getDescripcionRol(rol) {
     catalogo: 'Gestión de Productos y Catálogo',
     finanzas: 'Gestión Financiera y Créditos',
     compras: 'Gestión de Compras y Proveedores',
-    agente: 'Agente de Ventas'
+    agente: 'Agente de Ventas',
+    almacenista: 'Almacenista - Surtido y Control de Remisiones'
   };
   
   const rolNormalizado = (rol || '').toString().trim().toLowerCase();
   return descripciones[rolNormalizado] || 'Rol Desconocido';
 }
+
+module.exports = {
+  ROLES_PERMISOS,
+  getPermisosRol,
+  tienePermiso,
+  getRolesValidos,
+  esRolValido,
+  getDescripcionRol
+};
+  const rolNormalizado = (rol || '').toString().trim().toLowerCase();
+  return descripciones[rolNormalizado] || 'Rol Desconocido';
+
 
 module.exports = {
   ROLES_PERMISOS,

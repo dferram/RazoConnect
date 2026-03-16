@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const remisionesController = require('../controllers/remisionesController');
-const { authenticate, authorizeAdmin } = require('../middlewares/authMiddleware');
+const { authenticate, authorizeAdmin, authorizeRole, requirePermission } = require('../middlewares/authMiddleware');
 
+// Todas las rutas requieren autenticación
 router.use(authenticate);
-router.use(authorizeAdmin);
 
 /**
  * @swagger
@@ -49,7 +49,8 @@ router.use(authorizeAdmin);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post('/generar', remisionesController.generarRemision);
+// Generar remisión: Solo finanzas y admin
+router.post('/generar', authorizeRole(['finanzas', 'admin', 'super_admin']), remisionesController.generarRemision);
 /**
  * @swagger
  * /api/remisiones/pedido/{pedido_id}/pendiente:
@@ -94,7 +95,8 @@ router.post('/generar', remisionesController.generarRemision);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/pedido/:pedido_id/pendiente', remisionesController.obtenerItemsPendientesSurtir);
+// Items pendientes: Finanzas, almacenista y admin
+router.get('/pedido/:pedido_id/pendiente', authorizeRole(['finanzas', 'almacenista', 'admin', 'super_admin']), remisionesController.obtenerItemsPendientesSurtir);
 /**
  * @swagger
  * /api/remisiones/{id}:
@@ -143,7 +145,8 @@ router.get('/pedido/:pedido_id/pendiente', remisionesController.obtenerItemsPend
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/:id', remisionesController.obtenerRemision);
+// Ver remisión: Finanzas, almacenista, cliente (si es suya) y admin
+router.get('/:id', authorizeAdmin, remisionesController.obtenerRemision);
 /**
  * @swagger
  * /api/remisiones:
@@ -180,7 +183,8 @@ router.get('/:id', remisionesController.obtenerRemision);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get('/', remisionesController.listarRemisiones);
+// Listar remisiones: Finanzas, almacenista y admin
+router.get('/', authorizeRole(['finanzas', 'almacenista', 'admin', 'super_admin']), remisionesController.listarRemisiones);
 /**
  * @swagger
  * /api/remisiones/{id}/cancelar:
@@ -223,6 +227,104 @@ router.get('/', remisionesController.listarRemisiones);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.put('/:id/cancelar', remisionesController.cancelarRemision);
+// Cancelar remisión: Solo finanzas y admin
+router.put('/:id/cancelar', authorizeRole(['finanzas', 'admin', 'super_admin']), remisionesController.cancelarRemision);
+
+/**
+ * @swagger
+ * /api/remisiones/{id}/confirmar-almacen:
+ *   post:
+ *     summary: Confirmar remisión después de verificación física (almacenista)
+ *     tags: [Almacén - Remisiones]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la remisión
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               notas_almacen:
+ *                 type: string
+ *               discrepancias:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *     responses:
+ *       200:
+ *         description: Remisión confirmada por almacén
+ *       400:
+ *         description: Estado inválido
+ *       403:
+ *         description: Sin permisos
+ */
+router.post('/:id/confirmar-almacen', authorizeRole(['almacenista', 'admin', 'super_admin']), remisionesController.confirmarRemisionAlmacen);
+
+/**
+ * @swagger
+ * /api/remisiones/{id}/corregir:
+ *   put:
+ *     summary: Corregir items de remisión sin cancelar
+ *     tags: [Admin - Remisiones]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               items_corregir:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *               motivo_correccion:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Remisión corregida
+ *       400:
+ *         description: Datos inválidos
+ */
+router.put('/:id/corregir', authorizeRole(['finanzas', 'almacenista', 'admin', 'super_admin']), remisionesController.corregirRemision);
+
+/**
+ * @swagger
+ * /api/remisiones/{id}/confirmar-finanzas:
+ *   post:
+ *     summary: Confirmación final por finanzas - afecta CxC
+ *     tags: [Finanzas - Remisiones]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Remisión confirmada y CxC generado
+ *       400:
+ *         description: Estado inválido
+ *       403:
+ *         description: Sin permisos
+ */
+router.post('/:id/confirmar-finanzas', authorizeRole(['finanzas', 'admin', 'super_admin']), remisionesController.confirmarRemisionFinanzas);
 
 module.exports = router;
