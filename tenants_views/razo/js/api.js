@@ -351,6 +351,20 @@ const apiCall = async (endpoint, options = {}) => {
       );
     }
 
+    // Manejo de 429 Too Many Requests - redirigir a página de rate limit
+    if (response.status === 429) {
+      console.warn('⚠️ Rate limit alcanzado - Redirigiendo a página 429');
+      setTimeout(() => {
+        window.location.href = '/429.html';
+      }, 100);
+      
+      return {
+        ok: false,
+        status: 429,
+        data,
+      };
+    }
+
     // Manejo de 403 Forbidden (sin permisos) - NO cerrar sesión, solo mostrar alerta
     if (response.status === 403) {
       

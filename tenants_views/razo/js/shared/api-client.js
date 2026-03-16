@@ -80,6 +80,22 @@ const ApiClient = (() => {
         throw new ApiError('Sesión expirada. Redirigiendo...', 401);
       }
 
+      // Manejar 429 globalmente — redirigir a página de rate limit
+      if (response.status === 429) {
+        setTimeout(() => {
+          window.location.href = '/429.html';
+        }, 100);
+        throw new ApiError('Demasiadas solicitudes. Por favor, espera un momento.', 429);
+      }
+
+      // Manejar 403 globalmente — redirigir a página de acceso denegado
+      if (response.status === 403) {
+        setTimeout(() => {
+          window.location.href = '/403.html';
+        }, 100);
+        throw new ApiError('Acceso denegado.', 403);
+      }
+
       throw new ApiError(errorMessage, response.status);
     }
 
