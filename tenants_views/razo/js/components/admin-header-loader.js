@@ -51,18 +51,36 @@
    * Convierte el rol técnico a un nombre amigable para mostrar en el header
    */
   function getRoleDisplayName(rol) {
-    const roleLower = (rol || '').toString().toLowerCase().trim();
+    // Validar que el rol existe y no está vacío
+    if (!rol || typeof rol !== 'string') {
+      return 'Administrador';
+    }
+    
+    const roleLower = rol.toString().toLowerCase().trim();
+    
+    // Si el rol está vacío después de trim, retornar default
+    if (!roleLower) {
+      return 'Administrador';
+    }
     
     const roleMap = {
       'super_admin': 'Dueño de Tienda',
       'superadmin': 'Dueño de Tienda',
       'super admin': 'Dueño de Tienda',
+      'super-admin': 'Dueño de Tienda',
       'admin': 'Dueño de Tienda',
       'inventarios': 'Inventarios',
       'catalogo': 'Catálogo',
       'finanzas': 'Finanzas',
       'compras': 'Compras',
-      'agente': 'Agente de Ventas'
+      'agente': 'Agente de Ventas',
+      // Legacy roles que aún pueden existir en algunos usuarios
+      'gerente_finanzas': 'Finanzas',
+      'gerente_operaciones': 'Operaciones',
+      'gerente_comercial': 'Comercial',
+      'contador': 'Finanzas',
+      'jefe_almacen': 'Inventarios',
+      'almacenista': 'Inventarios'
     };
     
     return roleMap[roleLower] || 'Administrador';
@@ -80,9 +98,24 @@
   function loadHeaderData() {
     let adminData;
     try {
-      adminData = JSON.parse(localStorage.getItem("razoconnect_admin"));
-      if (!adminData || !adminData.nombre) {
-        throw new Error("Datos de admin incompletos");
+      const storedData = localStorage.getItem("razoconnect_admin");
+      if (!storedData) {
+        throw new Error("No hay datos de admin en localStorage");
+      }
+      
+      adminData = JSON.parse(storedData);
+      
+      // Validar que tenga al menos nombre y rol
+      if (!adminData || typeof adminData !== 'object') {
+        throw new Error("Datos de admin inválidos");
+      }
+      
+      // Si no tiene nombre o rol, usar defaults
+      if (!adminData.nombre) {
+        adminData.nombre = "Usuario";
+      }
+      if (!adminData.rol && !adminData.role) {
+        adminData.rol = "admin";
       }
     } catch (recoveryError) {
       console.error("❌ No se pudo recuperar datos del header:", recoveryError);
@@ -93,13 +126,17 @@
       };
     }
 
-    const nombre = (adminData.nombre || "Usuario").toString().trim();
-    const rolSession = (adminData.rol || adminData.role || "admin").toString().trim();
+    // Asegurar que nombre y rol sean strings válidos
+    const nombre = (adminData.nombre || "Usuario").toString().trim() || "Usuario";
+    const rolSession = (adminData.rol || adminData.role || "admin").toString().trim() || "admin";
     const rolRaw = rolSession.toLowerCase();
     const isSuperAdmin = rolRaw === "super admin" || rolRaw === "superadmin" || rolRaw === "super-admin" || rolRaw === "super_admin" || rolRaw === "admin";
     
     // FASE 2 - TASK 1: Usar nombre de rol específico en lugar de genérico
     const rolTexto = getRoleDisplayName(rolSession);
+    
+    // Log para debugging
+    console.log("📋 Datos del header:", { nombre, rol: rolSession, rolTexto });
     
     // Sin restricciones de rol - Admin y SuperAdmin tienen acceso a todas las páginas
 
