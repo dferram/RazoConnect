@@ -1347,8 +1347,8 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
 
 /**
  * POST /api/remisiones/:id/confirmar-almacen
- * Confirma una remisión después de verificación física por almacenista
- * Solo para rol almacenista
+ * Confirma una remisión después de verificación física por personal de inventarios
+ * Solo para rol inventarios
  */
 exports.confirmarRemisionAlmacen = async (req, res) => {
   const client = await pool.connect();

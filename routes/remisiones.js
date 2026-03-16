@@ -95,8 +95,8 @@ router.post('/generar', authorizeRole(['finanzas', 'admin', 'super_admin']), rem
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-// Items pendientes: Finanzas, almacenista y admin
-router.get('/pedido/:pedido_id/pendiente', authorizeRole(['finanzas', 'almacenista', 'admin', 'super_admin']), remisionesController.obtenerItemsPendientesSurtir);
+// Items pendientes: Finanzas, inventarios y admin
+router.get('/pedido/:pedido_id/pendiente', authorizeRole(['finanzas', 'inventarios', 'admin', 'super_admin']), remisionesController.obtenerItemsPendientesSurtir);
 /**
  * @swagger
  * /api/remisiones/{id}:
@@ -183,8 +183,8 @@ router.get('/:id', authorizeAdmin, remisionesController.obtenerRemision);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-// Listar remisiones: Finanzas, almacenista y admin
-router.get('/', authorizeRole(['finanzas', 'almacenista', 'admin', 'super_admin']), remisionesController.listarRemisiones);
+// Listar remisiones: Finanzas, inventarios y admin
+router.get('/', authorizeRole(['finanzas', 'inventarios', 'admin', 'super_admin']), remisionesController.listarRemisiones);
 /**
  * @swagger
  * /api/remisiones/{id}/cancelar:
@@ -266,7 +266,7 @@ router.put('/:id/cancelar', authorizeRole(['finanzas', 'admin', 'super_admin']),
  *       403:
  *         description: Sin permisos
  */
-router.post('/:id/confirmar-almacen', authorizeRole(['almacenista', 'admin', 'super_admin']), remisionesController.confirmarRemisionAlmacen);
+router.post('/:id/confirmar-almacen', authorizeRole(['inventarios', 'admin', 'super_admin']), remisionesController.confirmarRemisionAlmacen);
 
 /**
  * @swagger
@@ -301,7 +301,7 @@ router.post('/:id/confirmar-almacen', authorizeRole(['almacenista', 'admin', 'su
  *       400:
  *         description: Datos inválidos
  */
-router.put('/:id/corregir', authorizeRole(['finanzas', 'almacenista', 'admin', 'super_admin']), remisionesController.corregirRemision);
+router.put('/:id/corregir', authorizeRole(['finanzas', 'inventarios', 'admin', 'super_admin']), remisionesController.corregirRemision);
 
 /**
  * @swagger

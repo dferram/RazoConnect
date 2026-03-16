@@ -44,6 +44,7 @@ const ROLES_PERMISOS = {
     recibir_inventario: ['ver', 'modificar'],
     productos: ['ver'], // Solo consulta para verificar stock
     pedidos: ['ver', 'modificar'], // Ver pedidos y marcar como surtido
+    remisiones: ['ver', 'confirmar', 'corregir'], // Ver, confirmar y corregir remisiones
   },
 
   /**
@@ -173,8 +174,7 @@ function getRolesValidos() {
     'catalogo',
     'finanzas',
     'compras',
-    'agente',
-    'almacenista'
+    'agente'
   ];
 }
 
@@ -197,29 +197,16 @@ function getDescripcionRol(rol) {
   const descripciones = {
     super_admin: 'Super Administrador (Acceso Total en su Tenant)',
     admin: 'Administrador (Acceso Total en su Tenant)',
-    inventarios: 'Gestión de Inventarios y Auditorías',
+    inventarios: 'Gestión de Inventarios, Auditorías y Surtido',
     catalogo: 'Gestión de Productos y Catálogo',
     finanzas: 'Gestión Financiera y Créditos',
     compras: 'Gestión de Compras y Proveedores',
-    agente: 'Agente de Ventas',
-    almacenista: 'Almacenista - Surtido y Control de Remisiones'
+    agente: 'Agente de Ventas'
   };
   
   const rolNormalizado = (rol || '').toString().trim().toLowerCase();
   return descripciones[rolNormalizado] || 'Rol Desconocido';
 }
-
-module.exports = {
-  ROLES_PERMISOS,
-  getPermisosRol,
-  tienePermiso,
-  getRolesValidos,
-  esRolValido,
-  getDescripcionRol
-};
-  const rolNormalizado = (rol || '').toString().trim().toLowerCase();
-  return descripciones[rolNormalizado] || 'Rol Desconocido';
-
 
 module.exports = {
   ROLES_PERMISOS,
