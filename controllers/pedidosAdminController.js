@@ -148,6 +148,8 @@ const getAllPedidos = async (req, res) => {
         p.Monto_Descuento,
         p.Cupon_ID,
         p.completamente_surtido,
+        p.es_historico,
+        p.fecha_confirmacion,
         c.Nombre as ClienteNombre,
         c.Apellido as ClienteApellido,
         c.Email as ClienteEmail,
@@ -303,6 +305,8 @@ const getAllPedidos = async (req, res) => {
         costoEnvio,
         estatus: row.estatus,
         completamente_surtido: row.completamente_surtido || false,
+        es_historico: row.es_historico || false,
+        fecha_confirmacion: row.fecha_confirmacion || null,
         clienteNombre: `${row.clientenombre || ''} ${row.clienteapellido || ''}`.trim(),
         cliente: {
           nombre: row.clientenombre,
@@ -920,23 +924,38 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       }
     }
 
-    // Actualizar pedido a Surtido
+    // Verificar si hay productos en backorder
+    const backorderCheckQuery = `
+      SELECT COUNT(*) as productos_backorder
+      FROM detallesdelpedido
+      WHERE pedidoid = $1 AND esbackorder = true AND tenant_id = $2
+    `;
+    const backorderResult = await client.query(backorderCheckQuery, [pedidoId, tenant_id]);
+    const tieneBackorder = parseInt(backorderResult.rows[0].productos_backorder) > 0;
+
+    // Actualizar pedido a Surtido y marcar como histórico si está 100% surtido
     const updateQuery = `
       UPDATE pedidos 
       SET 
         estatus = 'Surtido',
-        completamente_surtido = true
+        completamente_surtido = true,
+        es_historico = $3,
+        fecha_confirmacion = NOW()
       WHERE pedidoid = $1 AND tenant_id = $2
       RETURNING *
     `;
     
-    await client.query(updateQuery, [pedidoId, tenant_id]);
+    // Solo marcar como histórico si NO tiene productos en backorder
+    const esHistorico = !tieneBackorder;
+    await client.query(updateQuery, [pedidoId, tenant_id, esHistorico]);
 
     await client.query('COMMIT');
 
     logger.info('Pedido confirmado y stock reducido:', {
       pedidoId,
       productosConfirmados,
+      esHistorico,
+      tieneBackorder,
       tenantId: tenant_id,
       userId,
       requestId: req.requestId
@@ -944,11 +963,13 @@ const confirmarSurtidoFinanzas = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Pedido confirmado. ${productosConfirmados} producto(s) descontado(s) del inventario.`,
+      message: `Pedido confirmado. ${productosConfirmados} producto(s) descontado(s) del inventario.${esHistorico ? ' Pedido movido a histórico.' : ' Pedido con productos pendientes.'}`,
       data: {
         pedidoId,
         estatus: 'Surtido',
-        productosConfirmados
+        productosConfirmados,
+        esHistorico,
+        tieneBackorder
       }
     });
 
