@@ -211,8 +211,17 @@ app.get('/tienda-no-encontrada.html', (req, res) => {
 });
 
 // ============================================================================
-// HEALTH CHECK — Azure App Service probe
+// HEALTH CHECK — Azure App Service probe & Docker HEALTHCHECK
 // ============================================================================
+// Endpoint simple para Docker HEALTHCHECK (sin autenticación)
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString() 
+  });
+});
+
+// Endpoint detallado para monitoreo (Azure)
 app.get('/api/health', async (req, res) => {
   const { getPoolMetrics } = require('./db');
   
