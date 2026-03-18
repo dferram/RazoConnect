@@ -54,6 +54,7 @@
     elements.estadoVacio = document.getElementById("estadoVacio");
     elements.btnRecargar = document.getElementById("btnRecargar");
     elements.btnExportar = document.getElementById("btnExportar");
+    elements.btnExportarPDF = document.getElementById("btnExportarPDF");
     elements.filtroFechaDesde = document.getElementById("filtroFechaDesde");
     elements.filtroFechaHasta = document.getElementById("filtroFechaHasta");
     elements.filtroCliente = document.getElementById("filtroCliente");
@@ -79,6 +80,7 @@
 
     elements.btnRecargar?.addEventListener("click", () => loadCartera(true));
     elements.btnExportar?.addEventListener("click", exportarExcel);
+    elements.btnExportarPDF?.addEventListener("click", exportarPDF);
   }
 
   async function loadCartera(isManualRefresh = false, page = state.currentPage) {
@@ -362,6 +364,59 @@
       });
     } finally {
       showButtonLoading(elements.btnExportar, false);
+    }
+  }
+
+  async function exportarPDF() {
+    try {
+      const fechaDesde = elements.filtroFechaDesde?.value;
+      const fechaHasta = elements.filtroFechaHasta?.value;
+      const adminId = state.filters.admin;
+
+      showButtonLoading(elements.btnExportarPDF, true);
+
+      let url = `/admin/cxc/pdf?`;
+      if (fechaDesde) url += `fechaInicio=${fechaDesde}&`;
+      if (fechaHasta) url += `fechaFin=${fechaHasta}&`;
+      if (adminId) url += `admin_id=${adminId}`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem('razoconnect_admin_token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al generar PDF");
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      a.download = `CXC_Reporte_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      Swal.fire({
+        icon: "success",
+        title: "PDF Generado",
+        text: "El reporte PDF se ha descargado correctamente",
+        confirmButtonColor: "#F97316"
+      });
+    } catch (error) {
+      console.error("Error generando PDF:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudo generar el PDF",
+        confirmButtonColor: "#F97316"
+      });
+    } finally {
+      showButtonLoading(elements.btnExportarPDF, false);
     }
   }
 

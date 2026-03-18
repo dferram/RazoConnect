@@ -678,10 +678,151 @@ async function registrarPago(req, res) {
     }
 }
 
+/**
+ * Genera PDF de reporte de CxP
+ * @route GET /api/admin/cxp/pdf
+ */
+async function generarPDFCxP(req, res) {
+    const PDFDocument = require('pdfkit');
+    const client = await pool.connect();
+    const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
+    const { fechaInicio, fechaFin, estatus, adminId } = req.query;
+    const userRole = req.user.rol;
+    const userId = req.user.id;
+    
+    try {
+        let whereConditions = ["cxp.estatus NOT IN ('CANCELADO')"];
+        let queryParams = [tenant_id];
+        let paramIndex = 2;
+        
+        whereConditions.push(`cxp.tenant_id = $1`);
+        whereConditions.push(`p.tenant_id = $1`);
+        
+        // Si es admin regular, solo ver sus propias CxP
+        if (userRole === 'admin') {
+            queryParams.push(userId);
+            whereConditions.push(`cxp.usuario_creador_id = $${paramIndex}`);
+            paramIndex++;
+        }
+        // Si es superadmin y especifica adminId, filtrar por ese admin
+        else if (userRole === 'superadmin' && adminId) {
+            const adminIdNum = parseInt(adminId, 10);
+            if (Number.isInteger(adminIdNum) && adminIdNum > 0) {
+                queryParams.push(adminIdNum);
+                whereConditions.push(`cxp.usuario_creador_id = $${paramIndex}`);
+                paramIndex++;
+            }
+        }
+        
+        if (fechaInicio) {
+            queryParams.push(fechaInicio);
+            whereConditions.push(`cxp.fecha_vencimiento >= $${paramIndex}`);
+            paramIndex++;
+        }
+        if (fechaFin) {
+            queryParams.push(fechaFin);
+            whereConditions.push(`cxp.fecha_vencimiento <= $${paramIndex}`);
+            paramIndex++;
+        }
+        if (estatus) {
+            queryParams.push(estatus);
+            whereConditions.push(`cxp.estatus = $${paramIndex}`);
+            paramIndex++;
+        }
+        
+        const whereClause = whereConditions.join(' AND ');
+        
+        const { rows } = await client.query(`
+            SELECT 
+                cxp.cxp_id,
+                cxp.fecha_emision,
+                cxp.fecha_vencimiento,
+                cxp.monto_total,
+                COALESCE(cxp.monto_pagado, 0) as monto_pagado,
+                (cxp.monto_total - COALESCE(cxp.monto_pagado, 0)) as saldo,
+                cxp.estatus,
+                cxp.referencia_factura,
+                p.nombreempresa as proveedor
+            FROM cuentas_por_pagar cxp
+            INNER JOIN proveedores p ON p.proveedorid = cxp.proveedor_id
+            WHERE ${whereClause}
+            ORDER BY cxp.fecha_vencimiento ASC
+        `, queryParams);
+        
+        const doc = new PDFDocument({ size: 'LETTER', margins: { top: 50, bottom: 50, left: 50, right: 50 } });
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="Reporte-CxP-${format(new Date(), 'yyyy-MM-dd')}.pdf"`);
+        
+        doc.pipe(res);
+        
+        doc.fontSize(18).font('Helvetica-Bold').fillColor('#F97316').text('REPORTE DE CUENTAS POR PAGAR', 50, 50);
+        doc.fontSize(10).font('Helvetica').fillColor('#666666').text(`Fecha: ${format(new Date(), 'dd/MM/yyyy')}`, 50, 75);
+        if (fechaInicio || fechaFin) {
+            doc.text(`Periodo: ${fechaInicio || 'Inicio'} - ${fechaFin || 'Fin'}`, 50, 90);
+        }
+        
+        let yPos = 120;
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#FFFFFF');
+        doc.rect(50, yPos, 512, 20).fillAndStroke('#F97316', '#F97316');
+        doc.text('PROVEEDOR', 55, yPos + 6);
+        doc.text('F. VTO', 250, yPos + 6);
+        doc.text('IMPORTE', 320, yPos + 6);
+        doc.text('PAGADO', 390, yPos + 6);
+        doc.text('SALDO', 460, yPos + 6);
+        
+        yPos += 25;
+        let totalSaldo = 0;
+        
+        rows.forEach((cuenta, index) => {
+            if (yPos > 720) {
+                doc.addPage();
+                yPos = 50;
+            }
+            
+            if (index % 2 === 0) {
+                doc.rect(50, yPos - 3, 512, 18).fillAndStroke('#F9F9F9', '#F9F9F9');
+            }
+            
+            doc.fontSize(8).font('Helvetica').fillColor('#333333');
+            doc.text(cuenta.proveedor, 55, yPos, { width: 180 });
+            doc.text(cuenta.fecha_vencimiento ? format(new Date(cuenta.fecha_vencimiento), 'dd/MM/yyyy') : 'N/A', 250, yPos);
+            doc.text(`$${parseFloat(cuenta.monto_total).toFixed(2)}`, 320, yPos);
+            doc.text(`$${parseFloat(cuenta.monto_pagado).toFixed(2)}`, 390, yPos);
+            doc.text(`$${parseFloat(cuenta.saldo).toFixed(2)}`, 460, yPos);
+            
+            totalSaldo += parseFloat(cuenta.saldo);
+            yPos += 18;
+        });
+        
+        yPos += 10;
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#F97316');
+        doc.text(`TOTAL SALDO: $${totalSaldo.toFixed(2)}`, 390, yPos);
+        
+        doc.end();
+        
+    } catch (error) {
+        logger.error('Error generando PDF CxP:', {
+            error: error.message,
+            requestId: req.requestId,
+            tenantId: req.tenant?.tenant_id
+        });
+        if (!res.headersSent) {
+            res.status(500).json({
+                success: false,
+                message: 'Error al generar el PDF'
+            });
+        }
+    } finally {
+        client.release();
+    }
+}
+
 module.exports = {
     exportarLoteCxP,
     getCuentasPorPagar,
     getCxPKPIs,
     getCxPDetalle,
-    registrarPago
+    registrarPago,
+    generarPDFCxP
 };

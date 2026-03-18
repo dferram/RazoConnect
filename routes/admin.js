@@ -59,6 +59,7 @@ const inventarioResumenController = require("../controllers/inventarioResumenCon
 const exportacionInventarioController = require("../controllers/exportacionInventarioController");
 const busquedaInventarioController = require("../controllers/busquedaInventarioController");
 const ajustesInventarioController = require("../controllers/ajustesInventarioController");
+const ajustesAlmacenController = require("../controllers/ajustesAlmacenController");
 const recepcionManualController = require("../controllers/recepcionManualController");
 const reglasEmpaqueController = require("../controllers/reglasEmpaqueController");
 const tiposProductoController = require("../controllers/tiposProductoController");
@@ -1200,6 +1201,13 @@ router.get(
 );
 
 router.get(
+  "/cxc/pdf",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'ejecutivo_cobranza', 'contador', 'auditor_interno']),
+  cxcController.generarPDFCxC
+);
+
+router.get(
   "/cxc/cliente/:clienteId",
   authenticate,
   authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'ejecutivo_cobranza', 'encargado_credito', 'soporte_cliente']),
@@ -1232,6 +1240,13 @@ router.get(
   authenticate,
   authorizeAdmin,
   cxpController.exportarLoteCxP
+);
+
+router.get(
+  "/cxp/pdf",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'contador', 'compras', 'auditor_interno']),
+  cxpController.generarPDFCxP
 );
 
 router.post(
@@ -1660,6 +1675,30 @@ router.post(
   authenticate,
   authorizeAdmin,
   recepcionItemsController.recibirItemOrdenCompra
+);
+
+/**
+ * Ajustes de Almacén - Reconciliación de entradas con CxP
+ */
+router.get(
+  "/ajustes-almacen/entradas-erroneas",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'compras', 'inventarios']),
+  ajustesAlmacenController.getEntradasErroneas
+);
+
+router.get(
+  "/ajustes-almacen/entrada/:id/detalles",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'compras', 'inventarios']),
+  ajustesAlmacenController.getDetallesEntrada
+);
+
+router.post(
+  "/ajustes-almacen/reconciliar",
+  authenticate,
+  authorizeRole(['super_admin', 'finanzas', 'gerente_finanzas', 'compras']),
+  ajustesAlmacenController.reconciliarEntrada
 );
 
 // Reasignar orden de compra (solo super admin)

@@ -677,4 +677,49 @@ document.addEventListener('DOMContentLoaded', async () => {
             Swal.fire('Error', 'No se pudo generar el reporte.', 'error');
         }
     });
+
+    // Exportación a PDF con filtros activos
+    document.getElementById('btn-exportar-pdf')?.addEventListener('click', async () => {
+        try {
+            const params = new URLSearchParams();
+            if (state.filters.fechaInicio) params.append('fechaInicio', state.filters.fechaInicio);
+            if (state.filters.fechaFin) params.append('fechaFin', state.filters.fechaFin);
+            if (state.filters.estatus) params.append('estatus', state.filters.estatus);
+            if (state.filters.adminId) params.append('adminId', state.filters.adminId);
+            if (state.filters.search) params.append('search', state.filters.search);
+            
+            Swal.fire({
+                title: 'Generando PDF...',
+                text: 'Por favor espera mientras se genera el reporte.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading() }
+            });
+
+            const url = `${API_BASE_URL}/admin/cxp/pdf${params.toString() ? `?${params.toString()}` : ''}`;
+            const response = await fetchWithAuth(url, { method: 'GET' });
+
+            if (!response.ok) throw new Error('Error al generar PDF');
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `CXP_Reporte_${new Date().toISOString().slice(0,10)}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+
+            Swal.fire({
+                icon: 'success',
+                title: 'PDF Generado',
+                text: 'El reporte PDF se ha descargado correctamente',
+                timer: 2500
+            });
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Error', 'No se pudo generar el PDF.', 'error');
+        }
+    });
 });

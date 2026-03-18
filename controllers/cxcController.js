@@ -486,15 +486,30 @@ async function getSummaryAging(req, res) {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     const admin_id = req.query.admin_id ? parseInt(req.query.admin_id) : null;
+    const fechaInicio = req.query.fechaInicio;
+    const fechaFin = req.query.fechaFin;
 
     try {
         // Construir parámetros de query dinámicamente
         let queryParams = [tenant_id];
         let paramIndex = 2;
+        let additionalFilters = '';
         
         // Agregar admin_id si se proporciona
         if (admin_id) {
             queryParams.push(admin_id);
+            paramIndex++;
+        }
+        
+        // Agregar filtros de fecha si se proporcionan
+        if (fechaInicio) {
+            queryParams.push(fechaInicio);
+            additionalFilters += ` AND p.fecha_vencimiento >= $${paramIndex}`;
+            paramIndex++;
+        }
+        if (fechaFin) {
+            queryParams.push(fechaFin);
+            additionalFilters += ` AND p.fecha_vencimiento <= $${paramIndex}`;
             paramIndex++;
         }
         
@@ -523,6 +538,7 @@ async function getSummaryAging(req, res) {
                     AND p.saldo_pendiente > 0
                     AND p.estatus NOT IN ('Cancelado', 'Rechazado')
                     AND p.tenant_id = $1
+                    ${additionalFilters}
             )
             SELECT 
                 cc.credito_id as "creditoId",
@@ -579,10 +595,48 @@ async function getSummaryAging(req, res) {
             LIMIT $${limitIndex} OFFSET $${offsetIndex}
         `, queryParams);
 
-        // Total de registros con mismo filtro
-        const countParams = [tenant_id];
+        // Total de registros con filtros aplicados
+        let countQueryParams = [tenant_id];
+        let countParamIndex = 2;
+        let countFilters = '';
+        let countAdminFilter = '';
+        
         if (admin_id) {
-            countParams.push(admin_id);
+            countQueryParams.push(admin_id);
+            countAdminFilter = ` AND EXISTS (
+                SELECT 1 FROM pedido_surtido_detalle psd
+                WHERE psd.pedido_id IN (
+                    SELECT pedidoid FROM pedidos 
+                    WHERE clienteid = c.clienteid 
+                    AND es_credito = true
+                    AND tenant_id = $1
+                )
+                AND psd.admin_id = $${countParamIndex}
+            )`;
+            countParamIndex++;
+        }
+        
+        if (fechaInicio) {
+            countQueryParams.push(fechaInicio);
+            countFilters += ` AND EXISTS (
+                SELECT 1 FROM pedidos p 
+                WHERE p.clienteid = c.clienteid 
+                AND p.es_credito = true 
+                AND p.saldo_pendiente > 0
+                AND p.fecha_vencimiento >= $${countParamIndex}
+            )`;
+            countParamIndex++;
+        }
+        if (fechaFin) {
+            countQueryParams.push(fechaFin);
+            countFilters += ` AND EXISTS (
+                SELECT 1 FROM pedidos p 
+                WHERE p.clienteid = c.clienteid 
+                AND p.es_credito = true 
+                AND p.saldo_pendiente > 0
+                AND p.fecha_vencimiento <= $${countParamIndex}
+            )`;
+            countParamIndex++;
         }
         
         const { rows: [count] } = await client.query(`
@@ -592,20 +646,53 @@ async function getSummaryAging(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-                ${admin_id ? `
-                AND EXISTS (
-                    SELECT 1 FROM pedido_surtido_detalle psd
-                    WHERE psd.pedido_id IN (
-                        SELECT pedidoid FROM pedidos 
-                        WHERE clienteid = c.clienteid 
-                        AND es_credito = true
-                        AND tenant_id = $1
-                    )
-                    AND psd.admin_id = $2
-                )` : ''}
-        `, countParams);
+                ${countAdminFilter}
+                ${countFilters}
+        `, countQueryParams);
 
-        // Métricas agregadas
+        // Métricas agregadas con filtros aplicados
+        let metricsParams = [tenant_id];
+        let metricsParamIndex = 2;
+        let metricsFilters = '';
+        
+        if (admin_id) {
+            metricsParams.push(admin_id);
+            metricsFilters += ` AND EXISTS (
+                SELECT 1 FROM pedido_surtido_detalle psd
+                WHERE psd.pedido_id IN (
+                    SELECT pedidoid FROM pedidos 
+                    WHERE clienteid = c.clienteid 
+                    AND es_credito = true
+                    AND tenant_id = $1
+                )
+                AND psd.admin_id = $${metricsParamIndex}
+            )`;
+            metricsParamIndex++;
+        }
+        
+        if (fechaInicio) {
+            metricsParams.push(fechaInicio);
+            metricsFilters += ` AND EXISTS (
+                SELECT 1 FROM pedidos p 
+                WHERE p.clienteid = c.clienteid 
+                AND p.es_credito = true 
+                AND p.saldo_pendiente > 0
+                AND p.fecha_vencimiento >= $${metricsParamIndex}
+            )`;
+            metricsParamIndex++;
+        }
+        if (fechaFin) {
+            metricsParams.push(fechaFin);
+            metricsFilters += ` AND EXISTS (
+                SELECT 1 FROM pedidos p 
+                WHERE p.clienteid = c.clienteid 
+                AND p.es_credito = true 
+                AND p.saldo_pendiente > 0
+                AND p.fecha_vencimiento <= $${metricsParamIndex}
+            )`;
+            metricsParamIndex++;
+        }
+        
         const { rows: [metrics] } = await client.query(`
             SELECT 
                 COALESCE(SUM(cc.saldo_deudor), 0) as total_cobrar,
@@ -616,7 +703,8 @@ async function getSummaryAging(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-        `, [tenant_id]);
+                ${metricsFilters}
+        `, metricsParams);
 
         const totalPages = Math.ceil(parseInt(count.total) / limit);
 
@@ -975,6 +1063,160 @@ async function getClienteCXCMovimientos(req, res) {
     }
 }
 
+/**
+ * Genera PDF de reporte de CxC
+ * @route GET /api/admin/cxc/pdf
+ */
+async function generarPDFCxC(req, res) {
+    const PDFDocument = require('pdfkit');
+    const client = await db.pool.connect();
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const { fechaInicio, fechaFin, admin_id } = req.query;
+    
+    try {
+        let queryParams = [tenant_id];
+        let paramIndex = 2;
+        let additionalFilters = '';
+        let adminFilter = '';
+        
+        if (admin_id) {
+            const adminIdNum = parseInt(admin_id, 10);
+            queryParams.push(adminIdNum);
+            adminFilter = ` AND EXISTS (
+                SELECT 1 FROM pedido_surtido_detalle psd
+                WHERE psd.pedido_id IN (
+                    SELECT pedidoid FROM pedidos 
+                    WHERE clienteid = c.clienteid 
+                    AND es_credito = true
+                    AND tenant_id = $1
+                )
+                AND psd.admin_id = $${paramIndex}
+            )`;
+            paramIndex++;
+        }
+        
+        if (fechaInicio) {
+            queryParams.push(fechaInicio);
+            additionalFilters += ` AND p.fecha_vencimiento >= $${paramIndex}`;
+            paramIndex++;
+        }
+        if (fechaFin) {
+            queryParams.push(fechaFin);
+            additionalFilters += ` AND p.fecha_vencimiento <= $${paramIndex}`;
+            paramIndex++;
+        }
+        
+        const { rows } = await client.query(`
+            WITH pedidos_aging AS (
+                SELECT 
+                    p.clienteid,
+                    p.saldo_pendiente,
+                    p.fecha_vencimiento,
+                    CASE 
+                        WHEN p.fecha_vencimiento IS NULL THEN 0
+                        WHEN p.fecha_vencimiento::date >= CURRENT_DATE THEN 0
+                        ELSE CURRENT_DATE - p.fecha_vencimiento::date
+                    END as dias_vencido
+                FROM pedidos p
+                WHERE p.es_credito = true
+                    AND p.saldo_pendiente > 0
+                    AND p.estatus NOT IN ('Cancelado', 'Rechazado')
+                    AND p.tenant_id = $1
+                    ${additionalFilters}
+            )
+            SELECT 
+                c.clienteid,
+                c.nombre,
+                c.apellido,
+                c.email,
+                cc.saldo_deudor,
+                cc.limite_credito,
+                cc.estado_credito,
+                COALESCE(SUM(CASE WHEN pa.dias_vencido = 0 THEN pa.saldo_pendiente ELSE 0 END), 0) as al_corriente,
+                COALESCE(SUM(CASE WHEN pa.dias_vencido BETWEEN 1 AND 30 THEN pa.saldo_pendiente ELSE 0 END), 0) as vencido_1_30,
+                COALESCE(SUM(CASE WHEN pa.dias_vencido > 30 THEN pa.saldo_pendiente ELSE 0 END), 0) as vencido_mas_30
+            FROM cliente_creditos cc
+            INNER JOIN clientes c ON c.clienteid = cc.cliente_id
+            LEFT JOIN pedidos_aging pa ON pa.clienteid = c.clienteid
+            WHERE cc.saldo_deudor > 0
+                AND cc.tenant_id = $1
+                AND c.tenant_id = $1
+                ${adminFilter}
+            GROUP BY c.clienteid, c.nombre, c.apellido, c.email, cc.saldo_deudor, cc.limite_credito, cc.estado_credito
+            ORDER BY cc.saldo_deudor DESC
+        `, queryParams);
+        
+        const doc = new PDFDocument({ size: 'LETTER', margins: { top: 50, bottom: 50, left: 50, right: 50 } });
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="Reporte-CxC-${format(new Date(), 'yyyy-MM-dd')}.pdf"`);
+        
+        doc.pipe(res);
+        
+        doc.fontSize(18).font('Helvetica-Bold').fillColor('#F97316').text('REPORTE DE CUENTAS POR COBRAR', 50, 50);
+        doc.fontSize(10).font('Helvetica').fillColor('#666666').text(`Fecha: ${format(new Date(), 'dd/MM/yyyy')}`, 50, 75);
+        if (fechaInicio || fechaFin) {
+            doc.text(`Periodo: ${fechaInicio || 'Inicio'} - ${fechaFin || 'Fin'}`, 50, 90);
+        }
+        
+        let yPos = 120;
+        doc.fontSize(9).font('Helvetica-Bold').fillColor('#FFFFFF');
+        doc.rect(50, yPos, 512, 20).fillAndStroke('#F97316', '#F97316');
+        doc.text('CLIENTE', 55, yPos + 6);
+        doc.text('SALDO', 250, yPos + 6);
+        doc.text('AL DÍA', 320, yPos + 6);
+        doc.text('1-30D', 380, yPos + 6);
+        doc.text('+30D', 440, yPos + 6);
+        doc.text('ESTADO', 490, yPos + 6);
+        
+        yPos += 25;
+        let totalSaldo = 0;
+        
+        rows.forEach((cliente, index) => {
+            if (yPos > 720) {
+                doc.addPage();
+                yPos = 50;
+            }
+            
+            if (index % 2 === 0) {
+                doc.rect(50, yPos - 3, 512, 18).fillAndStroke('#F9F9F9', '#F9F9F9');
+            }
+            
+            doc.fontSize(8).font('Helvetica').fillColor('#333333');
+            doc.text(`${cliente.nombre} ${cliente.apellido}`, 55, yPos, { width: 180 });
+            doc.text(`$${parseFloat(cliente.saldo_deudor).toFixed(2)}`, 250, yPos);
+            doc.text(`$${parseFloat(cliente.al_corriente).toFixed(2)}`, 320, yPos);
+            doc.text(`$${parseFloat(cliente.vencido_1_30).toFixed(2)}`, 380, yPos);
+            doc.text(`$${parseFloat(cliente.vencido_mas_30).toFixed(2)}`, 440, yPos);
+            doc.text(cliente.estado_credito, 490, yPos);
+            
+            totalSaldo += parseFloat(cliente.saldo_deudor);
+            yPos += 18;
+        });
+        
+        yPos += 10;
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#F97316');
+        doc.text(`TOTAL: $${totalSaldo.toFixed(2)}`, 250, yPos);
+        
+        doc.end();
+        
+    } catch (error) {
+        logger.error('Error generando PDF CxC:', {
+            error: error.message,
+            requestId: req.requestId,
+            tenantId: req.tenant?.tenant_id
+        });
+        if (!res.headersSent) {
+            res.status(500).json({
+                success: false,
+                message: 'Error al generar el PDF'
+            });
+        }
+    } finally {
+        client.release();
+    }
+}
+
 module.exports = {
     getSummaryAging,
     getMetricasCobranza,
@@ -984,5 +1226,6 @@ module.exports = {
     gestionarPagoCliente,
     getClientesCredito,
     getClienteCXCDetail,
-    getClienteCXCMovimientos
+    getClienteCXCMovimientos,
+    generarPDFCxC
 };

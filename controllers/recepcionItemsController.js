@@ -401,10 +401,11 @@ const recibirItemOrdenCompra = async (req, res) => {
     const stockAnterior = Number.parseInt(detalle.stockvariante, 10) || 0;
     const nuevoStock = stockAnterior + cantidadAumentar;
 
-    await client.query(
+    const logResult = await client.query(
       `INSERT INTO Log_Inventario 
        (VarianteID, CantidadCambiado, NuevoStock, Motivo, UsuarioID, tenant_id) 
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING LogID`,
       [
         varianteId,
         cantidadAumentar,
@@ -414,6 +415,8 @@ const recibirItemOrdenCompra = async (req, res) => {
         tenant_id,
       ]
     );
+    
+    const numeroRegistro = logResult.rows[0]?.logid;
 
     const faltantesResult = await client.query(
       "SELECT COUNT(*)::int AS faltantes FROM DetallesOrdenCompra WHERE OrdenCompraID = $1 AND COALESCE(PiezasRecibidas, 0) < (CantidadSolicitada * COALESCE(NULLIF(PiezasPorPaquete, 0), 1))",
@@ -444,6 +447,7 @@ const recibirItemOrdenCompra = async (req, res) => {
         ordenCompraId,
         estatusOC: nuevoEstatusOC,
         cuentaPorPagar,
+        numeroRegistro,
         item: {
           detalleId,
           varianteId,
