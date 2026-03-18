@@ -674,6 +674,16 @@
                   >
                     ✅ Confirmar Surtido
                   </button>
+                  <button
+                    type="button"
+                    class="btn btn-warning"
+                    id="btnRechazarFinanzas"
+                    onclick="rechazarPedidoFinanzas()"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #f59e0b; color: white; display: none;"
+                    title="Rechazar y regresar al almacén para corrección"
+                  >
+                    ↩️ Regresar a Almacén
+                  </button>
                   <!-- Botones de Factura y Remisión (solo para finanzas, admin, superadmin) -->
                   <button
                     type="button"
@@ -970,6 +980,7 @@
         const btnSurtir = document.getElementById('btnSurtirPedido');
         const btnAjustar = document.getElementById('btnAjustarPedido');
         const btnConfirmar = document.getElementById('btnConfirmarSurtido');
+        const btnRechazar = document.getElementById('btnRechazarFinanzas');
         const btnCambiarEstatus = document.getElementById('btnCambiarEstatus');
         
         if (isInventarios) {
@@ -1019,10 +1030,14 @@
             console.log(`🚫 [PEDIDO-DETALLE] Botón Ajustar Pedido oculto para ${userRole}`);
           }
           
-          // Show Confirmar Surtido button for finanzas and secretaria
+          // Show Confirmar Surtido and Rechazar buttons for finanzas and secretaria
           if (btnConfirmar) {
             btnConfirmar.style.display = 'inline-block';
             console.log(`✅ [PEDIDO-DETALLE] Botón Confirmar Surtido habilitado para ${userRole}`);
+          }
+          if (btnRechazar) {
+            btnRechazar.style.display = 'inline-block';
+            console.log(`✅ [PEDIDO-DETALLE] Botón Rechazar habilitado para ${userRole}`);
           }
           
           return;
@@ -1032,6 +1047,7 @@
         console.log('✅ [PEDIDO-DETALLE] Rol admin - Mostrando todos los datos');
         if (btnSurtir) btnSurtir.style.display = 'none';
         if (btnConfirmar) btnConfirmar.style.display = 'none';
+        if (btnRechazar) btnRechazar.style.display = 'none';
         if (btnCambiarEstatus) btnCambiarEstatus.style.display = 'inline-block';
       }
 
@@ -1223,25 +1239,37 @@
             // Update buttons based on role and order status
             const btnSurtir = document.getElementById('btnSurtirPedido');
             const btnConfirmar = document.getElementById('btnConfirmarSurtido');
+            const btnRechazar = document.getElementById('btnRechazarFinanzas');
             const btnRemision = document.getElementById('btnGenerarRemision');
             const currentRole = getUserRole();
-            const estaSurtido = ['surtido', 'enviado', 'entregado'].includes(estatusValor);
+            const estaSurtido = ['surtido', 'enviado', 'entregado', 'completado'].includes(estatusValor);
             const estaListoParaSurtir = estatusValor === 'listo para surtir';
             const estaParcialmenteSurtido = estatusValor === 'parcialmente surtido' || estatusValor === 'parcialmente_surtido';
+            const estaPendienteConfirmacion = estatusValor === 'pendiente de confirmación' || estatusValor === 'pendiente de confirmacion';
+            const estaRevisionAlmacen = estatusValor === 'revisión de almacén' || estatusValor === 'revision de almacen' || estatusValor === 'revision_almacen';
             
             // Inventarios role - Surtir button
-            if (btnSurtir && currentRole === 'inventarios') {
+            // Backend permite: 'inventarios', 'gerente_operaciones', 'jefe_almacen', 'admin', 'super_admin'
+            const puedeMarcarSurtido = ['inventarios', 'gerente_operaciones', 'jefe_almacen', 'admin', 'super_admin'].includes(currentRole);
+            
+            if (btnSurtir && puedeMarcarSurtido) {
               if (estaSurtido) {
                 // Already confirmed by finanzas
                 btnSurtir.innerHTML = '✅ Pedido Surtido';
                 btnSurtir.style.background = '#10b981';
                 btnSurtir.disabled = true;
                 btnSurtir.style.display = 'inline-block';
-              } else if (estaListoParaSurtir || estaParcialmenteSurtido) {
-                // Already marked as ready, waiting for finanzas
-                btnSurtir.innerHTML = '⏳ Esperando Confirmación';
+              } else if (estaPendienteConfirmacion) {
+                // Sent to finance, waiting for confirmation
+                btnSurtir.innerHTML = '⏳ Esperando Finanzas';
                 btnSurtir.style.background = '#6c757d';
                 btnSurtir.disabled = true;
+                btnSurtir.style.display = 'inline-block';
+              } else if (estaRevisionAlmacen) {
+                // Rejected by finance, needs correction - can resend
+                btnSurtir.innerHTML = '⚠️ Corregir y Reenviar';
+                btnSurtir.style.background = '#f59e0b';
+                btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';
               } else if (estatusValor === 'pendiente' || estatusValor === 'confirmado') {
                 // Can be marked as ready
@@ -1252,25 +1280,56 @@
               } else {
                 btnSurtir.style.display = 'none';
               }
+            } else if (btnSurtir) {
+              // Usuario sin permisos - ocultar botón
+              btnSurtir.style.display = 'none';
             }
             
-            // Finanzas and Secretaria role - Confirmar button
-            if (btnConfirmar && (currentRole === 'finanzas' || currentRole === 'gerente_finanzas' || currentRole === 'secretaria')) {
+            // Finanzas and Secretaria role - Confirmar and Rechazar buttons
+            // Backend permite confirmar: 'finanzas', 'gerente_finanzas', 'secretaria', 'admin', 'super_admin'
+            // Backend permite rechazar: 'finanzas', 'gerente_finanzas', 'admin', 'super_admin' (NO secretaria)
+            const puedeConfirmarFinanzas = ['finanzas', 'gerente_finanzas', 'secretaria', 'admin', 'super_admin'].includes(currentRole);
+            const puedeRechazarFinanzas = ['finanzas', 'gerente_finanzas', 'admin', 'super_admin'].includes(currentRole);
+            
+            if (puedeConfirmarFinanzas || puedeRechazarFinanzas) {
               if (estaSurtido) {
                 // Already confirmed
-                btnConfirmar.innerHTML = '✅ Confirmado';
-                btnConfirmar.style.background = '#10b981';
-                btnConfirmar.disabled = true;
-                btnConfirmar.style.display = 'inline-block';
-              } else if (estaListoParaSurtir || estaParcialmenteSurtido) {
-                // Ready to confirm
-                btnConfirmar.innerHTML = '✅ Confirmar Surtido';
-                btnConfirmar.style.background = '#0d6efd';
-                btnConfirmar.disabled = false;
-                btnConfirmar.style.display = 'inline-block';
+                if (btnConfirmar && puedeConfirmarFinanzas) {
+                  btnConfirmar.innerHTML = '✅ Confirmado';
+                  btnConfirmar.style.background = '#10b981';
+                  btnConfirmar.disabled = true;
+                  btnConfirmar.style.display = 'inline-block';
+                } else if (btnConfirmar) {
+                  btnConfirmar.style.display = 'none';
+                }
+                if (btnRechazar) btnRechazar.style.display = 'none';
+              } else if (estaPendienteConfirmacion) {
+                // Ready to confirm or reject - validate permissions
+                if (btnConfirmar && puedeConfirmarFinanzas) {
+                  btnConfirmar.innerHTML = '✅ Confirmar Surtido';
+                  btnConfirmar.style.background = '#0d6efd';
+                  btnConfirmar.disabled = false;
+                  btnConfirmar.style.display = 'inline-block';
+                } else if (btnConfirmar) {
+                  btnConfirmar.style.display = 'none';
+                }
+                
+                if (btnRechazar && puedeRechazarFinanzas) {
+                  btnRechazar.innerHTML = '↩️ Regresar a Almacén';
+                  btnRechazar.style.background = '#f59e0b';
+                  btnRechazar.disabled = false;
+                  btnRechazar.style.display = 'inline-block';
+                } else if (btnRechazar) {
+                  btnRechazar.style.display = 'none';
+                }
               } else {
-                btnConfirmar.style.display = 'none';
+                if (btnConfirmar) btnConfirmar.style.display = 'none';
+                if (btnRechazar) btnRechazar.style.display = 'none';
               }
+            } else {
+              // Usuario sin permisos - ocultar botones
+              if (btnConfirmar) btnConfirmar.style.display = 'none';
+              if (btnRechazar) btnRechazar.style.display = 'none';
             }
             
             // Update Generar Remisión button text if order is fulfilled
@@ -1834,6 +1893,79 @@
           }
         };
 
+        // Function to reject order and return to warehouse (for finanzas role)
+        window.rechazarPedidoFinanzas = async function() {
+          if (!selectedOrderId) {
+            showToast("No se pudo identificar el pedido", "error");
+            return;
+          }
+
+          const btnRechazar = document.getElementById('btnRechazarFinanzas');
+          if (!btnRechazar) return;
+
+          // Ask for observations
+          const { value: observaciones, isConfirmed } = await Swal.fire({
+            icon: 'warning',
+            title: 'Regresar pedido al almacén',
+            html: `
+              <p style="margin-bottom: 1rem;">Indica las observaciones o correcciones necesarias:</p>
+              <textarea id="swal-observaciones" class="swal2-textarea" 
+                placeholder="Ejemplo: Revisar cantidades del producto SKU-123, falta verificar stock..."
+                style="width: 100%; min-height: 100px; resize: vertical;"></textarea>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Regresar a Almacén',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#f59e0b',
+            cancelButtonColor: '#6c757d',
+            preConfirm: () => {
+              const obs = document.getElementById('swal-observaciones').value;
+              if (!obs || obs.trim() === '') {
+                Swal.showValidationMessage('Debes proporcionar observaciones');
+                return false;
+              }
+              return obs;
+            }
+          });
+
+          if (!isConfirmed || !observaciones) return;
+
+          const originalText = btnRechazar.innerHTML;
+          btnRechazar.disabled = true;
+          btnRechazar.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Regresando...';
+
+          try {
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/rechazar-finanzas`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${adminToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ observaciones_finanzas: observaciones })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+              await Swal.fire({
+                icon: 'success',
+                title: 'Pedido regresado',
+                text: 'El pedido ha sido regresado al almacén para corrección',
+                confirmButtonColor: '#f59e0b'
+              });
+              
+              window.location.reload();
+            } else {
+              throw new Error(data.message || 'Error al rechazar pedido');
+            }
+          } catch (error) {
+            console.error('Error rechazando pedido:', error);
+            showToast(error.message || 'Error al rechazar el pedido', 'error');
+            btnRechazar.disabled = false;
+            btnRechazar.innerHTML = originalText;
+          }
+        };
+
         // Function to confirm fulfillment and reduce stock (for finanzas role)
         window.confirmarSurtidoFinanzas = async function() {
           if (!selectedOrderId) {
@@ -1848,7 +1980,7 @@
           const confirmed = await Swal.fire({
             icon: 'warning',
             title: '¿Confirmar surtido?',
-            html: 'Esta acción:<br>• Reducirá el inventario<br>• Marcará el pedido como Surtido<br>• NO se puede deshacer',
+            html: 'Esta acción:<br>• Reducirá el inventario<br>• Generará CxC (si aplica)<br>• Marcará el pedido como Surtido<br>• NO se puede deshacer',
             showCancelButton: true,
             confirmButtonText: 'Sí, confirmar',
             cancelButtonText: 'Cancelar',

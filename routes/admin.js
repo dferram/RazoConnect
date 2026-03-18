@@ -488,6 +488,14 @@ router.post(
   pedidosAdminController.confirmarSurtidoFinanzas
 );
 
+// Rechazar pedido y regresar a almacén (finanzas)
+router.post(
+  "/pedidos/:id/rechazar-finanzas",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas']),
+  pedidosAdminController.rechazarPedidoFinanzas
+);
+
 // Generar PDF de remisión para pedido (admin)
 // Supports ?mostrarPrecios=false query param for inventarios role
 router.get(

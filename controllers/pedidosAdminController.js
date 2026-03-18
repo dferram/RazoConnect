@@ -769,7 +769,7 @@ const surtirPedido = async (req, res) => {
 
     await client.query('COMMIT');
 
-    logger.info('Pedido marcado como listo para surtir (sin reducir stock):', {
+    logger.info('Pedido enviado a finanzas para confirmación (sin reducir stock):', {
       pedidoId,
       nuevoEstatus,
       productosSurtidos,
@@ -781,7 +781,7 @@ const surtirPedido = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Pedido marcado como "${nuevoEstatus}". ${productosSurtidos} producto(s) listo(s), ${productosBackorder} en backorder.`,
+      message: `Pedido enviado a finanzas para confirmación. ${productosSurtidos} producto(s) listo(s), ${productosBackorder} en backorder. Stock NO afectado hasta confirmación de finanzas.`,
       data: {
         pedidoId: updateResult.rows[0].pedidoid,
         estatus: updateResult.rows[0].estatus,
@@ -991,10 +991,116 @@ const confirmarSurtidoFinanzas = async (req, res) => {
   }
 };
 
+/**
+ * Rechazar pedido y regresar a almacén (finanzas)
+ * Usado por finanzas para rechazar un pedido y regresarlo al almacenista para corrección
+ * POST /api/admin/pedidos/:id/rechazar-finanzas
+ */
+const rechazarPedidoFinanzas = async (req, res) => {
+  const client = await db.connect();
+  
+  try {
+    const { id: pedidoId } = req.params;
+    const { tenant_id } = req.tenant;
+    const { observaciones_finanzas } = req.body;
+    const userId = req.user?.id || req.user?.adminid;
+
+    if (!observaciones_finanzas || observaciones_finanzas.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Se requieren observaciones para rechazar el pedido'
+      });
+    }
+
+    await client.query('BEGIN');
+
+    // Obtener pedido
+    const pedidoQuery = `
+      SELECT p.* 
+      FROM pedidos p
+      WHERE p.pedidoid = $1 AND p.tenant_id = $2
+    `;
+    
+    const pedidoResult = await client.query(pedidoQuery, [pedidoId, tenant_id]);
+    
+    if (pedidoResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        message: 'Pedido no encontrado'
+      });
+    }
+
+    const pedido = pedidoResult.rows[0];
+    const estatusActual = (pedido.estatus || '').toLowerCase().trim();
+    
+    // Validar que el pedido está pendiente de confirmación
+    const estadosValidos = ['pendiente de confirmación', 'pendiente de confirmacion'];
+    if (!estadosValidos.includes(estatusActual)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: `No se puede rechazar. El pedido debe estar en estado "Pendiente de confirmación". Estado actual: ${pedido.estatus}`
+      });
+    }
+
+    // Cambiar estado a "Revisión de almacén"
+    const updateQuery = `
+      UPDATE pedidos 
+      SET 
+        estatus = 'Revisión de almacén',
+        observaciones_finanzas = $3,
+        rechazado_por_finanzas = $4,
+        fecha_rechazo_finanzas = NOW()
+      WHERE pedidoid = $1 AND tenant_id = $2
+      RETURNING *
+    `;
+    
+    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, observaciones_finanzas, userId]);
+
+    await client.query('COMMIT');
+
+    logger.info('Pedido rechazado por finanzas y regresado a almacén:', {
+      pedidoId,
+      observaciones: observaciones_finanzas,
+      userId,
+      tenantId: tenant_id,
+      requestId: req.requestId
+    });
+
+    res.json({
+      success: true,
+      message: 'Pedido regresado al almacén para corrección',
+      data: {
+        pedidoId: updateResult.rows[0].pedidoid,
+        estatus: updateResult.rows[0].estatus,
+        observaciones_finanzas
+      }
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Error al rechazar pedido por finanzas:', {
+      error: error.message,
+      stack: error.stack,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
+    res.status(500).json({
+      success: false,
+      message: 'Error al rechazar el pedido',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   getAllPedidos,
   getPedidoDetalle,
   confirmarPedido,
   surtirPedido,
-  confirmarSurtidoFinanzas
+  confirmarSurtidoFinanzas,
+  rechazarPedidoFinanzas
 };
