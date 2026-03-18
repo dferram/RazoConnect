@@ -1,9 +1,9 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Recepci√≥n de Inventario - Admin RazoConnect</title>
+    <title>RecepciÛn de Inventario - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
     <!-- SWEETALERT2 -->
@@ -16,8 +16,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
-    <!-- PROTECCI√ìN DE AUTENTICACI√ìN ADMIN -->
+    <!-- PROTECCI”N DE AUTENTICACI”N ADMIN -->
     <script src="js/auth-guard-admin.js"></script>
+<script src="js/api.js"></script>
 
     <!-- API Configuration -->
     <script>
@@ -26,7 +27,7 @@
 
 
 
-    <!-- SISTEMA DE RENOVACI√ìN DE TOKENS -->
+    <!-- SISTEMA DE RENOVACI”N DE TOKENS -->
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
@@ -49,10 +50,10 @@
           <!-- Instructional Banner -->
           <div id="instructionalBanner" class="instructional-banner">
             <p>
-              üí° <strong>Recepci√≥n de Inventario:</strong> Registra la llegada de productos de tus proveedores. Selecciona la orden de compra, verifica las cantidades recibidas y asigna costos. El sistema actualizar√° autom√°ticamente tu inventario disponible.
+              ?? <strong>RecepciÛn de Inventario:</strong> Registra la llegada de productos de tus proveedores. Selecciona la orden de compra, verifica las cantidades recibidas y asigna costos. El sistema actualizar· autom·ticamente tu inventario disponible.
             </p>
             <button class="instructional-banner-close" title="Cerrar">
-              √ó
+              ◊
             </button>
           </div>
 
@@ -76,16 +77,16 @@
               <!-- Super Admin Controls -->
               <div id="superAdminControls" style="display: none; gap: 0.5rem;">
                 <button id="btnReasignarSesion" class="btn btn-sm" style="background: #3B82F6; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
-                  <i class="bi bi-arrow-left-right"></i> Reasignar Sesi√≥n
+                  <i class="bi bi-arrow-left-right"></i> Reasignar SesiÛn
                 </button>
                 <button id="btnLiberarSesion" class="btn btn-sm" style="background: #DC2626; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
-                  <i class="bi bi-unlock"></i> Liberar Sesi√≥n
+                  <i class="bi bi-unlock"></i> Liberar SesiÛn
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- √ìrdenes de Compra Pendientes -->
+          <!-- ”rdenes de Compra Pendientes -->
           <section class="admin-card" style="padding: 1.25rem">
             <div
               style="
@@ -102,21 +103,21 @@
                   id="ocSearch"
                   type="text"
                   class="form-input"
-                  placeholder="Ej: 120 ¬∑ Proveedor..."
+                  placeholder="Ej: 120 ∑ Proveedor..."
                 />
               </div>
 
               <div style="min-width: 320px; flex: 1">
                 <label for="ocSelect" class="form-label">Orden de Compra</label>
                 <select id="ocSelect" class="form-input" disabled>
-                  <option value="">Cargando √≥rdenes‚Ä¶</option>
+                  <option value="">Cargando ÛrdenesÖ</option>
                 </select>
               </div>
 
               <div style="display: grid; gap: 0.25rem; min-width: 240px">
                 <div style="font-size: 0.85rem; color: #6b7280">Proveedor</div>
-                <div id="ocProveedor" style="font-weight: 700; color: #111827">‚Äî</div>
-                <div id="ocMeta" style="font-size: 0.85rem; color: #6b7280">‚Äî</div>
+                <div id="ocProveedor" style="font-weight: 700; color: #111827">ó</div>
+                <div id="ocMeta" style="font-size: 0.85rem; color: #6b7280">ó</div>
               </div>
             </div>
           </section>
@@ -133,13 +134,13 @@
               "
             >
               <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                <h2 style="margin: 0; font-size: 1.1rem">Auditor√≠a de Recepci√≥n</h2>
+                <h2 style="margin: 0; font-size: 1.1rem">AuditorÌa de RecepciÛn</h2>
                 <span id="tipoBadge" style="display: none;"></span>
               </div>
-              <span id="ocBadge" class="admin-badge secondary">‚Äî</span>
+              <span id="ocBadge" class="admin-badge secondary">ó</span>
             </div>
 
-            <!-- Botones de Gesti√≥n de Productos -->
+            <!-- Botones de GestiÛn de Productos -->
             <div id="botonesGestion" style="display: none; margin-bottom: 1rem; padding: 0.75rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
               <div style="display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap;">
                 <button id="btnAgregarProducto" type="button" class="btn btn-success" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
@@ -165,9 +166,9 @@
                   />
                 </div>
                 <div>
-                  <label for="filtroCategoria" class="form-label" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">Filtrar por Categor√≠a</label>
+                  <label for="filtroCategoria" class="form-label" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">Filtrar por CategorÌa</label>
                   <select id="filtroCategoria" class="form-input" style="font-size: 0.875rem;">
-                    <option value="">Todas las categor√≠as</option>
+                    <option value="">Todas las categorÌas</option>
                   </select>
                 </div>
                 <div>
@@ -231,7 +232,7 @@
                       <tr>
                         <th style="width: 60px">Imagen</th>
                         <th style="min-width: 200px">Producto</th>
-                        <th style="min-width: 110px">Categor√≠a</th>
+                        <th style="min-width: 110px">CategorÌa</th>
                         <th style="min-width: 110px">Color</th>
                         <th style="min-width: 110px">Medidas</th>
                         <th style="text-align: center; width: 110px">Solicitado (pzas)</th>
@@ -256,7 +257,7 @@
               </div>
 
               <!-- Tabla 2: Productos Ya Recibidos (100% ancho) -->
-              <!-- COMENTADA - No es √∫til en este momento. Mostraba el progreso de recepci√≥n con emojis -->
+              <!-- COMENTADA - No es ˙til en este momento. Mostraba el progreso de recepciÛn con emojis -->
               <!--
               <div class="recepcion-panel" style="margin-bottom: 2rem;">
                 <div
@@ -270,7 +271,7 @@
                   "
                 >
                   <div style="font-weight: 800; color: #111827">
-                    Recepci√≥n de Mercanc√≠a (Confirmado)
+                    RecepciÛn de MercancÌa (Confirmado)
                   </div>
                   <div id="recibidoBadge" class="admin-badge secondary">0 RECIBIDOS</div>
                 </div>
@@ -280,7 +281,7 @@
                       <tr>
                         <th style="width: 60px">Imagen</th>
                         <th style="min-width: 200px">Producto</th>
-                        <th style="min-width: 120px">Categor√≠a</th>
+                        <th style="min-width: 120px">CategorÌa</th>
                         <th style="min-width: 120px">Color</th>
                         <th style="min-width: 150px">Dimensiones</th>
                         <th style="text-align: center; width: 140px">Total recibido (pzas)</th>
@@ -300,7 +301,7 @@
               </div>
               -->
 
-              <!-- Tabla 3: Resumen de Sesi√≥n -->
+              <!-- Tabla 3: Resumen de SesiÛn -->
               <div class="recepcion-panel">
                   <div
                     style="
@@ -313,13 +314,13 @@
                     "
                   >
                     <div style="font-weight: 800; color: #111827">
-                      Resumen de Sesi√≥n
+                      Resumen de SesiÛn
                     </div>
-                    <div id="sesionBadge" class="admin-badge secondary">0 √çTEMS</div>
+                    <div id="sesionBadge" class="admin-badge secondary">0 ÕTEMS</div>
                   </div>
 
                   <div id="sesionEmpty" style="color: #6b7280; font-size: 0.95rem; padding: 0.75rem; border: 1px dashed rgba(107, 114, 128, 0.35); border-radius: 0.75rem;">
-                    Agrega cantidades a la sesi√≥n para finalizar la recepci√≥n en un solo paso.
+                    Agrega cantidades a la sesiÛn para finalizar la recepciÛn en un solo paso.
                   </div>
 
                   <div id="sesionTableWrap" class="table-responsive" style="display:none;">
@@ -328,7 +329,7 @@
                         <tr>
                           <th>Producto</th>
                           <th style="width: 140px;">SKU</th>
-                          <th style="width: 120px;">Categor√≠a</th>
+                          <th style="width: 120px;">CategorÌa</th>
                           <th style="width: 100px;">Color</th>
                           <th style="width: 120px;">Medida</th>
                           <th style="text-align:center; width: 140px;">Cantidad (pzas)</th>
@@ -364,7 +365,7 @@
                       class="btn btn-primary w-100"
                       disabled
                     >
-                      Finalizar Recepci√≥n y Generar Cuenta por Pagar
+                      Finalizar RecepciÛn y Generar Cuenta por Pagar
                     </button>
                     <button
                       id="btnCerrarSesion"
@@ -374,7 +375,7 @@
                       onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(220, 38, 38, 0.4)';"
                       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(220, 38, 38, 0.3)';"
                     >
-                      <i class="bi bi-x-octagon-fill"></i> Cerrar Sesi√≥n y Marcar Pendientes como No Recibidos
+                      <i class="bi bi-x-octagon-fill"></i> Cerrar SesiÛn y Marcar Pendientes como No Recibidos
                     </button>
                   </div>
                 </div>
@@ -417,7 +418,7 @@
         </div>
 
         <div style="margin-bottom: 1rem; padding: 0.75rem; background: #dbeafe; border-left: 4px solid #3b82f6; border-radius: 0.375rem;">
-          <strong>‚ÑπÔ∏è Informaci√≥n:</strong> Las cantidades se ingresan en <strong>paquetes</strong>. Cada producto muestra cu√°ntas piezas contiene por paquete.
+          <strong>?? InformaciÛn:</strong> Las cantidades se ingresan en <strong>paquetes</strong>. Cada producto muestra cu·ntas piezas contiene por paquete.
         </div>
 
         <div style="max-height: 500px; overflow-y: auto; margin-bottom: 1.5rem;">
@@ -427,7 +428,7 @@
                 <th style="width: 60px;">Imagen</th>
                 <th>Producto / Variante</th>
                 <th style="width: 120px;">SKU</th>
-                <th style="width: 120px;">Categor√≠a</th>
+                <th style="width: 120px;">CategorÌa</th>
                 <th style="width: 80px;">Stock</th>
                 <th style="width: 120px;">Paquetes</th>
                 <th style="width: 100px;"></th>
@@ -464,7 +465,7 @@
         </div>
 
         <div style="margin-bottom: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem;">
-          <strong>‚ö†Ô∏è Advertencia:</strong> Solo puedes quitar productos que NO hayan sido recibidos a√∫n.
+          <strong>?? Advertencia:</strong> Solo puedes quitar productos que NO hayan sido recibidos a˙n.
         </div>
 
         <div style="max-height: 400px; overflow-y: auto; margin-bottom: 1.5rem;">
@@ -523,7 +524,7 @@
         .then(html => {
           document.getElementById('modal-optimizacion-container').innerHTML = html;
         })
-        .catch(error => console.error('Error cargando modal de optimizaci√≥n:', error));
+        .catch(error => console.error('Error cargando modal de optimizaciÛn:', error));
     </script>
     <script>
       const ocSearch = document.getElementById("ocSearch");
@@ -575,13 +576,13 @@
           (x) => String(x.detalleId) === String(detalleId)
         );
         if (!item) {
-          showToastError("No se encontr√≥ el item");
+          showToastError("No se encontrÛ el item");
           return;
         }
 
         const input = inputEl || (tbodyPendiente ? tbodyPendiente.querySelector(`.input-qty-recibida[data-detalle-id="${detalleId}"]`) : null);
         if (!input) {
-          showToastError("No se encontr√≥ el campo de cantidad");
+          showToastError("No se encontrÛ el campo de cantidad");
           return;
         }
 
@@ -590,11 +591,11 @@
         const max = Number.parseInt(input.dataset.pendiente, 10) || 0;
 
         if (!Number.isInteger(cantidad) || cantidad <= 0) {
-          showToastError("Ingresa una cantidad v√°lida");
+          showToastError("Ingresa una cantidad v·lida");
           return;
         }
 
-        // Calcular cu√°nto ya est√° en sesi√≥n para este item
+        // Calcular cu·nto ya est· en sesiÛn para este item
         const enSesion = sesionRecepcion
           .filter((x) => String(x.detalleId) === String(item.detalleId))
           .reduce((acc, x) => acc + (Number.parseInt(x.cantidadPiezas || x.cantidad, 10) || 0), 0);
@@ -602,7 +603,7 @@
         const totalAcumulado = enSesion + cantidad;
         
         if (max > 0 && totalAcumulado > max) {
-          showToastError(`No puedes recibir m√°s de lo solicitado. Solicitado: ${max} pzas, Ya en sesi√≥n: ${enSesion} pzas, Intentando agregar: ${cantidad} pzas`);
+          showToastError(`No puedes recibir m·s de lo solicitado. Solicitado: ${max} pzas, Ya en sesiÛn: ${enSesion} pzas, Intentando agregar: ${cantidad} pzas`);
           return;
         }
 
@@ -619,7 +620,7 @@
           };
         } else {
           const costoCalculado = costoUnitarioValue(item);
-          console.log('üíæ [SESION] Guardando nuevo item:', {
+          console.log('?? [SESION] Guardando nuevo item:', {
             detalleId: item.detalleId,
             nombreProducto: item.nombreProducto,
             cantidad,
@@ -631,7 +632,7 @@
           sesionRecepcion.push({
             detalleId: item.detalleId,
             varianteId: item.varianteId,
-            cantidadPiezas: cantidad,  // ‚Üê EXPL√çCITO: Son PIEZAS, no paquetes
+            cantidadPiezas: cantidad,  // ? EXPLÕCITO: Son PIEZAS, no paquetes
             nombreProducto: safeText(item.nombreProducto),
             sku: safeText(item.sku),
             categoria: safeText(item.categoria || 'N/A'),
@@ -642,20 +643,20 @@
           });
         }
 
-        // FEATURE 2: Mantener el valor en el input despu√©s de agregar (NO limpiar)
+        // FEATURE 2: Mantener el valor en el input despuÈs de agregar (NO limpiar)
         // El valor se mantiene para que el usuario vea lo que acaba de registrar
-        // input.value = ''; // ‚Üê COMENTADO: Ya no limpiamos el input
+        // input.value = ''; // ? COMENTADO: Ya no limpiamos el input
         
         hasSessionData = true;
-        showToastSuccess("Agregado a sesi√≥n");
+        showToastSuccess("Agregado a sesiÛn");
         persistSesionRecepcion();
         renderizarTablaSesion();
         
-        // CR√çTICO: Solo actualizar el contador del item espec√≠fico, NO renderizar toda la tabla
+        // CRÕTICO: Solo actualizar el contador del item especÌfico, NO renderizar toda la tabla
         // para evitar que se reseteen los valores de otros inputs
         actualizarContadorPorRecibir(item.detalleId);
         
-        // FEATURE 3: Si el producto est√° completamente recibido, removerlo de la tabla pendientes
+        // FEATURE 3: Si el producto est· completamente recibido, removerlo de la tabla pendientes
         const solicitadoPzas = solicitadoPzasValue(item);
         const recibidoPzas = recibidoPzasValue(item);
         const enSesionPzas = sesionRecepcion
@@ -665,7 +666,7 @@
         
         if (pendientePzas === 0) {
           // Producto completamente recibido - remover de la tabla pendientes
-          console.log(`‚úÖ [COMPLETADO] Producto ${item.sku} completamente recibido, removiendo de pendientes`);
+          console.log(`? [COMPLETADO] Producto ${item.sku} completamente recibido, removiendo de pendientes`);
           const row = tbodyPendiente?.querySelector(`tr[data-detalle-id="${item.detalleId}"]`);
           if (row) {
             row.remove();
@@ -744,7 +745,7 @@
           const base = byDetalle.get(String(detalleId));
           if (!base) continue;
 
-          const cantidad = Number.parseInt(raw?.cantidadPiezas ?? raw?.cantidad, 10);  // ‚Üê Compatibilidad
+          const cantidad = Number.parseInt(raw?.cantidadPiezas ?? raw?.cantidad, 10);  // ? Compatibilidad
           if (!Number.isInteger(cantidad) || cantidad <= 0) continue;
 
           const piezasPorPaqueteStored = Number.parseInt(
@@ -779,7 +780,7 @@
           normalized.push({
             detalleId: base.detalleId,
             varianteId: base.varianteId,
-            cantidadPiezas: cantidadFinal,  // ‚Üê EXPL√çCITO: Son PIEZAS
+            cantidadPiezas: cantidadFinal,  // ? EXPLÕCITO: Son PIEZAS
             nombreProducto: safeText(base.nombreProducto),
             sku: safeText(base.sku),
             categoria: safeText(base.categoria || raw?.categoria || 'N/A'),
@@ -824,10 +825,10 @@
         const id = safeText(oc.ordenCompraId);
         const prov = safeText(oc.proveedorNombre);
         const est = safeText(oc.estatus);
-        return `OC #${id} ‚Äî ${prov} (${est})`;
+        return `OC #${id} ó ${prov} (${est})`;
       };
 
-      // Funci√≥n para verificar si una orden tiene sesi√≥n activa
+      // FunciÛn para verificar si una orden tiene sesiÛn activa
       const tieneSesionActiva = (ordenCompraId) => {
         try {
           const key = getRecepcionStorageKey(ordenCompraId);
@@ -861,18 +862,18 @@
         const placeholder = document.createElement("option");
         placeholder.value = "";
         placeholder.textContent = (ordenes.length + grupos.length)
-          ? "Selecciona una OC o Grupo‚Ä¶"
+          ? "Selecciona una OC o GrupoÖ"
           : "No hay OCs con ese filtro";
         ocSelect.appendChild(placeholder);
 
         // Agregar grupos primero con color morado
         if (grupos.length > 0) {
           const optgroupGrupos = document.createElement("optgroup");
-          optgroupGrupos.label = "üì¶ Grupos de √ìrdenes";
+          optgroupGrupos.label = "?? Grupos de ”rdenes";
           for (const grupo of grupos) {
             const opt = document.createElement("option");
             opt.value = `GRUPO-${grupo.grupoid}`;
-            opt.textContent = `üü£ ${grupo.nombre_grupo || `Grupo #${grupo.grupoid}`} (${grupo.total_ordenes || 0} √≥rdenes)`;
+            opt.textContent = `?? ${grupo.nombre_grupo || `Grupo #${grupo.grupoid}`} (${grupo.total_ordenes || 0} Ûrdenes)`;
             opt.style.color = "#8b5cf6";
             opt.style.fontWeight = "600";
             opt.dataset.esGrupo = "true";
@@ -884,20 +885,20 @@
           ocSelect.appendChild(optgroupGrupos);
         }
 
-        // Agregar √≥rdenes individuales
+        // Agregar Ûrdenes individuales
         if (ordenes.length > 0) {
           const optgroupOrdenes = document.createElement("optgroup");
-          optgroupOrdenes.label = "üìã √ìrdenes Individuales";
+          optgroupOrdenes.label = "?? ”rdenes Individuales";
           for (const oc of ordenes) {
             const opt = document.createElement("option");
             opt.value = String(oc.ordenCompraId);
             
-            // Verificar si tiene sesi√≥n activa
+            // Verificar si tiene sesiÛn activa
             const tieneSesion = tieneSesionActiva(oc.ordenCompraId);
             
-            // Marcar visualmente las √≥rdenes con sesi√≥n activa
+            // Marcar visualmente las Ûrdenes con sesiÛn activa
             if (tieneSesion) {
-              opt.textContent = `üü¢ ${buildOptionLabel(oc)} [En progreso]`;
+              opt.textContent = `?? ${buildOptionLabel(oc)} [En progreso]`;
               opt.style.color = "#10b981";  // Verde
               opt.style.fontWeight = "700";
               opt.style.background = "#ecfdf5";  // Fondo verde claro
@@ -920,22 +921,22 @@
 
       const loadOrdenes = async () => {
         ocSelect.disabled = true;
-        ocSelect.innerHTML = "<option value=\"\">Cargando √≥rdenes‚Ä¶</option>";
+        ocSelect.innerHTML = "<option value=\"\">Cargando ÛrdenesÖ</option>";
         try {
-          // Cargar √≥rdenes individuales
+          // Cargar Ûrdenes individuales
           const resp = await apiCall("/admin/ordenes-compra?estatus=Pendiente,Parcial", {
             method: "GET",
           });
 
           if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudieron cargar √≥rdenes");
+            throw new Error(resp.data?.message || "No se pudieron cargar Ûrdenes");
           }
 
           state.ordenes = Array.isArray(resp.data?.data?.ordenes)
             ? resp.data.data.ordenes
             : [];
 
-          // Cargar grupos de √≥rdenes
+          // Cargar grupos de Ûrdenes
           try {
             const respGrupos = await apiCall("/admin/ordenes-compra/grupos", {
               method: "GET",
@@ -988,7 +989,7 @@
         } catch (error) {
           ocSelect.disabled = true;
           ocSelect.innerHTML = "<option value=\"\">Error cargando OCs</option>";
-          setEmpty(error.message || "No se pudieron cargar √≥rdenes");
+          setEmpty(error.message || "No se pudieron cargar Ûrdenes");
         }
       };
 
@@ -1131,13 +1132,13 @@
           const tr = document.createElement("tr");
           tr.dataset.detalleId = String(item.detalleId);
           
-          // VISUAL INDICATOR: Aplicar color seg√∫n estado de recepci√≥n
+          // VISUAL INDICATOR: Aplicar color seg˙n estado de recepciÛn
           if (enSesionPzas > 0 && pendientePzas === 0) {
-            // Completamente agregado a sesi√≥n - verde tenue
+            // Completamente agregado a sesiÛn - verde tenue
             tr.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
             tr.style.borderLeft = "4px solid #10b981";
           } else if (enSesionPzas > 0) {
-            // Parcialmente en sesi√≥n - amarillo tenue
+            // Parcialmente en sesiÛn - amarillo tenue
             tr.style.backgroundColor = "rgba(245, 158, 11, 0.1)";
             tr.style.borderLeft = "4px solid #f59e0b";
           }
@@ -1215,7 +1216,7 @@
             }
           };
 
-          // Helper text que muestra conversi√≥n a paquetes
+          // Helper text que muestra conversiÛn a paquetes
           const helperText = document.createElement("div");
           helperText.style.cssText = "font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem; min-height: 1rem;";
           
@@ -1225,7 +1226,7 @@
               const paquetes = Math.floor(val / piezas);
               const resto = val % piezas;
               if (paquetes > 0) {
-                helperText.textContent = `‚âà ${paquetes} paq${resto > 0 ? ` + ${resto} pzas` : ''}`;
+                helperText.textContent = `ò ${paquetes} paq${resto > 0 ? ` + ${resto} pzas` : ''}`;
                 helperText.style.color = "#10b981";
               } else {
                 helperText.textContent = `${val} pzas (< 1 paq)`;
@@ -1256,7 +1257,7 @@
           const btn = document.createElement("button");
           btn.type = "button";
           btn.className = "btn btn-primary btn-agregar-sesion";
-          btn.textContent = "‚ûï Agregar";
+          btn.textContent = "? Agregar";
           btn.style.padding = "0.45rem 0.75rem";
           btn.style.fontSize = "0.875rem";
           btn.dataset.detalleId = String(item.detalleId);
@@ -1339,7 +1340,7 @@
           top.style.gap = "0.75rem";
           top.innerHTML = `
             <div style="font-weight: 800; color: ${isDone ? "#10b981" : "#f59e0b"}">
-              ${isDone ? "‚úÖ Completo" : "üü° Parcial"}
+              ${isDone ? "? Completo" : "?? Parcial"}
             </div>
             <div style="font-size: 0.85rem; color: #6b7280">${recibidoPzas}/${solicitadoPzas}</div>
           `;
@@ -1383,7 +1384,7 @@
         }
       };
 
-      // Funci√≥n para actualizar el contador "Por recibir" de un item espec√≠fico
+      // FunciÛn para actualizar el contador "Por recibir" de un item especÌfico
       const actualizarContadorPorRecibir = (detalleId) => {
         const item = (Array.isArray(state.items) ? state.items : []).find(
           (x) => String(x.detalleId) === String(detalleId)
@@ -1424,14 +1425,14 @@
         const totalMonto = items.reduce((acc, x) => {
           const piezas = x.piezasPorPaquete ?? x.piezasporpaquete;
           const costo = x.costoUnitario ?? x.costounitario;
-          const cantidadPzas = x.cantidadPiezas ?? x.cantidad;  // ‚Üê Compatibilidad con datos antiguos
+          const cantidadPzas = x.cantidadPiezas ?? x.cantidad;  // ? Compatibilidad con datos antiguos
           return acc + montoDePiezas(cantidadPzas, piezas, costo);
         }, 0);
 
         hasSessionData = count > 0;
 
         if (sesionBadge) {
-          sesionBadge.textContent = `${count} √çTEMS`;
+          sesionBadge.textContent = `${count} ÕTEMS`;
         }
         if (lblTotalSesion) {
           lblTotalSesion.textContent = formatMoneyMx(totalMonto);
@@ -1445,7 +1446,7 @@
         }
         if (btnFinalizarRecepcion) {
           btnFinalizarRecepcion.style.display = count ? "inline-flex" : "none";
-          btnFinalizarRecepcion.textContent = `üìù Finalizar Recepci√≥n y Generar Cuenta por Pagar (${count} √≠tems)`;
+          btnFinalizarRecepcion.textContent = `?? Finalizar RecepciÛn y Generar Cuenta por Pagar (${count} Ìtems)`;
         }
 
         if (btnConfirmarGenerarCxp) {
@@ -1453,7 +1454,7 @@
           btnConfirmarGenerarCxp.disabled = !count;
         }
 
-        // FEATURE 1: Mostrar bot√≥n de cerrar sesi√≥n SOLO si el admin est√° trabajando en la sesi√≥n Y hay items pendientes
+        // FEATURE 1: Mostrar botÛn de cerrar sesiÛn SOLO si el admin est· trabajando en la sesiÛn Y hay items pendientes
         const btnCerrarSesion = document.getElementById('btnCerrarSesion');
         if (btnCerrarSesion) {
           // Calcular si hay items pendientes de recibir
@@ -1468,15 +1469,15 @@
             return pen > 0;
           });
           
-          // CR√çTICO: Solo mostrar si NO est√° en modo lectura (sesionBloqueada = false significa que el admin S√ç est√° trabajando)
-          // Y adem√°s hay productos pendientes
+          // CRÕTICO: Solo mostrar si NO est· en modo lectura (sesionBloqueada = false significa que el admin SÕ est· trabajando)
+          // Y adem·s hay productos pendientes
           const puedeTrabajar = !sesionBloqueada;
           btnCerrarSesion.style.display = (puedeTrabajar && hasPendientes) ? "block" : "none";
         }
 
         if (sesionFloatingCounter) {
           sesionFloatingCounter.style.display = count ? "block" : "none";
-          sesionFloatingCounter.textContent = `Items en sesi√≥n: ${count} | Total: ${formatMoneyMx(totalMonto)}`;
+          sesionFloatingCounter.textContent = `Items en sesiÛn: ${count} | Total: ${formatMoneyMx(totalMonto)}`;
         }
 
         if (!tbodySesion) return;
@@ -1485,7 +1486,7 @@
         for (const it of items) {
           const tr = document.createElement("tr");
 
-          // Obtener informaci√≥n adicional del item desde state.items
+          // Obtener informaciÛn adicional del item desde state.items
           const itemInfo = Array.isArray(state.items) ? state.items.find(x => String(x.detalleId) === String(it.detalleId)) : null;
 
           const tdNombre = document.createElement("td");
@@ -1513,7 +1514,7 @@
 
           const tdCant = document.createElement("td");
           tdCant.style.textAlign = "center";
-          const cantidadPzas = it.cantidadPiezas ?? it.cantidad;  // ‚Üê Compatibilidad con datos antiguos
+          const cantidadPzas = it.cantidadPiezas ?? it.cantidad;  // ? Compatibilidad con datos antiguos
           tdCant.innerHTML = `<strong>${(Number.parseInt(cantidadPzas, 10) || 0).toLocaleString("es-MX")}</strong>`;
 
           const tdAcc = document.createElement("td");
@@ -1606,14 +1607,14 @@
           if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
             await Swal.fire({
               icon: "warning",
-              title: "Sesi√≥n Expirada",
-              text: "Tu sesi√≥n ha expirado. Por favor inicia sesi√≥n nuevamente.",
+              title: "SesiÛn Expirada",
+              text: "Tu sesiÛn ha expirado. Por favor inicia sesiÛn nuevamente.",
               confirmButtonColor: "#F97316",
               allowOutsideClick: false,
             });
           }
           window.location.href = "/login.html";
-          throw new Error("Sesi√≥n expirada");
+          throw new Error("SesiÛn expirada");
         }
 
         return { ok: response.ok, status: response.status, data };
@@ -1646,14 +1647,14 @@
           if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
             await Swal.fire({
               icon: "warning",
-              title: "Sesi√≥n Expirada",
-              text: "Tu sesi√≥n ha expirado. Por favor inicia sesi√≥n nuevamente.",
+              title: "SesiÛn Expirada",
+              text: "Tu sesiÛn ha expirado. Por favor inicia sesiÛn nuevamente.",
               confirmButtonColor: "#F97316",
               allowOutsideClick: false,
             });
           }
           window.location.href = "/login.html";
-          throw new Error("Sesi√≥n expirada");
+          throw new Error("SesiÛn expirada");
         }
 
         return { ok: response.ok, status: response.status, data };
@@ -1665,11 +1666,11 @@
           return;
         }
         if (!Array.isArray(sesionRecepcion) || sesionRecepcion.length === 0) {
-          showToastError("No hay items en la sesi√≥n");
+          showToastError("No hay items en la sesiÛn");
           return;
         }
 
-        // Calcular totales para el modal de confirmaci√≥n
+        // Calcular totales para el modal de confirmaciÛn
         let totalPiezasSesion = 0;
         let montoTotalSesion = 0;
         const itemsOrden = Array.isArray(state.items) ? state.items : [];
@@ -1678,7 +1679,7 @@
         let tablaResumen = '<table class="admin-table" style="margin: 1rem 0; font-size: 0.875rem;">';
         tablaResumen += '<thead><tr>';
         tablaResumen += '<th>Producto</th>';
-        tablaResumen += '<th style="text-align: center;">Piezas Sesi√≥n</th>';
+        tablaResumen += '<th style="text-align: center;">Piezas SesiÛn</th>';
         tablaResumen += '<th style="text-align: center;">Total Recibido</th>';
         tablaResumen += '<th style="text-align: right;">Subtotal</th>';
         tablaResumen += '</tr></thead><tbody>';
@@ -1687,14 +1688,14 @@
           // Buscar el item correspondiente en la orden para obtener datos completos
           const itemOC = itemsOrden.find(x => String(x.detalleId) === String(itemSesion.detalleId));
           
-          const cantidadSesion = Number.parseInt(itemSesion.cantidadPiezas || itemSesion.cantidad, 10) || 0;  // ‚Üê Compatibilidad
+          const cantidadSesion = Number.parseInt(itemSesion.cantidadPiezas || itemSesion.cantidad, 10) || 0;  // ? Compatibilidad
           const piezasPorPaquete = Number.parseInt(itemSesion.piezasPorPaquete || itemSesion.piezasporpaquete, 10) || 1;
           const costoUnitario = Number.parseFloat(itemSesion.costoUnitario || itemSesion.costounitario) || 0;
           
-          // Cantidad ya recibida en BD (antes de esta sesi√≥n)
+          // Cantidad ya recibida en BD (antes de esta sesiÛn)
           const cantidadRecibidaBD = itemOC ? recibidoPzasValue(itemOC) : 0;
           
-          // Total final = Lo que ya hab√≠a + Lo que acabo de picar
+          // Total final = Lo que ya habÌa + Lo que acabo de picar
           const totalFinal = cantidadRecibidaBD + cantidadSesion;
           
           // Calcular subtotal
@@ -1718,15 +1719,15 @@
         tablaResumen += `<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: right; color: #F97316; font-size: 1.1rem;">${formatMoneyMx(montoTotalSesion)}</td>`;
         tablaResumen += '</tr></tfoot></table>';
 
-        // Modal de confirmaci√≥n con resumen
+        // Modal de confirmaciÛn con resumen
         const confirmacion = await Swal.fire({
-          title: 'üìã Confirmar Recepci√≥n',
+          title: '?? Confirmar RecepciÛn',
           html: `
             <div style="text-align: left;">
-              <p style="margin-bottom: 1rem; color: #6b7280;">Revisa el resumen de la recepci√≥n antes de continuar:</p>
+              <p style="margin-bottom: 1rem; color: #6b7280;">Revisa el resumen de la recepciÛn antes de continuar:</p>
               ${tablaResumen}
               <div style="margin-top: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem;">
-                <strong>‚ö†Ô∏è Nota:</strong> Esta acci√≥n generar√° una Cuenta por Pagar y actualizar√° el inventario.
+                <strong>?? Nota:</strong> Esta acciÛn generar· una Cuenta por Pagar y actualizar· el inventario.
               </div>
             </div>
           `,
@@ -1742,23 +1743,23 @@
           return;
         }
 
-        // Modal para capturar remisi√≥n y archivo con sugerencia inteligente
+        // Modal para capturar remisiÛn y archivo con sugerencia inteligente
         const sugerenciaRemision = getSuggestedRemision();
         const lastRemision = localStorage.getItem('last_remision_code');
         
         const modal = await Swal.fire({
-          title: "üìù Finalizar Recepci√≥n y Generar Cuenta por Pagar",
+          title: "?? Finalizar RecepciÛn y Generar Cuenta por Pagar",
           html: `
             <div style="text-align:left;">
-              <label for="swalRef" style="display:block; font-weight:700; margin-bottom:0.35rem;">N√∫mero de Remisi√≥n/Factura</label>
+              <label for="swalRef" style="display:block; font-weight:700; margin-bottom:0.35rem;">N˙mero de RemisiÛn/Factura</label>
               <input id="swalRef" class="swal2-input" value="${sugerenciaRemision}" placeholder="Ej: REM-5002" style="margin:0;" />
               ${sugerenciaRemision ? `
                 <div style="margin-top: 0.5rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem; font-size: 0.875rem;">
-                  <strong>üí° Sugerencia:</strong> El consecutivo anterior fue <strong>${lastRemision}</strong>
+                  <strong>?? Sugerencia:</strong> El consecutivo anterior fue <strong>${lastRemision}</strong>
                 </div>
               ` : ''}
               <div style="height: 0.75rem;"></div>
-              <label for="swalFile" style="display:block; font-weight:700; margin-bottom:0.35rem;">Foto de Remisi√≥n (opcional)</label>
+              <label for="swalFile" style="display:block; font-weight:700; margin-bottom:0.35rem;">Foto de RemisiÛn (opcional)</label>
               <input id="swalFile" type="file" class="swal2-file" accept="image/*,application/pdf" />
             </div>
           `,
@@ -1770,11 +1771,11 @@
           preConfirm: () => {
             const ref = document.getElementById("swalRef")?.value?.trim();
             if (!ref) {
-              Swal.showValidationMessage("El n√∫mero de remisi√≥n/factura es obligatorio");
+              Swal.showValidationMessage("El n˙mero de remisiÛn/factura es obligatorio");
               return null;
             }
             
-            // Guardar la remisi√≥n para la pr√≥xima vez
+            // Guardar la remisiÛn para la prÛxima vez
             saveLastRemision(ref);
             
             const file = document.getElementById("swalFile")?.files?.[0] || null;
@@ -1795,7 +1796,7 @@
         }
 
         try {
-          // MISI√ìN 2: Anti-double-click protection
+          // MISI”N 2: Anti-double-click protection
           const btnToDisable = btnConfirmarGenerarCxp || btnFinalizarRecepcion;
           if (btnToDisable) {
             btnToDisable.disabled = true;
@@ -1806,7 +1807,7 @@
 
           const resp = await apiCallFormData("/admin/recepcion-masiva", fd);
           if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudo finalizar recepci√≥n");
+            throw new Error(resp.data?.message || "No se pudo finalizar recepciÛn");
           }
 
           clearSesionRecepcionStorage(state.orden.ordenCompraId);
@@ -1815,14 +1816,14 @@
           isExported = false;
           renderizarTablaSesion();
           await loadRecepcion(state.orden.ordenCompraId);
-          showToastSuccess("Recepci√≥n finalizada");
+          showToastSuccess("RecepciÛn finalizada");
           
-          // NO re-habilitar el bot√≥n en caso de √©xito (la p√°gina se recarga)
+          // NO re-habilitar el botÛn en caso de Èxito (la p·gina se recarga)
         } catch (error) {
           console.error(error);
           showToastError(error.message || "Error al finalizar");
           
-          // Solo re-habilitar el bot√≥n si hay error
+          // Solo re-habilitar el botÛn si hay error
           const btnToEnable = btnConfirmarGenerarCxp || btnFinalizarRecepcion;
           if (btnToEnable) {
             btnToEnable.disabled = false;
@@ -1833,7 +1834,7 @@
         }
       };
 
-      // Variables de bloqueo de sesi√≥n
+      // Variables de bloqueo de sesiÛn
       let sesionBloqueada = false;
       let adminTrabajando = null;
       let esSuperAdmin = false;
@@ -1846,30 +1847,30 @@
           );
 
           if (!resp.ok) {
-            console.warn('No se pudo verificar bloqueo de sesi√≥n');
+            console.warn('No se pudo verificar bloqueo de sesiÛn');
             return { bloqueada: false, puedeEditar: true };
           }
 
-          console.log('üîç [DEBUG RESPUESTA] resp completo:', resp);
-          console.log('üîç [DEBUG RESPUESTA] resp.data:', resp.data);
-          console.log('üîç [DEBUG RESPUESTA] resp.data.data:', resp.data?.data);
+          console.log('?? [DEBUG RESPUESTA] resp completo:', resp);
+          console.log('?? [DEBUG RESPUESTA] resp.data:', resp.data);
+          console.log('?? [DEBUG RESPUESTA] resp.data.data:', resp.data?.data);
           
           const data = resp.data?.data || resp.data || {};
-          console.log('üîç [DEBUG RESPUESTA] data final:', data);
-          console.log('üîç [DEBUG RESPUESTA] data.bloqueada:', data.bloqueada, 'tipo:', typeof data.bloqueada);
-          console.log('üîç [DEBUG RESPUESTA] data.esPropietario:', data.esPropietario, 'tipo:', typeof data.esPropietario);
+          console.log('?? [DEBUG RESPUESTA] data final:', data);
+          console.log('?? [DEBUG RESPUESTA] data.bloqueada:', data.bloqueada, 'tipo:', typeof data.bloqueada);
+          console.log('?? [DEBUG RESPUESTA] data.esPropietario:', data.esPropietario, 'tipo:', typeof data.esPropietario);
           
           // Verificar si el usuario actual es super admin
           const adminInfo = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
-          console.log('üîç [DEBUG ROL] Admin Info:', adminInfo);
-          console.log('üîç [DEBUG ROL] Rol original:', adminInfo.rol);
+          console.log('?? [DEBUG ROL] Admin Info:', adminInfo);
+          console.log('?? [DEBUG ROL] Rol original:', adminInfo.rol);
           const rolNormalizado = (adminInfo.rol || '').toLowerCase().replace(/\s+/g, '');
-          console.log('üîç [DEBUG ROL] Rol normalizado:', rolNormalizado);
+          console.log('?? [DEBUG ROL] Rol normalizado:', rolNormalizado);
           esSuperAdmin = rolNormalizado === 'superadmin';
-          console.log('üîç [DEBUG ROL] Es super admin:', esSuperAdmin);
+          console.log('?? [DEBUG ROL] Es super admin:', esSuperAdmin);
           
-          // CR√çTICO: Super admin debe ver modo lectura si OTRO admin est√° trabajando
-          // Solo puede editar si es propietario O si la sesi√≥n est√° libre
+          // CRÕTICO: Super admin debe ver modo lectura si OTRO admin est· trabajando
+          // Solo puede editar si es propietario O si la sesiÛn est· libre
           sesionBloqueada = data.bloqueada && !data.esPropietario;
           adminTrabajando = data.nombreAdmin;
 
@@ -1888,7 +1889,7 @@
           );
           return resp.ok;
         } catch (error) {
-          console.error('Error bloqueando sesi√≥n:', error);
+          console.error('Error bloqueando sesiÛn:', error);
           return false;
         }
       };
@@ -1900,19 +1901,19 @@
             { method: "POST" }
           );
         } catch (error) {
-          console.error('Error desbloqueando sesi√≥n:', error);
+          console.error('Error desbloqueando sesiÛn:', error);
         }
       };
 
       const forzarLiberacion = async (ordenCompraId) => {
         try {
           const confirmacion = await Swal.fire({
-            title: 'üîì Forzar Liberaci√≥n de Sesi√≥n',
-            html: `<p>¬øEst√°s seguro de que deseas liberar la sesi√≥n de <strong>${adminTrabajando}</strong>?</p>
-                   <p class="text-muted" style="font-size: 0.875rem;">Esta acci√≥n permitir√° que otros administradores editen esta orden.</p>`,
+            title: '?? Forzar LiberaciÛn de SesiÛn',
+            html: `<p>øEst·s seguro de que deseas liberar la sesiÛn de <strong>${adminTrabajando}</strong>?</p>
+                   <p class="text-muted" style="font-size: 0.875rem;">Esta acciÛn permitir· que otros administradores editen esta orden.</p>`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'S√≠, liberar sesi√≥n',
+            confirmButtonText: 'SÌ, liberar sesiÛn',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#F97316'
           });
@@ -1925,20 +1926,20 @@
           );
 
           if (resp.ok) {
-            showToastSuccess('Sesi√≥n liberada exitosamente');
+            showToastSuccess('SesiÛn liberada exitosamente');
             await loadRecepcion(ordenCompraId);
           } else {
-            showToastError('No se pudo liberar la sesi√≥n');
+            showToastError('No se pudo liberar la sesiÛn');
           }
         } catch (error) {
-          console.error('Error forzando liberaci√≥n:', error);
-          showToastError('Error al liberar sesi√≥n');
+          console.error('Error forzando liberaciÛn:', error);
+          showToastError('Error al liberar sesiÛn');
         }
       };
 
       const actualizarBarraEstado = (bloqueo) => {
-        console.log('üîç [ACTUALIZAR BARRA] Llamada con bloqueo:', bloqueo);
-        console.log('üîç [ACTUALIZAR BARRA] esSuperAdmin:', esSuperAdmin);
+        console.log('?? [ACTUALIZAR BARRA] Llamada con bloqueo:', bloqueo);
+        console.log('?? [ACTUALIZAR BARRA] esSuperAdmin:', esSuperAdmin);
         
         const sessionStatusBar = document.getElementById('sessionStatusBar');
         const modeBadge = document.getElementById('modeBadge');
@@ -1946,7 +1947,7 @@
         const sessionInfoText = document.getElementById('sessionInfoText');
         const superAdminControls = document.getElementById('superAdminControls');
 
-        console.log('üîç [ACTUALIZAR BARRA] Elementos encontrados:', {
+        console.log('?? [ACTUALIZAR BARRA] Elementos encontrados:', {
           sessionStatusBar: !!sessionStatusBar,
           modeBadge: !!modeBadge,
           modeText: !!modeText,
@@ -1958,7 +1959,7 @@
 
         sessionStatusBar.style.display = 'block';
 
-        // CR√çTICO: Mostrar modo lectura si OTRO admin est√° trabajando (incluso para super admin)
+        // CRÕTICO: Mostrar modo lectura si OTRO admin est· trabajando (incluso para super admin)
         if (bloqueo.bloqueada && !bloqueo.esPropietario) {
           // Modo Solo Lectura
           modeBadge.style.background = 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)';
@@ -1966,7 +1967,7 @@
           modeBadge.style.border = '2px solid #DC2626';
           modeBadge.querySelector('i').className = 'bi bi-eye';
           modeText.textContent = 'Solo Lectura';
-          sessionInfoText.innerHTML = `<strong>${bloqueo.nombreAdmin}</strong> est√° trabajando en esta orden`;
+          sessionInfoText.innerHTML = `<strong>${bloqueo.nombreAdmin}</strong> est· trabajando en esta orden`;
         } else {
           // Modo Operador
           modeBadge.style.background = 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)';
@@ -1974,35 +1975,35 @@
           modeBadge.style.border = '2px solid #10B981';
           modeBadge.querySelector('i').className = 'bi bi-pencil-square';
           modeText.textContent = 'Modo Operador';
-          sessionInfoText.innerHTML = 'Est√°s trabajando en esta orden';
+          sessionInfoText.innerHTML = 'Est·s trabajando en esta orden';
         }
 
-        // Mostrar controles de super admin si hay sesi√≥n bloqueada (incluso si es propietario)
+        // Mostrar controles de super admin si hay sesiÛn bloqueada (incluso si es propietario)
         if (superAdminControls) {
-          // Convertir expl√≠citamente a booleanos para evitar problemas
+          // Convertir explÌcitamente a booleanos para evitar problemas
           const bloqueada = Boolean(bloqueo.bloqueada);
           
-          console.log('üîç [SUPER ADMIN CHECK]', {
+          console.log('?? [SUPER ADMIN CHECK]', {
             esSuperAdmin,
             bloqueada,
             condicion: esSuperAdmin && bloqueada
           });
           
-          // Super admin puede reasignar cualquier sesi√≥n, incluso la propia
+          // Super admin puede reasignar cualquier sesiÛn, incluso la propia
           if (esSuperAdmin && bloqueada) {
             superAdminControls.style.display = 'flex';
-            console.log('‚úÖ [SUPER ADMIN] Mostrando controles de reasignaci√≥n');
+            console.log('? [SUPER ADMIN] Mostrando controles de reasignaciÛn');
           } else {
             superAdminControls.style.display = 'none';
-            console.log('‚ùå [SUPER ADMIN] Ocultando controles');
+            console.log('? [SUPER ADMIN] Ocultando controles');
           }
         } else {
-          console.error('‚ö†Ô∏è [SUPER ADMIN] Elemento superAdminControls no encontrado en el DOM');
+          console.error('?? [SUPER ADMIN] Elemento superAdminControls no encontrado en el DOM');
         }
       };
 
       const aplicarModoSoloLectura = () => {
-        // Deshabilitar todos los inputs y botones de edici√≥n
+        // Deshabilitar todos los inputs y botones de ediciÛn
         const inputs = document.querySelectorAll('.cantidad-hoy, input[type="number"]');
         inputs.forEach(input => input.disabled = true);
 
@@ -2022,20 +2023,20 @@
         const bannerPrevio = document.getElementById('bannerSoloLectura');
         if (bannerPrevio) bannerPrevio.remove();
 
-        // NO limpiar sesi√≥n aqu√≠ - se restaurar√° desde localStorage m√°s adelante
+        // NO limpiar sesiÛn aquÌ - se restaurar· desde localStorage m·s adelante
 
         try {
-          // Verificar bloqueo de sesi√≥n
+          // Verificar bloqueo de sesiÛn
           const bloqueo = await verificarBloqueoSesion(ordenCompraId);
 
           if (bloqueo.bloqueada && !bloqueo.esPropietario) {
-            // Sesi√≥n bloqueada por otro admin - modo solo lectura
-            console.log(`üîí Sesi√≥n bloqueada por ${bloqueo.nombreAdmin}`);
+            // SesiÛn bloqueada por otro admin - modo solo lectura
+            console.log(`?? SesiÛn bloqueada por ${bloqueo.nombreAdmin}`);
           } else if (!bloqueo.bloqueada) {
-            // Sesi√≥n libre - intentar bloquear
+            // SesiÛn libre - intentar bloquear
             await bloquearSesion(ordenCompraId);
           }
-          // Si esPropietario, ya est√° bloqueada por nosotros, continuar normalmente
+          // Si esPropietario, ya est· bloqueada por nosotros, continuar normalmente
 
           const resp = await apiCall(
             `/admin/ordenes-compra/${encodeURIComponent(ordenCompraId)}/recepcion`,
@@ -2043,18 +2044,18 @@
           );
 
           if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudo cargar recepci√≥n");
+            throw new Error(resp.data?.message || "No se pudo cargar recepciÛn");
           }
 
           state.orden = resp.data?.data?.orden || null;
           state.items = Array.isArray(resp.data?.data?.items) ? resp.data.data.items : [];
 
           if (!state.orden) {
-            setEmpty("No se encontr√≥ informaci√≥n de la orden");
+            setEmpty("No se encontrÛ informaciÛn de la orden");
             return;
           }
 
-          // Restaurar sesi√≥n autom√°ticamente desde localStorage
+          // Restaurar sesiÛn autom·ticamente desde localStorage
           const ocKey = getRecepcionStorageKey(state.orden.ordenCompraId);
           if (ocKey && !ocRestorePrompted.has(ocKey)) {
             ocRestorePrompted.add(ocKey);
@@ -2066,23 +2067,23 @@
               sesionRecepcion = [];
             }
           } else if (!sesionRecepcion || sesionRecepcion.length === 0) {
-            // Si no hay sesi√≥n previa, inicializar vac√≠a
+            // Si no hay sesiÛn previa, inicializar vacÌa
             sesionRecepcion = [];
           }
 
           if (ocProveedor) {
-            ocProveedor.textContent = safeText(state.orden.proveedorNombre || "‚Äî");
+            ocProveedor.textContent = safeText(state.orden.proveedorNombre || "ó");
           }
           if (ocMeta) {
             ocMeta.textContent = `Estatus: ${safeText(state.orden.estatus)}`;
           }
           if (ocBadge) {
-            ocBadge.textContent = `OC #${safeText(state.orden.ordenCompraId)} ¬∑ ${safeText(
+            ocBadge.textContent = `OC #${safeText(state.orden.ordenCompraId)} ∑ ${safeText(
               state.orden.estatus
             )}`;
           }
 
-          // CRUCIAL: Asegurar que las tablas est√©n visibles antes de renderizar
+          // CRUCIAL: Asegurar que las tablas estÈn visibles antes de renderizar
           if (recepcionSplit) {
             const paneles = recepcionSplit.querySelectorAll('.recepcion-panel');
             paneles.forEach(panel => {
@@ -2101,7 +2102,7 @@
             inicializarFiltros();
           }
           
-          // Mostrar botones de gesti√≥n si est√°n disponibles
+          // Mostrar botones de gestiÛn si est·n disponibles
           if (typeof actualizarBotonesGestion === 'function') {
             actualizarBotonesGestion();
           }
@@ -2114,7 +2115,7 @@
           }
         } catch (error) {
           console.error(error);
-          setEmpty(error.message || "Error al cargar recepci√≥n");
+          setEmpty(error.message || "Error al cargar recepciÛn");
         } finally {
           setLoading(false);
         }
@@ -2131,10 +2132,10 @@
         });
       }
 
-      // Desbloquear sesi√≥n al salir de la p√°gina
+      // Desbloquear sesiÛn al salir de la p·gina
       window.addEventListener('beforeunload', () => {
         if (state.orden?.ordenCompraId && !sesionBloqueada) {
-          // Usar sendBeacon para garantizar que se env√≠e incluso al cerrar
+          // Usar sendBeacon para garantizar que se envÌe incluso al cerrar
           const token = localStorage.getItem('razoconnect_admin_token');
           const url = `/api/admin/ordenes-compra/${state.orden.ordenCompraId}/desbloquear-sesion`;
           const data = new Blob([JSON.stringify({})], { type: 'application/json' });
@@ -2174,7 +2175,7 @@
         const id = ocSelect.value;
         const selected = ocSelect.options[ocSelect.selectedIndex];
 
-        // Desbloquear sesi√≥n anterior si existe
+        // Desbloquear sesiÛn anterior si existe
         if (state.orden?.ordenCompraId && !sesionBloqueada) {
           await desbloquearSesion(state.orden.ordenCompraId);
         }
@@ -2182,9 +2183,9 @@
         if (!id) {
           state.orden = null;
           state.items = [];
-          if (ocProveedor) ocProveedor.textContent = "‚Äî";
-          if (ocMeta) ocMeta.textContent = "‚Äî";
-          if (ocBadge) ocBadge.textContent = "‚Äî";
+          if (ocProveedor) ocProveedor.textContent = "ó";
+          if (ocMeta) ocMeta.textContent = "ó";
+          if (ocBadge) ocBadge.textContent = "ó";
           setEmpty("Selecciona una orden de compra para empezar.");
           return;
         }
@@ -2193,11 +2194,11 @@
         const esGrupo = selected?.dataset?.esGrupo === "true";
         
         if (esGrupo) {
-          // Es un grupo - cargar TODAS las √≥rdenes simult√°neamente
+          // Es un grupo - cargar TODAS las Ûrdenes simult·neamente
           const grupoId = selected?.dataset?.grupoId;
           console.log('[GRUPOS] Cargando grupo completo:', grupoId);
           
-          // Limpiar cualquier recepci√≥n previa
+          // Limpiar cualquier recepciÛn previa
           const recepcionSplit = document.getElementById('recepcionSplit');
           if (recepcionSplit) {
             recepcionSplit.innerHTML = '';
@@ -2207,18 +2208,18 @@
           if (typeof cargarGrupoCompleto === 'function') {
             await cargarGrupoCompleto(grupoId);
           } else {
-            console.error('[GRUPOS] Funci√≥n cargarGrupoCompleto no disponible');
-            setEmpty('Error: M√≥dulo de grupos no cargado');
+            console.error('[GRUPOS] FunciÛn cargarGrupoCompleto no disponible');
+            setEmpty('Error: MÛdulo de grupos no cargado');
           }
         } else {
           // Es una orden individual - LIMPIAR ESTADO DE GRUPO
           console.log('[GRUPOS] Cambiando a orden individual - limpiando estado de grupo');
           
-          // Llamar a la funci√≥n de limpieza del m√≥dulo de grupos
+          // Llamar a la funciÛn de limpieza del mÛdulo de grupos
           if (typeof limpiarEstadoGrupo === 'function') {
             limpiarEstadoGrupo();
           } else {
-            // Fallback manual si la funci√≥n no est√° disponible
+            // Fallback manual si la funciÛn no est· disponible
             const botonesGrupo = document.getElementById('botonesExportacionGrupo');
             if (botonesGrupo) {
               botonesGrupo.remove();
@@ -2231,16 +2232,16 @@
           
           // Es una orden individual
           if (ocProveedor) {
-            ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "‚Äî");
+            ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "ó");
           }
           if (ocMeta) {
-            ocMeta.textContent = "‚Äî";
+            ocMeta.textContent = "ó";
           }
           if (ocBadge) {
-            ocBadge.textContent = `OC #${safeText(id)} ¬∑ Cargando‚Ä¶`;
+            ocBadge.textContent = `OC #${safeText(id)} ∑ CargandoÖ`;
           }
           
-          // loadRecepcion se encargar√° de limpiar y renderizar el contenedor
+          // loadRecepcion se encargar· de limpiar y renderizar el contenedor
           await loadRecepcion(id);
         }
       });
@@ -2248,7 +2249,7 @@
       loadOrdenes();
 
       // ============================================
-      // GESTI√ìN DE PRODUCTOS EN LA ORDEN
+      // GESTI”N DE PRODUCTOS EN LA ORDEN
       // ============================================
       
       const btnAgregarProducto = document.getElementById("btnAgregarProducto");
@@ -2262,7 +2263,7 @@
 
       let productosProveedorCache = [];
 
-      // Mostrar/Ocultar botones seg√∫n el estado de la orden
+      // Mostrar/Ocultar botones seg˙n el estado de la orden
       const actualizarBotonesGestion = () => {
         const ordenCargada = state.orden && state.orden.ordenCompraId;
         const estatusPermitido = ordenCargada && ['Pendiente', 'Parcial'].includes(state.orden.estatus);
@@ -2275,23 +2276,23 @@
       // Abrir modal de agregar producto
       const abrirModalAgregarProducto = async () => {
         const currentState = window.recepcionState || state;
-        console.log('üîç [DEBUG] currentState.orden:', currentState.orden);
+        console.log('?? [DEBUG] currentState.orden:', currentState.orden);
         
         if (!currentState.orden) {
           showToastError("No hay orden de compra seleccionada");
           return;
         }
 
-        // Intentar obtener proveedorId de m√∫ltiples formas
+        // Intentar obtener proveedorId de m˙ltiples formas
         const proveedorId = currentState.orden.proveedorId || currentState.orden.proveedorid || currentState.orden.ProveedorID;
         
         if (!proveedorId) {
           showToastError("No se pudo obtener el proveedor de la orden");
-          console.error('‚ùå [ERROR] No se encontr√≥ proveedorId en:', currentState.orden);
+          console.error('? [ERROR] No se encontrÛ proveedorId en:', currentState.orden);
           return;
         }
 
-        console.log('‚úÖ [DEBUG] proveedorId:', proveedorId);
+        console.log('? [DEBUG] proveedorId:', proveedorId);
 
         modalAgregarProducto.style.display = 'flex';
         tbodyProductosProveedor.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #6b7280;">Cargando productos del proveedor...</td></tr>';
@@ -2323,12 +2324,12 @@
         for (const variante of variantes) {
           const tr = document.createElement('tr');
           
-          // Construir descripci√≥n de la variante
+          // Construir descripciÛn de la variante
           const detalles = [];
           if (variante.dimensiones) detalles.push(variante.dimensiones);
           if (variante.nombremedida) detalles.push(variante.nombremedida);
           if (variante.color_nombre) detalles.push(variante.color_nombre);
-          const descripcionVariante = detalles.length > 0 ? detalles.join(' ‚Ä¢ ') : 'N/A';
+          const descripcionVariante = detalles.length > 0 ? detalles.join(' ï ') : 'N/A';
           
           // Obtener piezas por paquete y cantidad de empaque
           const piezasPorPaquete = Number.parseInt(variante.piezasporpaquete, 10) || 1;
@@ -2361,7 +2362,7 @@
                   data-empaque="${cantidadEmpaque}"
                   style="width: 80px;">
                 <small style="font-size: 0.7rem; color: #6b7280;">${piezasPorPaquete} pza${piezasPorPaquete !== 1 ? 's' : ''}/paq</small>
-                ${cantidadEmpaque > 1 ? `<small style="font-size: 0.65rem; color: #f59e0b; font-weight: 600;">M√≠n: ${cantidadEmpaque} paq</small>` : ''}
+                ${cantidadEmpaque > 1 ? `<small style="font-size: 0.65rem; color: #f59e0b; font-weight: 600;">MÌn: ${cantidadEmpaque} paq</small>` : ''}
               </div>
             </td>
             <td style="width: 100px; text-align: center;">
@@ -2421,9 +2422,9 @@
             return;
           }
 
-          // Validar que sea m√∫ltiplo de la cantidad de empaque
+          // Validar que sea m˙ltiplo de la cantidad de empaque
           if (cantidad % cantidadEmpaque !== 0) {
-            showToastError(`La cantidad debe ser m√∫ltiplo de ${cantidadEmpaque} (regla de empaque del proveedor)`);
+            showToastError(`La cantidad debe ser m˙ltiplo de ${cantidadEmpaque} (regla de empaque del proveedor)`);
             return;
           }
 
@@ -2459,7 +2460,7 @@
       // Abrir modal de quitar producto
       const abrirModalQuitarProducto = () => {
         const currentState = window.recepcionState || state;
-        console.log('üîç [DEBUG] abrirModalQuitarProducto - currentState:', currentState);
+        console.log('?? [DEBUG] abrirModalQuitarProducto - currentState:', currentState);
         
         if (!currentState.orden || !currentState.items || currentState.items.length === 0) {
           showToastError("No hay productos en la orden");
@@ -2495,14 +2496,14 @@
             </td>
             <td><strong>${safeText(item.nombreProducto)}</strong></td>
             <td><code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(item.sku)}</code></td>
-            <td>${item.dimensiones || '‚Äî'}</td>
+            <td>${item.dimensiones || 'ó'}</td>
             <td>
               ${item.colorNombre 
                 ? `<div style="display: flex; align-items: center; gap: 0.5rem;">
                      <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: ${item.colorHex || '#ccc'}; border: 1px solid #ddd;"></span>
                      <span>${safeText(item.colorNombre)}</span>
                    </div>`
-                : '‚Äî'
+                : 'ó'
               }
             </td>
             <td style="text-align: center;">${solicitado} pzas</td>
@@ -2532,21 +2533,21 @@
           const item = currentState.items.find(i => String(i.detalleId) === String(detalleId));
 
           if (!item) {
-            showToastError('No se encontr√≥ el producto');
+            showToastError('No se encontrÛ el producto');
             return;
           }
 
           const confirmacion = await Swal.fire({
             icon: 'warning',
-            title: '¬øQuitar producto de la orden?',
+            title: 'øQuitar producto de la orden?',
             html: `
-              <p>Est√°s a punto de quitar el siguiente producto:</p>
+              <p>Est·s a punto de quitar el siguiente producto:</p>
               <p style="margin-top: 1rem;"><strong>${safeText(item.nombreProducto)}</strong></p>
               <p style="color: #6b7280;">SKU: ${safeText(item.sku)}</p>
-              <p style="margin-top: 1rem; color: #dc3545; font-weight: 600;">Esta acci√≥n no se puede deshacer.</p>
+              <p style="margin-top: 1rem; color: #dc3545; font-weight: 600;">Esta acciÛn no se puede deshacer.</p>
             `,
             showCancelButton: true,
-            confirmButtonText: 'S√≠, quitar',
+            confirmButtonText: 'SÌ, quitar',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#dc3545',
             focusCancel: true
@@ -2611,7 +2612,7 @@
       });
 
       // ============================================
-      // CERRAR SESI√ìN DE RECEPCI√ìN
+      // CERRAR SESI”N DE RECEPCI”N
       // ============================================
       const btnCerrarSesion = document.getElementById('btnCerrarSesion');
 
@@ -2623,7 +2624,7 @@
           return;
         }
 
-        // Calcular cu√°ntos productos pendientes hay
+        // Calcular cu·ntos productos pendientes hay
         const items = Array.isArray(state.items) ? state.items : [];
         const pendientes = items.filter((i) => {
           const sol = solicitadoPzasValue(i);
@@ -2637,19 +2638,19 @@
 
         // Confirmar con el usuario
         const confirmacion = await Swal.fire({
-          title: '<span style="color: #DC2626; font-weight: 800;">‚ö†Ô∏è Cerrar Sesi√≥n de Recepci√≥n</span>',
+          title: '<span style="color: #DC2626; font-weight: 800;">?? Cerrar SesiÛn de RecepciÛn</span>',
           html: `
             <div style="text-align: left; padding: 0.5rem;">
               <!-- Alerta principal -->
               <div style="padding: 1rem; background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); border-left: 4px solid #DC2626; border-radius: 0.75rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);">
                 <div style="display: flex; align-items: start; gap: 0.75rem;">
-                  <div style="font-size: 1.5rem;">üö®</div>
+                  <div style="font-size: 1.5rem;">??</div>
                   <div>
                     <p style="margin: 0 0 0.5rem 0; color: #991B1B; font-weight: 700; font-size: 0.95rem;">
-                      Esta acci√≥n marcar√° <strong>${pendientes.length} producto(s) pendiente(s)</strong> como <strong>NO RECIBIDOS</strong>
+                      Esta acciÛn marcar· <strong>${pendientes.length} producto(s) pendiente(s)</strong> como <strong>NO RECIBIDOS</strong>
                     </p>
                     <p style="margin: 0; color: #7F1D1D; font-size: 0.875rem;">
-                      Los productos se cerrar√°n por merma y no podr√°n ser recibidos posteriormente en esta orden.
+                      Los productos se cerrar·n por merma y no podr·n ser recibidos posteriormente en esta orden.
                     </p>
                   </div>
                 </div>
@@ -2658,10 +2659,10 @@
               <!-- Info positiva -->
               <div style="padding: 0.875rem; background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%); border-left: 4px solid #10B981; border-radius: 0.75rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);">
                 <div style="display: flex; align-items: start; gap: 0.75rem;">
-                  <div style="font-size: 1.25rem;">‚úÖ</div>
+                  <div style="font-size: 1.25rem;">?</div>
                   <div>
                     <p style="margin: 0; color: #065F46; font-weight: 600; font-size: 0.875rem;">
-                      Los productos que ya registraste en la sesi√≥n <strong>NO se ver√°n afectados</strong> y se procesar√°n normalmente.
+                      Los productos que ya registraste en la sesiÛn <strong>NO se ver·n afectados</strong> y se procesar·n normalmente.
                     </p>
                   </div>
                 </div>
@@ -2670,12 +2671,12 @@
               <!-- Campo de motivo -->
               <div style="margin-bottom: 1rem;">
                 <label for="swal-motivo" style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: #111827; font-size: 0.95rem;">
-                  üìù Motivo del cierre (opcional):
+                  ?? Motivo del cierre (opcional):
                 </label>
                 <textarea 
                   id="swal-motivo" 
                   class="swal2-textarea" 
-                  placeholder="Ej: Proveedor no entreg√≥ productos faltantes, mercanc√≠a da√±ada en tr√°nsito, cancelaci√≥n de pedido..." 
+                  placeholder="Ej: Proveedor no entregÛ productos faltantes, mercancÌa daÒada en tr·nsito, cancelaciÛn de pedido..." 
                   style="width: 100%; min-height: 90px; border: 2px solid #E5E7EB; border-radius: 0.5rem; padding: 0.75rem; font-size: 0.875rem; font-family: inherit; resize: vertical;"
                 ></textarea>
               </div>
@@ -2683,14 +2684,14 @@
               <!-- Advertencia final -->
               <div style="padding: 0.75rem; background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 0.5rem; margin-top: 1rem;">
                 <p style="margin: 0; color: #92400E; font-size: 0.8rem; font-weight: 600;">
-                  ‚ö†Ô∏è Esta acci√≥n es <strong>irreversible</strong>. Los productos cerrados quedar√°n registrados como merma en el sistema.
+                  ?? Esta acciÛn es <strong>irreversible</strong>. Los productos cerrados quedar·n registrados como merma en el sistema.
                 </p>
               </div>
             </div>
           `,
           width: '650px',
           showCancelButton: true,
-          confirmButtonText: '<i class="bi bi-check-circle-fill"></i> S√≠, cerrar sesi√≥n',
+          confirmButtonText: '<i class="bi bi-check-circle-fill"></i> SÌ, cerrar sesiÛn',
           cancelButtonText: '<i class="bi bi-x-circle"></i> Cancelar',
           confirmButtonColor: '#DC2626',
           cancelButtonColor: '#6B7280',
@@ -2702,7 +2703,7 @@
           },
           buttonsStyling: false,
           preConfirm: () => {
-            const motivo = document.getElementById('swal-motivo')?.value?.trim() || 'Sesi√≥n cerrada manualmente';
+            const motivo = document.getElementById('swal-motivo')?.value?.trim() || 'SesiÛn cerrada manualmente';
             return { motivo };
           }
         });
@@ -2710,10 +2711,10 @@
         if (!confirmacion.isConfirmed) return;
 
         try {
-          console.log('üî¥ [CERRAR SESI√ìN] Iniciando cierre de sesi√≥n para OC:', currentState.orden.ordenCompraId);
+          console.log('?? [CERRAR SESI”N] Iniciando cierre de sesiÛn para OC:', currentState.orden.ordenCompraId);
           
           Swal.fire({
-            title: 'Cerrando sesi√≥n...',
+            title: 'Cerrando sesiÛn...',
             text: 'Por favor espera',
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); }
@@ -2728,81 +2729,81 @@
             }
           );
 
-          console.log('üî¥ [CERRAR SESI√ìN] Respuesta del servidor:', resp);
+          console.log('?? [CERRAR SESI”N] Respuesta del servidor:', resp);
 
           if (!resp.ok) {
-            throw new Error(resp.data?.message || 'No se pudo cerrar la sesi√≥n');
+            throw new Error(resp.data?.message || 'No se pudo cerrar la sesiÛn');
           }
 
-          console.log('üî¥ [CERRAR SESI√ìN] Limpiando sesi√≥n local...');
-          // Limpiar sesi√≥n local
+          console.log('?? [CERRAR SESI”N] Limpiando sesiÛn local...');
+          // Limpiar sesiÛn local
           clearSesionRecepcionStorage(currentState.orden.ordenCompraId);
           sesionRecepcion = [];
           hasSessionData = false;
 
-          console.log('üî¥ [CERRAR SESI√ìN] Desbloqueando sesi√≥n...');
-          // Desbloquear la sesi√≥n para que otros puedan trabajar
+          console.log('?? [CERRAR SESI”N] Desbloqueando sesiÛn...');
+          // Desbloquear la sesiÛn para que otros puedan trabajar
           try {
             await desbloquearSesion(currentState.orden.ordenCompraId);
           } catch (desbloqueoError) {
-            console.warn('‚ö†Ô∏è Error al desbloquear sesi√≥n (no cr√≠tico):', desbloqueoError);
+            console.warn('?? Error al desbloquear sesiÛn (no crÌtico):', desbloqueoError);
           }
 
-          console.log('üî¥ [CERRAR SESI√ìN] Mostrando mensaje de √©xito...');
+          console.log('?? [CERRAR SESI”N] Mostrando mensaje de Èxito...');
           await Swal.fire({
             icon: 'success',
-            title: 'Sesi√≥n Cerrada',
-            text: resp.data?.message || 'La sesi√≥n se cerr√≥ exitosamente',
+            title: 'SesiÛn Cerrada',
+            text: resp.data?.message || 'La sesiÛn se cerrÛ exitosamente',
             confirmButtonColor: '#F97316'
           });
 
-          console.log('üî¥ [CERRAR SESI√ìN] Limpiando estado y UI...');
+          console.log('?? [CERRAR SESI”N] Limpiando estado y UI...');
           // Limpiar completamente el estado y volver al inicio
           state.orden = null;
           state.items = [];
           sesionBloqueada = false;
           
-          // Resetear el selector de √≥rdenes
+          // Resetear el selector de Ûrdenes
           if (ocSelect) {
             ocSelect.value = '';
-            console.log('üî¥ [CERRAR SESI√ìN] Selector de OC reseteado');
+            console.log('?? [CERRAR SESI”N] Selector de OC reseteado');
           }
           
           // Limpiar UI
-          if (ocProveedor) ocProveedor.textContent = "‚Äî";
-          if (ocMeta) ocMeta.textContent = "‚Äî";
+          if (ocProveedor) ocProveedor.textContent = "ó";
+          if (ocMeta) ocMeta.textContent = "ó";
           if (ocBadge) ocBadge.textContent = "Selecciona una OC";
           
           // Ocultar secciones
           if (recepcionSplit) {
             recepcionSplit.style.display = "none";
-            console.log('üî¥ [CERRAR SESI√ìN] Secci√≥n de recepci√≥n ocultada');
+            console.log('?? [CERRAR SESI”N] SecciÛn de recepciÛn ocultada');
           }
           if (botonesGestion) {
             botonesGestion.style.display = "none";
-            console.log('üî¥ [CERRAR SESI√ìN] Botones de gesti√≥n ocultados');
+            console.log('?? [CERRAR SESI”N] Botones de gestiÛn ocultados');
           }
           
           // Limpiar tablas
           if (tbodyPendiente) tbodyPendiente.innerHTML = '';
           if (tbodySesion) tbodySesion.innerHTML = '';
           
-          console.log('üî¥ [CERRAR SESI√ìN] Renderizando tablas vac√≠as...');
-          // Renderizar tablas vac√≠as
+          console.log('?? [CERRAR SESI”N] Renderizando tablas vacÌas...');
+          // Renderizar tablas vacÌas
           renderSplit();
           renderizarTablaSesion();
           
-          console.log('üî¥ [CERRAR SESI√ìN] Recargando lista de √≥rdenes...');
-          // Recargar lista de √≥rdenes para actualizar estados
+          console.log('?? [CERRAR SESI”N] Recargando lista de Ûrdenes...');
+          // Recargar lista de Ûrdenes para actualizar estados
           await loadOrdenes();
           
-          console.log('‚úÖ [CERRAR SESI√ìN] Proceso completado exitosamente');
+          console.log('? [CERRAR SESI”N] Proceso completado exitosamente');
         } catch (error) {
           console.error(error);
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: error.message || 'No se pudo cerrar la sesi√≥n',
+            text: error.message || 'No se pudo cerrar la sesiÛn',
             confirmButtonColor: '#F97316'
           });
         }
@@ -2813,11 +2814,11 @@
       }
 
       // ============================================
-      // REASIGNACI√ìN DE SESI√ìN
+      // REASIGNACI”N DE SESI”N
       // ============================================
       const btnReasignarSesion = document.getElementById('btnReasignarSesion');
 
-      // Funci√≥n para mostrar modal de reasignaci√≥n de sesi√≥n
+      // FunciÛn para mostrar modal de reasignaciÛn de sesiÛn
       async function mostrarModalReasignarSesion() {
         const currentState = window.recepcionState || state;
         
@@ -2879,17 +2880,17 @@
           }).join('');
 
           const result = await Swal.fire({
-            title: '<strong style="color: #1f2937;">Reasignar Sesi√≥n de Recepci√≥n</strong>',
+            title: '<strong style="color: #1f2937;">Reasignar SesiÛn de RecepciÛn</strong>',
             html: `
               <div style="text-align: left; margin-bottom: 1rem;">
-                <p style="color: #6b7280; font-size: 0.95rem; margin: 0;">Selecciona el administrador responsable de esta sesi√≥n de recepci√≥n. El administrador recibir√° una notificaci√≥n y podr√° continuar trabajando en esta orden de compra.</p>
+                <p style="color: #6b7280; font-size: 0.95rem; margin: 0;">Selecciona el administrador responsable de esta sesiÛn de recepciÛn. El administrador recibir· una notificaciÛn y podr· continuar trabajando en esta orden de compra.</p>
               </div>
               <div id="adminsContainer" style="max-height: 400px; overflow-y: auto; text-align: left;">
                 ${adminsHTML}
               </div>
             `,
             showCancelButton: true,
-            confirmButtonText: 'Reasignar Sesi√≥n',
+            confirmButtonText: 'Reasignar SesiÛn',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#F97316',
             cancelButtonColor: '#6b7280',
@@ -2955,7 +2956,7 @@
         }
       }
 
-      // Funci√≥n para reasignar sesi√≥n a un admin
+      // FunciÛn para reasignar sesiÛn a un admin
       async function reasignarSesionAAdmin(adminId) {
         const currentState = window.recepcionState || state;
         
@@ -2969,18 +2970,18 @@
           );
 
           if (resp.ok) {
-            showToastSuccess('Sesi√≥n reasignada exitosamente');
+            showToastSuccess('SesiÛn reasignada exitosamente');
             await loadRecepcion(currentState.orden.ordenCompraId);
           } else {
-            showToastError(resp.data?.message || 'Error al reasignar sesi√≥n');
+            showToastError(resp.data?.message || 'Error al reasignar sesiÛn');
           }
         } catch (error) {
-          console.error('Error reasignando sesi√≥n:', error);
-          showToastError('Error al reasignar sesi√≥n');
+          console.error('Error reasignando sesiÛn:', error);
+          showToastError('Error al reasignar sesiÛn');
         }
       }
 
-      // Event listener para bot√≥n de reasignar
+      // Event listener para botÛn de reasignar
       if (btnReasignarSesion) {
         btnReasignarSesion.addEventListener('click', mostrarModalReasignarSesion);
       }
@@ -3108,7 +3109,7 @@
         }
       }
 
-      /* Im√°genes de producto miniatura en tablas */
+      /* Im·genes de producto miniatura en tablas */
       .img-mini-tabla {
         width: 40px;
         height: 40px;
@@ -3124,7 +3125,7 @@
         text-overflow: ellipsis;
       }
 
-      /* Inputs de cantidad m√°s compactos */
+      /* Inputs de cantidad m·s compactos */
       .input-mini-tabla {
         max-width: 80px;
         padding: 0.25rem 0.5rem;
@@ -3154,7 +3155,7 @@
         gap: 0;
       }
 
-      /* Optimizar celdas con m√°s espacio horizontal */
+      /* Optimizar celdas con m·s espacio horizontal */
       #tablaPendiente th,
       #tablaPendiente td,
       #tablaRecibido th,
