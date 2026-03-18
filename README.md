@@ -20,6 +20,10 @@ RazoConnect is a multi-tenant SaaS platform that enables B2B commerce operations
 
 The system is deployed on Azure App Service and serves production traffic for multiple businesses simultaneously.
 
+### Recent Updates (March 2026)
+
+**Finance-Warehouse Confirmation Workflow**: Implemented a new approval flow where warehouse staff prepare orders and Finance department confirms before stock deduction and CxC generation. See [`docs/FLUJO_FINANZAS_ALMACEN.md`](docs/FLUJO_FINANZAS_ALMACEN.md) for complete documentation.
+
 ---
 
 ## Architecture
