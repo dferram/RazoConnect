@@ -11,16 +11,57 @@
 const redis = require('redis');
 const NodeCache = require('node-cache');
 
+// ============================================
+// CACHE STAMPEDE PREVENTION
+// ============================================
+// Map para almacenar promesas de fetch en curso
+// Evita que múltiples requests ejecuten la misma query simultáneamente
+const pendingFetches = new Map();
+
+// ============================================
+// TTL RECOMENDADOS POR TIPO DE DATO
+// ============================================
+const CACHE_TTL = {
+  // Datos financieros: TTL corto (1-2 minutos)
+  SALDO_CLIENTE: 60,
+  CXC_SUMMARY: 120,
+  CXP_SUMMARY: 120,
+  PAGOS_PENDIENTES: 60,
+  
+  // Catálogos: TTL largo (10-30 minutos)
+  PRODUCTOS: 600,
+  CATEGORIAS: 1800,
+  PROVEEDORES: 1800,
+  MEDIDAS: 1800,
+  
+  // Sesiones y permisos: TTL muy corto (30-60 segundos)
+  BLACKLIST: 60,
+  PERMISOS_USUARIO: 300,
+  REFRESH_TOKEN: 2592000, // 30 días
+  
+  // Reportes y dashboards: TTL medio (5 minutos)
+  DASHBOARD_STATS: 300,
+  VENTAS_DIARIAS: 300,
+  INVENTARIO_RESUMEN: 300,
+  
+  // Configuración: TTL muy largo (1 hora)
+  CONFIGURACION_SISTEMA: 3600,
+  TENANT_CONFIG: 3600,
+  
+  // Default
+  DEFAULT: 300
+};
+
 // Hybrid Cache: Memoria RAM local (antes de Redis)
 const localCache = new NodeCache({
-  stdTTL: 300, // 5 minutos por defecto
+  stdTTL: CACHE_TTL.DEFAULT,
   checkperiod: 60, // Limpieza cada 60 segundos
   useClones: false // Mejor performance, no clona objetos
 });
 
 // Cache específico para blacklist (60 segundos)
 const blacklistCache = new NodeCache({
-  stdTTL: 60,
+  stdTTL: CACHE_TTL.BLACKLIST,
   checkperiod: 10,
   useClones: false
 });
@@ -407,22 +448,28 @@ const isTokenBlacklisted = async (tokenId) => {
 };
 
 /**
- * HYBRID CACHE HELPER
+ * HYBRID CACHE HELPER CON CACHE STAMPEDE PREVENTION
  * Busca en: RAM local → Redis → Base de datos (fetchFunction)
+ * 
+ * MEJORAS:
+ * - Previene Cache Stampede: Si hay un fetch en curso, otras peticiones esperan
+ * - Graceful Degradation: Si hay error, ejecuta fetchFunction directamente
+ * - Logging mejorado para debugging
+ * 
  * @param {string} key - Clave del cache
  * @param {Function} fetchFunction - Función async que obtiene datos de BD
  * @param {number} ttl - Tiempo de vida en segundos (default: 300s = 5min)
  * @returns {Promise<any>}
  */
-const getOrSetCache = async (key, fetchFunction, ttl = 300) => {
+const getOrSetCache = async (key, fetchFunction, ttl = CACHE_TTL.DEFAULT) => {
   try {
-    // 1. Verificar en RAM local
+    // 1. Verificar en RAM local (más rápido)
     const cachedValue = localCache.get(key);
     if (cachedValue !== undefined) {
       return cachedValue;
     }
 
-    // 2. Verificar en Redis
+    // 2. Verificar en Redis (remoto)
     const client = await getRedisClient();
     if (client) {
       const redisValue = await client.get(key);
@@ -434,20 +481,49 @@ const getOrSetCache = async (key, fetchFunction, ttl = 300) => {
       }
     }
 
-    // 3. Ejecutar fetchFunction (consulta a BD)
-    const freshData = await fetchFunction();
-
-    // 4. Guardar en ambos caches
-    localCache.set(key, freshData, ttl);
-    if (client) {
-      await client.setEx(key, ttl, JSON.stringify(freshData));
+    // 3. ✅ CACHE STAMPEDE PREVENTION
+    // Si ya hay un fetch en curso para esta key, esperar su resultado
+    if (pendingFetches.has(key)) {
+      console.log(`[CACHE] Esperando fetch en curso para: ${key}`);
+      return await pendingFetches.get(key);
     }
 
-    return freshData;
+    // 4. Ejecutar fetchFunction y almacenar promesa
+    const fetchPromise = fetchFunction()
+      .then(freshData => {
+        // Guardar en ambos caches
+        localCache.set(key, freshData, ttl);
+        if (client) {
+          client.setEx(key, ttl, JSON.stringify(freshData)).catch(err => 
+            console.error('[CACHE] Error guardando en Redis:', err.message)
+          );
+        }
+        return freshData;
+      })
+      .catch(error => {
+        console.error('[CACHE] Error en fetchFunction:', error.message);
+        throw error;
+      })
+      .finally(() => {
+        // Limpiar promesa pendiente
+        pendingFetches.delete(key);
+      });
+
+    // Almacenar promesa para que otras peticiones la esperen
+    pendingFetches.set(key, fetchPromise);
+    return await fetchPromise;
+
   } catch (error) {
-    console.error('[HYBRID CACHE] Error:', error);
-    // Fallback: ejecutar fetchFunction directamente
-    return await fetchFunction();
+    console.error('[HYBRID CACHE] Error:', error.message);
+    // Limpiar promesa pendiente en caso de error
+    pendingFetches.delete(key);
+    // Graceful Degradation: ejecutar fetchFunction directamente
+    try {
+      return await fetchFunction();
+    } catch (fallbackError) {
+      console.error('[CACHE FALLBACK] Error crítico:', fallbackError.message);
+      throw fallbackError;
+    }
   }
 };
 
@@ -473,6 +549,24 @@ const invalidateCache = async (key) => {
 const flushLocalCache = () => {
   localCache.flushAll();
   blacklistCache.flushAll();
+  pendingFetches.clear();
+};
+
+/**
+ * Obtiene estadísticas del cache para monitoreo
+ */
+const getCacheStats = () => {
+  return {
+    localCache: {
+      keys: localCache.keys().length,
+      stats: localCache.getStats()
+    },
+    blacklistCache: {
+      keys: blacklistCache.keys().length,
+      stats: blacklistCache.getStats()
+    },
+    pendingFetches: pendingFetches.size
+  };
 };
 
 /**
@@ -509,4 +603,7 @@ module.exports = {
   getOrSetCache,
   invalidateCache,
   flushLocalCache,
+  getCacheStats,
+  // Constantes de TTL
+  CACHE_TTL,
 };
