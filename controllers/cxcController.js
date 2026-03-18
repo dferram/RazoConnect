@@ -599,9 +599,20 @@ async function getSummaryAging(req, res) {
         let countQueryParams = [tenant_id];
         let countParamIndex = 2;
         let countFilters = '';
+        let countAdminFilter = '';
         
         if (admin_id) {
             countQueryParams.push(admin_id);
+            countAdminFilter = ` AND EXISTS (
+                SELECT 1 FROM pedido_surtido_detalle psd
+                WHERE psd.pedido_id IN (
+                    SELECT pedidoid FROM pedidos 
+                    WHERE clienteid = c.clienteid 
+                    AND es_credito = true
+                    AND tenant_id = $1
+                )
+                AND psd.admin_id = $${countParamIndex}
+            )`;
             countParamIndex++;
         }
         
@@ -635,6 +646,7 @@ async function getSummaryAging(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
+                ${countAdminFilter}
                 ${countFilters}
         `, countQueryParams);
 
