@@ -5,11 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Validar Pagos - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
-
+    
+    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script src="js/auth-guard-admin.js"></script>
-<script src="js/api.js"></script>
+    <!-- Core Scripts - ORDEN CRÃTICO: api.js debe cargarse primero -->
+    <script src="js/api.js" defer></script>
+    <script src="js/auth-guard-admin.js" defer></script>
+    
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -361,10 +364,10 @@
           <!-- Instructional Banner -->
           <div id="instructionalBanner" class="instructional-banner">
             <p>
-              ?? <strong>Validar Pagos de Clientes:</strong> Revisa y valida los pagos reportados por tus clientes. Puedes ver el comprobante adjunto, verificar el monto y aprobar o rechazar el pago. Los pagos aprobados se aplican automáticamente al saldo del cliente.
+              ?? <strong>Validar Pagos de Clientes:</strong> Revisa y valida los pagos reportados por tus clientes. Puedes ver el comprobante adjunto, verificar el monto y aprobar o rechazar el pago. Los pagos aprobados se aplican automï¿½ticamente al saldo del cliente.
             </p>
             <button class="instructional-banner-close" title="Cerrar">
-              ×
+              ï¿½
             </button>
           </div>
         </div>
@@ -373,7 +376,7 @@
           <section class="admin-card simple-hero">
             <div class="simple-hero__content">
               <div>
-                <p class="simple-hero__eyebrow">Finanzas · Validación de pedidos</p>
+                <p class="simple-hero__eyebrow">Finanzas ï¿½ Validaciï¿½n de pedidos</p>
                 <h2>Validar pedidos con transferencia</h2>
                 <p class="simple-hero__desc">
                   Revisa y aprueba los pedidos pagados por transferencia bancaria con comprobante adjunto
@@ -384,15 +387,15 @@
                   id="btnRecargar"
                   type="button"
                   class="btn btn-secondary btn-icon"
-                  aria-label="Recargar información"
-                  title="Recargar información"
+                  aria-label="Recargar informaciï¿½n"
+                  title="Recargar informaciï¿½n"
                 >
                   <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
                 </button>
               </div>
             </div>
             <div class="simple-hero__meta">
-              <span>Actualizado <strong id="ultimoRefresh">—</strong></span>
+              <span>Actualizado <strong id="ultimoRefresh">ï¿½</strong></span>
               <span id="totalPagos">0 pagos pendientes</span>
             </div>
           </section>
@@ -404,12 +407,12 @@
 
             <div id="estadoVacio" class="empty-state" style="display: none;">
               <div class="empty-state-icon">?</div>
-              <h3 class="empty-state-title">No hay pedidos pendientes de validación</h3>
+              <h3 class="empty-state-title">No hay pedidos pendientes de validaciï¿½n</h3>
               <p class="empty-state-text">Todos los pedidos con transferencia han sido validados</p>
             </div>
 
             <div id="listaPagos" style="display: none;">
-              <!-- Los pagos se cargarán dinámicamente aquí -->
+              <!-- Los pagos se cargarï¿½n dinï¿½micamente aquï¿½ -->
             </div>
           </section>
         </div>
@@ -422,7 +425,7 @@
         <header class="modal-panel__header">
           <div>
             <p class="eyebrow">Comprobante de pago</p>
-            <h2 id="modalCliente">—</h2>
+            <h2 id="modalCliente">ï¿½</h2>
             <p class="modal-balance">
               Monto: <strong id="modalMonto">$0.00</strong>
             </p>

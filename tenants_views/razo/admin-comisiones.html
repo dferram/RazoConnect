@@ -3,23 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestión de Comisiones - Admin RazoConnect</title>
+    <title>Gestiï¿½n de Comisiones - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
-
+    
+    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
-    <script src="js/auth-guard-admin.js"></script>
-<script src="js/api.js"></script>
+    <!-- Core Scripts - ORDEN CRÃTICO: api.js debe cargarse primero -->
+    <script src="js/api.js" defer></script>
+    <script src="js/auth-guard-admin.js" defer></script>
+    
 
-    <!-- API Configuration -->
-    <script>
-      const API_BASE_URL = window.location.origin + '/api';
-    </script>
-
-
-
-    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <!-- PROTECCIï¿½N DE AUTENTICACIï¿½N ADMIN -->
+    <!-- SISTEMA DE RENOVACIï¿½N DE TOKENS -->
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
@@ -28,7 +24,7 @@
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
     />
     <style>
-      /* Ajustes específicos para la vista de comisiones */
+      /* Ajustes especï¿½ficos para la vista de comisiones */
       #comisionesTable {
         table-layout: fixed;
         width: 100%;
@@ -138,7 +134,7 @@
     </style>
       <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
-  <body data-page-title="Gestión de Comisiones">
+  <body data-page-title="Gestiï¿½n de Comisiones">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="admin-sidebar-container"></div>
@@ -151,10 +147,10 @@
           <!-- Instructional Banner -->
           <div id="instructionalBanner" class="instructional-banner">
             <p>
-              ?? <strong>Gestión de Comisiones:</strong> Administra las comisiones de tus agentes de ventas. Puedes ver el historial de comisiones generadas, marcar pagos realizados y filtrar por agente o período. Las comisiones se calculan automáticamente según los pedidos entregados.
+              ?? <strong>Gestiï¿½n de Comisiones:</strong> Administra las comisiones de tus agentes de ventas. Puedes ver el historial de comisiones generadas, marcar pagos realizados y filtrar por agente o perï¿½odo. Las comisiones se calculan automï¿½ticamente segï¿½n los pedidos entregados.
             </p>
             <button class="instructional-banner-close" title="Cerrar">
-              ×
+              ï¿½
             </button>
           </div>
         </div>
@@ -246,12 +242,12 @@
                   <tr>
                     <th>#</th>
                     <th>Agente</th>
-                    <th>Código</th>
+                    <th>Cï¿½digo</th>
                     <th>Pedido</th>
                     <th>Monto Venta</th>
-                    <th>Comisión</th>
+                    <th>Comisiï¿½n</th>
                     <th>Estado</th>
-                    <th>Generación</th>
+                    <th>Generaciï¿½n</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -503,7 +499,7 @@
 
       async function pagarComision(id, agente, monto) {
         try {
-          // Si SweetAlert2 está disponible, usar modal moderno
+          // Si SweetAlert2 estï¿½ disponible, usar modal moderno
           if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
             const result = await Swal.fire({
               title: "Confirmar Pago",
@@ -512,7 +508,7 @@
               }</b>.`,
               icon: "question",
               showCancelButton: true,
-              confirmButtonText: "Sí, procesar pago",
+              confirmButtonText: "Sï¿½, procesar pago",
               cancelButtonText: "Cancelar",
               confirmButtonColor: "#F97316",
             });
@@ -521,9 +517,9 @@
               return;
             }
           } else {
-            // Fallback a confirm nativo si no está SweetAlert2
+            // Fallback a confirm nativo si no estï¿½ SweetAlert2
             const confirmado = confirm(
-              `¿Pagar comisión de $${monto.toLocaleString()} a ${agente}?`
+              `ï¿½Pagar comisiï¿½n de $${monto.toLocaleString()} a ${agente}?`
             );
             if (!confirmado) return;
           }
@@ -541,10 +537,10 @@
           const data = await response.json();
 
           if (response.ok && data.success) {
-            showToast(`Comisión pagada: $${monto.toLocaleString()}`, "success");
+            showToast(`Comisiï¿½n pagada: $${monto.toLocaleString()}`, "success");
             loadComisiones();
           } else {
-            showToast(data.message || "Error al pagar comisión", "error");
+            showToast(data.message || "Error al pagar comisiï¿½n", "error");
           }
         } catch (error) {
           console.error("Error:", error);
@@ -581,9 +577,9 @@
           link.addEventListener("click", (e) => {
             e.preventDefault();
             showToast(
-              `Módulo "${
+              `Mï¿½dulo "${
                 link.querySelector("span:last-child").textContent
-              }" próximamente`,
+              }" prï¿½ximamente`,
               "info"
             );
           });
