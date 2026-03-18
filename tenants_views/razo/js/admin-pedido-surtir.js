@@ -123,40 +123,61 @@ function renderizarProductos() {
       badgeText = 'Separado';
     }
 
-    tr.innerHTML = `
-      <td>
-        <div class="checkbox-container">
-          <input 
-            type="checkbox" 
-            class="producto-checkbox"
-            data-detalle-id="${producto.detalleId}"
-            ${producto.separado ? 'checked' : ''}
-            ${producto.esBackorder ? 'disabled' : ''}
-            onchange="toggleProductoSeparado(${producto.detalleId}, this.checked)"
-          />
-        </div>
-      </td>
-      <td>
-        <span class="producto-sku">${producto.sku}</span>
-      </td>
-      <td>
-        <div class="producto-info">
-          <div>
-            <div class="producto-nombre">${producto.nombreProducto}</div>
-            <div class="producto-variante">${producto.variante}</div>
-          </div>
-        </div>
-      </td>
-      <td style="text-align: center; font-weight: 600;">
-        ${producto.cantidadPaquetes}
-      </td>
-      <td style="text-align: center;">
-        ${producto.tamano.descripcion}
-      </td>
-      <td style="text-align: center;">
-        <span class="badge ${badgeClass}">${badgeText}</span>
-      </td>
-    `;
+    // Crear elementos de forma segura para evitar XSS
+    const tdCheckbox = document.createElement('td');
+    const checkboxContainer = document.createElement('div');
+    checkboxContainer.className = 'checkbox-container';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'producto-checkbox';
+    checkbox.dataset.detalleId = producto.detalleId;
+    checkbox.checked = producto.separado;
+    checkbox.disabled = producto.esBackorder;
+    checkbox.onchange = function() { toggleProductoSeparado(producto.detalleId, this.checked); };
+    checkboxContainer.appendChild(checkbox);
+    tdCheckbox.appendChild(checkboxContainer);
+    
+    const tdSku = document.createElement('td');
+    const spanSku = document.createElement('span');
+    spanSku.className = 'producto-sku';
+    spanSku.textContent = producto.sku;
+    tdSku.appendChild(spanSku);
+    
+    const tdProducto = document.createElement('td');
+    const divInfo = document.createElement('div');
+    divInfo.className = 'producto-info';
+    const divNombre = document.createElement('div');
+    divNombre.className = 'producto-nombre';
+    divNombre.textContent = producto.nombreProducto;
+    const divVariante = document.createElement('div');
+    divVariante.className = 'producto-variante';
+    divVariante.textContent = producto.variante;
+    divInfo.appendChild(divNombre);
+    divInfo.appendChild(divVariante);
+    tdProducto.appendChild(divInfo);
+    
+    const tdCantidad = document.createElement('td');
+    tdCantidad.style.textAlign = 'center';
+    tdCantidad.style.fontWeight = '600';
+    tdCantidad.textContent = producto.cantidadPaquetes;
+    
+    const tdTamano = document.createElement('td');
+    tdTamano.style.textAlign = 'center';
+    tdTamano.textContent = producto.tamano.descripcion;
+    
+    const tdEstado = document.createElement('td');
+    tdEstado.style.textAlign = 'center';
+    const spanBadge = document.createElement('span');
+    spanBadge.className = `badge ${badgeClass}`;
+    spanBadge.textContent = badgeText;
+    tdEstado.appendChild(spanBadge);
+    
+    tr.appendChild(tdCheckbox);
+    tr.appendChild(tdSku);
+    tr.appendChild(tdProducto);
+    tr.appendChild(tdCantidad);
+    tr.appendChild(tdTamano);
+    tr.appendChild(tdEstado);
 
     tbody.appendChild(tr);
   });
@@ -212,9 +233,12 @@ async function toggleProductoSeparado(detalleId, separado) {
         // Recalcular estadísticas
         estadisticas.separados = productosData.filter(p => p.separado && !p.esBackorder).length;
         estadisticas.pendientes = productosData.filter(p => !p.separado && !p.esBackorder).length;
-        estadisticas.porcentajeCompletado = Math.round(
-          (estadisticas.separados / (estadisticas.total - estadisticas.backorder)) * 100
-        );
+        
+        // Evitar división por cero
+        const productosNoBackorder = estadisticas.total - estadisticas.backorder;
+        estadisticas.porcentajeCompletado = productosNoBackorder > 0
+          ? Math.round((estadisticas.separados / productosNoBackorder) * 100)
+          : 0;
         
         actualizarEstadisticas();
       }

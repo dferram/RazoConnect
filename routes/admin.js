@@ -565,6 +565,14 @@ router.get(
   pickingController.obtenerEstadoPicking
 );
 
+// Marcar todos los productos como separados (DEBE IR ANTES de /:detalleId)
+router.post(
+  "/pedidos/:id/picking/marcar-todos",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'jefe_almacen']),
+  pickingController.marcarTodosSeparados
+);
+
 // Marcar producto como separado
 router.post(
   "/pedidos/:id/picking/:detalleId",
@@ -579,14 +587,6 @@ router.delete(
   authenticate,
   authorizeRole(['super_admin', 'admin', 'inventarios', 'jefe_almacen']),
   pickingController.desmarcarProductoSeparado
-);
-
-// Marcar todos los productos como separados
-router.post(
-  "/pedidos/:id/picking/marcar-todos",
-  authenticate,
-  authorizeRole(['super_admin', 'admin', 'inventarios', 'jefe_almacen']),
-  pickingController.marcarTodosSeparados
 );
 
 /**

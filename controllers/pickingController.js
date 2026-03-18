@@ -65,6 +65,12 @@ const obtenerEstadoPicking = async (req, res) => {
     const productosSeparados = result.rows.filter(r => r.separacion_id !== null).length;
     const productosBackorder = result.rows.filter(r => r.esbackorder === true).length;
     const productosPendientes = totalProductos - productosSeparados - productosBackorder;
+    
+    // Calcular porcentaje evitando división por cero
+    const productosNoBackorder = totalProductos - productosBackorder;
+    const porcentajeCompletado = productosNoBackorder > 0 
+      ? Math.round((productosSeparados / productosNoBackorder) * 100) 
+      : 0;
 
     const productos = result.rows.map(row => ({
       detalleId: row.detalleid,
@@ -96,9 +102,7 @@ const obtenerEstadoPicking = async (req, res) => {
           separados: productosSeparados,
           pendientes: productosPendientes,
           backorder: productosBackorder,
-          porcentajeCompletado: totalProductos > 0 
-            ? Math.round((productosSeparados / (totalProductos - productosBackorder)) * 100) 
-            : 0
+          porcentajeCompletado
         }
       }
     });
@@ -127,6 +131,15 @@ const marcarProductoSeparado = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const separadoPorId = req.user?.id || req.user?.adminid;
+    
+    // Validar que separadoPorId existe
+    if (!separadoPorId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado correctamente'
+      });
+    }
+    
     const pedidoId = parseInt(req.params.id);
     const detalleId = parseInt(req.params.detalleId);
     const { cantidadSeparada, observaciones } = req.body;
@@ -257,6 +270,29 @@ const desmarcarProductoSeparado = async (req, res) => {
 
     await client.query('BEGIN');
 
+    // Verificar estado del pedido antes de permitir desmarcar
+    const pedidoCheck = await client.query(
+      `SELECT estatus FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2`,
+      [pedidoId, tenant_id]
+    );
+
+    if (pedidoCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        message: 'Pedido no encontrado'
+      });
+    }
+
+    const estadosNoModificables = ['surtido', 'enviado', 'entregado', 'cancelado', 'listo para surtir'];
+    if (estadosNoModificables.includes(pedidoCheck.rows[0].estatus.toLowerCase())) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: `No se puede desmarcar productos de un pedido en estado "${pedidoCheck.rows[0].estatus}"`
+      });
+    }
+
     const deleteResult = await client.query(
       `DELETE FROM pedido_productos_separados
        WHERE detalle_id = $1 AND pedido_id = $2 AND tenant_id = $3
@@ -316,9 +352,41 @@ const marcarTodosSeparados = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
     const separadoPorId = req.user?.id || req.user?.adminid;
+    
+    // Validar que separadoPorId existe
+    if (!separadoPorId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario no autenticado correctamente'
+      });
+    }
+    
     const pedidoId = parseInt(req.params.id);
 
     await client.query('BEGIN');
+
+    // Verificar estado del pedido antes de permitir marcar todos
+    const pedidoCheck = await client.query(
+      `SELECT estatus FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2`,
+      [pedidoId, tenant_id]
+    );
+
+    if (pedidoCheck.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        message: 'Pedido no encontrado'
+      });
+    }
+
+    const estadosValidos = ['nuevo', 'pendiente', 'confirmado', 'aprobado'];
+    if (!estadosValidos.includes(pedidoCheck.rows[0].estatus.toLowerCase())) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: `No se puede marcar productos de un pedido en estado "${pedidoCheck.rows[0].estatus}"`
+      });
+    }
 
     // Obtener todos los detalles del pedido que NO son backorder
     const detallesResult = await client.query(
