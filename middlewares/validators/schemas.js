@@ -90,21 +90,29 @@ const registroClienteSchema = [
     .matches(/^[a-zA-ZÀ-ÿ\s'-]+$/).withMessage('El apellido contiene caracteres no permitidos'),
 
   body('email')
+    .optional({ nullable: true })
     .trim()
-    .notEmpty().withMessage('El email es requerido')
     .isEmail().withMessage('El email no tiene un formato válido')
     .normalizeEmail()
     .isLength({ max: 254 }).withMessage('El email es demasiado largo'),
 
   body('password')
     .notEmpty().withMessage('La contraseña es requerida')
-    .isLength({ min: 8 }).withMessage('La contraseña debe tener al menos 8 caracteres')
+    .isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres')
     .isLength({ max: 128 }).withMessage('La contraseña es demasiado larga'),
 
   body('telefono')
     .optional({ nullable: true })
     .trim()
-    .isMobilePhone('es-MX').withMessage('El teléfono no tiene un formato válido'),
+    .isLength({ min: 10, max: 20 }).withMessage('El teléfono debe tener entre 10 y 20 caracteres')
+    .matches(/^\d+$/).withMessage('El teléfono solo debe contener dígitos'),
+
+  body().custom((value, { req }) => {
+    if (!req.body.email && !req.body.telefono) {
+      throw new Error('Debes proporcionar al menos un correo electrónico o número de teléfono');
+    }
+    return true;
+  }),
 ];
 
 // ============================================================

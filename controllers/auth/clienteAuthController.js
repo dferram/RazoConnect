@@ -18,6 +18,13 @@ const registroCliente = async (req, res) => {
 
     const { tenant_id } = req.tenant;
 
+    if (!email && !telefono) {
+      return res.status(400).json({
+        success: false,
+        message: "Debes proporcionar al menos un correo electrónico o número de teléfono.",
+      });
+    }
+
     if (numero_cliente && numero_cliente.trim() !== "") {
       const numeroClienteCheck = await db.query(
         "SELECT clienteid FROM clientes WHERE numero_cliente = $1 AND tenant_id = $2",
@@ -69,11 +76,14 @@ const registroCliente = async (req, res) => {
       numeroClienteFinal = numero_cliente.trim();
     }
 
+    const emailFinal = email && email.trim() !== "" ? email.trim() : null;
+    const telefonoFinal = telefono && telefono.trim() !== "" ? telefono.trim() : null;
+
     const result = await db.query(
       `INSERT INTO clientes (nombre, apellido, email, passwordhash, telefono, tenant_id, numero_cliente)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING clienteid, nombre, apellido, email, telefono, fechaderegistro, numero_cliente`,
-      [nombre.trim(), apellido.trim(), email, PasswordHash, telefono, tenant_id, numeroClienteFinal]
+      [nombre.trim(), apellido.trim(), emailFinal, PasswordHash, telefonoFinal, tenant_id, numeroClienteFinal]
     );
 
     const nuevoCliente = result.rows[0];
