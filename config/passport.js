@@ -44,7 +44,7 @@ const configurePassport = (passport) => {
       } else {
         // Cliente por defecto (incluir Telefono para usuarios registrados solo con teléfono)
         const result = await db.query(
-          'SELECT ClienteID as id, Nombre, Apellido, Email, Telefono, avatar_url FROM clientes WHERE ClienteID = $1',
+          'SELECT clienteid as id, nombre, apellido, email, telefono, avatar_url FROM clientes WHERE clienteid = $1',
           [sessionData.id]
         );
         if (result.rows.length > 0) {
@@ -108,7 +108,7 @@ const configurePassport = (passport) => {
           let cliente = null;
 
           let result = await db.query(
-            `SELECT ClienteID, Nombre, Apellido, Email, google_id, avatar_url, tenant_id
+            `SELECT clienteid, nombre, apellido, email, google_id, avatar_url, tenant_id
              FROM clientes
              WHERE google_id = $1 AND tenant_id = $2`,
             [googleId, tenant_id]
@@ -119,16 +119,16 @@ const configurePassport = (passport) => {
 
             if (avatarUrl && avatarUrl !== cliente.avatar_url) {
               await db.query(
-                `UPDATE clientes SET avatar_url = $1 WHERE ClienteID = $2 AND tenant_id = $3`,
+                `UPDATE clientes SET avatar_url = $1 WHERE clienteid = $2 AND tenant_id = $3`,
                 [avatarUrl, cliente.clienteid, tenant_id]
               );
               cliente.avatar_url = avatarUrl;
             }
           } else if (email) {
             result = await db.query(
-              `SELECT ClienteID, Nombre, Apellido, Email, google_id, avatar_url, tenant_id
+              `SELECT clienteid, nombre, apellido, email, google_id, avatar_url, tenant_id
                FROM clientes
-               WHERE Email = $1 AND tenant_id = $2`,
+               WHERE email = $1 AND tenant_id = $2`,
               [email, tenant_id]
             );
 
@@ -139,7 +139,7 @@ const configurePassport = (passport) => {
                 `UPDATE clientes
                  SET google_id = $1,
                      avatar_url = COALESCE($2, avatar_url)
-                 WHERE ClienteID = $3 AND tenant_id = $4`,
+                 WHERE clienteid = $3 AND tenant_id = $4`,
                 [googleId, avatarUrl || null, cliente.clienteid, tenant_id]
               );
 
@@ -156,9 +156,9 @@ const configurePassport = (passport) => {
                 "";
 
               const insert = await db.query(
-                `INSERT INTO clientes (Nombre, Apellido, Email, PasswordHash, google_id, avatar_url, tenant_id)
+                `INSERT INTO clientes (nombre, apellido, email, passwordhash, google_id, avatar_url, tenant_id)
                  VALUES ($1, $2, $3, $4, $5, $6, $7)
-                 RETURNING ClienteID, Nombre, Apellido, Email, google_id, avatar_url, tenant_id`,
+                 RETURNING clienteid, nombre, apellido, email, google_id, avatar_url, tenant_id`,
                 [nombre, apellido, email, null, googleId, avatarUrl || null, tenant_id]
               );
 

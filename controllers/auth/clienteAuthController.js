@@ -14,7 +14,7 @@ const { validateLogin } = require("../../utils/validator");
  */
 const registroCliente = async (req, res) => {
   try {
-    let { Nombre, Apellido, Email, Password, Telefono, numero_cliente } = req.body;
+    let { nombre, apellido, email, password, telefono, numero_cliente } = req.body;
 
     const { tenant_id } = req.tenant;
 
@@ -32,10 +32,10 @@ const registroCliente = async (req, res) => {
       }
     }
 
-    if (Email) {
+    if (email) {
       const emailCheck = await db.query(
-        "SELECT ClienteID FROM clientes WHERE Email = $1 AND tenant_id = $2",
-        [Email, tenant_id]
+        "SELECT clienteid FROM clientes WHERE email = $1 AND tenant_id = $2",
+        [email, tenant_id]
       );
 
       if (emailCheck.rows.length > 0) {
@@ -46,10 +46,10 @@ const registroCliente = async (req, res) => {
       }
     }
 
-    if (Telefono) {
+    if (telefono) {
       const telefonoCheck = await db.query(
         "SELECT clienteid FROM clientes WHERE telefono = $1 AND tenant_id = $2",
-        [Telefono, tenant_id]
+        [telefono, tenant_id]
       );
 
       if (telefonoCheck.rows.length > 0) {
@@ -61,7 +61,7 @@ const registroCliente = async (req, res) => {
     }
 
     const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 10;
-    const PasswordHash = await bcrypt.hash(Password, saltRounds);
+    const PasswordHash = await bcrypt.hash(password, saltRounds);
 
     let numeroClienteFinal = null;
     
@@ -73,7 +73,7 @@ const registroCliente = async (req, res) => {
       `INSERT INTO clientes (nombre, apellido, email, passwordhash, telefono, tenant_id, numero_cliente)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING clienteid, nombre, apellido, email, telefono, fechaderegistro, numero_cliente`,
-      [Nombre.trim(), Apellido.trim(), Email, PasswordHash, Telefono, tenant_id, numeroClienteFinal]
+      [nombre.trim(), apellido.trim(), email, PasswordHash, telefono, tenant_id, numeroClienteFinal]
     );
 
     const nuevoCliente = result.rows[0];
@@ -129,12 +129,12 @@ const registroCliente = async (req, res) => {
     });
     }
 
-    if (Email) {
+    if (email) {
       try {
         const frontendUrl = process.env.FRONTEND_BASE_URL || "https://razo.com.mx";
-        await sendTemplatedEmail(Email, "¡Bienvenido a RazoConnect!", {
+        await sendTemplatedEmail(email, "¡Bienvenido a RazoConnect!", {
           title: "¡Bienvenido a RazoConnect!",
-          name: `${Nombre} ${Apellido}`,
+          name: `${nombre} ${apellido}`,
           message: `Nos alegra que te hayas unido a nuestra comunidad. Tu cuenta ha sido creada exitosamente y ya puedes comenzar a explorar nuestro catálogo de productos.`,
           buttonText: "Explorar Catálogo",
           buttonUrl: `${frontendUrl}/catalogo.html`,
@@ -569,7 +569,7 @@ const resetPassword = async (req, res) => {
 
     if (tokenRow.clienteid) {
       await db.query(
-        "UPDATE clientes SET PasswordHash = $1 WHERE ClienteID = $2",
+        "UPDATE clientes SET passwordhash = $1 WHERE clienteid = $2",
         [hashedPassword, tokenRow.clienteid]
       );
     } else if (tokenRow.agenteid) {
