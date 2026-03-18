@@ -93,6 +93,8 @@ const reasignarOrdenController = require("../controllers/reasignarOrdenControlle
 const ordenesGruposController = require("../controllers/ordenesGruposController");
 const gruposOrdenesPDFController = require("../controllers/gruposOrdenesPDFController");
 const gruposOrdenesExcelController = require("../controllers/gruposOrdenesExcelController");
+const solicitudesModificacionController = require("../controllers/solicitudesModificacionController");
+const pickingController = require("../controllers/pickingController");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const uploadProductImages = require("../middlewares/uploadProductImages");
@@ -515,6 +517,76 @@ router.get(
   authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas']),
   heavyOperationLimiter,
   facturaController.descargarFactura
+);
+
+/**
+ * Solicitudes de Modificación de Pedidos (Sistema de Autorizaciones)
+ */
+// Crear solicitud de modificación (inventarios)
+router.post(
+  "/solicitudes-modificacion",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'jefe_almacen']),
+  solicitudesModificacionController.crearSolicitud
+);
+
+// Obtener solicitudes de modificación (con filtros)
+router.get(
+  "/solicitudes-modificacion",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'gerente_operaciones', 'jefe_almacen', 'supervisor_ventas']),
+  solicitudesModificacionController.obtenerSolicitudes
+);
+
+// Aprobar solicitud de modificación (supervisores y gerentes)
+router.put(
+  "/solicitudes-modificacion/:id/aprobar",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'jefe_almacen', 'supervisor_ventas']),
+  solicitudesModificacionController.aprobarSolicitud
+);
+
+// Rechazar solicitud de modificación (supervisores y gerentes)
+router.put(
+  "/solicitudes-modificacion/:id/rechazar",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'gerente_operaciones', 'jefe_almacen', 'supervisor_ventas']),
+  solicitudesModificacionController.rechazarSolicitud
+);
+
+/**
+ * Picking/Separación de Productos (Inventarios)
+ */
+// Obtener estado de picking de un pedido
+router.get(
+  "/pedidos/:id/picking",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'gerente_operaciones', 'jefe_almacen']),
+  pickingController.obtenerEstadoPicking
+);
+
+// Marcar producto como separado
+router.post(
+  "/pedidos/:id/picking/:detalleId",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'jefe_almacen', 'almacenista']),
+  pickingController.marcarProductoSeparado
+);
+
+// Desmarcar producto (quitar separación)
+router.delete(
+  "/pedidos/:id/picking/:detalleId",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'jefe_almacen']),
+  pickingController.desmarcarProductoSeparado
+);
+
+// Marcar todos los productos como separados
+router.post(
+  "/pedidos/:id/picking/marcar-todos",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'jefe_almacen']),
+  pickingController.marcarTodosSeparados
 );
 
 /**

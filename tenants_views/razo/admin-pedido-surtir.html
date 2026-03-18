@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Surtir Pedido - Inventarios RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
+    <script src="js/auth-guard-admin.js"></script>
+    <script src="js/api.js"></script>
+
+    <!-- API Configuration -->
+    <script>
+      const API_BASE_URL = window.location.origin + '/api';
+    </script>
+
+    <!-- FASE 2: Blindaje de rutas por rol -->
+    <script src="js/route-guard.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="css/mobile-responsive.css" />
+    
+    <style>
+      .picking-container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .picking-header {
+        background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(249, 115, 22, 0.1);
+      }
+
+      .picking-header h1 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.75rem;
+      }
+
+      .picking-header p {
+        margin: 0;
+        opacity: 0.95;
+        font-size: 0.95rem;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: 4px solid var(--razo-orange);
+      }
+
+      .stat-card.success {
+        border-left-color: #16A34A;
+      }
+
+      .stat-card.warning {
+        border-left-color: #F59E0B;
+      }
+
+      .stat-card.danger {
+        border-left-color: #DC2626;
+      }
+
+      .stat-label {
+        font-size: 0.875rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+      }
+
+      .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1F2937;
+      }
+
+      .progress-bar-container {
+        background: #E5E7EB;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 0.75rem;
+      }
+
+      .progress-bar {
+        background: linear-gradient(90deg, #16A34A 0%, #22C55E 100%);
+        height: 100%;
+        transition: width 0.3s ease;
+      }
+
+      .productos-table {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+
+      .productos-table table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .productos-table th {
+        background: #F3F4F6;
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: #374151;
+        border-bottom: 2px solid #E5E7EB;
+      }
+
+      .productos-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #E5E7EB;
+      }
+
+      .productos-table tr:hover {
+        background: #F9FAFB;
+      }
+
+      .producto-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .producto-sku {
+        font-family: 'Courier New', monospace;
+        background: #F3F4F6;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        color: #6B7280;
+      }
+
+      .producto-nombre {
+        font-weight: 600;
+        color: #1F2937;
+      }
+
+      .producto-variante {
+        font-size: 0.875rem;
+        color: #6B7280;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .badge.separado {
+        background: #D1FAE5;
+        color: #065F46;
+      }
+
+      .badge.pendiente {
+        background: #FEF3C7;
+        color: #92400E;
+      }
+
+      .badge.backorder {
+        background: #FEE2E2;
+        color: #991B1B;
+      }
+
+      .checkbox-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .checkbox-container input[type="checkbox"] {
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        accent-color: var(--razo-orange);
+      }
+
+      .checkbox-container input[type="checkbox"]:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        justify-content: flex-end;
+      }
+
+      .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+        font-size: 1rem;
+      }
+
+      .btn-primary {
+        background: var(--razo-orange);
+        color: white;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: #EA580C;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(249, 115, 22, 0.2);
+      }
+
+      .btn-secondary {
+        background: #6B7280;
+        color: white;
+      }
+
+      .btn-secondary:hover:not(:disabled) {
+        background: #4B5563;
+      }
+
+      .btn-success {
+        background: #16A34A;
+        color: white;
+      }
+
+      .btn-success:hover:not(:disabled) {
+        background: #15803D;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(22, 163, 74, 0.2);
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 3rem;
+      }
+
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid var(--razo-orange);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6B7280;
+      }
+
+      .empty-state-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+      }
+    </style>
+</head>
+<body data-page-title="Surtir Pedido">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="admin-sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <div class="picking-container">
+            <!-- Header -->
+            <div class="picking-header">
+              <h1>🎯 Surtir Pedido #<span id="pedidoNumero">...</span></h1>
+              <p>Marca los productos que has separado físicamente del almacén</p>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-label">Total Productos</div>
+                <div class="stat-value" id="statTotal">0</div>
+              </div>
+              <div class="stat-card success">
+                <div class="stat-label">✓ Separados</div>
+                <div class="stat-value" id="statSeparados">0</div>
+              </div>
+              <div class="stat-card warning">
+                <div class="stat-label">⏳ Pendientes</div>
+                <div class="stat-value" id="statPendientes">0</div>
+              </div>
+              <div class="stat-card danger">
+                <div class="stat-label">📦 Backorder</div>
+                <div class="stat-value" id="statBackorder">0</div>
+              </div>
+            </div>
+
+            <!-- Barra de progreso -->
+            <div class="admin-table-container" style="margin-bottom: 2rem;">
+              <h3 style="margin: 0 0 1rem 0;">Progreso de Separación</h3>
+              <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+              </div>
+              <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; color: #6B7280;">
+                <span id="progressText">0% completado</span>
+              </p>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading">
+              <div class="spinner"></div>
+              <p style="margin-top: 1rem; color: #6B7280;">Cargando productos...</p>
+            </div>
+
+            <!-- Tabla de Productos -->
+            <div id="productosContainer" style="display: none;">
+              <div class="productos-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width: 60px;">
+                        <div class="checkbox-container">
+                          <input type="checkbox" id="selectAll" title="Seleccionar todos" />
+                        </div>
+                      </th>
+                      <th>SKU</th>
+                      <th>Producto</th>
+                      <th style="text-align: center;">Cantidad</th>
+                      <th style="text-align: center;">Tamaño</th>
+                      <th style="text-align: center;">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody id="productosTableBody">
+                    <!-- Productos se cargan dinámicamente -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Botones de Acción -->
+              <div class="action-buttons">
+                <button class="btn btn-secondary" onclick="window.location.href='admin-pedidos.html'">
+                  ← Volver a Pedidos
+                </button>
+                <button class="btn btn-primary" id="btnMarcarTodos" onclick="marcarTodosComoSeparados()">
+                  ✓ Marcar Todos como Separados
+                </button>
+                <button class="btn btn-success" id="btnEnviarFinanzas" onclick="mostrarModalVerificacion()" disabled>
+                  ✅ Enviar a Finanzas
+                </button>
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+              <div class="empty-state-icon">📦</div>
+              <h3>No hay productos para surtir</h3>
+              <p>Este pedido no tiene productos disponibles para separación</p>
+              <button class="btn btn-secondary" onclick="window.location.href='admin-pedidos.html'" style="margin-top: 1rem;">
+                ← Volver a Pedidos
+              </button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/components/admin-sidebar-loader.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/admin-pedido-surtir.js"></script>
+</body>
+</html>
