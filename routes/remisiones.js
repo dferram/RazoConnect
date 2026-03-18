@@ -327,4 +327,38 @@ router.put('/:id/corregir', authorizeRole(['finanzas', 'inventarios', 'admin', '
  */
 router.post('/:id/confirmar-finanzas', authorizeRole(['finanzas', 'admin', 'super_admin']), remisionesController.confirmarRemisionFinanzas);
 
+/**
+ * @swagger
+ * /api/remisiones/{id}/rechazar-finanzas:
+ *   post:
+ *     summary: Rechazar remisión y regresar a almacén para corrección
+ *     tags: [Finanzas - Remisiones]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [observaciones_finanzas]
+ *             properties:
+ *               observaciones_finanzas:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Remisión regresada al almacén
+ *       400:
+ *         description: Estado inválido o faltan observaciones
+ *       403:
+ *         description: Sin permisos
+ */
+router.post('/:id/rechazar-finanzas', authorizeRole(['finanzas', 'admin', 'super_admin']), remisionesController.rechazarRemisionFinanzas);
+
 module.exports = router;

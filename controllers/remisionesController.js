@@ -224,7 +224,8 @@ exports.generarRemision = async (req, res) => {
     const folio = folioResult.rows[0].folio;
 
     // 5. Insertar remisión
-    // Estados: BORRADOR → PENDIENTE_REVISION → CONFIRMADA → EMPACADA → ENVIADA
+    // Estados: BORRADOR → PENDIENTE_REVISION → PENDIENTE_CONFIRMACION_FINANZAS → SURTIDO → EMPACADA → ENVIADA
+    // IMPORTANTE: Al generar remisión, NO se afecta stock ni CxC hasta confirmación de finanzas
     const estadoInicial = emitir_inmediatamente ? 'PENDIENTE_REVISION' : 'BORRADOR';
     
     const remisionInsert = await client.query(
@@ -266,93 +267,9 @@ exports.generarRemision = async (req, res) => {
         ]
       );
 
-      // 6.5. CRÍTICO: Descontar stock de inventarios_admin
-      // Obtener el admin_id del pedido para descontar del inventario correcto
-      const adminQuery = await client.query(
-        `SELECT agenteid FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2`,
-        [pedido_id, tenant_id]
-      );
-      
-      // Si hay agente, obtener su admin_id; si no, usar admin por defecto
-      let adminIdStock = 1; // Default admin
-      if (adminQuery.rows.length > 0 && adminQuery.rows[0].agenteid) {
-        const agenteQuery = await client.query(
-          `SELECT admin_id FROM agentesdeventas WHERE agenteid = $1`,
-          [adminQuery.rows[0].agenteid]
-        );
-        if (agenteQuery.rows.length > 0 && agenteQuery.rows[0].admin_id) {
-          adminIdStock = agenteQuery.rows[0].admin_id;
-        }
-      }
-
-      // ============================================
-      // HARD-RESERVE: Liberar reserva + Descontar stock físico
-      // ============================================
-      // Al confirmar remisión:
-      // 1. Liberar la reserva (cantidad_reservada -= piezas)
-      // 2. Descontar stock físico (cantidad -= piezas)
-      
-      const stockUpdateResult = await client.query(
-        `UPDATE stock_admin 
-         SET cantidad = GREATEST(0, cantidad - $1),
-             cantidad_reservada = GREATEST(0, cantidad_reservada - $1),
-             updated_at = NOW()
-         WHERE variante_id = $2 
-           AND admin_id = $3 
-           AND tenant_id = $4
-         RETURNING stockadminid, cantidad, cantidad_reservada`,
-        [item.piezas_surtidas, item.variante_id, adminIdStock, tenant_id]
-      );
-
-      if (stockUpdateResult.rows.length > 0) {
-        const stockInfo = stockUpdateResult.rows[0];
-        
-        // Registrar en log de auditoría
-        await client.query(
-          `INSERT INTO inventario_reservas_log (
-             stockadminid, variante_id, admin_id, pedido_id, detalle_id,
-             cantidad_reservada, accion, cantidad_antes, cantidad_despues,
-             usuario_id, tenant_id
-           )
-           VALUES ($1, $2, $3, $4, $5, $6, 'CONFIRMAR', $7, $8, $9, $10)`,
-          [
-            stockInfo.stockadminid,
-            item.variante_id,
-            adminIdStock,
-            pedido_id,
-            item.detalle_pedido_id,
-            item.piezas_surtidas,
-            stockInfo.cantidad_reservada + item.piezas_surtidas,
-            stockInfo.cantidad_reservada,
-            req.user?.id || null,
-            tenant_id
-          ]
-        );
-      } else {
-      }
-
-      // 6.6. Registrar movimiento en Kardex
-      try {
-        await kardexService.registrarMovimiento({
-          varianteId: item.variante_id,
-          adminId: adminIdStock,
-          tenantId: tenant_id,
-          tipo: 'SALIDA',
-          cantidad: -item.piezas_surtidas, // Negativo para salidas
-          motivo: 'VENTA',
-          referenciaTipo: 'REMISION',
-          referenciaId: `REM-${remision.remision_id}`,
-          observaciones: `Surtido en remisión ${folio}. Pedido #${pedido_id}. ${item.cantidad_paquetes} paquete(s) x ${item.piezas_surtidas / item.cantidad_paquetes} piezas`,
-          ipOrigen: null
-        }, client);
-      } catch (kardexError) {
-        logger.error('Error al registrar movimiento de salida en Kardex', {
-          error: kardexError.message,
-          varianteId: item.variante_id,
-          requestId: req.requestId,
-          tenantId: req.tenant?.tenant_id
-        });
-      }
+      // 6.5. IMPORTANTE: NO descontar stock aquí
+      // El stock solo se descuenta cuando FINANZAS confirma la remisión
+      // Por ahora solo registramos los items en detalles_remision
 
       // 7. Actualizar cantidad surtida en detallesdelpedido
       await client.query(
@@ -1208,18 +1125,109 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
 
     const remision = remisionQuery.rows[0];
 
-    if (remision.estado !== 'CONFIRMADA') {
+    if (remision.estado !== 'PENDIENTE_CONFIRMACION_FINANZAS') {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        error: `No se puede confirmar finanzas. Estado actual: ${remision.estado}. Se requiere CONFIRMADA`
+        error: `No se puede confirmar finanzas. Estado actual: ${remision.estado}. Se requiere PENDIENTE_CONFIRMACION_FINANZAS`
       });
     }
 
-    // Actualizar estado a EMITIDA
+    // Obtener detalles de la remisión para descontar stock
+    const detallesQuery = await client.query(
+      `SELECT dr.*, pv.sku
+       FROM detalles_remision dr
+       INNER JOIN producto_variantes pv ON dr.variante_id = pv.varianteid
+       WHERE dr.remision_id = $1 AND dr.tenant_id = $2`,
+      [id, tenant_id]
+    );
+
+    // Obtener admin_id del pedido para descontar del inventario correcto
+    const adminQuery = await client.query(
+      `SELECT agenteid FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2`,
+      [remision.pedidoid, tenant_id]
+    );
+    
+    let adminIdStock = 1;
+    if (adminQuery.rows.length > 0 && adminQuery.rows[0].agenteid) {
+      const agenteQuery = await client.query(
+        `SELECT admin_id FROM agentesdeventas WHERE agenteid = $1`,
+        [adminQuery.rows[0].agenteid]
+      );
+      if (agenteQuery.rows.length > 0 && agenteQuery.rows[0].admin_id) {
+        adminIdStock = agenteQuery.rows[0].admin_id;
+      }
+    }
+
+    // AHORA SÍ: Descontar stock y registrar en Kardex para cada item surtido
+    for (const detalle of detallesQuery.rows) {
+      // Descontar stock físico y liberar reserva
+      const stockUpdateResult = await client.query(
+        `UPDATE stock_admin 
+         SET cantidad = GREATEST(0, cantidad - $1),
+             cantidad_reservada = GREATEST(0, cantidad_reservada - $1),
+             updated_at = NOW()
+         WHERE variante_id = $2 
+           AND admin_id = $3 
+           AND tenant_id = $4
+         RETURNING stockadminid, cantidad, cantidad_reservada`,
+        [detalle.piezas_surtidas, detalle.variante_id, adminIdStock, tenant_id]
+      );
+
+      if (stockUpdateResult.rows.length > 0) {
+        const stockInfo = stockUpdateResult.rows[0];
+        
+        // Registrar en log de auditoría
+        await client.query(
+          `INSERT INTO inventario_reservas_log (
+             stockadminid, variante_id, admin_id, pedido_id, detalle_id,
+             cantidad_reservada, accion, cantidad_antes, cantidad_despues,
+             usuario_id, tenant_id
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, 'CONFIRMAR_FINANZAS', $7, $8, $9, $10)`,
+          [
+            stockInfo.stockadminid,
+            detalle.variante_id,
+            adminIdStock,
+            remision.pedidoid,
+            detalle.detalle_pedido_id,
+            detalle.piezas_surtidas,
+            stockInfo.cantidad_reservada + detalle.piezas_surtidas,
+            stockInfo.cantidad_reservada,
+            userId,
+            tenant_id
+          ]
+        );
+      }
+
+      // Registrar movimiento en Kardex
+      try {
+        await kardexService.registrarMovimiento({
+          varianteId: detalle.variante_id,
+          adminId: adminIdStock,
+          tenantId: tenant_id,
+          tipo: 'SALIDA',
+          cantidad: -detalle.piezas_surtidas,
+          motivo: 'VENTA',
+          referenciaTipo: 'REMISION',
+          referenciaId: `REM-${id}`,
+          observaciones: `Confirmado por finanzas. Remisión ${remision.folio}. Pedido #${remision.pedidoid}`,
+          ipOrigen: null
+        }, client);
+      } catch (kardexError) {
+        logger.error('Error al registrar movimiento en Kardex', {
+          error: kardexError.message,
+          varianteId: detalle.variante_id,
+          requestId: req.requestId,
+          tenantId: req.tenant?.tenant_id
+        });
+      }
+    }
+
+    // Actualizar estado a SURTIDO (no EMITIDA)
     await client.query(
       `UPDATE remisiones
-       SET estado = 'EMITIDA',
+       SET estado = 'SURTIDO',
            fecha_emision_final = NOW(),
            confirmado_por_finanzas = $1
        WHERE remision_id = $2`,
@@ -1324,11 +1332,12 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Remisión confirmada por finanzas y CxC generado',
+      message: 'Remisión confirmada por finanzas. Stock descontado y CxC generado',
       remision: {
         remision_id: parseInt(id),
-        estado: 'EMITIDA',
-        cxc_generado: remision.es_credito
+        estado: 'SURTIDO',
+        cxc_generado: remision.es_credito,
+        items_procesados: detallesQuery.rows.length
       }
     });
 
@@ -1381,18 +1390,19 @@ exports.confirmarRemisionAlmacen = async (req, res) => {
 
     const remision = remisionQuery.rows[0];
 
-    if (remision.estado !== 'PENDIENTE_REVISION') {
+    if (!['PENDIENTE_REVISION', 'REVISION_ALMACEN'].includes(remision.estado)) {
       await client.query('ROLLBACK');
       return res.status(400).json({ 
         success: false,
-        error: `No se puede confirmar. Estado actual: ${remision.estado}. Se requiere estado PENDIENTE_REVISION` 
+        error: `No se puede confirmar. Estado actual: ${remision.estado}. Se requiere estado PENDIENTE_REVISION o REVISION_ALMACEN` 
       });
     }
 
-    // Actualizar estado a CONFIRMADA
+    // Actualizar estado a PENDIENTE_CONFIRMACION_FINANZAS (no CONFIRMADA)
+    // El almacenista marca como listo, pero finanzas debe confirmar antes de afectar stock/CxC
     await client.query(
       `UPDATE remisiones 
-       SET estado = 'CONFIRMADA',
+       SET estado = 'PENDIENTE_CONFIRMACION_FINANZAS',
            notas = COALESCE(notas || E'\n\n', '') || 'CONFIRMADO POR ALMACÉN: ' || $1,
            fecha_confirmacion_almacen = NOW(),
            confirmado_por_almacen = $2
@@ -1421,10 +1431,10 @@ exports.confirmarRemisionAlmacen = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Remisión confirmada por almacén exitosamente',
+      message: 'Remisión enviada a finanzas para confirmación final',
       remision: {
         remision_id: parseInt(id),
-        estado: 'CONFIRMADA',
+        estado: 'PENDIENTE_CONFIRMACION_FINANZAS',
         notas_almacen
       }
     });
@@ -1440,6 +1450,106 @@ exports.confirmarRemisionAlmacen = async (req, res) => {
       success: false,
       message: 'Error al confirmar remisión'
     });
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * POST /api/remisiones/:id/rechazar-finanzas
+ * Rechaza una remisión y la regresa al almacenista para corrección
+ * Solo para rol finanzas
+ */
+exports.rechazarRemisionFinanzas = async (req, res) => {
+  const client = await pool.connect();
+  
+  try {
+    const { id } = req.params;
+    const { tenant_id } = req.tenant;
+    const { observaciones_finanzas } = req.body;
+    const userId = req.user?.id || req.user?.userId;
+
+    if (!observaciones_finanzas || observaciones_finanzas.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        error: 'Se requieren observaciones para rechazar la remisión'
+      });
+    }
+
+    await client.query('BEGIN');
+
+    // Verificar remisión
+    const remisionQuery = await client.query(
+      `SELECT r.*, p.pedidoid
+       FROM remisiones r
+       INNER JOIN pedidos p ON r.pedido_id = p.pedidoid
+       WHERE r.remision_id = $1 AND r.tenant_id = $2
+       FOR UPDATE`,
+      [id, tenant_id]
+    );
+
+    if (remisionQuery.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, error: 'Remisión no encontrada' });
+    }
+
+    const remision = remisionQuery.rows[0];
+
+    if (remision.estado !== 'PENDIENTE_CONFIRMACION_FINANZAS') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        error: `No se puede rechazar. Estado actual: ${remision.estado}. Se requiere PENDIENTE_CONFIRMACION_FINANZAS`
+      });
+    }
+
+    // Cambiar estado a REVISION_ALMACEN para que el almacenista pueda corregir
+    await client.query(
+      `UPDATE remisiones
+       SET estado = 'REVISION_ALMACEN',
+           observaciones_finanzas = $1,
+           rechazado_por_finanzas = $2,
+           fecha_rechazo_finanzas = NOW()
+       WHERE remision_id = $3`,
+      [observaciones_finanzas, userId, id]
+    );
+
+    // Registrar en historial
+    await client.query(
+      `INSERT INTO historial_remisiones (
+        remision_id, accion, usuario_id, detalles, tenant_id
+      ) VALUES ($1, 'RECHAZO_FINANZAS', $2, $3, $4)`,
+      [
+        id,
+        userId,
+        JSON.stringify({
+          observaciones: observaciones_finanzas,
+          timestamp: new Date().toISOString()
+        }),
+        tenant_id
+      ]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      message: 'Remisión regresada al almacén para corrección',
+      remision: {
+        remision_id: parseInt(id),
+        estado: 'REVISION_ALMACEN',
+        observaciones_finanzas
+      }
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Error al rechazar remisión por finanzas:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
+    res.status(500).json({ success: false, message: 'Error al rechazar remisión' });
   } finally {
     client.release();
   }

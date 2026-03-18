@@ -75,11 +75,29 @@ async function descargarFactura(req, res) {
 
     const pedido = pedidoResult.rows[0];
 
-    const estatusPermitidos = ['Surtido', 'Enviado', 'Entregado'];
+    // Verificar que el pedido tiene remisiones confirmadas por finanzas
+    const remisionQuery = await pool.query(
+      `SELECT COUNT(*) as total_surtido
+       FROM remisiones
+       WHERE pedido_id = $1 AND tenant_id = $2 AND estado = 'SURTIDO'`,
+      [pedidoId, tenant_id]
+    );
+
+    const totalSurtido = parseInt(remisionQuery.rows[0]?.total_surtido || 0);
+
+    if (totalSurtido === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se puede generar factura. El pedido debe tener al menos una remisión confirmada por finanzas (estado SURTIDO).'
+      });
+    }
+
+    // Validación adicional de estatus del pedido
+    const estatusPermitidos = ['Surtido', 'Completado', 'Enviado', 'Entregado', 'Parcial'];
     if (!estatusPermitidos.includes(pedido.estatus)) {
       return res.status(400).json({
         success: false,
-        message: `No se puede generar factura para pedidos en estatus "${pedido.estatus}". Solo se permite para pedidos Surtido, Enviado o Entregado.`
+        message: `No se puede generar factura para pedidos en estatus "${pedido.estatus}". Solo se permite para pedidos con remisiones confirmadas.`
       });
     }
 
