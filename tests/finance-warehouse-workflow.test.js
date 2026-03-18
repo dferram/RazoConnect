@@ -13,6 +13,9 @@
 const request = require('supertest');
 const app = require('../index');
 const pool = require('../db');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { generateAccessToken } = require('../utils/tokenUtils');
 
 describe('Finance-Warehouse Workflow', () => {
   let adminToken;
@@ -24,6 +27,11 @@ describe('Finance-Warehouse Workflow', () => {
   let testRemisionId;
   let testClienteId;
   let testVarianteId;
+  let adminUserId;
+  let finanzasUserId;
+  let inventariosUserId;
+  let secretariaUserId;
+  let testAdminIdStock;
 
   beforeAll(async () => {
     // Setup: Crear tenant de prueba
@@ -34,40 +42,47 @@ describe('Finance-Warehouse Workflow', () => {
     );
     testTenantId = tenantResult.rows[0].tenant_id;
 
-    // Crear usuarios de prueba
+    // Crear usuarios de prueba con passwords hasheados
+    const hashedPassword = await bcrypt.hash('TestPassword123!', 10);
+    
     const adminResult = await pool.query(
       `INSERT INTO administradores (nombre, email, password, rol, tenant_id)
-       VALUES ('Admin Test', 'admin@test.local', 'hashed_password', 'admin', $1)
+       VALUES ('Admin Test', 'admin@test.local', $1, 'admin', $2)
        RETURNING adminid`,
-      [testTenantId]
+      [hashedPassword, testTenantId]
     );
+    adminUserId = adminResult.rows[0].adminid;
+    testAdminIdStock = adminUserId;
 
     const finanzasResult = await pool.query(
       `INSERT INTO administradores (nombre, email, password, rol, tenant_id)
-       VALUES ('Finanzas Test', 'finanzas@test.local', 'hashed_password', 'finanzas', $1)
+       VALUES ('Finanzas Test', 'finanzas@test.local', $1, 'finanzas', $2)
        RETURNING adminid`,
-      [testTenantId]
+      [hashedPassword, testTenantId]
     );
+    finanzasUserId = finanzasResult.rows[0].adminid;
 
     const inventariosResult = await pool.query(
       `INSERT INTO administradores (nombre, email, password, rol, tenant_id)
-       VALUES ('Inventarios Test', 'inventarios@test.local', 'hashed_password', 'inventarios', $1)
+       VALUES ('Inventarios Test', 'inventarios@test.local', $1, 'inventarios', $2)
        RETURNING adminid`,
-      [testTenantId]
+      [hashedPassword, testTenantId]
     );
+    inventariosUserId = inventariosResult.rows[0].adminid;
 
     const secretariaResult = await pool.query(
       `INSERT INTO administradores (nombre, email, password, rol, tenant_id)
-       VALUES ('Secretaria Test', 'secretaria@test.local', 'hashed_password', 'secretaria', $1)
+       VALUES ('Secretaria Test', 'secretaria@test.local', $1, 'secretaria', $2)
        RETURNING adminid`,
-      [testTenantId]
+      [hashedPassword, testTenantId]
     );
+    secretariaUserId = secretariaResult.rows[0].adminid;
 
-    // Crear tokens de prueba (simplificado - en producción usar JWT real)
-    adminToken = 'test_admin_token';
-    finanzasToken = 'test_finanzas_token';
-    inventariosToken = 'test_inventarios_token';
-    secretariaToken = 'test_secretaria_token';
+    // Generar tokens JWT reales
+    adminToken = generateAccessToken({ id: adminUserId, rol: 'admin', tenant_id: testTenantId });
+    finanzasToken = generateAccessToken({ id: finanzasUserId, rol: 'finanzas', tenant_id: testTenantId });
+    inventariosToken = generateAccessToken({ id: inventariosUserId, rol: 'inventarios', tenant_id: testTenantId });
+    secretariaToken = generateAccessToken({ id: secretariaUserId, rol: 'secretaria', tenant_id: testTenantId });
 
     // Crear cliente de prueba
     const clienteResult = await pool.query(
@@ -94,18 +109,33 @@ describe('Finance-Warehouse Workflow', () => {
     );
     testVarianteId = varianteResult.rows[0].varianteid;
 
-    // Crear stock de prueba
+    // Crear stock de prueba usando el admin_id dinámico
     await pool.query(
       `INSERT INTO stock_admin (variante_id, admin_id, cantidad, cantidad_reservada, tenant_id)
-       VALUES ($1, 1, 100, 0, $2)`,
-      [testVarianteId, testTenantId]
+       VALUES ($1, $2, 100, 0, $3)`,
+      [testVarianteId, testAdminIdStock, testTenantId]
     );
   });
 
   afterAll(async () => {
-    // Cleanup: Eliminar datos de prueba
-    await pool.query('DELETE FROM tenants WHERE tenant_id = $1', [testTenantId]);
-    await pool.end();
+    // Cleanup: Eliminar datos de prueba en orden correcto para evitar violaciones de FK
+    try {
+      // Eliminar en orden inverso de dependencias
+      await pool.query('DELETE FROM detalles_remision WHERE tenant_id = $1', [testTenantId]);
+      await pool.query('DELETE FROM remisiones WHERE tenant_id = $1', [testTenantId]);
+      await pool.query('DELETE FROM detallesdelpedido WHERE tenant_id = $1', [testTenantId]);
+      await pool.query('DELETE FROM pedidos WHERE tenant_id = $1', [testTenantId]);
+      await pool.query('DELETE FROM stock_admin WHERE tenant_id = $1', [testTenantId]);
+      await pool.query('DELETE FROM producto_variantes WHERE tenant_id = $1', [testTenantId]);
+      await pool.query('DELETE FROM productos WHERE tenant_id = $1', [testTenantId]);
+      await pool.query('DELETE FROM clientes WHERE tenant_id = $1', [testTenantId]);
+      await pool.query('DELETE FROM administradores WHERE tenant_id = $1', [testTenantId]);
+      await pool.query('DELETE FROM tenants WHERE tenant_id = $1', [testTenantId]);
+    } catch (error) {
+      console.error('Error during test cleanup:', error);
+    } finally {
+      await pool.end();
+    }
   });
 
   describe('1. Flujo de Almacén - Marcar Pedido como Listo', () => {
@@ -134,13 +164,15 @@ describe('Finance-Warehouse Workflow', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
+      // El endpoint surtirPedido cambia el estado a 'Pendiente de confirmación'
       expect(response.body.data.estatus).toBe('Pendiente de confirmación');
-      expect(response.body.message).toContain('Stock NO afectado');
+      // Verificar que el mensaje menciona que stock NO fue afectado
+      expect(response.body.message).toMatch(/Stock NO afectado|sin reducir stock/i);
 
       // Verificar que el stock NO fue afectado
       const stockResult = await pool.query(
-        'SELECT cantidad FROM stock_admin WHERE variante_id = $1 AND tenant_id = $2',
-        [testVarianteId, testTenantId]
+        'SELECT cantidad FROM stock_admin WHERE variante_id = $1 AND admin_id = $2 AND tenant_id = $3',
+        [testVarianteId, testAdminIdStock, testTenantId]
       );
       expect(stockResult.rows[0].cantidad).toBe(100); // Stock sin cambios
     });

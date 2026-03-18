@@ -257,8 +257,7 @@ RazoConnect/
 ├── routes/
 │   ├── admin.js
 │   ├── clientes.js
-│   ├─��� auth.js
-│   └── developer.js
+│   ├── auth.js│   └── developer.js
 │
 ├── tenants_views/
 │   ├── razo/                      # Tenant A frontend (HTML/CSS/JS)
@@ -492,6 +491,4 @@ Technical documentation is maintained in `docs/`:
 
 ## License
 
-Copyright (c) 2024–2025 xCore. All rights reserved.
-
-This software is proprietary and confidential. See [LICENSE](LICENSE) for terms.
+Copyright (c) 2025–2026 xCore. All rights reserved.

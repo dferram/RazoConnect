@@ -994,11 +994,13 @@ exports.corregirRemision = async (req, res) => {
 
     const remision = remisionQuery.rows[0];
 
-    if (!['PENDIENTE_REVISION', 'CONFIRMADA'].includes(remision.estado)) {
+    // Permitir corrección en PENDIENTE_REVISION, CONFIRMADA y REVISION_ALMACEN
+    // REVISION_ALMACEN es cuando finanzas rechazó y almacén necesita corregir
+    if (!['PENDIENTE_REVISION', 'CONFIRMADA', 'REVISION_ALMACEN'].includes(remision.estado)) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        error: `No se puede corregir en estado ${remision.estado}`
+        error: `No se puede corregir en estado ${remision.estado}. Estados permitidos: PENDIENTE_REVISION, CONFIRMADA, REVISION_ALMACEN`
       });
     }
 
