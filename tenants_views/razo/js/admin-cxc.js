@@ -399,6 +399,7 @@
       document.body.appendChild(a);
       a.click();
       a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
 
       Swal.fire({
         icon: "success",

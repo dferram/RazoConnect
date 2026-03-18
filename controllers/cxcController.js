@@ -595,10 +595,37 @@ async function getSummaryAging(req, res) {
             LIMIT $${limitIndex} OFFSET $${offsetIndex}
         `, queryParams);
 
-        // Total de registros con mismo filtro
-        const countParams = [tenant_id];
+        // Total de registros con filtros aplicados
+        let countQueryParams = [tenant_id];
+        let countParamIndex = 2;
+        let countFilters = '';
+        
         if (admin_id) {
-            countParams.push(admin_id);
+            countQueryParams.push(admin_id);
+            countParamIndex++;
+        }
+        
+        if (fechaInicio) {
+            countQueryParams.push(fechaInicio);
+            countFilters += ` AND EXISTS (
+                SELECT 1 FROM pedidos p 
+                WHERE p.clienteid = c.clienteid 
+                AND p.es_credito = true 
+                AND p.saldo_pendiente > 0
+                AND p.fecha_vencimiento >= $${countParamIndex}
+            )`;
+            countParamIndex++;
+        }
+        if (fechaFin) {
+            countQueryParams.push(fechaFin);
+            countFilters += ` AND EXISTS (
+                SELECT 1 FROM pedidos p 
+                WHERE p.clienteid = c.clienteid 
+                AND p.es_credito = true 
+                AND p.saldo_pendiente > 0
+                AND p.fecha_vencimiento <= $${countParamIndex}
+            )`;
+            countParamIndex++;
         }
         
         const { rows: [count] } = await client.query(`
@@ -608,20 +635,52 @@ async function getSummaryAging(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-                ${admin_id ? `
-                AND EXISTS (
-                    SELECT 1 FROM pedido_surtido_detalle psd
-                    WHERE psd.pedido_id IN (
-                        SELECT pedidoid FROM pedidos 
-                        WHERE clienteid = c.clienteid 
-                        AND es_credito = true
-                        AND tenant_id = $1
-                    )
-                    AND psd.admin_id = $2
-                )` : ''}
-        `, countParams);
+                ${countFilters}
+        `, countQueryParams);
 
-        // Métricas agregadas
+        // Métricas agregadas con filtros aplicados
+        let metricsParams = [tenant_id];
+        let metricsParamIndex = 2;
+        let metricsFilters = '';
+        
+        if (admin_id) {
+            metricsParams.push(admin_id);
+            metricsFilters += ` AND EXISTS (
+                SELECT 1 FROM pedido_surtido_detalle psd
+                WHERE psd.pedido_id IN (
+                    SELECT pedidoid FROM pedidos 
+                    WHERE clienteid = c.clienteid 
+                    AND es_credito = true
+                    AND tenant_id = $1
+                )
+                AND psd.admin_id = $${metricsParamIndex}
+            )`;
+            metricsParamIndex++;
+        }
+        
+        if (fechaInicio) {
+            metricsParams.push(fechaInicio);
+            metricsFilters += ` AND EXISTS (
+                SELECT 1 FROM pedidos p 
+                WHERE p.clienteid = c.clienteid 
+                AND p.es_credito = true 
+                AND p.saldo_pendiente > 0
+                AND p.fecha_vencimiento >= $${metricsParamIndex}
+            )`;
+            metricsParamIndex++;
+        }
+        if (fechaFin) {
+            metricsParams.push(fechaFin);
+            metricsFilters += ` AND EXISTS (
+                SELECT 1 FROM pedidos p 
+                WHERE p.clienteid = c.clienteid 
+                AND p.es_credito = true 
+                AND p.saldo_pendiente > 0
+                AND p.fecha_vencimiento <= $${metricsParamIndex}
+            )`;
+            metricsParamIndex++;
+        }
+        
         const { rows: [metrics] } = await client.query(`
             SELECT 
                 COALESCE(SUM(cc.saldo_deudor), 0) as total_cobrar,
@@ -632,7 +691,8 @@ async function getSummaryAging(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-        `, [tenant_id]);
+                ${metricsFilters}
+        `, metricsParams);
 
         const totalPages = Math.ceil(parseInt(count.total) / limit);
 
@@ -1002,13 +1062,24 @@ async function generarPDFCxC(req, res) {
     const { fechaInicio, fechaFin, admin_id } = req.query;
     
     try {
-        let whereConditions = ['cc.saldo_deudor > 0', 'cc.tenant_id = $1', 'c.tenant_id = $1'];
         let queryParams = [tenant_id];
         let paramIndex = 2;
         let additionalFilters = '';
+        let adminFilter = '';
         
         if (admin_id) {
-            queryParams.push(parseInt(admin_id));
+            const adminIdNum = parseInt(admin_id, 10);
+            queryParams.push(adminIdNum);
+            adminFilter = ` AND EXISTS (
+                SELECT 1 FROM pedido_surtido_detalle psd
+                WHERE psd.pedido_id IN (
+                    SELECT pedidoid FROM pedidos 
+                    WHERE clienteid = c.clienteid 
+                    AND es_credito = true
+                    AND tenant_id = $1
+                )
+                AND psd.admin_id = $${paramIndex}
+            )`;
             paramIndex++;
         }
         
@@ -1058,6 +1129,7 @@ async function generarPDFCxC(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
+                ${adminFilter}
             GROUP BY c.clienteid, c.nombre, c.apellido, c.email, cc.saldo_deudor, cc.limite_credito, cc.estado_credito
             ORDER BY cc.saldo_deudor DESC
         `, queryParams);

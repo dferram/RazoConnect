@@ -36,7 +36,14 @@ async function getEntradasErroneas(req, res) {
             paramIndex++;
         }
         if (proveedorId) {
-            queryParams.push(parseInt(proveedorId));
+            const proveedorIdNum = parseInt(proveedorId, 10);
+            if (!Number.isInteger(proveedorIdNum) || proveedorIdNum <= 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'ID de proveedor inválido'
+                });
+            }
+            queryParams.push(proveedorIdNum);
             whereConditions.push(`oc.proveedorid = $${paramIndex}`);
             paramIndex++;
         }
@@ -101,9 +108,16 @@ async function getEntradasErroneas(req, res) {
 async function getDetallesEntrada(req, res) {
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
-    const ordenCompraId = parseInt(req.params.id);
+    const ordenCompraId = parseInt(req.params.id, 10);
     
     try {
+        if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID de orden de compra inválido'
+            });
+        }
+        
         const { rows } = await client.query(`
             SELECT 
                 doc.detalleoc_id,
@@ -121,10 +135,12 @@ async function getDetallesEntrada(req, res) {
             FROM detallesordencompra doc
             INNER JOIN producto_variantes pv ON pv.varianteid = doc.varianteid
             INNER JOIN productos p ON p.productoid = pv.productoid
+            INNER JOIN ordenesdecompra oc ON oc.ordencompraid = doc.ordencompraid
             WHERE doc.ordencompraid = $1
+                AND oc.tenant_id = $2
                 AND doc.cantidadrecibida > 0
             ORDER BY p.nombreproducto
-        `, [ordenCompraId]);
+        `, [ordenCompraId, tenant_id]);
         
         res.json({
             success: true,
@@ -205,6 +221,19 @@ async function reconciliarEntrada(req, res) {
         
         // Actualizar o crear cuenta por pagar
         if (cxpId) {
+            const { rows: cxpCheck } = await client.query(
+                'SELECT cxp_id FROM cuentas_por_pagar WHERE cxp_id = $1 AND orden_compra_id = $2 AND tenant_id = $3',
+                [cxpId, ordenCompraId, tenant_id]
+            );
+            
+            if (cxpCheck.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({
+                    success: false,
+                    message: 'La CxP proporcionada no pertenece a esta orden de compra'
+                });
+            }
+            
             await client.query(`
                 UPDATE cuentas_por_pagar
                 SET monto_total = $1,

@@ -685,6 +685,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (state.filters.fechaInicio) params.append('fechaInicio', state.filters.fechaInicio);
             if (state.filters.fechaFin) params.append('fechaFin', state.filters.fechaFin);
             if (state.filters.estatus) params.append('estatus', state.filters.estatus);
+            if (state.filters.adminId) params.append('adminId', state.filters.adminId);
+            if (state.filters.search) params.append('search', state.filters.search);
             
             Swal.fire({
                 title: 'Generando PDF...',

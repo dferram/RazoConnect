@@ -686,7 +686,7 @@ async function generarPDFCxP(req, res) {
     const PDFDocument = require('pdfkit');
     const client = await pool.connect();
     const tenant_id = req.tenant?.tenant_id || req.user?.tenantId || 1;
-    const { fechaInicio, fechaFin, estatus } = req.query;
+    const { fechaInicio, fechaFin, estatus, adminId } = req.query;
     const userRole = req.user.rol;
     const userId = req.user.id;
     
@@ -698,10 +698,20 @@ async function generarPDFCxP(req, res) {
         whereConditions.push(`cxp.tenant_id = $1`);
         whereConditions.push(`p.tenant_id = $1`);
         
+        // Si es admin regular, solo ver sus propias CxP
         if (userRole === 'admin') {
             queryParams.push(userId);
             whereConditions.push(`cxp.usuario_creador_id = $${paramIndex}`);
             paramIndex++;
+        }
+        // Si es superadmin y especifica adminId, filtrar por ese admin
+        else if (userRole === 'superadmin' && adminId) {
+            const adminIdNum = parseInt(adminId, 10);
+            if (Number.isInteger(adminIdNum) && adminIdNum > 0) {
+                queryParams.push(adminIdNum);
+                whereConditions.push(`cxp.usuario_creador_id = $${paramIndex}`);
+                paramIndex++;
+            }
         }
         
         if (fechaInicio) {
