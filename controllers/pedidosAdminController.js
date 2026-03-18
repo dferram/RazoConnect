@@ -1035,7 +1035,8 @@ const rechazarPedidoFinanzas = async (req, res) => {
     const estatusActual = (pedido.estatus || '').toLowerCase().trim();
     
     // Validar que el pedido está pendiente de confirmación
-    if (estatusActual !== 'pendiente de confirmación' && estatusActual !== 'pendiente de confirmacion') {
+    const estadosValidos = ['pendiente de confirmación', 'pendiente de confirmacion'];
+    if (!estadosValidos.includes(estatusActual)) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,

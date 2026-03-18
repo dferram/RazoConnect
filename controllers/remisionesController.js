@@ -1160,6 +1160,8 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
     }
 
     // AHORA SÍ: Descontar stock y registrar en Kardex para cada item surtido
+    const itemsConError = [];
+    
     for (const detalle of detallesQuery.rows) {
       // Descontar stock físico y liberar reserva
       const stockUpdateResult = await client.query(
@@ -1173,6 +1175,16 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
          RETURNING stockadminid, cantidad, cantidad_reservada`,
         [detalle.piezas_surtidas, detalle.variante_id, adminIdStock, tenant_id]
       );
+
+      if (stockUpdateResult.rows.length === 0) {
+        // No se encontró el registro de stock - error crítico
+        itemsConError.push({
+          sku: detalle.sku,
+          variante_id: detalle.variante_id,
+          error: 'No se encontró registro de stock'
+        });
+        continue;
+      }
 
       if (stockUpdateResult.rows.length > 0) {
         const stockInfo = stockUpdateResult.rows[0];
@@ -1221,7 +1233,28 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
           requestId: req.requestId,
           tenantId: req.tenant?.tenant_id
         });
+        itemsConError.push({
+          sku: detalle.sku,
+          variante_id: detalle.variante_id,
+          error: 'Error en Kardex: ' + kardexError.message
+        });
       }
+    }
+
+    // Validar que no hubo errores críticos en el descuento de stock
+    if (itemsConError.length > 0) {
+      await client.query('ROLLBACK');
+      logger.error('Error al descontar stock en confirmación de finanzas', {
+        remisionId: id,
+        itemsConError,
+        requestId: req.requestId,
+        tenantId: req.tenant?.tenant_id
+      });
+      return res.status(500).json({
+        success: false,
+        message: 'Error al descontar stock. No se pudo confirmar la remisión.',
+        errors: itemsConError
+      });
     }
 
     // Actualizar estado a SURTIDO (no EMITIDA)
@@ -1400,14 +1433,19 @@ exports.confirmarRemisionAlmacen = async (req, res) => {
 
     // Actualizar estado a PENDIENTE_CONFIRMACION_FINANZAS (no CONFIRMADA)
     // El almacenista marca como listo, pero finanzas debe confirmar antes de afectar stock/CxC
+    const notasCompletas = remision.estado === 'REVISION_ALMACEN' 
+      ? `CORREGIDO Y REENVIADO: ${notas_almacen || 'Sin observaciones'}. Observaciones previas de finanzas: ${remision.observaciones_finanzas || 'N/A'}`
+      : `CONFIRMADO POR ALMACÉN: ${notas_almacen || 'Sin observaciones'}`;
+    
     await client.query(
       `UPDATE remisiones 
        SET estado = 'PENDIENTE_CONFIRMACION_FINANZAS',
-           notas = COALESCE(notas || E'\n\n', '') || 'CONFIRMADO POR ALMACÉN: ' || $1,
+           notas = COALESCE(notas || E'\n\n', '') || $1,
            fecha_confirmacion_almacen = NOW(),
-           confirmado_por_almacen = $2
+           confirmado_por_almacen = $2,
+           observaciones_finanzas = NULL
        WHERE remision_id = $3 AND tenant_id = $4`,
-      [notas_almacen || 'Sin observaciones', userId, id, tenant_id]
+      [notasCompletas, userId, id, tenant_id]
     );
 
     // Registrar en historial

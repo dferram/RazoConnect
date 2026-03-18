@@ -1249,7 +1249,10 @@
             const estaRevisionAlmacen = estatusValor === 'revisión de almacén' || estatusValor === 'revision de almacen' || estatusValor === 'revision_almacen';
             
             // Inventarios role - Surtir button
-            if (btnSurtir && currentRole === 'inventarios') {
+            // Backend permite: 'inventarios', 'gerente_operaciones', 'jefe_almacen', 'admin', 'super_admin'
+            const puedeMarcarSurtido = ['inventarios', 'gerente_operaciones', 'jefe_almacen', 'admin', 'super_admin'].includes(currentRole);
+            
+            if (btnSurtir && puedeMarcarSurtido) {
               if (estaSurtido) {
                 // Already confirmed by finanzas
                 btnSurtir.innerHTML = '✅ Pedido Surtido';
@@ -1263,7 +1266,7 @@
                 btnSurtir.disabled = true;
                 btnSurtir.style.display = 'inline-block';
               } else if (estaRevisionAlmacen) {
-                // Rejected by finance, needs correction
+                // Rejected by finance, needs correction - can resend
                 btnSurtir.innerHTML = '⚠️ Corregir y Reenviar';
                 btnSurtir.style.background = '#f59e0b';
                 btnSurtir.disabled = false;
@@ -1277,37 +1280,56 @@
               } else {
                 btnSurtir.style.display = 'none';
               }
+            } else if (btnSurtir) {
+              // Usuario sin permisos - ocultar botón
+              btnSurtir.style.display = 'none';
             }
             
             // Finanzas and Secretaria role - Confirmar and Rechazar buttons
-            if ((currentRole === 'finanzas' || currentRole === 'gerente_finanzas' || currentRole === 'secretaria')) {
+            // Backend permite confirmar: 'finanzas', 'gerente_finanzas', 'secretaria', 'admin', 'super_admin'
+            // Backend permite rechazar: 'finanzas', 'gerente_finanzas', 'admin', 'super_admin' (NO secretaria)
+            const puedeConfirmarFinanzas = ['finanzas', 'gerente_finanzas', 'secretaria', 'admin', 'super_admin'].includes(currentRole);
+            const puedeRechazarFinanzas = ['finanzas', 'gerente_finanzas', 'admin', 'super_admin'].includes(currentRole);
+            
+            if (puedeConfirmarFinanzas || puedeRechazarFinanzas) {
               if (estaSurtido) {
                 // Already confirmed
-                if (btnConfirmar) {
+                if (btnConfirmar && puedeConfirmarFinanzas) {
                   btnConfirmar.innerHTML = '✅ Confirmado';
                   btnConfirmar.style.background = '#10b981';
                   btnConfirmar.disabled = true;
                   btnConfirmar.style.display = 'inline-block';
+                } else if (btnConfirmar) {
+                  btnConfirmar.style.display = 'none';
                 }
                 if (btnRechazar) btnRechazar.style.display = 'none';
               } else if (estaPendienteConfirmacion) {
-                // Ready to confirm or reject
-                if (btnConfirmar) {
+                // Ready to confirm or reject - validate permissions
+                if (btnConfirmar && puedeConfirmarFinanzas) {
                   btnConfirmar.innerHTML = '✅ Confirmar Surtido';
                   btnConfirmar.style.background = '#0d6efd';
                   btnConfirmar.disabled = false;
                   btnConfirmar.style.display = 'inline-block';
+                } else if (btnConfirmar) {
+                  btnConfirmar.style.display = 'none';
                 }
-                if (btnRechazar) {
+                
+                if (btnRechazar && puedeRechazarFinanzas) {
                   btnRechazar.innerHTML = '↩️ Regresar a Almacén';
                   btnRechazar.style.background = '#f59e0b';
                   btnRechazar.disabled = false;
                   btnRechazar.style.display = 'inline-block';
+                } else if (btnRechazar) {
+                  btnRechazar.style.display = 'none';
                 }
               } else {
                 if (btnConfirmar) btnConfirmar.style.display = 'none';
                 if (btnRechazar) btnRechazar.style.display = 'none';
               }
+            } else {
+              // Usuario sin permisos - ocultar botones
+              if (btnConfirmar) btnConfirmar.style.display = 'none';
+              if (btnRechazar) btnRechazar.style.display = 'none';
             }
             
             // Update Generar Remisión button text if order is fulfilled
