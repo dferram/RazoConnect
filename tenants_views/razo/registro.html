@@ -222,22 +222,30 @@
         }, 3000);
       }
 
-      // Function to save auth data
-      function saveAuthData(token, usuario) {
-        if (!token || typeof token !== 'string') {
-          console.error('❌ Token inválido al guardar:', token);
+      // Function to save auth data (legacy support)
+      function saveAuthData(accessToken, usuario, refreshToken = null) {
+        if (!accessToken || typeof accessToken !== 'string') {
+          console.error('❌ Token inválido al guardar:', accessToken);
           return false;
         }
         
-        const tokenParts = token.split('.');
+        const tokenParts = accessToken.split('.');
         if (tokenParts.length !== 3) {
-          console.error('❌ Token malformado al guardar:', token);
+          console.error('❌ Token malformado al guardar:', accessToken);
           return false;
         }
 
         try {
-          localStorage.setItem('razoconnect_token', token);
+          // Save legacy token for compatibility
+          localStorage.setItem('razoconnect_token', accessToken);
           localStorage.setItem('razoconnect_user', JSON.stringify(usuario));
+          
+          // Save new token structure if refresh token is provided
+          if (refreshToken) {
+            localStorage.setItem('razoconnect_access_token', accessToken);
+            localStorage.setItem('razoconnect_refresh_token', refreshToken);
+          }
+          
           console.log('✅ Datos de autenticación guardados correctamente');
           return true;
         } catch (error) {
@@ -425,25 +433,11 @@
           const response = await API.registroCliente(formData);
 
           if (response.ok && response.data.success) {
-            // Extract token and user data
-            let token = null;
-            let usuario = null;
+            // Extract token and user data from response
+            const responseData = response.data.data;
             
-            // Try new structure first (data.data)
-            if (response.data.data) {
-              token = response.data.data.accessToken || response.data.data.token;
-              usuario = response.data.data.usuario || response.data.data.cliente;
-            }
-            
-            // Fallback to legacy structure
-            if (!token) {
-              token = response.data.token || response.data.access_token;
-              usuario = response.data.cliente || response.data.usuario;
-            }
-
-            // Validate token before saving
-            if (!token || typeof token !== 'string' || token.split('.').length !== 3) {
-              console.error('❌ Token inválido recibido en registro:', token);
+            if (!responseData) {
+              console.error('❌ Respuesta sin datos:', response.data);
               Swal.fire({
                 title: 'Error',
                 text: 'Error al procesar la respuesta del servidor. Por favor intenta nuevamente.',
@@ -454,8 +448,29 @@
               return;
             }
 
-            // Save auth data
-            saveAuthData(token, usuario);
+            const accessToken = responseData.accessToken;
+            const refreshToken = responseData.refreshToken;
+            const usuario = responseData.cliente;
+
+            // Validate tokens before saving
+            if (!accessToken || typeof accessToken !== 'string' || accessToken.split('.').length !== 3) {
+              console.error('❌ Access token inválido recibido en registro:', accessToken);
+              Swal.fire({
+                title: 'Error',
+                text: 'Error al procesar la respuesta del servidor. Por favor intenta nuevamente.',
+                icon: 'error',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#ef4444'
+              });
+              return;
+            }
+
+            // Save auth data using AuthManager if available, otherwise use legacy method
+            if (typeof AuthManager !== 'undefined' && AuthManager) {
+              AuthManager.saveTokens(accessToken, refreshToken, usuario, 'cliente');
+            } else {
+              saveAuthData(accessToken, usuario, refreshToken);
+            }
 
             // Show success message with SweetAlert2
             Swal.fire({
