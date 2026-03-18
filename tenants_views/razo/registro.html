@@ -184,76 +184,6 @@
     </div>
 
     <script>
-      // Utility function to show toast notifications
-      function showToast(message, type = "info") {
-        const toast = document.createElement("div");
-        toast.className = `toast toast-${type}`;
-        toast.textContent = message;
-        toast.style.cssText = `
-          position: fixed;
-          bottom: 2rem;
-          right: 2rem;
-          background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-          color: white;
-          padding: 1rem 1.5rem;
-          border-radius: 0.5rem;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-          z-index: 10000;
-          font-weight: 500;
-          opacity: 0;
-          transform: translateY(1rem);
-          transition: all 0.3s ease;
-        `;
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-          toast.style.opacity = '1';
-          toast.style.transform = 'translateY(0)';
-        }, 100);
-
-        setTimeout(() => {
-          toast.style.opacity = '0';
-          toast.style.transform = 'translateY(1rem)';
-          setTimeout(() => {
-            if (toast.parentNode) {
-              document.body.removeChild(toast);
-            }
-          }, 300);
-        }, 3000);
-      }
-
-      // Function to save auth data (legacy support)
-      function saveAuthData(accessToken, usuario, refreshToken = null) {
-        if (!accessToken || typeof accessToken !== 'string') {
-          console.error('❌ Token inválido al guardar:', accessToken);
-          return false;
-        }
-        
-        const tokenParts = accessToken.split('.');
-        if (tokenParts.length !== 3) {
-          console.error('❌ Token malformado al guardar:', accessToken);
-          return false;
-        }
-
-        try {
-          // Save legacy token for compatibility
-          localStorage.setItem('razoconnect_token', accessToken);
-          localStorage.setItem('razoconnect_user', JSON.stringify(usuario));
-          
-          // Save new token structure if refresh token is provided
-          if (refreshToken) {
-            localStorage.setItem('razoconnect_access_token', accessToken);
-            localStorage.setItem('razoconnect_refresh_token', refreshToken);
-          }
-          
-          console.log('✅ Datos de autenticación guardados correctamente');
-          return true;
-        } catch (error) {
-          console.error('❌ Error al guardar en localStorage:', error);
-          return false;
-        }
-      }
-
       const registroForm = document.getElementById("registroForm");
       const nombreInput = document.getElementById("nombre");
       const apellidoInput = document.getElementById("apellido");
@@ -274,6 +204,7 @@
           const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
           passwordInput.setAttribute("type", type);
           
+          // Cambiar icono
           if (type === "password") {
             this.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
           } else {
@@ -288,6 +219,7 @@
           const type = confirmPasswordInput.getAttribute("type") === "password" ? "text" : "password";
           confirmPasswordInput.setAttribute("type", type);
           
+          // Cambiar icono
           if (type === "password") {
             this.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
           } else {
@@ -297,8 +229,14 @@
       }
 
       // Check if user is already logged in
-      if (AuthManager && AuthManager.isAuthenticated()) {
-        window.location.href = "/inicio.html";
+      if (typeof AuthManager !== 'undefined' && AuthManager && typeof AuthManager.isAuthenticated === 'function') {
+        try {
+          if (AuthManager.isAuthenticated()) {
+            window.location.href = "/inicio.html";
+          }
+        } catch (error) {
+          console.warn('Error checking authentication:', error);
+        }
       }
 
       // Show alert message
@@ -423,16 +361,20 @@
 
         try {
           const formData = {
-            Nombre: nombre,
-            Apellido: apellido,
-            Email: email || null,
-            Password: password,
-            Telefono: telefono || null,
+            nombre: nombre,
+            apellido: apellido,
+            email: email || null,
+            password: password,
+            telefono: telefono || null,
           };
 
+          console.log('📤 Enviando datos de registro:', { ...formData, password: '***' });
           const response = await API.registroCliente(formData);
+          console.log('📥 Respuesta recibida:', response);
 
-          if (response.ok && response.data.success) {
+          if (response.ok && response.data && response.data.success) {
+            console.log('✅ Registro exitoso, procesando respuesta...');
+            
             // Extract token and user data from response
             const responseData = response.data.data;
             
@@ -452,6 +394,12 @@
             const refreshToken = responseData.refreshToken;
             const usuario = responseData.cliente;
 
+            console.log('🔑 Tokens recibidos:', {
+              hasAccessToken: !!accessToken,
+              hasRefreshToken: !!refreshToken,
+              hasUsuario: !!usuario
+            });
+
             // Validate tokens before saving
             if (!accessToken || typeof accessToken !== 'string' || accessToken.split('.').length !== 3) {
               console.error('❌ Access token inválido recibido en registro:', accessToken);
@@ -466,10 +414,31 @@
             }
 
             // Save auth data using AuthManager if available, otherwise use legacy method
-            if (typeof AuthManager !== 'undefined' && AuthManager) {
-              AuthManager.saveTokens(accessToken, refreshToken, usuario, 'cliente');
-            } else {
-              saveAuthData(accessToken, usuario, refreshToken);
+            try {
+              if (typeof AuthManager !== 'undefined' && AuthManager && typeof AuthManager.saveTokens === 'function') {
+                console.log('💾 Guardando tokens con AuthManager...');
+                AuthManager.saveTokens(accessToken, refreshToken, usuario, 'cliente');
+              } else {
+                console.log('💾 Guardando tokens con método legacy...');
+                // Use the saveAuthData from api.js which expects (token, userData)
+                localStorage.setItem('razoconnect_token', accessToken);
+                localStorage.setItem('razoconnect_user', JSON.stringify(usuario));
+                if (refreshToken) {
+                  localStorage.setItem('razoconnect_access_token', accessToken);
+                  localStorage.setItem('razoconnect_refresh_token', refreshToken);
+                }
+              }
+              console.log('✅ Tokens guardados exitosamente');
+            } catch (saveError) {
+              console.error('❌ Error al guardar tokens:', saveError);
+              Swal.fire({
+                title: 'Error',
+                text: 'Error al guardar la sesión. Por favor intenta nuevamente.',
+                icon: 'error',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#ef4444'
+              });
+              return;
             }
 
             // Show success message with SweetAlert2
@@ -525,10 +494,19 @@
               });
             } else if (response.data.errors && Array.isArray(response.data.errors)) {
               // Errores de validación múltiples
+              const errorMessages = response.data.errors.map(err => {
+                // Si es un objeto, extraer el mensaje
+                if (typeof err === 'object' && err !== null) {
+                  return err.msg || err.message || JSON.stringify(err);
+                }
+                // Si es string, usarlo directamente
+                return String(err);
+              });
+              
               Swal.fire({
                 title: 'Errores de validación',
                 html: '<ul style="text-align: left; padding-left: 1.5rem;">' +
-                      response.data.errors.map(err => `<li>${err}</li>`).join('') +
+                      errorMessages.map(msg => `<li>${msg}</li>`).join('') +
                       '</ul>',
                 icon: 'error',
                 confirmButtonText: 'Corregir',
@@ -546,10 +524,18 @@
             }
           }
         } catch (error) {
-          console.error("Registro error:", error);
+          console.error("❌ Error en registro:", error);
+          console.error("Stack trace:", error.stack);
+          
+          let errorMessage = 'No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.';
+          
+          if (error.message) {
+            errorMessage = error.message;
+          }
+          
           Swal.fire({
             title: 'Error de conexión',
-            text: 'No se pudo conectar con el servidor. Por favor, verifica tu conexión a internet e intenta nuevamente.',
+            text: errorMessage,
             icon: 'error',
             confirmButtonText: 'Entendido',
             confirmButtonColor: '#ef4444'

@@ -467,6 +467,7 @@ const API = {
     return apiCall("/registro/cliente", {
       method: "POST",
       body: JSON.stringify(formData),
+      public: true,
     });
   },
 
