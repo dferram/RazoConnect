@@ -5,21 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Detalle del Agente - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
-    <script src="js/auth-guard-admin.js"></script>
-<script src="js/api.js"></script>
-
-    <!-- API Configuration -->
-    <script>
-      const API_BASE_URL = window.location.origin + '/api';
-    </script>
-
-
+    <!-- Core Scripts - ORDEN CRÍTICO: api.js debe cargarse primero -->
+    <script src="js/api.js" defer></script>
+    <script src="js/auth-guard-admin.js" defer></script>
+    
 
     <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
-
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <link rel="stylesheet" href="css/styles.css" />
     <script src="js/components/back-button-loader.js"></script>

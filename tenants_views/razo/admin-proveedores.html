@@ -3,21 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gestión de Proveedores - Admin RazoConnect</title>
+    <title>Gestiï¿½n de Proveedores - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
-
-    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
-    <script src="js/auth-guard-admin.js"></script>
-<script src="js/api.js"></script>
-
-    <!-- API Configuration -->
-    <script>
-      const API_BASE_URL = window.location.origin + '/api';
-    </script>
-
-    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
-
+    
+    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Core Scripts - ORDEN CRÃTICO: api.js debe cargarse primero -->
+    <script src="js/api.js" defer></script>
+    <script src="js/auth-guard-admin.js" defer></script>
+    
+
+    <!-- PROTECCIï¿½N DE AUTENTICACIï¿½N ADMIN -->
+    <!-- SISTEMA DE RENOVACIï¿½N DE TOKENS -->
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
@@ -27,7 +25,7 @@
     />
       <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
-  <body data-page-title="Gestión de proveedores">
+  <body data-page-title="Gestiï¿½n de proveedores">
     <div class="admin-layout">
       <!-- Sidebar -->
       <div id="admin-sidebar-container"></div>
@@ -40,10 +38,10 @@
           <!-- Instructional Banner -->
           <div id="instructionalBanner" class="instructional-banner">
             <p>
-              ?? <strong>Gestión de Proveedores:</strong> Administra tu catálogo de proveedores. Puedes agregar nuevos proveedores, editar su información de contacto y configurar reglas de empaque para cada tipo de producto que manejan.
+              ?? <strong>Gestiï¿½n de Proveedores:</strong> Administra tu catï¿½logo de proveedores. Puedes agregar nuevos proveedores, editar su informaciï¿½n de contacto y configurar reglas de empaque para cada tipo de producto que manejan.
             </p>
             <button class="instructional-banner-close" title="Cerrar">
-              ×
+              ï¿½
             </button>
           </div>
 
@@ -107,7 +105,7 @@
                     <th>Empresa</th>
                     <th>Contacto</th>
                     <th>Email</th>
-                    <th>Teléfono</th>
+                    <th>Telï¿½fono</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -198,12 +196,12 @@
               style="font-size: 0.875rem; margin-bottom: 1.5rem; grid-column: 1 / -1"
             >
               <strong>?? Nota:</strong> Solo el nombre de la empresa es
-              obligatorio. Los demás campos son opcionales.
+              obligatorio. Los demï¿½s campos son opcionales.
             </div>
 
-            <!-- SECCIÓN: INFORMACIÓN EMPRESARIAL -->
+            <!-- SECCIï¿½N: INFORMACIï¿½N EMPRESARIAL -->
             <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
-              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? Información Empresarial</legend>
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? Informaciï¿½n Empresarial</legend>
             </fieldset>
 
             <div class="form-grid">
@@ -221,7 +219,7 @@
               </div>
 
               <div class="form-group">
-                <label for="razonSocial" class="form-label">Razón Social</label>
+                <label for="razonSocial" class="form-label">Razï¿½n Social</label>
                 <input
                   type="text"
                   id="razonSocial"
@@ -242,7 +240,7 @@
               </div>
 
               <div class="form-group" style="grid-column: 1 / -1;">
-                <label for="regimenFiscal" class="form-label">Régimen Fiscal</label>
+                <label for="regimenFiscal" class="form-label">Rï¿½gimen Fiscal</label>
                 <input
                   type="text"
                   id="regimenFiscal"
@@ -252,14 +250,14 @@
               </div>
             </div>
 
-            <!-- SECCIÓN: DIRECCIÓN FISCAL -->
+            <!-- SECCIï¿½N: DIRECCIï¿½N FISCAL -->
             <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
-              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? Dirección Fiscal</legend>
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? Direcciï¿½n Fiscal</legend>
             </fieldset>
 
             <div class="form-grid">
               <div class="form-group" style="grid-column: 1 / -1;">
-                <label for="calle" class="form-label">Calle y Número</label>
+                <label for="calle" class="form-label">Calle y Nï¿½mero</label>
                 <input
                   type="text"
                   id="calle"
@@ -279,7 +277,7 @@
               </div>
 
               <div class="form-group">
-                <label for="cp" class="form-label">Código Postal</label>
+                <label for="cp" class="form-label">Cï¿½digo Postal</label>
                 <input
                   type="text"
                   id="cp"
@@ -295,7 +293,7 @@
                   type="text"
                   id="ciudad"
                   class="form-input"
-                  placeholder="Ej: Ciudad de México"
+                  placeholder="Ej: Ciudad de Mï¿½xico"
                 />
               </div>
 
@@ -310,7 +308,7 @@
               </div>
             </div>
 
-            <!-- SECCIÓN: CONTACTOS -->
+            <!-- SECCIï¿½N: CONTACTOS -->
             <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
               <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? Contactos</legend>
             </fieldset>
@@ -328,7 +326,7 @@
               </div>
 
               <div class="form-group">
-                <label for="telefono" class="form-label">Teléfono</label>
+                <label for="telefono" class="form-label">Telï¿½fono</label>
                 <input
                   type="tel"
                   id="telefono"
@@ -398,7 +396,7 @@
               </div>
 
               <div class="form-group">
-                <label for="telefonoCobranza" class="form-label">Teléfono</label>
+                <label for="telefonoCobranza" class="form-label">Telï¿½fono</label>
                 <input
                   type="tel"
                   id="telefonoCobranza"
@@ -418,9 +416,9 @@
               </div>
             </div>
 
-            <!-- SECCIÓN: INFORMACIÓN BANCARIA -->
+            <!-- SECCIï¿½N: INFORMACIï¿½N BANCARIA -->
             <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
-              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? Información Bancaria</legend>
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? Informaciï¿½n Bancaria</legend>
             </fieldset>
 
             <div class="form-grid">
@@ -435,12 +433,12 @@
               </div>
 
               <div class="form-group">
-                <label for="numeroCuenta" class="form-label">Número de Cuenta</label>
+                <label for="numeroCuenta" class="form-label">Nï¿½mero de Cuenta</label>
                 <input
                   type="text"
                   id="numeroCuenta"
                   class="form-input"
-                  placeholder="Últimos 4 dígitos"
+                  placeholder="ï¿½ltimos 4 dï¿½gitos"
                 />
               </div>
 
@@ -450,7 +448,7 @@
                   type="text"
                   id="clabe"
                   class="form-input"
-                  placeholder="18 dígitos"
+                  placeholder="18 dï¿½gitos"
                   maxlength="18"
                 />
               </div>
@@ -466,14 +464,14 @@
               </div>
             </div>
 
-            <!-- SECCIÓN: CONDICIONES COMERCIALES -->
+            <!-- SECCIï¿½N: CONDICIONES COMERCIALES -->
             <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
               <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? Condiciones Comerciales</legend>
             </fieldset>
 
             <div class="form-grid">
               <div class="form-group">
-                <label for="diasCredito" class="form-label">Días de Crédito</label>
+                <label for="diasCredito" class="form-label">Dï¿½as de Crï¿½dito</label>
                 <input
                   type="number"
                   id="diasCredito"
@@ -484,7 +482,7 @@
               </div>
 
               <div class="form-group">
-                <label for="limiteCredito" class="form-label">Límite de Crédito ($)</label>
+                <label for="limiteCredito" class="form-label">Lï¿½mite de Crï¿½dito ($)</label>
                 <input
                   type="number"
                   id="limiteCredito"
@@ -501,12 +499,12 @@
                   type="text"
                   id="descuentoFinanciero"
                   class="form-input"
-                  placeholder="Ej: 2% a 10 días"
+                  placeholder="Ej: 2% a 10 dï¿½as"
                 />
               </div>
 
               <div class="form-group">
-                <label for="minimoCompra" class="form-label">Mínimo de Compra ($)</label>
+                <label for="minimoCompra" class="form-label">Mï¿½nimo de Compra ($)</label>
                 <input
                   type="number"
                   id="minimoCompra"
@@ -530,7 +528,7 @@
             </div>
 
             <fieldset style="grid-column: 1 / -1; border: none; padding: 0; margin: 1.5rem 0 1rem 0;">
-              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? Configuración de Empaques</legend>
+              <legend style="font-size: 1rem; font-weight: 600; color: var(--razo-orange); margin-bottom: 0.75rem; padding: 0;">?? Configuraciï¿½n de Empaques</legend>
             </fieldset>
 
             <div class="admin-table-container" style="grid-column: 1 / -1; padding: 1rem; margin-bottom: 0.75rem;">
@@ -831,7 +829,7 @@
       async function applyReglasEmpaque(proveedorId) {
         const provId = Number.parseInt(proveedorId, 10);
         if (!Number.isInteger(provId) || provId <= 0) {
-          throw new Error("Proveedor inválido para aplicar reglas");
+          throw new Error("Proveedor invï¿½lido para aplicar reglas");
         }
 
         for (const regla of reglasEmpaque) {
@@ -1162,7 +1160,7 @@
                 }
               } catch (e) {
                 showToast(
-                  e.message || "Proveedor guardado, pero falló la aplicación de reglas de empaque",
+                  e.message || "Proveedor guardado, pero fallï¿½ la aplicaciï¿½n de reglas de empaque",
                   "error"
                 );
                 if (!editingProveedorId && proveedorIdRespuesta) {
@@ -1205,7 +1203,7 @@
         link.addEventListener("click", (e) => {
           e.preventDefault();
           const moduleName = link.querySelector("span:last-child").textContent;
-          showToast(`Módulo "${moduleName}" próximamente disponible`, "info");
+          showToast(`Mï¿½dulo "${moduleName}" prï¿½ximamente disponible`, "info");
         });
       });
 

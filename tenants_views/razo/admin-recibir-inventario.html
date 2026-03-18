@@ -3,12 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Recepción de Inventario - Admin RazoConnect</title>
+    <title>Recepciï¿½n de Inventario - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
-
-    <!-- SWEETALERT2 -->
+    
+    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!-- Core Scripts - ORDEN CRÃTICO: api.js debe cargarse primero -->
+    <script src="js/api.js" defer></script>
+    <script src="js/auth-guard-admin.js" defer></script>
+    
+
+    <!-- SWEETALERT2 -->
     <!-- EXCELJS -->
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 
@@ -16,18 +22,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
-    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
-    <script src="js/auth-guard-admin.js"></script>
-<script src="js/api.js"></script>
-
-    <!-- API Configuration -->
-    <script>
-      const API_BASE_URL = window.location.origin + '/api';
-    </script>
-
-
-
-    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <!-- PROTECCIï¿½N DE AUTENTICACIï¿½N ADMIN -->
+    <!-- SISTEMA DE RENOVACIï¿½N DE TOKENS -->
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
@@ -50,10 +46,10 @@
           <!-- Instructional Banner -->
           <div id="instructionalBanner" class="instructional-banner">
             <p>
-              ?? <strong>Recepción de Inventario:</strong> Registra la llegada de productos de tus proveedores. Selecciona la orden de compra, verifica las cantidades recibidas y asigna costos. El sistema actualizará automáticamente tu inventario disponible.
+              ?? <strong>Recepciï¿½n de Inventario:</strong> Registra la llegada de productos de tus proveedores. Selecciona la orden de compra, verifica las cantidades recibidas y asigna costos. El sistema actualizarï¿½ automï¿½ticamente tu inventario disponible.
             </p>
             <button class="instructional-banner-close" title="Cerrar">
-              ×
+              ï¿½
             </button>
           </div>
 
@@ -77,16 +73,16 @@
               <!-- Super Admin Controls -->
               <div id="superAdminControls" style="display: none; gap: 0.5rem;">
                 <button id="btnReasignarSesion" class="btn btn-sm" style="background: #3B82F6; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
-                  <i class="bi bi-arrow-left-right"></i> Reasignar Sesión
+                  <i class="bi bi-arrow-left-right"></i> Reasignar Sesiï¿½n
                 </button>
                 <button id="btnLiberarSesion" class="btn btn-sm" style="background: #DC2626; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
-                  <i class="bi bi-unlock"></i> Liberar Sesión
+                  <i class="bi bi-unlock"></i> Liberar Sesiï¿½n
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- Órdenes de Compra Pendientes -->
+          <!-- ï¿½rdenes de Compra Pendientes -->
           <section class="admin-card" style="padding: 1.25rem">
             <div
               style="
@@ -103,21 +99,21 @@
                   id="ocSearch"
                   type="text"
                   class="form-input"
-                  placeholder="Ej: 120 · Proveedor..."
+                  placeholder="Ej: 120 ï¿½ Proveedor..."
                 />
               </div>
 
               <div style="min-width: 320px; flex: 1">
                 <label for="ocSelect" class="form-label">Orden de Compra</label>
                 <select id="ocSelect" class="form-input" disabled>
-                  <option value="">Cargando órdenes…</option>
+                  <option value="">Cargando ï¿½rdenesï¿½</option>
                 </select>
               </div>
 
               <div style="display: grid; gap: 0.25rem; min-width: 240px">
                 <div style="font-size: 0.85rem; color: #6b7280">Proveedor</div>
-                <div id="ocProveedor" style="font-weight: 700; color: #111827">—</div>
-                <div id="ocMeta" style="font-size: 0.85rem; color: #6b7280">—</div>
+                <div id="ocProveedor" style="font-weight: 700; color: #111827">ï¿½</div>
+                <div id="ocMeta" style="font-size: 0.85rem; color: #6b7280">ï¿½</div>
               </div>
             </div>
           </section>
@@ -134,13 +130,13 @@
               "
             >
               <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                <h2 style="margin: 0; font-size: 1.1rem">Auditoría de Recepción</h2>
+                <h2 style="margin: 0; font-size: 1.1rem">Auditorï¿½a de Recepciï¿½n</h2>
                 <span id="tipoBadge" style="display: none;"></span>
               </div>
-              <span id="ocBadge" class="admin-badge secondary">—</span>
+              <span id="ocBadge" class="admin-badge secondary">ï¿½</span>
             </div>
 
-            <!-- Botones de Gestión de Productos -->
+            <!-- Botones de Gestiï¿½n de Productos -->
             <div id="botonesGestion" style="display: none; margin-bottom: 1rem; padding: 0.75rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
               <div style="display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap;">
                 <button id="btnAgregarProducto" type="button" class="btn btn-success" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
@@ -166,9 +162,9 @@
                   />
                 </div>
                 <div>
-                  <label for="filtroCategoria" class="form-label" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">Filtrar por Categoría</label>
+                  <label for="filtroCategoria" class="form-label" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">Filtrar por Categorï¿½a</label>
                   <select id="filtroCategoria" class="form-input" style="font-size: 0.875rem;">
-                    <option value="">Todas las categorías</option>
+                    <option value="">Todas las categorï¿½as</option>
                   </select>
                 </div>
                 <div>
@@ -232,7 +228,7 @@
                       <tr>
                         <th style="width: 60px">Imagen</th>
                         <th style="min-width: 200px">Producto</th>
-                        <th style="min-width: 110px">Categoría</th>
+                        <th style="min-width: 110px">Categorï¿½a</th>
                         <th style="min-width: 110px">Color</th>
                         <th style="min-width: 110px">Medidas</th>
                         <th style="text-align: center; width: 110px">Solicitado (pzas)</th>
@@ -257,7 +253,7 @@
               </div>
 
               <!-- Tabla 2: Productos Ya Recibidos (100% ancho) -->
-              <!-- COMENTADA - No es útil en este momento. Mostraba el progreso de recepción con emojis -->
+              <!-- COMENTADA - No es ï¿½til en este momento. Mostraba el progreso de recepciï¿½n con emojis -->
               <!--
               <div class="recepcion-panel" style="margin-bottom: 2rem;">
                 <div
@@ -271,7 +267,7 @@
                   "
                 >
                   <div style="font-weight: 800; color: #111827">
-                    Recepción de Mercancía (Confirmado)
+                    Recepciï¿½n de Mercancï¿½a (Confirmado)
                   </div>
                   <div id="recibidoBadge" class="admin-badge secondary">0 RECIBIDOS</div>
                 </div>
@@ -281,7 +277,7 @@
                       <tr>
                         <th style="width: 60px">Imagen</th>
                         <th style="min-width: 200px">Producto</th>
-                        <th style="min-width: 120px">Categoría</th>
+                        <th style="min-width: 120px">Categorï¿½a</th>
                         <th style="min-width: 120px">Color</th>
                         <th style="min-width: 150px">Dimensiones</th>
                         <th style="text-align: center; width: 140px">Total recibido (pzas)</th>
@@ -301,7 +297,7 @@
               </div>
               -->
 
-              <!-- Tabla 3: Resumen de Sesión -->
+              <!-- Tabla 3: Resumen de Sesiï¿½n -->
               <div class="recepcion-panel">
                   <div
                     style="
@@ -314,13 +310,13 @@
                     "
                   >
                     <div style="font-weight: 800; color: #111827">
-                      Resumen de Sesión
+                      Resumen de Sesiï¿½n
                     </div>
-                    <div id="sesionBadge" class="admin-badge secondary">0 ÍTEMS</div>
+                    <div id="sesionBadge" class="admin-badge secondary">0 ï¿½TEMS</div>
                   </div>
 
                   <div id="sesionEmpty" style="color: #6b7280; font-size: 0.95rem; padding: 0.75rem; border: 1px dashed rgba(107, 114, 128, 0.35); border-radius: 0.75rem;">
-                    Agrega cantidades a la sesión para finalizar la recepción en un solo paso.
+                    Agrega cantidades a la sesiï¿½n para finalizar la recepciï¿½n en un solo paso.
                   </div>
 
                   <div id="sesionTableWrap" class="table-responsive" style="display:none;">
@@ -329,7 +325,7 @@
                         <tr>
                           <th>Producto</th>
                           <th style="width: 140px;">SKU</th>
-                          <th style="width: 120px;">Categoría</th>
+                          <th style="width: 120px;">Categorï¿½a</th>
                           <th style="width: 100px;">Color</th>
                           <th style="width: 120px;">Medida</th>
                           <th style="text-align:center; width: 140px;">Cantidad (pzas)</th>
@@ -365,7 +361,7 @@
                       class="btn btn-primary w-100"
                       disabled
                     >
-                      Finalizar Recepción y Generar Cuenta por Pagar
+                      Finalizar Recepciï¿½n y Generar Cuenta por Pagar
                     </button>
                     <button
                       id="btnCerrarSesion"
@@ -375,7 +371,7 @@
                       onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(220, 38, 38, 0.4)';"
                       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(220, 38, 38, 0.3)';"
                     >
-                      <i class="bi bi-x-octagon-fill"></i> Cerrar Sesión y Marcar Pendientes como No Recibidos
+                      <i class="bi bi-x-octagon-fill"></i> Cerrar Sesiï¿½n y Marcar Pendientes como No Recibidos
                     </button>
                   </div>
                 </div>
@@ -418,7 +414,7 @@
         </div>
 
         <div style="margin-bottom: 1rem; padding: 0.75rem; background: #dbeafe; border-left: 4px solid #3b82f6; border-radius: 0.375rem;">
-          <strong>?? Información:</strong> Las cantidades se ingresan en <strong>paquetes</strong>. Cada producto muestra cuántas piezas contiene por paquete.
+          <strong>?? Informaciï¿½n:</strong> Las cantidades se ingresan en <strong>paquetes</strong>. Cada producto muestra cuï¿½ntas piezas contiene por paquete.
         </div>
 
         <div style="max-height: 500px; overflow-y: auto; margin-bottom: 1.5rem;">
@@ -428,7 +424,7 @@
                 <th style="width: 60px;">Imagen</th>
                 <th>Producto / Variante</th>
                 <th style="width: 120px;">SKU</th>
-                <th style="width: 120px;">Categoría</th>
+                <th style="width: 120px;">Categorï¿½a</th>
                 <th style="width: 80px;">Stock</th>
                 <th style="width: 120px;">Paquetes</th>
                 <th style="width: 100px;"></th>
@@ -465,7 +461,7 @@
         </div>
 
         <div style="margin-bottom: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem;">
-          <strong>?? Advertencia:</strong> Solo puedes quitar productos que NO hayan sido recibidos aún.
+          <strong>?? Advertencia:</strong> Solo puedes quitar productos que NO hayan sido recibidos aï¿½n.
         </div>
 
         <div style="max-height: 400px; overflow-y: auto; margin-bottom: 1.5rem;">
@@ -524,7 +520,7 @@
         .then(html => {
           document.getElementById('modal-optimizacion-container').innerHTML = html;
         })
-        .catch(error => console.error('Error cargando modal de optimización:', error));
+        .catch(error => console.error('Error cargando modal de optimizaciï¿½n:', error));
     </script>
     <script>
       const ocSearch = document.getElementById("ocSearch");
@@ -576,13 +572,13 @@
           (x) => String(x.detalleId) === String(detalleId)
         );
         if (!item) {
-          showToastError("No se encontró el item");
+          showToastError("No se encontrï¿½ el item");
           return;
         }
 
         const input = inputEl || (tbodyPendiente ? tbodyPendiente.querySelector(`.input-qty-recibida[data-detalle-id="${detalleId}"]`) : null);
         if (!input) {
-          showToastError("No se encontró el campo de cantidad");
+          showToastError("No se encontrï¿½ el campo de cantidad");
           return;
         }
 
@@ -591,11 +587,11 @@
         const max = Number.parseInt(input.dataset.pendiente, 10) || 0;
 
         if (!Number.isInteger(cantidad) || cantidad <= 0) {
-          showToastError("Ingresa una cantidad válida");
+          showToastError("Ingresa una cantidad vï¿½lida");
           return;
         }
 
-        // Calcular cuánto ya está en sesión para este item
+        // Calcular cuï¿½nto ya estï¿½ en sesiï¿½n para este item
         const enSesion = sesionRecepcion
           .filter((x) => String(x.detalleId) === String(item.detalleId))
           .reduce((acc, x) => acc + (Number.parseInt(x.cantidadPiezas || x.cantidad, 10) || 0), 0);
@@ -603,7 +599,7 @@
         const totalAcumulado = enSesion + cantidad;
         
         if (max > 0 && totalAcumulado > max) {
-          showToastError(`No puedes recibir más de lo solicitado. Solicitado: ${max} pzas, Ya en sesión: ${enSesion} pzas, Intentando agregar: ${cantidad} pzas`);
+          showToastError(`No puedes recibir mï¿½s de lo solicitado. Solicitado: ${max} pzas, Ya en sesiï¿½n: ${enSesion} pzas, Intentando agregar: ${cantidad} pzas`);
           return;
         }
 
@@ -632,7 +628,7 @@
           sesionRecepcion.push({
             detalleId: item.detalleId,
             varianteId: item.varianteId,
-            cantidadPiezas: cantidad,  // ? EXPLÍCITO: Son PIEZAS, no paquetes
+            cantidadPiezas: cantidad,  // ? EXPLï¿½CITO: Son PIEZAS, no paquetes
             nombreProducto: safeText(item.nombreProducto),
             sku: safeText(item.sku),
             categoria: safeText(item.categoria || 'N/A'),
@@ -643,20 +639,20 @@
           });
         }
 
-        // FEATURE 2: Mantener el valor en el input después de agregar (NO limpiar)
+        // FEATURE 2: Mantener el valor en el input despuï¿½s de agregar (NO limpiar)
         // El valor se mantiene para que el usuario vea lo que acaba de registrar
         // input.value = ''; // ? COMENTADO: Ya no limpiamos el input
         
         hasSessionData = true;
-        showToastSuccess("Agregado a sesión");
+        showToastSuccess("Agregado a sesiï¿½n");
         persistSesionRecepcion();
         renderizarTablaSesion();
         
-        // CRÍTICO: Solo actualizar el contador del item específico, NO renderizar toda la tabla
+        // CRï¿½TICO: Solo actualizar el contador del item especï¿½fico, NO renderizar toda la tabla
         // para evitar que se reseteen los valores de otros inputs
         actualizarContadorPorRecibir(item.detalleId);
         
-        // FEATURE 3: Si el producto está completamente recibido, removerlo de la tabla pendientes
+        // FEATURE 3: Si el producto estï¿½ completamente recibido, removerlo de la tabla pendientes
         const solicitadoPzas = solicitadoPzasValue(item);
         const recibidoPzas = recibidoPzasValue(item);
         const enSesionPzas = sesionRecepcion
@@ -780,7 +776,7 @@
           normalized.push({
             detalleId: base.detalleId,
             varianteId: base.varianteId,
-            cantidadPiezas: cantidadFinal,  // ? EXPLÍCITO: Son PIEZAS
+            cantidadPiezas: cantidadFinal,  // ? EXPLï¿½CITO: Son PIEZAS
             nombreProducto: safeText(base.nombreProducto),
             sku: safeText(base.sku),
             categoria: safeText(base.categoria || raw?.categoria || 'N/A'),
@@ -825,10 +821,10 @@
         const id = safeText(oc.ordenCompraId);
         const prov = safeText(oc.proveedorNombre);
         const est = safeText(oc.estatus);
-        return `OC #${id} — ${prov} (${est})`;
+        return `OC #${id} ï¿½ ${prov} (${est})`;
       };
 
-      // Función para verificar si una orden tiene sesión activa
+      // Funciï¿½n para verificar si una orden tiene sesiï¿½n activa
       const tieneSesionActiva = (ordenCompraId) => {
         try {
           const key = getRecepcionStorageKey(ordenCompraId);
@@ -862,18 +858,18 @@
         const placeholder = document.createElement("option");
         placeholder.value = "";
         placeholder.textContent = (ordenes.length + grupos.length)
-          ? "Selecciona una OC o Grupo…"
+          ? "Selecciona una OC o Grupoï¿½"
           : "No hay OCs con ese filtro";
         ocSelect.appendChild(placeholder);
 
         // Agregar grupos primero con color morado
         if (grupos.length > 0) {
           const optgroupGrupos = document.createElement("optgroup");
-          optgroupGrupos.label = "?? Grupos de Órdenes";
+          optgroupGrupos.label = "?? Grupos de ï¿½rdenes";
           for (const grupo of grupos) {
             const opt = document.createElement("option");
             opt.value = `GRUPO-${grupo.grupoid}`;
-            opt.textContent = `?? ${grupo.nombre_grupo || `Grupo #${grupo.grupoid}`} (${grupo.total_ordenes || 0} órdenes)`;
+            opt.textContent = `?? ${grupo.nombre_grupo || `Grupo #${grupo.grupoid}`} (${grupo.total_ordenes || 0} ï¿½rdenes)`;
             opt.style.color = "#8b5cf6";
             opt.style.fontWeight = "600";
             opt.dataset.esGrupo = "true";
@@ -885,18 +881,18 @@
           ocSelect.appendChild(optgroupGrupos);
         }
 
-        // Agregar órdenes individuales
+        // Agregar ï¿½rdenes individuales
         if (ordenes.length > 0) {
           const optgroupOrdenes = document.createElement("optgroup");
-          optgroupOrdenes.label = "?? Órdenes Individuales";
+          optgroupOrdenes.label = "?? ï¿½rdenes Individuales";
           for (const oc of ordenes) {
             const opt = document.createElement("option");
             opt.value = String(oc.ordenCompraId);
             
-            // Verificar si tiene sesión activa
+            // Verificar si tiene sesiï¿½n activa
             const tieneSesion = tieneSesionActiva(oc.ordenCompraId);
             
-            // Marcar visualmente las órdenes con sesión activa
+            // Marcar visualmente las ï¿½rdenes con sesiï¿½n activa
             if (tieneSesion) {
               opt.textContent = `?? ${buildOptionLabel(oc)} [En progreso]`;
               opt.style.color = "#10b981";  // Verde
@@ -921,22 +917,22 @@
 
       const loadOrdenes = async () => {
         ocSelect.disabled = true;
-        ocSelect.innerHTML = "<option value=\"\">Cargando órdenes…</option>";
+        ocSelect.innerHTML = "<option value=\"\">Cargando ï¿½rdenesï¿½</option>";
         try {
-          // Cargar órdenes individuales
+          // Cargar ï¿½rdenes individuales
           const resp = await apiCall("/admin/ordenes-compra?estatus=Pendiente,Parcial", {
             method: "GET",
           });
 
           if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudieron cargar órdenes");
+            throw new Error(resp.data?.message || "No se pudieron cargar ï¿½rdenes");
           }
 
           state.ordenes = Array.isArray(resp.data?.data?.ordenes)
             ? resp.data.data.ordenes
             : [];
 
-          // Cargar grupos de órdenes
+          // Cargar grupos de ï¿½rdenes
           try {
             const respGrupos = await apiCall("/admin/ordenes-compra/grupos", {
               method: "GET",
@@ -989,7 +985,7 @@
         } catch (error) {
           ocSelect.disabled = true;
           ocSelect.innerHTML = "<option value=\"\">Error cargando OCs</option>";
-          setEmpty(error.message || "No se pudieron cargar órdenes");
+          setEmpty(error.message || "No se pudieron cargar ï¿½rdenes");
         }
       };
 
@@ -1132,13 +1128,13 @@
           const tr = document.createElement("tr");
           tr.dataset.detalleId = String(item.detalleId);
           
-          // VISUAL INDICATOR: Aplicar color según estado de recepción
+          // VISUAL INDICATOR: Aplicar color segï¿½n estado de recepciï¿½n
           if (enSesionPzas > 0 && pendientePzas === 0) {
-            // Completamente agregado a sesión - verde tenue
+            // Completamente agregado a sesiï¿½n - verde tenue
             tr.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
             tr.style.borderLeft = "4px solid #10b981";
           } else if (enSesionPzas > 0) {
-            // Parcialmente en sesión - amarillo tenue
+            // Parcialmente en sesiï¿½n - amarillo tenue
             tr.style.backgroundColor = "rgba(245, 158, 11, 0.1)";
             tr.style.borderLeft = "4px solid #f59e0b";
           }
@@ -1216,7 +1212,7 @@
             }
           };
 
-          // Helper text que muestra conversión a paquetes
+          // Helper text que muestra conversiï¿½n a paquetes
           const helperText = document.createElement("div");
           helperText.style.cssText = "font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem; min-height: 1rem;";
           
@@ -1226,7 +1222,7 @@
               const paquetes = Math.floor(val / piezas);
               const resto = val % piezas;
               if (paquetes > 0) {
-                helperText.textContent = `˜ ${paquetes} paq${resto > 0 ? ` + ${resto} pzas` : ''}`;
+                helperText.textContent = `ï¿½ ${paquetes} paq${resto > 0 ? ` + ${resto} pzas` : ''}`;
                 helperText.style.color = "#10b981";
               } else {
                 helperText.textContent = `${val} pzas (< 1 paq)`;
@@ -1384,7 +1380,7 @@
         }
       };
 
-      // Función para actualizar el contador "Por recibir" de un item específico
+      // Funciï¿½n para actualizar el contador "Por recibir" de un item especï¿½fico
       const actualizarContadorPorRecibir = (detalleId) => {
         const item = (Array.isArray(state.items) ? state.items : []).find(
           (x) => String(x.detalleId) === String(detalleId)
@@ -1432,7 +1428,7 @@
         hasSessionData = count > 0;
 
         if (sesionBadge) {
-          sesionBadge.textContent = `${count} ÍTEMS`;
+          sesionBadge.textContent = `${count} ï¿½TEMS`;
         }
         if (lblTotalSesion) {
           lblTotalSesion.textContent = formatMoneyMx(totalMonto);
@@ -1446,7 +1442,7 @@
         }
         if (btnFinalizarRecepcion) {
           btnFinalizarRecepcion.style.display = count ? "inline-flex" : "none";
-          btnFinalizarRecepcion.textContent = `?? Finalizar Recepción y Generar Cuenta por Pagar (${count} ítems)`;
+          btnFinalizarRecepcion.textContent = `?? Finalizar Recepciï¿½n y Generar Cuenta por Pagar (${count} ï¿½tems)`;
         }
 
         if (btnConfirmarGenerarCxp) {
@@ -1454,7 +1450,7 @@
           btnConfirmarGenerarCxp.disabled = !count;
         }
 
-        // FEATURE 1: Mostrar botón de cerrar sesión SOLO si el admin está trabajando en la sesión Y hay items pendientes
+        // FEATURE 1: Mostrar botï¿½n de cerrar sesiï¿½n SOLO si el admin estï¿½ trabajando en la sesiï¿½n Y hay items pendientes
         const btnCerrarSesion = document.getElementById('btnCerrarSesion');
         if (btnCerrarSesion) {
           // Calcular si hay items pendientes de recibir
@@ -1469,15 +1465,15 @@
             return pen > 0;
           });
           
-          // CRÍTICO: Solo mostrar si NO está en modo lectura (sesionBloqueada = false significa que el admin SÍ está trabajando)
-          // Y además hay productos pendientes
+          // CRï¿½TICO: Solo mostrar si NO estï¿½ en modo lectura (sesionBloqueada = false significa que el admin Sï¿½ estï¿½ trabajando)
+          // Y ademï¿½s hay productos pendientes
           const puedeTrabajar = !sesionBloqueada;
           btnCerrarSesion.style.display = (puedeTrabajar && hasPendientes) ? "block" : "none";
         }
 
         if (sesionFloatingCounter) {
           sesionFloatingCounter.style.display = count ? "block" : "none";
-          sesionFloatingCounter.textContent = `Items en sesión: ${count} | Total: ${formatMoneyMx(totalMonto)}`;
+          sesionFloatingCounter.textContent = `Items en sesiï¿½n: ${count} | Total: ${formatMoneyMx(totalMonto)}`;
         }
 
         if (!tbodySesion) return;
@@ -1486,7 +1482,7 @@
         for (const it of items) {
           const tr = document.createElement("tr");
 
-          // Obtener información adicional del item desde state.items
+          // Obtener informaciï¿½n adicional del item desde state.items
           const itemInfo = Array.isArray(state.items) ? state.items.find(x => String(x.detalleId) === String(it.detalleId)) : null;
 
           const tdNombre = document.createElement("td");
@@ -1607,14 +1603,14 @@
           if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
             await Swal.fire({
               icon: "warning",
-              title: "Sesión Expirada",
-              text: "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+              title: "Sesiï¿½n Expirada",
+              text: "Tu sesiï¿½n ha expirado. Por favor inicia sesiï¿½n nuevamente.",
               confirmButtonColor: "#F97316",
               allowOutsideClick: false,
             });
           }
           window.location.href = "/login.html";
-          throw new Error("Sesión expirada");
+          throw new Error("Sesiï¿½n expirada");
         }
 
         return { ok: response.ok, status: response.status, data };
@@ -1647,14 +1643,14 @@
           if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
             await Swal.fire({
               icon: "warning",
-              title: "Sesión Expirada",
-              text: "Tu sesión ha expirado. Por favor inicia sesión nuevamente.",
+              title: "Sesiï¿½n Expirada",
+              text: "Tu sesiï¿½n ha expirado. Por favor inicia sesiï¿½n nuevamente.",
               confirmButtonColor: "#F97316",
               allowOutsideClick: false,
             });
           }
           window.location.href = "/login.html";
-          throw new Error("Sesión expirada");
+          throw new Error("Sesiï¿½n expirada");
         }
 
         return { ok: response.ok, status: response.status, data };
@@ -1666,11 +1662,11 @@
           return;
         }
         if (!Array.isArray(sesionRecepcion) || sesionRecepcion.length === 0) {
-          showToastError("No hay items en la sesión");
+          showToastError("No hay items en la sesiï¿½n");
           return;
         }
 
-        // Calcular totales para el modal de confirmación
+        // Calcular totales para el modal de confirmaciï¿½n
         let totalPiezasSesion = 0;
         let montoTotalSesion = 0;
         const itemsOrden = Array.isArray(state.items) ? state.items : [];
@@ -1679,7 +1675,7 @@
         let tablaResumen = '<table class="admin-table" style="margin: 1rem 0; font-size: 0.875rem;">';
         tablaResumen += '<thead><tr>';
         tablaResumen += '<th>Producto</th>';
-        tablaResumen += '<th style="text-align: center;">Piezas Sesión</th>';
+        tablaResumen += '<th style="text-align: center;">Piezas Sesiï¿½n</th>';
         tablaResumen += '<th style="text-align: center;">Total Recibido</th>';
         tablaResumen += '<th style="text-align: right;">Subtotal</th>';
         tablaResumen += '</tr></thead><tbody>';
@@ -1692,10 +1688,10 @@
           const piezasPorPaquete = Number.parseInt(itemSesion.piezasPorPaquete || itemSesion.piezasporpaquete, 10) || 1;
           const costoUnitario = Number.parseFloat(itemSesion.costoUnitario || itemSesion.costounitario) || 0;
           
-          // Cantidad ya recibida en BD (antes de esta sesión)
+          // Cantidad ya recibida en BD (antes de esta sesiï¿½n)
           const cantidadRecibidaBD = itemOC ? recibidoPzasValue(itemOC) : 0;
           
-          // Total final = Lo que ya había + Lo que acabo de picar
+          // Total final = Lo que ya habï¿½a + Lo que acabo de picar
           const totalFinal = cantidadRecibidaBD + cantidadSesion;
           
           // Calcular subtotal
@@ -1719,15 +1715,15 @@
         tablaResumen += `<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: right; color: #F97316; font-size: 1.1rem;">${formatMoneyMx(montoTotalSesion)}</td>`;
         tablaResumen += '</tr></tfoot></table>';
 
-        // Modal de confirmación con resumen
+        // Modal de confirmaciï¿½n con resumen
         const confirmacion = await Swal.fire({
-          title: '?? Confirmar Recepción',
+          title: '?? Confirmar Recepciï¿½n',
           html: `
             <div style="text-align: left;">
-              <p style="margin-bottom: 1rem; color: #6b7280;">Revisa el resumen de la recepción antes de continuar:</p>
+              <p style="margin-bottom: 1rem; color: #6b7280;">Revisa el resumen de la recepciï¿½n antes de continuar:</p>
               ${tablaResumen}
               <div style="margin-top: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem;">
-                <strong>?? Nota:</strong> Esta acción generará una Cuenta por Pagar y actualizará el inventario.
+                <strong>?? Nota:</strong> Esta acciï¿½n generarï¿½ una Cuenta por Pagar y actualizarï¿½ el inventario.
               </div>
             </div>
           `,
@@ -1743,15 +1739,15 @@
           return;
         }
 
-        // Modal para capturar remisión y archivo con sugerencia inteligente
+        // Modal para capturar remisiï¿½n y archivo con sugerencia inteligente
         const sugerenciaRemision = getSuggestedRemision();
         const lastRemision = localStorage.getItem('last_remision_code');
         
         const modal = await Swal.fire({
-          title: "?? Finalizar Recepción y Generar Cuenta por Pagar",
+          title: "?? Finalizar Recepciï¿½n y Generar Cuenta por Pagar",
           html: `
             <div style="text-align:left;">
-              <label for="swalRef" style="display:block; font-weight:700; margin-bottom:0.35rem;">Número de Remisión/Factura</label>
+              <label for="swalRef" style="display:block; font-weight:700; margin-bottom:0.35rem;">Nï¿½mero de Remisiï¿½n/Factura</label>
               <input id="swalRef" class="swal2-input" value="${sugerenciaRemision}" placeholder="Ej: REM-5002" style="margin:0;" />
               ${sugerenciaRemision ? `
                 <div style="margin-top: 0.5rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem; font-size: 0.875rem;">
@@ -1759,7 +1755,7 @@
                 </div>
               ` : ''}
               <div style="height: 0.75rem;"></div>
-              <label for="swalFile" style="display:block; font-weight:700; margin-bottom:0.35rem;">Foto de Remisión (opcional)</label>
+              <label for="swalFile" style="display:block; font-weight:700; margin-bottom:0.35rem;">Foto de Remisiï¿½n (opcional)</label>
               <input id="swalFile" type="file" class="swal2-file" accept="image/*,application/pdf" />
             </div>
           `,
@@ -1771,11 +1767,11 @@
           preConfirm: () => {
             const ref = document.getElementById("swalRef")?.value?.trim();
             if (!ref) {
-              Swal.showValidationMessage("El número de remisión/factura es obligatorio");
+              Swal.showValidationMessage("El nï¿½mero de remisiï¿½n/factura es obligatorio");
               return null;
             }
             
-            // Guardar la remisión para la próxima vez
+            // Guardar la remisiï¿½n para la prï¿½xima vez
             saveLastRemision(ref);
             
             const file = document.getElementById("swalFile")?.files?.[0] || null;
@@ -1796,7 +1792,7 @@
         }
 
         try {
-          // MISIÓN 2: Anti-double-click protection
+          // MISIï¿½N 2: Anti-double-click protection
           const btnToDisable = btnConfirmarGenerarCxp || btnFinalizarRecepcion;
           if (btnToDisable) {
             btnToDisable.disabled = true;
@@ -1807,7 +1803,7 @@
 
           const resp = await apiCallFormData("/admin/recepcion-masiva", fd);
           if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudo finalizar recepción");
+            throw new Error(resp.data?.message || "No se pudo finalizar recepciï¿½n");
           }
 
           clearSesionRecepcionStorage(state.orden.ordenCompraId);
@@ -1816,14 +1812,14 @@
           isExported = false;
           renderizarTablaSesion();
           await loadRecepcion(state.orden.ordenCompraId);
-          showToastSuccess("Recepción finalizada");
+          showToastSuccess("Recepciï¿½n finalizada");
           
-          // NO re-habilitar el botón en caso de éxito (la página se recarga)
+          // NO re-habilitar el botï¿½n en caso de ï¿½xito (la pï¿½gina se recarga)
         } catch (error) {
           console.error(error);
           showToastError(error.message || "Error al finalizar");
           
-          // Solo re-habilitar el botón si hay error
+          // Solo re-habilitar el botï¿½n si hay error
           const btnToEnable = btnConfirmarGenerarCxp || btnFinalizarRecepcion;
           if (btnToEnable) {
             btnToEnable.disabled = false;
@@ -1834,7 +1830,7 @@
         }
       };
 
-      // Variables de bloqueo de sesión
+      // Variables de bloqueo de sesiï¿½n
       let sesionBloqueada = false;
       let adminTrabajando = null;
       let esSuperAdmin = false;
@@ -1847,7 +1843,7 @@
           );
 
           if (!resp.ok) {
-            console.warn('No se pudo verificar bloqueo de sesión');
+            console.warn('No se pudo verificar bloqueo de sesiï¿½n');
             return { bloqueada: false, puedeEditar: true };
           }
 
@@ -1869,8 +1865,8 @@
           esSuperAdmin = rolNormalizado === 'superadmin';
           console.log('?? [DEBUG ROL] Es super admin:', esSuperAdmin);
           
-          // CRÍTICO: Super admin debe ver modo lectura si OTRO admin está trabajando
-          // Solo puede editar si es propietario O si la sesión está libre
+          // CRï¿½TICO: Super admin debe ver modo lectura si OTRO admin estï¿½ trabajando
+          // Solo puede editar si es propietario O si la sesiï¿½n estï¿½ libre
           sesionBloqueada = data.bloqueada && !data.esPropietario;
           adminTrabajando = data.nombreAdmin;
 
@@ -1889,7 +1885,7 @@
           );
           return resp.ok;
         } catch (error) {
-          console.error('Error bloqueando sesión:', error);
+          console.error('Error bloqueando sesiï¿½n:', error);
           return false;
         }
       };
@@ -1901,19 +1897,19 @@
             { method: "POST" }
           );
         } catch (error) {
-          console.error('Error desbloqueando sesión:', error);
+          console.error('Error desbloqueando sesiï¿½n:', error);
         }
       };
 
       const forzarLiberacion = async (ordenCompraId) => {
         try {
           const confirmacion = await Swal.fire({
-            title: '?? Forzar Liberación de Sesión',
-            html: `<p>¿Estás seguro de que deseas liberar la sesión de <strong>${adminTrabajando}</strong>?</p>
-                   <p class="text-muted" style="font-size: 0.875rem;">Esta acción permitirá que otros administradores editen esta orden.</p>`,
+            title: '?? Forzar Liberaciï¿½n de Sesiï¿½n',
+            html: `<p>ï¿½Estï¿½s seguro de que deseas liberar la sesiï¿½n de <strong>${adminTrabajando}</strong>?</p>
+                   <p class="text-muted" style="font-size: 0.875rem;">Esta acciï¿½n permitirï¿½ que otros administradores editen esta orden.</p>`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Sí, liberar sesión',
+            confirmButtonText: 'Sï¿½, liberar sesiï¿½n',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#F97316'
           });
@@ -1926,14 +1922,14 @@
           );
 
           if (resp.ok) {
-            showToastSuccess('Sesión liberada exitosamente');
+            showToastSuccess('Sesiï¿½n liberada exitosamente');
             await loadRecepcion(ordenCompraId);
           } else {
-            showToastError('No se pudo liberar la sesión');
+            showToastError('No se pudo liberar la sesiï¿½n');
           }
         } catch (error) {
-          console.error('Error forzando liberación:', error);
-          showToastError('Error al liberar sesión');
+          console.error('Error forzando liberaciï¿½n:', error);
+          showToastError('Error al liberar sesiï¿½n');
         }
       };
 
@@ -1959,7 +1955,7 @@
 
         sessionStatusBar.style.display = 'block';
 
-        // CRÍTICO: Mostrar modo lectura si OTRO admin está trabajando (incluso para super admin)
+        // CRï¿½TICO: Mostrar modo lectura si OTRO admin estï¿½ trabajando (incluso para super admin)
         if (bloqueo.bloqueada && !bloqueo.esPropietario) {
           // Modo Solo Lectura
           modeBadge.style.background = 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)';
@@ -1967,7 +1963,7 @@
           modeBadge.style.border = '2px solid #DC2626';
           modeBadge.querySelector('i').className = 'bi bi-eye';
           modeText.textContent = 'Solo Lectura';
-          sessionInfoText.innerHTML = `<strong>${bloqueo.nombreAdmin}</strong> está trabajando en esta orden`;
+          sessionInfoText.innerHTML = `<strong>${bloqueo.nombreAdmin}</strong> estï¿½ trabajando en esta orden`;
         } else {
           // Modo Operador
           modeBadge.style.background = 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)';
@@ -1975,12 +1971,12 @@
           modeBadge.style.border = '2px solid #10B981';
           modeBadge.querySelector('i').className = 'bi bi-pencil-square';
           modeText.textContent = 'Modo Operador';
-          sessionInfoText.innerHTML = 'Estás trabajando en esta orden';
+          sessionInfoText.innerHTML = 'Estï¿½s trabajando en esta orden';
         }
 
-        // Mostrar controles de super admin si hay sesión bloqueada (incluso si es propietario)
+        // Mostrar controles de super admin si hay sesiï¿½n bloqueada (incluso si es propietario)
         if (superAdminControls) {
-          // Convertir explícitamente a booleanos para evitar problemas
+          // Convertir explï¿½citamente a booleanos para evitar problemas
           const bloqueada = Boolean(bloqueo.bloqueada);
           
           console.log('?? [SUPER ADMIN CHECK]', {
@@ -1989,10 +1985,10 @@
             condicion: esSuperAdmin && bloqueada
           });
           
-          // Super admin puede reasignar cualquier sesión, incluso la propia
+          // Super admin puede reasignar cualquier sesiï¿½n, incluso la propia
           if (esSuperAdmin && bloqueada) {
             superAdminControls.style.display = 'flex';
-            console.log('? [SUPER ADMIN] Mostrando controles de reasignación');
+            console.log('? [SUPER ADMIN] Mostrando controles de reasignaciï¿½n');
           } else {
             superAdminControls.style.display = 'none';
             console.log('? [SUPER ADMIN] Ocultando controles');
@@ -2003,7 +1999,7 @@
       };
 
       const aplicarModoSoloLectura = () => {
-        // Deshabilitar todos los inputs y botones de edición
+        // Deshabilitar todos los inputs y botones de ediciï¿½n
         const inputs = document.querySelectorAll('.cantidad-hoy, input[type="number"]');
         inputs.forEach(input => input.disabled = true);
 
@@ -2023,20 +2019,20 @@
         const bannerPrevio = document.getElementById('bannerSoloLectura');
         if (bannerPrevio) bannerPrevio.remove();
 
-        // NO limpiar sesión aquí - se restaurará desde localStorage más adelante
+        // NO limpiar sesiï¿½n aquï¿½ - se restaurarï¿½ desde localStorage mï¿½s adelante
 
         try {
-          // Verificar bloqueo de sesión
+          // Verificar bloqueo de sesiï¿½n
           const bloqueo = await verificarBloqueoSesion(ordenCompraId);
 
           if (bloqueo.bloqueada && !bloqueo.esPropietario) {
-            // Sesión bloqueada por otro admin - modo solo lectura
-            console.log(`?? Sesión bloqueada por ${bloqueo.nombreAdmin}`);
+            // Sesiï¿½n bloqueada por otro admin - modo solo lectura
+            console.log(`?? Sesiï¿½n bloqueada por ${bloqueo.nombreAdmin}`);
           } else if (!bloqueo.bloqueada) {
-            // Sesión libre - intentar bloquear
+            // Sesiï¿½n libre - intentar bloquear
             await bloquearSesion(ordenCompraId);
           }
-          // Si esPropietario, ya está bloqueada por nosotros, continuar normalmente
+          // Si esPropietario, ya estï¿½ bloqueada por nosotros, continuar normalmente
 
           const resp = await apiCall(
             `/admin/ordenes-compra/${encodeURIComponent(ordenCompraId)}/recepcion`,
@@ -2044,18 +2040,18 @@
           );
 
           if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudo cargar recepción");
+            throw new Error(resp.data?.message || "No se pudo cargar recepciï¿½n");
           }
 
           state.orden = resp.data?.data?.orden || null;
           state.items = Array.isArray(resp.data?.data?.items) ? resp.data.data.items : [];
 
           if (!state.orden) {
-            setEmpty("No se encontró información de la orden");
+            setEmpty("No se encontrï¿½ informaciï¿½n de la orden");
             return;
           }
 
-          // Restaurar sesión automáticamente desde localStorage
+          // Restaurar sesiï¿½n automï¿½ticamente desde localStorage
           const ocKey = getRecepcionStorageKey(state.orden.ordenCompraId);
           if (ocKey && !ocRestorePrompted.has(ocKey)) {
             ocRestorePrompted.add(ocKey);
@@ -2067,23 +2063,23 @@
               sesionRecepcion = [];
             }
           } else if (!sesionRecepcion || sesionRecepcion.length === 0) {
-            // Si no hay sesión previa, inicializar vacía
+            // Si no hay sesiï¿½n previa, inicializar vacï¿½a
             sesionRecepcion = [];
           }
 
           if (ocProveedor) {
-            ocProveedor.textContent = safeText(state.orden.proveedorNombre || "—");
+            ocProveedor.textContent = safeText(state.orden.proveedorNombre || "ï¿½");
           }
           if (ocMeta) {
             ocMeta.textContent = `Estatus: ${safeText(state.orden.estatus)}`;
           }
           if (ocBadge) {
-            ocBadge.textContent = `OC #${safeText(state.orden.ordenCompraId)} · ${safeText(
+            ocBadge.textContent = `OC #${safeText(state.orden.ordenCompraId)} ï¿½ ${safeText(
               state.orden.estatus
             )}`;
           }
 
-          // CRUCIAL: Asegurar que las tablas estén visibles antes de renderizar
+          // CRUCIAL: Asegurar que las tablas estï¿½n visibles antes de renderizar
           if (recepcionSplit) {
             const paneles = recepcionSplit.querySelectorAll('.recepcion-panel');
             paneles.forEach(panel => {
@@ -2102,7 +2098,7 @@
             inicializarFiltros();
           }
           
-          // Mostrar botones de gestión si están disponibles
+          // Mostrar botones de gestiï¿½n si estï¿½n disponibles
           if (typeof actualizarBotonesGestion === 'function') {
             actualizarBotonesGestion();
           }
@@ -2115,7 +2111,7 @@
           }
         } catch (error) {
           console.error(error);
-          setEmpty(error.message || "Error al cargar recepción");
+          setEmpty(error.message || "Error al cargar recepciï¿½n");
         } finally {
           setLoading(false);
         }
@@ -2132,10 +2128,10 @@
         });
       }
 
-      // Desbloquear sesión al salir de la página
+      // Desbloquear sesiï¿½n al salir de la pï¿½gina
       window.addEventListener('beforeunload', () => {
         if (state.orden?.ordenCompraId && !sesionBloqueada) {
-          // Usar sendBeacon para garantizar que se envíe incluso al cerrar
+          // Usar sendBeacon para garantizar que se envï¿½e incluso al cerrar
           const token = localStorage.getItem('razoconnect_admin_token');
           const url = `/api/admin/ordenes-compra/${state.orden.ordenCompraId}/desbloquear-sesion`;
           const data = new Blob([JSON.stringify({})], { type: 'application/json' });
@@ -2175,7 +2171,7 @@
         const id = ocSelect.value;
         const selected = ocSelect.options[ocSelect.selectedIndex];
 
-        // Desbloquear sesión anterior si existe
+        // Desbloquear sesiï¿½n anterior si existe
         if (state.orden?.ordenCompraId && !sesionBloqueada) {
           await desbloquearSesion(state.orden.ordenCompraId);
         }
@@ -2183,9 +2179,9 @@
         if (!id) {
           state.orden = null;
           state.items = [];
-          if (ocProveedor) ocProveedor.textContent = "—";
-          if (ocMeta) ocMeta.textContent = "—";
-          if (ocBadge) ocBadge.textContent = "—";
+          if (ocProveedor) ocProveedor.textContent = "ï¿½";
+          if (ocMeta) ocMeta.textContent = "ï¿½";
+          if (ocBadge) ocBadge.textContent = "ï¿½";
           setEmpty("Selecciona una orden de compra para empezar.");
           return;
         }
@@ -2194,11 +2190,11 @@
         const esGrupo = selected?.dataset?.esGrupo === "true";
         
         if (esGrupo) {
-          // Es un grupo - cargar TODAS las órdenes simultáneamente
+          // Es un grupo - cargar TODAS las ï¿½rdenes simultï¿½neamente
           const grupoId = selected?.dataset?.grupoId;
           console.log('[GRUPOS] Cargando grupo completo:', grupoId);
           
-          // Limpiar cualquier recepción previa
+          // Limpiar cualquier recepciï¿½n previa
           const recepcionSplit = document.getElementById('recepcionSplit');
           if (recepcionSplit) {
             recepcionSplit.innerHTML = '';
@@ -2208,18 +2204,18 @@
           if (typeof cargarGrupoCompleto === 'function') {
             await cargarGrupoCompleto(grupoId);
           } else {
-            console.error('[GRUPOS] Función cargarGrupoCompleto no disponible');
-            setEmpty('Error: Módulo de grupos no cargado');
+            console.error('[GRUPOS] Funciï¿½n cargarGrupoCompleto no disponible');
+            setEmpty('Error: Mï¿½dulo de grupos no cargado');
           }
         } else {
           // Es una orden individual - LIMPIAR ESTADO DE GRUPO
           console.log('[GRUPOS] Cambiando a orden individual - limpiando estado de grupo');
           
-          // Llamar a la función de limpieza del módulo de grupos
+          // Llamar a la funciï¿½n de limpieza del mï¿½dulo de grupos
           if (typeof limpiarEstadoGrupo === 'function') {
             limpiarEstadoGrupo();
           } else {
-            // Fallback manual si la función no está disponible
+            // Fallback manual si la funciï¿½n no estï¿½ disponible
             const botonesGrupo = document.getElementById('botonesExportacionGrupo');
             if (botonesGrupo) {
               botonesGrupo.remove();
@@ -2232,16 +2228,16 @@
           
           // Es una orden individual
           if (ocProveedor) {
-            ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "—");
+            ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "ï¿½");
           }
           if (ocMeta) {
-            ocMeta.textContent = "—";
+            ocMeta.textContent = "ï¿½";
           }
           if (ocBadge) {
-            ocBadge.textContent = `OC #${safeText(id)} · Cargando…`;
+            ocBadge.textContent = `OC #${safeText(id)} ï¿½ Cargandoï¿½`;
           }
           
-          // loadRecepcion se encargará de limpiar y renderizar el contenedor
+          // loadRecepcion se encargarï¿½ de limpiar y renderizar el contenedor
           await loadRecepcion(id);
         }
       });
@@ -2249,7 +2245,7 @@
       loadOrdenes();
 
       // ============================================
-      // GESTIÓN DE PRODUCTOS EN LA ORDEN
+      // GESTIï¿½N DE PRODUCTOS EN LA ORDEN
       // ============================================
       
       const btnAgregarProducto = document.getElementById("btnAgregarProducto");
@@ -2263,7 +2259,7 @@
 
       let productosProveedorCache = [];
 
-      // Mostrar/Ocultar botones según el estado de la orden
+      // Mostrar/Ocultar botones segï¿½n el estado de la orden
       const actualizarBotonesGestion = () => {
         const ordenCargada = state.orden && state.orden.ordenCompraId;
         const estatusPermitido = ordenCargada && ['Pendiente', 'Parcial'].includes(state.orden.estatus);
@@ -2283,12 +2279,12 @@
           return;
         }
 
-        // Intentar obtener proveedorId de múltiples formas
+        // Intentar obtener proveedorId de mï¿½ltiples formas
         const proveedorId = currentState.orden.proveedorId || currentState.orden.proveedorid || currentState.orden.ProveedorID;
         
         if (!proveedorId) {
           showToastError("No se pudo obtener el proveedor de la orden");
-          console.error('? [ERROR] No se encontró proveedorId en:', currentState.orden);
+          console.error('? [ERROR] No se encontrï¿½ proveedorId en:', currentState.orden);
           return;
         }
 
@@ -2324,12 +2320,12 @@
         for (const variante of variantes) {
           const tr = document.createElement('tr');
           
-          // Construir descripción de la variante
+          // Construir descripciï¿½n de la variante
           const detalles = [];
           if (variante.dimensiones) detalles.push(variante.dimensiones);
           if (variante.nombremedida) detalles.push(variante.nombremedida);
           if (variante.color_nombre) detalles.push(variante.color_nombre);
-          const descripcionVariante = detalles.length > 0 ? detalles.join(' • ') : 'N/A';
+          const descripcionVariante = detalles.length > 0 ? detalles.join(' ï¿½ ') : 'N/A';
           
           // Obtener piezas por paquete y cantidad de empaque
           const piezasPorPaquete = Number.parseInt(variante.piezasporpaquete, 10) || 1;
@@ -2362,7 +2358,7 @@
                   data-empaque="${cantidadEmpaque}"
                   style="width: 80px;">
                 <small style="font-size: 0.7rem; color: #6b7280;">${piezasPorPaquete} pza${piezasPorPaquete !== 1 ? 's' : ''}/paq</small>
-                ${cantidadEmpaque > 1 ? `<small style="font-size: 0.65rem; color: #f59e0b; font-weight: 600;">Mín: ${cantidadEmpaque} paq</small>` : ''}
+                ${cantidadEmpaque > 1 ? `<small style="font-size: 0.65rem; color: #f59e0b; font-weight: 600;">Mï¿½n: ${cantidadEmpaque} paq</small>` : ''}
               </div>
             </td>
             <td style="width: 100px; text-align: center;">
@@ -2422,9 +2418,9 @@
             return;
           }
 
-          // Validar que sea múltiplo de la cantidad de empaque
+          // Validar que sea mï¿½ltiplo de la cantidad de empaque
           if (cantidad % cantidadEmpaque !== 0) {
-            showToastError(`La cantidad debe ser múltiplo de ${cantidadEmpaque} (regla de empaque del proveedor)`);
+            showToastError(`La cantidad debe ser mï¿½ltiplo de ${cantidadEmpaque} (regla de empaque del proveedor)`);
             return;
           }
 
@@ -2496,14 +2492,14 @@
             </td>
             <td><strong>${safeText(item.nombreProducto)}</strong></td>
             <td><code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(item.sku)}</code></td>
-            <td>${item.dimensiones || '—'}</td>
+            <td>${item.dimensiones || 'ï¿½'}</td>
             <td>
               ${item.colorNombre 
                 ? `<div style="display: flex; align-items: center; gap: 0.5rem;">
                      <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: ${item.colorHex || '#ccc'}; border: 1px solid #ddd;"></span>
                      <span>${safeText(item.colorNombre)}</span>
                    </div>`
-                : '—'
+                : 'ï¿½'
               }
             </td>
             <td style="text-align: center;">${solicitado} pzas</td>
@@ -2533,21 +2529,21 @@
           const item = currentState.items.find(i => String(i.detalleId) === String(detalleId));
 
           if (!item) {
-            showToastError('No se encontró el producto');
+            showToastError('No se encontrï¿½ el producto');
             return;
           }
 
           const confirmacion = await Swal.fire({
             icon: 'warning',
-            title: '¿Quitar producto de la orden?',
+            title: 'ï¿½Quitar producto de la orden?',
             html: `
-              <p>Estás a punto de quitar el siguiente producto:</p>
+              <p>Estï¿½s a punto de quitar el siguiente producto:</p>
               <p style="margin-top: 1rem;"><strong>${safeText(item.nombreProducto)}</strong></p>
               <p style="color: #6b7280;">SKU: ${safeText(item.sku)}</p>
-              <p style="margin-top: 1rem; color: #dc3545; font-weight: 600;">Esta acción no se puede deshacer.</p>
+              <p style="margin-top: 1rem; color: #dc3545; font-weight: 600;">Esta acciï¿½n no se puede deshacer.</p>
             `,
             showCancelButton: true,
-            confirmButtonText: 'Sí, quitar',
+            confirmButtonText: 'Sï¿½, quitar',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#dc3545',
             focusCancel: true
@@ -2612,7 +2608,7 @@
       });
 
       // ============================================
-      // CERRAR SESIÓN DE RECEPCIÓN
+      // CERRAR SESIï¿½N DE RECEPCIï¿½N
       // ============================================
       const btnCerrarSesion = document.getElementById('btnCerrarSesion');
 
@@ -2624,7 +2620,7 @@
           return;
         }
 
-        // Calcular cuántos productos pendientes hay
+        // Calcular cuï¿½ntos productos pendientes hay
         const items = Array.isArray(state.items) ? state.items : [];
         const pendientes = items.filter((i) => {
           const sol = solicitadoPzasValue(i);
@@ -2638,7 +2634,7 @@
 
         // Confirmar con el usuario
         const confirmacion = await Swal.fire({
-          title: '<span style="color: #DC2626; font-weight: 800;">?? Cerrar Sesión de Recepción</span>',
+          title: '<span style="color: #DC2626; font-weight: 800;">?? Cerrar Sesiï¿½n de Recepciï¿½n</span>',
           html: `
             <div style="text-align: left; padding: 0.5rem;">
               <!-- Alerta principal -->
@@ -2647,10 +2643,10 @@
                   <div style="font-size: 1.5rem;">??</div>
                   <div>
                     <p style="margin: 0 0 0.5rem 0; color: #991B1B; font-weight: 700; font-size: 0.95rem;">
-                      Esta acción marcará <strong>${pendientes.length} producto(s) pendiente(s)</strong> como <strong>NO RECIBIDOS</strong>
+                      Esta acciï¿½n marcarï¿½ <strong>${pendientes.length} producto(s) pendiente(s)</strong> como <strong>NO RECIBIDOS</strong>
                     </p>
                     <p style="margin: 0; color: #7F1D1D; font-size: 0.875rem;">
-                      Los productos se cerrarán por merma y no podrán ser recibidos posteriormente en esta orden.
+                      Los productos se cerrarï¿½n por merma y no podrï¿½n ser recibidos posteriormente en esta orden.
                     </p>
                   </div>
                 </div>
@@ -2662,7 +2658,7 @@
                   <div style="font-size: 1.25rem;">?</div>
                   <div>
                     <p style="margin: 0; color: #065F46; font-weight: 600; font-size: 0.875rem;">
-                      Los productos que ya registraste en la sesión <strong>NO se verán afectados</strong> y se procesarán normalmente.
+                      Los productos que ya registraste en la sesiï¿½n <strong>NO se verï¿½n afectados</strong> y se procesarï¿½n normalmente.
                     </p>
                   </div>
                 </div>
@@ -2676,7 +2672,7 @@
                 <textarea 
                   id="swal-motivo" 
                   class="swal2-textarea" 
-                  placeholder="Ej: Proveedor no entregó productos faltantes, mercancía dañada en tránsito, cancelación de pedido..." 
+                  placeholder="Ej: Proveedor no entregï¿½ productos faltantes, mercancï¿½a daï¿½ada en trï¿½nsito, cancelaciï¿½n de pedido..." 
                   style="width: 100%; min-height: 90px; border: 2px solid #E5E7EB; border-radius: 0.5rem; padding: 0.75rem; font-size: 0.875rem; font-family: inherit; resize: vertical;"
                 ></textarea>
               </div>
@@ -2684,14 +2680,14 @@
               <!-- Advertencia final -->
               <div style="padding: 0.75rem; background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 0.5rem; margin-top: 1rem;">
                 <p style="margin: 0; color: #92400E; font-size: 0.8rem; font-weight: 600;">
-                  ?? Esta acción es <strong>irreversible</strong>. Los productos cerrados quedarán registrados como merma en el sistema.
+                  ?? Esta acciï¿½n es <strong>irreversible</strong>. Los productos cerrados quedarï¿½n registrados como merma en el sistema.
                 </p>
               </div>
             </div>
           `,
           width: '650px',
           showCancelButton: true,
-          confirmButtonText: '<i class="bi bi-check-circle-fill"></i> Sí, cerrar sesión',
+          confirmButtonText: '<i class="bi bi-check-circle-fill"></i> Sï¿½, cerrar sesiï¿½n',
           cancelButtonText: '<i class="bi bi-x-circle"></i> Cancelar',
           confirmButtonColor: '#DC2626',
           cancelButtonColor: '#6B7280',
@@ -2703,7 +2699,7 @@
           },
           buttonsStyling: false,
           preConfirm: () => {
-            const motivo = document.getElementById('swal-motivo')?.value?.trim() || 'Sesión cerrada manualmente';
+            const motivo = document.getElementById('swal-motivo')?.value?.trim() || 'Sesiï¿½n cerrada manualmente';
             return { motivo };
           }
         });
@@ -2711,10 +2707,10 @@
         if (!confirmacion.isConfirmed) return;
 
         try {
-          console.log('?? [CERRAR SESIÓN] Iniciando cierre de sesión para OC:', currentState.orden.ordenCompraId);
+          console.log('?? [CERRAR SESIï¿½N] Iniciando cierre de sesiï¿½n para OC:', currentState.orden.ordenCompraId);
           
           Swal.fire({
-            title: 'Cerrando sesión...',
+            title: 'Cerrando sesiï¿½n...',
             text: 'Por favor espera',
             allowOutsideClick: false,
             didOpen: () => { Swal.showLoading(); }
@@ -2729,81 +2725,81 @@
             }
           );
 
-          console.log('?? [CERRAR SESIÓN] Respuesta del servidor:', resp);
+          console.log('?? [CERRAR SESIï¿½N] Respuesta del servidor:', resp);
 
           if (!resp.ok) {
-            throw new Error(resp.data?.message || 'No se pudo cerrar la sesión');
+            throw new Error(resp.data?.message || 'No se pudo cerrar la sesiï¿½n');
           }
 
-          console.log('?? [CERRAR SESIÓN] Limpiando sesión local...');
-          // Limpiar sesión local
+          console.log('?? [CERRAR SESIï¿½N] Limpiando sesiï¿½n local...');
+          // Limpiar sesiï¿½n local
           clearSesionRecepcionStorage(currentState.orden.ordenCompraId);
           sesionRecepcion = [];
           hasSessionData = false;
 
-          console.log('?? [CERRAR SESIÓN] Desbloqueando sesión...');
-          // Desbloquear la sesión para que otros puedan trabajar
+          console.log('?? [CERRAR SESIï¿½N] Desbloqueando sesiï¿½n...');
+          // Desbloquear la sesiï¿½n para que otros puedan trabajar
           try {
             await desbloquearSesion(currentState.orden.ordenCompraId);
           } catch (desbloqueoError) {
-            console.warn('?? Error al desbloquear sesión (no crítico):', desbloqueoError);
+            console.warn('?? Error al desbloquear sesiï¿½n (no crï¿½tico):', desbloqueoError);
           }
 
-          console.log('?? [CERRAR SESIÓN] Mostrando mensaje de éxito...');
+          console.log('?? [CERRAR SESIï¿½N] Mostrando mensaje de ï¿½xito...');
           await Swal.fire({
             icon: 'success',
-            title: 'Sesión Cerrada',
-            text: resp.data?.message || 'La sesión se cerró exitosamente',
+            title: 'Sesiï¿½n Cerrada',
+            text: resp.data?.message || 'La sesiï¿½n se cerrï¿½ exitosamente',
             confirmButtonColor: '#F97316'
           });
 
-          console.log('?? [CERRAR SESIÓN] Limpiando estado y UI...');
+          console.log('?? [CERRAR SESIï¿½N] Limpiando estado y UI...');
           // Limpiar completamente el estado y volver al inicio
           state.orden = null;
           state.items = [];
           sesionBloqueada = false;
           
-          // Resetear el selector de órdenes
+          // Resetear el selector de ï¿½rdenes
           if (ocSelect) {
             ocSelect.value = '';
-            console.log('?? [CERRAR SESIÓN] Selector de OC reseteado');
+            console.log('?? [CERRAR SESIï¿½N] Selector de OC reseteado');
           }
           
           // Limpiar UI
-          if (ocProveedor) ocProveedor.textContent = "—";
-          if (ocMeta) ocMeta.textContent = "—";
+          if (ocProveedor) ocProveedor.textContent = "ï¿½";
+          if (ocMeta) ocMeta.textContent = "ï¿½";
           if (ocBadge) ocBadge.textContent = "Selecciona una OC";
           
           // Ocultar secciones
           if (recepcionSplit) {
             recepcionSplit.style.display = "none";
-            console.log('?? [CERRAR SESIÓN] Sección de recepción ocultada');
+            console.log('?? [CERRAR SESIï¿½N] Secciï¿½n de recepciï¿½n ocultada');
           }
           if (botonesGestion) {
             botonesGestion.style.display = "none";
-            console.log('?? [CERRAR SESIÓN] Botones de gestión ocultados');
+            console.log('?? [CERRAR SESIï¿½N] Botones de gestiï¿½n ocultados');
           }
           
           // Limpiar tablas
           if (tbodyPendiente) tbodyPendiente.innerHTML = '';
           if (tbodySesion) tbodySesion.innerHTML = '';
           
-          console.log('?? [CERRAR SESIÓN] Renderizando tablas vacías...');
-          // Renderizar tablas vacías
+          console.log('?? [CERRAR SESIï¿½N] Renderizando tablas vacï¿½as...');
+          // Renderizar tablas vacï¿½as
           renderSplit();
           renderizarTablaSesion();
           
-          console.log('?? [CERRAR SESIÓN] Recargando lista de órdenes...');
-          // Recargar lista de órdenes para actualizar estados
+          console.log('?? [CERRAR SESIï¿½N] Recargando lista de ï¿½rdenes...');
+          // Recargar lista de ï¿½rdenes para actualizar estados
           await loadOrdenes();
           
-          console.log('? [CERRAR SESIÓN] Proceso completado exitosamente');
+          console.log('? [CERRAR SESIï¿½N] Proceso completado exitosamente');
         } catch (error) {
           console.error(error);
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: error.message || 'No se pudo cerrar la sesión',
+            text: error.message || 'No se pudo cerrar la sesiï¿½n',
             confirmButtonColor: '#F97316'
           });
         }
@@ -2814,11 +2810,11 @@
       }
 
       // ============================================
-      // REASIGNACIÓN DE SESIÓN
+      // REASIGNACIï¿½N DE SESIï¿½N
       // ============================================
       const btnReasignarSesion = document.getElementById('btnReasignarSesion');
 
-      // Función para mostrar modal de reasignación de sesión
+      // Funciï¿½n para mostrar modal de reasignaciï¿½n de sesiï¿½n
       async function mostrarModalReasignarSesion() {
         const currentState = window.recepcionState || state;
         
@@ -2880,17 +2876,17 @@
           }).join('');
 
           const result = await Swal.fire({
-            title: '<strong style="color: #1f2937;">Reasignar Sesión de Recepción</strong>',
+            title: '<strong style="color: #1f2937;">Reasignar Sesiï¿½n de Recepciï¿½n</strong>',
             html: `
               <div style="text-align: left; margin-bottom: 1rem;">
-                <p style="color: #6b7280; font-size: 0.95rem; margin: 0;">Selecciona el administrador responsable de esta sesión de recepción. El administrador recibirá una notificación y podrá continuar trabajando en esta orden de compra.</p>
+                <p style="color: #6b7280; font-size: 0.95rem; margin: 0;">Selecciona el administrador responsable de esta sesiï¿½n de recepciï¿½n. El administrador recibirï¿½ una notificaciï¿½n y podrï¿½ continuar trabajando en esta orden de compra.</p>
               </div>
               <div id="adminsContainer" style="max-height: 400px; overflow-y: auto; text-align: left;">
                 ${adminsHTML}
               </div>
             `,
             showCancelButton: true,
-            confirmButtonText: 'Reasignar Sesión',
+            confirmButtonText: 'Reasignar Sesiï¿½n',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#F97316',
             cancelButtonColor: '#6b7280',
@@ -2956,7 +2952,7 @@
         }
       }
 
-      // Función para reasignar sesión a un admin
+      // Funciï¿½n para reasignar sesiï¿½n a un admin
       async function reasignarSesionAAdmin(adminId) {
         const currentState = window.recepcionState || state;
         
@@ -2970,18 +2966,18 @@
           );
 
           if (resp.ok) {
-            showToastSuccess('Sesión reasignada exitosamente');
+            showToastSuccess('Sesiï¿½n reasignada exitosamente');
             await loadRecepcion(currentState.orden.ordenCompraId);
           } else {
-            showToastError(resp.data?.message || 'Error al reasignar sesión');
+            showToastError(resp.data?.message || 'Error al reasignar sesiï¿½n');
           }
         } catch (error) {
-          console.error('Error reasignando sesión:', error);
-          showToastError('Error al reasignar sesión');
+          console.error('Error reasignando sesiï¿½n:', error);
+          showToastError('Error al reasignar sesiï¿½n');
         }
       }
 
-      // Event listener para botón de reasignar
+      // Event listener para botï¿½n de reasignar
       if (btnReasignarSesion) {
         btnReasignarSesion.addEventListener('click', mostrarModalReasignarSesion);
       }
@@ -3109,7 +3105,7 @@
         }
       }
 
-      /* Imágenes de producto miniatura en tablas */
+      /* Imï¿½genes de producto miniatura en tablas */
       .img-mini-tabla {
         width: 40px;
         height: 40px;
@@ -3125,7 +3121,7 @@
         text-overflow: ellipsis;
       }
 
-      /* Inputs de cantidad más compactos */
+      /* Inputs de cantidad mï¿½s compactos */
       .input-mini-tabla {
         max-width: 80px;
         padding: 0.25rem 0.5rem;
@@ -3155,7 +3151,7 @@
         gap: 0;
       }
 
-      /* Optimizar celdas con más espacio horizontal */
+      /* Optimizar celdas con mï¿½s espacio horizontal */
       #tablaPendiente th,
       #tablaPendiente td,
       #tablaRecibido th,

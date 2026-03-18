@@ -5,11 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Estado de Cuenta - Detalle - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
-
+    
+    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script src="js/auth-guard-admin.js"></script>
-<script src="js/api.js"></script>
+    <!-- Core Scripts - ORDEN CRÍTICO: api.js debe cargarse primero -->
+    <script src="js/api.js" defer></script>
+    <script src="js/auth-guard-admin.js" defer></script>
+    
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />

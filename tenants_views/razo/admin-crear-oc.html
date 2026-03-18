@@ -5,25 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Crear Orden de Compra - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
-
-    <!-- SWEETALERT2 -->
+    
+    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <!-- Core Scripts - ORDEN CRÃTICO: api.js debe cargarse primero -->
+    <script src="js/api.js" defer></script>
+    <script src="js/auth-guard-admin.js" defer></script>
+    
+
+    <!-- SWEETALERT2 -->
     <!-- EXCELJS -->
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 
-    <!-- PROTECCIÓN DE AUTENTICACIÓN ADMIN -->
-    <script src="js/auth-guard-admin.js"></script>
-<script src="js/api.js"></script>
-
-    <!-- API Configuration -->
-    <script>
-      const API_BASE_URL = window.location.origin + '/api';
-    </script>
-
-
-
-    <!-- SISTEMA DE RENOVACIÓN DE TOKENS -->
+    <!-- PROTECCIï¿½N DE AUTENTICACIï¿½N ADMIN -->
+    <!-- SISTEMA DE RENOVACIï¿½N DE TOKENS -->
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
@@ -46,10 +42,10 @@
           <!-- Instructional Banner -->
           <div id="instructionalBanner" class="instructional-banner">
             <p>
-              ?? <strong>Crear Orden de Compra:</strong> Genera una nueva orden de compra manual para solicitar productos a tus proveedores. Selecciona el proveedor, agrega productos con cantidades y el sistema calculará automáticamente los totales. Puedes exportar la orden a Excel.
+              ?? <strong>Crear Orden de Compra:</strong> Genera una nueva orden de compra manual para solicitar productos a tus proveedores. Selecciona el proveedor, agrega productos con cantidades y el sistema calcularï¿½ automï¿½ticamente los totales. Puedes exportar la orden a Excel.
             </p>
             <button class="instructional-banner-close" title="Cerrar">
-              ×
+              ï¿½
             </button>
           </div>
 
@@ -59,7 +55,7 @@
             style="max-width: 1000px; margin: 0 auto"
           >
             <form id="ordenCompraForm">
-              <!-- Información General -->
+              <!-- Informaciï¿½n General -->
               <div
                 style="
                   background: #fff8f0;
@@ -84,7 +80,7 @@
                       font-size: 1.125rem;
                     "
                   >
-                    ?? Información General
+                    ?? Informaciï¿½n General
                   </h3>
                   <div
                     style="
@@ -97,7 +93,7 @@
                       font-size: 0.9rem;
                       white-space: nowrap;
                     "
-                    aria-label="Número de orden de compra"
+                    aria-label="Nï¿½mero de orden de compra"
                   >
                     OC #<span id="ocNumero">Nueva</span>
                   </div>
@@ -191,7 +187,7 @@
                         </tr>
                       </thead>
                       <tbody id="productosTableBody">
-                        <!-- Productos seleccionados aparecerán aquí -->
+                        <!-- Productos seleccionados aparecerï¿½n aquï¿½ -->
                       </tbody>
                     </table>
 
@@ -228,7 +224,7 @@
                 </div>
               </div>
 
-              <!-- Botón de exportación -->
+              <!-- Botï¿½n de exportaciï¿½n -->
               <div class="admin-content" style="margin-top: 1rem;">
                 <div class="d-flex justify-content-end" style="padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
                   <button id="btn-exportar-oc" type="button" class="btn btn-success" style="display: none;">
@@ -238,7 +234,7 @@
                 </div>
               </div>
 
-              <!-- Botones de acción -->
+              <!-- Botones de acciï¿½n -->
               <div
                 style="
                   display: flex;
@@ -331,7 +327,7 @@
           </div>
 
           <div class="modal-body">
-            <!-- Búsqueda de productos -->
+            <!-- Bï¿½squeda de productos -->
             <div class="form-group">
               <label for="buscarProducto" class="form-label"
                 >Buscar Producto</label
@@ -618,7 +614,7 @@
             const totalPiezas = p * r;
             const subtotal = c * totalPiezas;
 
-            // Intentar múltiples propiedades posibles para la imagen
+            // Intentar mï¿½ltiples propiedades posibles para la imagen
             const imagenRaw = item.url_imagen_variante || item.imagen_url || item.secure_url || item.imagen || item.url_imagen || null;
             const img = resolverImagen(imagenRaw);
             const nombre = item.nombre_completo || "(Sin nombre)";
@@ -699,7 +695,7 @@
       function actualizarCosto(index, nuevoCosto) {
         const costo = Number.parseFloat(nuevoCosto);
         if (!Number.isFinite(costo) || costo < 0) {
-          showToast("El costo debe ser un número válido", "warning");
+          showToast("El costo debe ser un nï¿½mero vï¿½lido", "warning");
           actualizarTablaProductos();
           return;
         }
@@ -730,7 +726,7 @@
         showToast(`${producto?.nombre_completo || "Producto"} eliminado de la orden`, "info");
       }
 
-      // Función helper para resolver URLs de imágenes
+      // Funciï¿½n helper para resolver URLs de imï¿½genes
       function resolverImagen(url) {
         if (!url) return '/images/default-product.png';
         if (url.startsWith('http://') || url.startsWith('https://')) return url;
@@ -747,10 +743,10 @@
 
         listaProductos.innerHTML = resultadosCompra
           .map((r) => {
-            // Diagnóstico: Ver estructura del objeto producto
+            // Diagnï¿½stico: Ver estructura del objeto producto
             console.log('Producto data:', r);
             
-            // Intentar múltiples propiedades posibles para la imagen
+            // Intentar mï¿½ltiples propiedades posibles para la imagen
             const imagenRaw = r.url_imagen_variante || r.imagen_url || r.secure_url || r.imagen || r.url_imagen || null;
             const img = resolverImagen(imagenRaw);
             const nombre = r.nombre_completo || "(Sin nombre)";
@@ -854,7 +850,7 @@
           if (!response.ok || !data.success) {
             resultadosCompra = [];
             listaProductos.innerHTML =
-              '<div style="padding: 1.25rem; text-align: center; color: var(--razo-gray-warm);">No se pudo cargar la búsqueda</div>';
+              '<div style="padding: 1.25rem; text-align: center; color: var(--razo-gray-warm);">No se pudo cargar la bï¿½squeda</div>';
             return;
           }
 
@@ -1020,7 +1016,7 @@
                   sessionStorage.setItem("_navigating", "true");
                 } catch (storageError) {
                   console.warn(
-                    "No se pudo registrar navegación en sessionStorage:",
+                    "No se pudo registrar navegaciï¿½n en sessionStorage:",
                     storageError
                   );
                 }
@@ -1045,7 +1041,7 @@
           }
         });
 
-      // Establecer fecha mínima (hoy)
+      // Establecer fecha mï¿½nima (hoy)
       const today = new Date().toISOString().split("T")[0];
       document
         .getElementById("fechaEntregaEsperada")
@@ -1065,7 +1061,7 @@
         link.addEventListener("click", (e) => {
           e.preventDefault();
           const moduleName = link.querySelector("span:last-child").textContent;
-          showToast(`Módulo "${moduleName}" próximamente disponible`, "info");
+          showToast(`Mï¿½dulo "${moduleName}" prï¿½ximamente disponible`, "info");
         });
       });
 
@@ -1095,7 +1091,7 @@
         });
       }
 
-      // Función para obtener el siguiente folio sugerido
+      // Funciï¿½n para obtener el siguiente folio sugerido
       function getSuggestedFolioOC() {
         try {
           const lastFolio = localStorage.getItem('last_folio_oc');
@@ -1112,7 +1108,7 @@
         }
       }
 
-      // Función para guardar el último folio usado
+      // Funciï¿½n para guardar el ï¿½ltimo folio usado
       function saveLastFolioOC(folio) {
         try {
           localStorage.setItem('last_folio_oc', folio);
@@ -1121,7 +1117,7 @@
         }
       }
 
-      // Función para mostrar/ocultar botón de exportación
+      // Funciï¿½n para mostrar/ocultar botï¿½n de exportaciï¿½n
       function toggleExportButton() {
         const btnExportar = document.getElementById('btn-exportar-oc');
         const proveedorId = document.getElementById('proveedorId')?.value;
@@ -1132,7 +1128,7 @@
         }
       }
 
-      // Función principal de exportación a Excel
+      // Funciï¿½n principal de exportaciï¿½n a Excel
       async function exportarExcelOC(folio) {
         if (!itemsOrdenCompra || itemsOrdenCompra.length === 0) {
           Swal.fire({
@@ -1174,15 +1170,15 @@
           worksheet.columns = [
             { key: 'A', width: 8 },    // ID
             { key: 'B', width: 18 },   // SKU
-            { key: 'C', width: 13.33 }, // Descripción parte 1
-            { key: 'D', width: 13.33 }, // Descripción parte 2
-            { key: 'E', width: 13.33 }, // Descripción parte 3
+            { key: 'C', width: 13.33 }, // Descripciï¿½n parte 1
+            { key: 'D', width: 13.33 }, // Descripciï¿½n parte 2
+            { key: 'E', width: 13.33 }, // Descripciï¿½n parte 3
             { key: 'F', width: 15 },   // Costo Unitario
             { key: 'G', width: 15 },   // Piezas Solicitadas
             { key: 'H', width: 15 }    // TOTAL
           ];
 
-          // Cargar e insertar logo (dimensiones corregidas para mantener proporción)
+          // Cargar e insertar logo (dimensiones corregidas para mantener proporciï¿½n)
           try {
             const logoResponse = await fetch('/icon/Logo_Razo.png');
             const logoBlob = await logoResponse.blob();
@@ -1205,7 +1201,7 @@
           worksheet.getRow(2).height = 20;
           worksheet.getRow(3).height = 20;
 
-          // ENCABEZADO - Fila 1: Título (C1:E1)
+          // ENCABEZADO - Fila 1: Tï¿½tulo (C1:E1)
           worksheet.mergeCells('C1:E1');
           const titleCell = worksheet.getCell('C1');
           titleCell.value = 'ORDEN DE COMPRA';
@@ -1261,13 +1257,13 @@
           const headers = [
             { col: 'A', text: '#' },
             { col: 'B', text: 'SKU' },
-            { col: 'C', text: 'Producto + Descripción', merge: true },
+            { col: 'C', text: 'Producto + Descripciï¿½n', merge: true },
             { col: 'F', text: 'Costo Unitario' },
             { col: 'G', text: 'Piezas Solicitadas' },
             { col: 'H', text: 'TOTAL' }
           ];
 
-          // Combinar celdas para Descripción (C5:E5)
+          // Combinar celdas para Descripciï¿½n (C5:E5)
           worksheet.mergeCells('C5:E5');
 
           // Aplicar estilos a encabezados
@@ -1325,7 +1321,7 @@
               right: { style: 'thin' }
             };
 
-            // Producto + Descripción (combinada en C-E)
+            // Producto + Descripciï¿½n (combinada en C-E)
             worksheet.mergeCells(`C${currentRow}:E${currentRow}`);
             const descripcionCell = worksheet.getCell(`C${currentRow}`);
             descripcionCell.value = item.nombre_completo || '';
@@ -1360,7 +1356,7 @@
               right: { style: 'thin' }
             };
 
-            // TOTAL (fórmula dinámica)
+            // TOTAL (fï¿½rmula dinï¿½mica)
             const totalCell = worksheet.getCell(`H${currentRow}`);
             totalCell.value = { formula: `F${currentRow}*G${currentRow}` };
             totalCell.numFmt = '$#,##0.00';
@@ -1397,7 +1393,7 @@
             right: { style: 'thin', color: { argb: 'FF000000' } }
           };
 
-          // Valor del TOTAL GENERAL (fórmula SUM)
+          // Valor del TOTAL GENERAL (fï¿½rmula SUM)
           const totalGeneralCell = worksheet.getCell(`H${totalRow}`);
           const firstDataRow = 6;
           const lastDataRow = currentRow - 1;
@@ -1429,7 +1425,7 @@
           a.remove();
           window.URL.revokeObjectURL(url);
 
-          // Guardar folio para próxima vez
+          // Guardar folio para prï¿½xima vez
           saveLastFolioOC(folio);
 
           Swal.fire({
@@ -1450,7 +1446,7 @@
         }
       }
 
-      // Event listener para el botón de exportación con lógica de folio
+      // Event listener para el botï¿½n de exportaciï¿½n con lï¿½gica de folio
       document.getElementById('btn-exportar-oc')?.addEventListener('click', async () => {
         if (!itemsOrdenCompra || itemsOrdenCompra.length === 0) {
           Swal.fire({
@@ -1479,7 +1475,7 @@
           title: '?? Folio de Orden de Compra',
           html: `
             <div style="text-align: left;">
-              <label for="swal-folio-oc" style="display: block; font-weight: 700; margin-bottom: 0.5rem;">Número de Folio:</label>
+              <label for="swal-folio-oc" style="display: block; font-weight: 700; margin-bottom: 0.5rem;">Nï¿½mero de Folio:</label>
               <input id="swal-folio-oc" class="swal2-input" value="${suggestedFolio}" placeholder="Ej: OC-100" style="margin: 0; width: 100%;" />
               <div style="margin-top: 0.5rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem; font-size: 0.875rem;">
                 <strong>?? Sugerencia:</strong> El siguiente folio consecutivo es <strong>${suggestedFolio}</strong>

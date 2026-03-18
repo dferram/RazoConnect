@@ -1,18 +1,22 @@
 ﻿<!DOCTYPE html>
 <html lang="es">
 <head>
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Core Scripts - ORDEN CRÍTICO: api.js debe cargarse primero -->
+    <script src="js/api.js" defer></script>
+    <script src="js/auth-guard-admin.js" defer></script>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle de Orden de Compra - RazoConnect</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="css/admin-styles.css">
-    <script src="js/auth-guard-admin.js"></script>
-    <script src="js/api.js"></script>
     <link rel="stylesheet" href="css/styles.css" />
     <script src="js/components/back-button-loader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
+    </head>
 <body data-page-title="Detalle de orden de compra">
     <div class="admin-layout">
         <div id="admin-sidebar-container"></div>
