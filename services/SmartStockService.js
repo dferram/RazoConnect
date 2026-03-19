@@ -36,10 +36,18 @@ async function determineUserContext({ userId, userRole, tenantId }) {
   );
   
   const isAdmin = roles.includes('admin');
-  const isFinanzas = roles.includes('finanzas') || roles.includes('gerente_finanzas');
-  const isInventarios = roles.includes('inventarios') || roles.includes('gerente_operaciones') || roles.includes('jefe_almacen');
-  const isAgente = roles.includes('agente');
   const isCliente = roles.includes('cliente');
+  
+  // Roles que necesitan admin_responsable_id (todos excepto super_admin, admin, cliente)
+  const rolesConAdminResponsable = [
+    'finanzas', 'gerente_finanzas',
+    'inventarios', 'gerente_operaciones', 'jefe_almacen',
+    'catalogo',
+    'compras',
+    'agente'
+  ];
+  
+  const necesitaAdminResponsable = roles.some(r => rolesConAdminResponsable.includes(r));
 
   let adminId = null;
   let clienteAdminId = null;
@@ -56,22 +64,11 @@ async function determineUserContext({ userId, userRole, tenantId }) {
     };
   }
 
-  // CASO 2: Admin regular - Su propio ID es el admin_id
-  if (isAdmin) {
-    adminId = userId;
-    return { 
-      isSuperAdmin: false, 
-      isAdmin: true, 
-      isAgente: false,
-      isCliente: false,
-      adminId, 
-      clienteAdminId: null 
-    };
-  }
-
-  // CASO 2.5: Finanzas o Inventarios - Buscar su admin responsable
-  if (isFinanzas || isInventarios) {
+  // CASO 2: Roles con admin_responsable_id (finanzas, inventarios, catalogo, compras, agente)
+  // IMPORTANTE: Verificar ANTES que admin, porque pueden tener ambos roles
+  if (necesitaAdminResponsable) {
     try {
+      // Primero intentar desde tabla administradores
       const { rows } = await db.query(
         `SELECT admin_responsable_id 
          FROM administradores 
@@ -81,12 +78,26 @@ async function determineUserContext({ userId, userRole, tenantId }) {
       
       if (rows.length > 0 && rows[0].admin_responsable_id) {
         adminId = rows[0].admin_responsable_id;
-      } else {
-        // Si no tiene admin asignado, usar su propio ID (fallback)
+      } else if (roles.includes('agente')) {
+        // Fallback para agentes: buscar en agentesdeventas
+        const agenteResult = await db.query(
+          `SELECT admin_responsable_id 
+           FROM agentesdeventas 
+           WHERE agenteid = $1 AND tenant_id = $2 AND activo = true`,
+          [userId, tenantId]
+        );
+        
+        if (agenteResult.rows.length > 0 && agenteResult.rows[0].admin_responsable_id) {
+          adminId = agenteResult.rows[0].admin_responsable_id;
+        }
+      }
+      
+      // Si no tiene admin asignado, usar su propio ID (fallback)
+      if (!adminId) {
         adminId = userId;
       }
     } catch (error) {
-      console.error('[SmartStockService] Error al obtener admin de finanzas/inventarios:', error);
+      console.error('[SmartStockService] Error al obtener admin responsable:', error);
       // Fallback: usar su propio ID
       adminId = userId;
     }
@@ -94,34 +105,20 @@ async function determineUserContext({ userId, userRole, tenantId }) {
     return { 
       isSuperAdmin: false, 
       isAdmin: true, // Tratarlos como admin para acceso a stock_admin
-      isAgente: false,
+      isAgente: roles.includes('agente'),
       isCliente: false,
       adminId, 
       clienteAdminId: null 
     };
   }
 
-  // CASO 3: Agente - Buscar su admin responsable
-  if (isAgente) {
-    try {
-      const { rows } = await db.query(
-        `SELECT admin_responsable_id 
-         FROM agentesdeventas 
-         WHERE agenteid = $1 AND tenant_id = $2 AND activo = true`,
-        [userId, tenantId]
-      );
-      
-      if (rows.length > 0 && rows[0].admin_responsable_id) {
-        adminId = rows[0].admin_responsable_id;
-      }
-    } catch (error) {
-      console.error('[SmartStockService] Error al obtener admin del agente:', error);
-    }
-
+  // CASO 3: Admin regular - Su propio ID es el admin_id
+  if (isAdmin) {
+    adminId = userId;
     return { 
       isSuperAdmin: false, 
-      isAdmin: false, 
-      isAgente: true,
+      isAdmin: true, 
+      isAgente: false,
       isCliente: false,
       adminId, 
       clienteAdminId: null 
