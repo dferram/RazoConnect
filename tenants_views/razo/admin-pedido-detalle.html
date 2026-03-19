@@ -660,9 +660,9 @@
                     id="btnSurtirPedido"
                     onclick="surtirPedidoInventarios()"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #16a34a; color: white; display: none;"
-                    title="Marcar productos como listos para surtir"
+                    title="Surtir productos con stock y enviar a finanzas"
                   >
-                    ✅ Marcar Listo
+                    📦 Surtir Pedido
                   </button>
                   <button
                     type="button"
@@ -1273,14 +1273,14 @@
                 btnSurtir.style.display = 'inline-block';
               } else if (estatusValor === 'pendiente' || estatusValor === 'confirmado' || estaParcialmenteSurtido) {
                 // Can be marked as ready - includes parcialmente_surtido for inventarios to mark remaining items
-                btnSurtir.innerHTML = '✅ Marcar Listo';
+                btnSurtir.innerHTML = '📦 Surtir Pedido';
                 btnSurtir.style.background = '#16a34a';
                 btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';
                 console.log(`✅ [PEDIDO-DETALLE] Botón Surtir visible para inventarios (estatus: ${estatusValor})`);
               } else {
                 // For any other status, show the button but indicate current state
-                btnSurtir.innerHTML = '✅ Marcar Listo';
+                btnSurtir.innerHTML = '📦 Surtir Pedido';
                 btnSurtir.style.background = '#16a34a';
                 btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';
@@ -1452,8 +1452,22 @@
                   
                   const isInventariosRole = getUserRole() === 'inventarios';
                   
+                  // Determinar si mostrar checkbox (solo para inventarios, productos con stock, no confirmados)
+                  const puedeSeleccionar = isInventariosRole && badgeText === 'CON STOCK' && (item.cantidadSurtida === 0 || !item.cantidadSurtida);
+                  
                   return `
               <div class="item-row">
+                ${puedeSeleccionar ? `
+                <div style="display: flex; align-items: center; padding: 0 0.5rem;">
+                  <input 
+                    type="checkbox" 
+                    class="producto-surtir-checkbox" 
+                    data-detalle-id="${item.detalleId}"
+                    style="width: 1.25rem; height: 1.25rem; cursor: pointer;"
+                    title="Seleccionar para surtir"
+                  />
+                </div>
+                ` : ''}
                 ${
                   item.imagenUrl
                     ? `<img src="${item.imagenUrl}" alt="${item.nombre}" class="item-image-placeholder" style="object-fit: cover; border-radius: 0.5rem;" />`
@@ -1488,9 +1502,15 @@
               )
               .join("");
 
-            document.getElementById("itemsTotal").textContent = formatCurrency(
-              pedido.montoTotal
-            );
+            // Calculate total based on role
+            let totalToShow = pedido.montoTotal;
+            if (isFinanzasRole) {
+              // Finanzas: solo mostrar total de productos con stock (no backorder)
+              totalToShow = productosToRender.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);
+              console.log(`💰 [FINANZAS] Total calculado: ${totalToShow} (solo productos con stock)`);
+            }
+            
+            document.getElementById("itemsTotal").textContent = formatCurrency(totalToShow);
 
             loadingState.style.display = "none";
             contentWrapper.style.display = "block";
@@ -1849,13 +1869,32 @@
           const btnSurtir = document.getElementById('btnSurtirPedido');
           if (!btnSurtir) return;
 
+          // Recopilar productos seleccionados (checkboxes marcados)
+          const checkboxes = document.querySelectorAll('.producto-surtir-checkbox:checked');
+          const productosSeleccionados = Array.from(checkboxes).map(cb => parseInt(cb.dataset.detalleId));
+
+          if (productosSeleccionados.length === 0) {
+            await Swal.fire({
+              icon: 'warning',
+              title: 'Selecciona productos',
+              text: 'Debes seleccionar al menos un producto con stock para surtir.',
+              confirmButtonColor: '#f59e0b'
+            });
+            return;
+          }
+
           // Confirm action
           const confirmed = await Swal.fire({
             icon: 'question',
-            title: '¿Marcar como listo?',
-            text: 'Los productos con stock se marcarán como listos para surtir. NO se reducirá el inventario hasta que finanzas confirme.',
+            title: '¿Surtir productos seleccionados?',
+            html: `
+              <p>Se enviarán <strong>${productosSeleccionados.length} producto(s)</strong> a finanzas para confirmación.</p>
+              <p style="color: #6c757d; font-size: 0.9rem; margin-top: 0.5rem;">
+                El inventario NO se reducirá hasta que finanzas confirme.
+              </p>
+            `,
             showCancelButton: true,
-            confirmButtonText: 'Sí, marcar listo',
+            confirmButtonText: 'Sí, surtir productos',
             cancelButtonText: 'Cancelar',
             confirmButtonColor: '#16a34a',
             cancelButtonColor: '#6c757d'
@@ -1865,7 +1904,7 @@
 
           const originalText = btnSurtir.innerHTML;
           btnSurtir.disabled = true;
-          btnSurtir.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Marcando...';
+          btnSurtir.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Surtiendo...';
 
           try {
             const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/surtir`, {
@@ -1873,7 +1912,10 @@
               headers: {
                 'Authorization': `Bearer ${adminToken}`,
                 'Content-Type': 'application/json'
-              }
+              },
+              body: JSON.stringify({
+                detalleIds: productosSeleccionados
+              })
             });
 
             const data = await response.json();

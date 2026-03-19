@@ -331,7 +331,10 @@ async function adjustStock({
   motivo = 'Ajuste manual',
   client = null 
 }) {
+  console.log('🔍 [SmartStock] adjustStock called:', { varianteId, cantidad, userId, userRole, tenantId, motivo });
+  
   if (!varianteId || !userId || !tenantId || cantidad === 0) {
+    console.log('❌ [SmartStock] Parámetros inválidos');
     return { 
       success: false, 
       newStock: 0, 
@@ -341,6 +344,7 @@ async function adjustStock({
 
   const dbClient = client || db;
   const context = await determineUserContext({ userId, userRole, tenantId });
+  console.log('🔍 [SmartStock] Context determined:', context);
 
   // CASO A: Super Admin - Modifica stock global
   if (context.isSuperAdmin) {
@@ -388,10 +392,22 @@ async function adjustStock({
         [varianteId, context.adminId, tenantId]
       );
 
+      console.log('🔍 [SmartStock] Stock admin check:', {
+        varianteId,
+        adminId: context.adminId,
+        tenantId,
+        existingRows: existingRows.length,
+        currentStock: existingRows.length > 0 ? existingRows[0].cantidad : 'N/A',
+        cantidadDelta: cantidad
+      });
+
       let newStock = 0;
 
       if (existingRows.length > 0) {
         // UPDATE existente
+        const currentStock = parseInt(existingRows[0].cantidad, 10);
+        console.log('🔍 [SmartStock] Actualizando stock existente:', { currentStock, delta: cantidad, willBe: currentStock + cantidad });
+        
         const { rows } = await dbClient.query(
           `UPDATE stock_admin 
            SET cantidad = GREATEST(cantidad + $1, 0)
@@ -400,8 +416,10 @@ async function adjustStock({
           [cantidad, varianteId, context.adminId, tenantId]
         );
         newStock = parseInt(rows[0].cantidad, 10);
+        console.log('✅ [SmartStock] Stock actualizado:', { newStock });
       } else {
         // INSERT nuevo registro (solo si es incremento)
+        console.log('⚠️ [SmartStock] No existe registro en stock_admin');
         if (cantidad > 0) {
           const { rows } = await dbClient.query(
             `INSERT INTO stock_admin (admin_id, variante_id, tenant_id, cantidad)
@@ -410,8 +428,10 @@ async function adjustStock({
             [context.adminId, varianteId, tenantId, cantidad]
           );
           newStock = parseInt(rows[0].cantidad, 10);
+          console.log('✅ [SmartStock] Registro creado:', { newStock });
         } else {
           // No se puede decrementar si no existe registro
+          console.log('❌ [SmartStock] No se puede decrementar - no existe registro');
           return { 
             success: false, 
             newStock: 0, 

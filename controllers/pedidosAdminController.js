@@ -429,7 +429,11 @@ const getPedidoDetalle = async (req, res) => {
         pv.productoid,
         pv.color_nombre,
         pv.color_hex,
-        pv.stock,
+        COALESCE(
+          (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND tenant_id = $2 LIMIT 1),
+          pv.stock,
+          0
+        ) as stock,
         pr.nombreproducto,
         COALESCE(
           (
@@ -701,6 +705,7 @@ const surtirPedido = async (req, res) => {
   
   try {
     const { id: pedidoId } = req.params;
+    const { detalleIds } = req.body; // Array de IDs de productos seleccionados
     const { tenant_id } = req.tenant;
     const userRole = (req.user?.rol || req.user?.role || '').toLowerCase().trim();
 
@@ -728,19 +733,44 @@ const surtirPedido = async (req, res) => {
     const pedido = pedidoResult.rows[0];
     const productosBackorder = parseInt(pedido.productos_backorder || 0);
     const totalProductos = parseInt(pedido.total_productos || 0);
-    const productosSurtidos = totalProductos - productosBackorder;
 
-    // Marcar productos con stock como surtidos (NO reduce inventario)
-    // Solo marca los productos que NO son backorder
-    const marcarSurtidosQuery = `
-      UPDATE detallesdelpedido
-      SET cantidadsurtida = cantidadpaquetes
-      WHERE pedidoid = $1 
-        AND esbackorder = false
-        AND tenant_id = $2
-    `;
+    // Marcar productos seleccionados como surtidos (NO reduce inventario)
+    let marcarResult;
     
-    await client.query(marcarSurtidosQuery, [pedidoId, tenant_id]);
+    if (detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0) {
+      // MODO SELECTIVO: Solo marcar productos específicos seleccionados por inventarios
+      const marcarSurtidosQuery = `
+        UPDATE detallesdelpedido
+        SET cantidadsurtida = cantidadpaquetes
+        WHERE pedidoid = $1 
+          AND detalleid = ANY($2::int[])
+          AND esbackorder = false
+          AND cantidadsurtida = 0
+          AND tenant_id = $3
+      `;
+      
+      marcarResult = await client.query(marcarSurtidosQuery, [pedidoId, detalleIds, tenant_id]);
+    } else {
+      // MODO LEGACY: Marcar todos los productos con stock (compatibilidad con código anterior)
+      const marcarSurtidosQuery = `
+        UPDATE detallesdelpedido
+        SET cantidadsurtida = cantidadpaquetes
+        WHERE pedidoid = $1 
+          AND esbackorder = false
+          AND cantidadsurtida = 0
+          AND tenant_id = $2
+      `;
+      
+      marcarResult = await client.query(marcarSurtidosQuery, [pedidoId, tenant_id]);
+    }
+    
+    logger.info('Productos marcados como surtidos:', {
+      pedidoId,
+      productosActualizados: marcarResult.rowCount,
+      modoSelectivo: !!(detalleIds && detalleIds.length > 0),
+      detalleIds: detalleIds || 'todos',
+      tenantId: tenant_id
+    });
 
     // Actualizar estatus del pedido a "Pendiente de Confirmación" para que finanzas lo vea
     let nuevoEstatus = 'Pendiente de Confirmación';
@@ -781,12 +811,12 @@ const surtirPedido = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Pedido enviado a finanzas para confirmación. ${productosSurtidos} producto(s) listo(s), ${productosBackorder} en backorder. Stock NO afectado hasta confirmación de finanzas.`,
+      message: `Pedido enviado a finanzas para confirmación. ${marcarResult.rowCount} producto(s) marcado(s) como listo(s), ${productosBackorder} en backorder. Stock NO afectado hasta confirmación de finanzas.`,
       data: {
         pedidoId: updateResult.rows[0].pedidoid,
         estatus: updateResult.rows[0].estatus,
         completamente_surtido: updateResult.rows[0].completamente_surtido,
-        productosSurtidos,
+        productosMarcados: marcarResult.rowCount,
         productosBackorder
       }
     });
@@ -846,11 +876,11 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     const estatusActual = (pedido.estatus || '').toLowerCase().trim();
     
     // Validar que el pedido está en estado correcto
-    if (!['listo para surtir', 'parcialmente surtido', 'parcialmente_surtido'].includes(estatusActual)) {
+    if (!['listo para surtir', 'parcialmente surtido', 'parcialmente_surtido', 'pendiente de confirmación', 'pendiente de confirmacion'].includes(estatusActual)) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        message: `No se puede confirmar. El pedido debe estar en estado "Listo para Surtir" o "Parcialmente Surtido". Estado actual: ${pedido.estatus}`
+        message: `No se puede confirmar. El pedido debe estar en estado "Listo para Surtir", "Parcialmente Surtido" o "Pendiente de Confirmación". Estado actual: ${pedido.estatus}`
       });
     }
 
@@ -885,12 +915,27 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     const motivo = `Confirmación surtido Pedido #${pedidoId}`;
     let productosConfirmados = 0;
 
+    logger.info('🔍 [DEBUG] Iniciando confirmación de surtido:', {
+      pedidoId,
+      userId,
+      tenant_id,
+      userRole: ['finanzas', 'admin'],
+      productosConStock: productosResult.rows.length
+    });
+
     // Reducir inventario solo para productos con stock
     for (const item of productosResult.rows) {
       const varianteId = parseInt(item.varianteid);
       const piezasTotales = parseInt(item.piezastotales || 0);
 
       if (piezasTotales <= 0) continue;
+
+      logger.info('🔍 [DEBUG] Procesando producto:', {
+        varianteId,
+        piezasTotales,
+        sku: item.sku,
+        nombre: item.nombreproducto
+      });
 
       try {
         await inventoryService.registrarMovimiento(client, {
@@ -899,8 +944,12 @@ const confirmarSurtidoFinanzas = async (req, res) => {
           motivo,
           usuarioId: userId,
           esExcepcion: false,
+          tenantId: tenant_id,
+          userRole: ['finanzas', 'admin'],
+          tipoOrigen: 'VENTA'
         });
         productosConfirmados++;
+        logger.info('✅ [DEBUG] Producto confirmado exitosamente:', { varianteId, productosConfirmados });
       } catch (invError) {
         await client.query('ROLLBACK');
 

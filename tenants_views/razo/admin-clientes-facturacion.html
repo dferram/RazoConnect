@@ -261,6 +261,35 @@
               <div class="spinner"></div>
             </div>
 
+            <!-- Pedidos Surtidos Section - PRIORIDAD: Mostrar primero -->
+            <div id="pedidosSurtidosSection" style="margin-bottom: 2rem;">
+              <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--razo-orange);">
+                ✅ Pedidos Surtidos <span id="countSurtidos" class="admin-badge success" style="margin-left: 0.5rem;">0</span>
+              </h3>
+              <div class="admin-table-container">
+                <div style="overflow-x: auto">
+                  <table class="admin-table" id="pedidosSurtidosTable" style="display: none">
+                    <thead>
+                      <tr>
+                        <th>Pedido</th>
+                        <th>Cliente</th>
+                        <th>Fecha</th>
+                        <th>Monto</th>
+                        <th>Estatus</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="pedidosSurtidosBody"></tbody>
+                  </table>
+                </div>
+                <div id="emptySurtidos" class="empty-state" style="display: none">
+                  <div class="empty-state-icon">📦</div>
+                  <h3 class="empty-state-title">No hay pedidos surtidos</h3>
+                  <p class="empty-state-text">Los pedidos surtidos aparecerán aquí.</p>
+                </div>
+              </div>
+            </div>
+
             <!-- Pedidos Pendientes Section -->
             <div id="pedidosPendientesSection" style="margin-bottom: 2rem;">
               <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--razo-orange);">
@@ -290,14 +319,14 @@
               </div>
             </div>
 
-            <!-- Pedidos Surtidos Section -->
-            <div id="pedidosSurtidosSection">
-              <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--razo-orange);">
-                ✅ Pedidos Surtidos <span id="countSurtidos" class="admin-badge success" style="margin-left: 0.5rem;">0</span>
+            <!-- Pedidos Históricos Section -->
+            <div id="pedidosHistoricosSection">
+              <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--razo-gray-warm);">
+                📚 Histórico <span id="countHistoricos" class="admin-badge" style="margin-left: 0.5rem; background: #6c757d;">0</span>
               </h3>
               <div class="admin-table-container">
                 <div style="overflow-x: auto">
-                  <table class="admin-table" id="pedidosSurtidosTable" style="display: none">
+                  <table class="admin-table" id="pedidosHistoricosTable" style="display: none">
                     <thead>
                       <tr>
                         <th>Pedido</th>
@@ -308,13 +337,13 @@
                         <th>Acciones</th>
                       </tr>
                     </thead>
-                    <tbody id="pedidosSurtidosBody"></tbody>
+                    <tbody id="pedidosHistoricosBody"></tbody>
                   </table>
                 </div>
-                <div id="emptySurtidos" class="empty-state" style="display: none">
-                  <div class="empty-state-icon">📦</div>
-                  <h3 class="empty-state-title">No hay pedidos surtidos</h3>
-                  <p class="empty-state-text">Los pedidos surtidos aparecerán aquí.</p>
+                <div id="emptyHistoricos" class="empty-state" style="display: none">
+                  <div class="empty-state-icon">�</div>
+                  <h3 class="empty-state-title">No hay pedidos históricos</h3>
+                  <p class="empty-state-text">Los pedidos completamente confirmados aparecerán aquí.</p>
                 </div>
               </div>
             </div>
@@ -569,23 +598,29 @@
           if (data.success) {
             const allPedidos = data.data || [];
             
-            // Separar pedidos en pendientes y surtidos
+            // Separar pedidos en 3 categorías:
+            // 1. SURTIDOS: Enviados por inventarios, esperando confirmación de finanzas (PENDIENTE DE CONFIRMACIÓN)
+            const pedidosSurtidos = allPedidos.filter(pedido => {
+              const estatus = (pedido.estatus || '').toLowerCase();
+              return ['pendiente de confirmación', 'pendiente de confirmacion'].includes(estatus);
+            });
+            
+            // 2. PENDIENTES: Pedidos confirmados/aprobados/pendientes (aún no procesados por inventarios o finanzas)
             const pedidosPendientes = allPedidos.filter(pedido => {
               const estatus = (pedido.estatus || '').toLowerCase();
               return ['pendiente', 'aprobado', 'confirmado', 'listo para surtir', 'parcialmente surtido', 'parcialmente_surtido'].includes(estatus);
             });
             
-            const pedidosSurtidos = allPedidos.filter(pedido => {
+            // 3. HISTÓRICOS: Ya confirmados completamente por finanzas (SURTIDO = confirmado por finanzas)
+            const pedidosHistoricos = allPedidos.filter(pedido => {
               const estatus = (pedido.estatus || '').toLowerCase();
-              const estaSurtido = ['surtido', 'enviado', 'entregado'].includes(estatus);
-              const estaCompletamenteSurtido = pedido.completamente_surtido === true || pedido.completamente_surtido === 1;
-              return estaSurtido && estaCompletamenteSurtido;
+              return ['surtido', 'enviado', 'entregado'].includes(estatus);
             });
             
             pedidosData = allPedidos;
             
-            console.log(`📊 [CLIENTES-FACTURACIÓN] Total: ${allPedidos.length}, Pendientes: ${pedidosPendientes.length}, Surtidos: ${pedidosSurtidos.length}`);
-            renderPedidos({ pendientes: pedidosPendientes, surtidos: pedidosSurtidos });
+            console.log(`📊 [CLIENTES-FACTURACIÓN] Total: ${allPedidos.length}, Surtidos: ${pedidosSurtidos.length}, Pendientes: ${pedidosPendientes.length}, Históricos: ${pedidosHistoricos.length}`);
+            renderPedidos({ surtidos: pedidosSurtidos, pendientes: pedidosPendientes, historicos: pedidosHistoricos });
           }
         } catch (error) {
           console.error("Error loading pedidos:", error);
@@ -596,22 +631,23 @@
       }
 
       function renderPedidos(data) {
-        const { pendientes = [], surtidos = [] } = data;
+        const { surtidos = [], pendientes = [], historicos = [] } = data;
         
         // Update counts
-        document.getElementById("countPendientes").textContent = pendientes.length;
         document.getElementById("countSurtidos").textContent = surtidos.length;
+        document.getElementById("countPendientes").textContent = pendientes.length;
+        document.getElementById("countHistoricos").textContent = historicos.length;
         
-        // Render Pendientes
-        const pendientesTable = document.getElementById("pedidosPendientesTable");
-        const pendientesBody = document.getElementById("pedidosPendientesBody");
-        const emptyPendientes = document.getElementById("emptyPendientes");
+        // Render Surtidos (PRIORIDAD: Los que inventarios envió a finanzas)
+        const surtidosTable = document.getElementById("pedidosSurtidosTable");
+        const surtidosBody = document.getElementById("pedidosSurtidosBody");
+        const emptySurtidos = document.getElementById("emptySurtidos");
         
-        if (pendientes.length === 0) {
-          pendientesTable.style.display = "none";
-          emptyPendientes.style.display = "block";
+        if (surtidos.length === 0) {
+          surtidosTable.style.display = "none";
+          emptySurtidos.style.display = "block";
         } else {
-          pendientesBody.innerHTML = pendientes.map((pedido) => {
+          surtidosBody.innerHTML = surtidos.map((pedido) => {
             const estatusBadge = getEstatusBadge(pedido.estatus);
             const fecha = new Date(pedido.fechaPedido).toLocaleDateString("es-MX");
             const monto = formatCurrency(pedido.montoTotal);
@@ -635,30 +671,28 @@
               </tr>
             `;
           }).join("");
-          pendientesTable.style.display = "table";
-          emptyPendientes.style.display = "none";
+          surtidosTable.style.display = "table";
+          emptySurtidos.style.display = "none";
         }
         
-        // Render Surtidos
-        const surtidosTable = document.getElementById("pedidosSurtidosTable");
-        const surtidosBody = document.getElementById("pedidosSurtidosBody");
-        const emptySurtidos = document.getElementById("emptySurtidos");
+        // Render Pendientes (Aún no enviados por inventarios)
+        const pendientesTable = document.getElementById("pedidosPendientesTable");
+        const pendientesBody = document.getElementById("pedidosPendientesBody");
+        const emptyPendientes = document.getElementById("emptyPendientes");
         
-        if (surtidos.length === 0) {
-          surtidosTable.style.display = "none";
-          emptySurtidos.style.display = "block";
+        if (pendientes.length === 0) {
+          pendientesTable.style.display = "none";
+          emptyPendientes.style.display = "block";
         } else {
-          surtidosBody.innerHTML = surtidos.map((pedido) => {
+          pendientesBody.innerHTML = pendientes.map((pedido) => {
             const estatusBadge = getEstatusBadge(pedido.estatus);
             const fecha = new Date(pedido.fechaPedido).toLocaleDateString("es-MX");
             const monto = formatCurrency(pedido.montoTotal);
-            const esHistorico = pedido.es_historico === true;
-            const historicoBadge = esHistorico ? '<span class="admin-badge secondary" style="margin-left: 0.5rem; font-size: 0.7rem;">📚 Histórico</span>' : '';
 
             return `
-              <tr${esHistorico ? ' style="background-color: #f9fafb;"' : ''}>
+              <tr>
                 <td>
-                  <div style="font-weight: 600; color: var(--razo-gray-dark);">#${String(pedido.pedidoId).padStart(6, "0")}${historicoBadge}</div>
+                  <div style="font-weight: 600; color: var(--razo-gray-dark);">#${String(pedido.pedidoId).padStart(6, "0")}</div>
                 </td>
                 <td>${pedido.clienteNombre || "-"}</td>
                 <td>${fecha}</td>
@@ -688,8 +722,59 @@
               </tr>
             `;
           }).join("");
-          surtidosTable.style.display = "table";
-          emptySurtidos.style.display = "none";
+          pendientesTable.style.display = "table";
+          emptyPendientes.style.display = "none";
+        }
+        
+        // Render Históricos (Ya confirmados por finanzas)
+        const historicosTable = document.getElementById("pedidosHistoricosTable");
+        const historicosBody = document.getElementById("pedidosHistoricosBody");
+        const emptyHistoricos = document.getElementById("emptyHistoricos");
+        
+        if (historicos.length === 0) {
+          historicosTable.style.display = "none";
+          emptyHistoricos.style.display = "block";
+        } else {
+          historicosBody.innerHTML = historicos.map((pedido) => {
+            const estatusBadge = getEstatusBadge(pedido.estatus);
+            const fecha = new Date(pedido.fechaPedido).toLocaleDateString("es-MX");
+            const monto = formatCurrency(pedido.montoTotal);
+
+            return `
+              <tr style="background-color: #f9fafb;">
+                <td>
+                  <div style="font-weight: 600; color: var(--razo-gray-dark);">#${String(pedido.pedidoId).padStart(6, "0")}</div>
+                </td>
+                <td>${pedido.clienteNombre || "-"}</td>
+                <td>${fecha}</td>
+                <td style="font-weight: 600;">${monto}</td>
+                <td>${estatusBadge}</td>
+                <td>
+                  <div class="action-buttons">
+                    <a class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" href="/admin-pedido-detalle.html?id=${pedido.pedidoId}" onclick="setNavigationContext('clientes-facturacion')">
+                      Ver detalle
+                    </a>
+                    <button 
+                      class="btn btn-info" 
+                      style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #17a2b8; color: white;"
+                      onclick="generarRemision(${pedido.pedidoId})"
+                      title="Generar remisión PDF">
+                      📄 Remisión
+                    </button>
+                    <button 
+                      class="btn btn-danger" 
+                      style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #dc2626; color: white;"
+                      onclick="generarFactura(${pedido.pedidoId})"
+                      title="Generar factura PDF">
+                      🧾 Factura
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join("");
+          historicosTable.style.display = "table";
+          emptyHistoricos.style.display = "none";
         }
       }
 
@@ -727,27 +812,32 @@
           return matchesId && matchesCliente && matchesHistorico && matchesFecha;
         });
 
-        // Separate into pendientes and surtidos
+        // Separate into 3 categories
+        let surtidos = filtered.filter(pedido => {
+          const estatus = (pedido.estatus || '').toLowerCase();
+          return ['pendiente de confirmación', 'pendiente de confirmacion'].includes(estatus);
+        });
+        
         let pendientes = filtered.filter(pedido => {
           const estatus = (pedido.estatus || '').toLowerCase();
           return ['pendiente', 'aprobado', 'confirmado', 'listo para surtir', 'parcialmente surtido', 'parcialmente_surtido'].includes(estatus);
         });
         
-        let surtidos = filtered.filter(pedido => {
+        let historicos = filtered.filter(pedido => {
           const estatus = (pedido.estatus || '').toLowerCase();
-          const estaSurtido = ['surtido', 'enviado', 'entregado'].includes(estatus);
-          const estaCompletamenteSurtido = pedido.completamente_surtido === true || pedido.completamente_surtido === 1;
-          return estaSurtido && estaCompletamenteSurtido;
+          return ['surtido', 'enviado', 'entregado'].includes(estatus);
         });
 
         // Apply tipo filter
         if (tipoFilter === 'pendientes') {
           surtidos = [];
+          historicos = [];
         } else if (tipoFilter === 'surtidos') {
           pendientes = [];
+          historicos = [];
         }
 
-        renderPedidos({ pendientes, surtidos });
+        renderPedidos({ surtidos, pendientes, historicos });
       }
 
       // ════════════════════════════════════════════════════════════
@@ -898,6 +988,10 @@
         const estatusMap = {
           'Pendiente': 'warning',
           'Aprobado': 'info',
+          'Confirmado': 'info',
+          'Listo para Surtir': 'primary',
+          'Parcialmente Surtido': 'warning',
+          'Pendiente de Confirmación': 'warning',
           'Surtido': 'success',
           'Enviado': 'info',
           'Entregado': 'success',
