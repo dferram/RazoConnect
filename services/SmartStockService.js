@@ -36,6 +36,8 @@ async function determineUserContext({ userId, userRole, tenantId }) {
   );
   
   const isAdmin = roles.includes('admin');
+  const isFinanzas = roles.includes('finanzas') || roles.includes('gerente_finanzas');
+  const isInventarios = roles.includes('inventarios') || roles.includes('gerente_operaciones') || roles.includes('jefe_almacen');
   const isAgente = roles.includes('agente');
   const isCliente = roles.includes('cliente');
 
@@ -60,6 +62,38 @@ async function determineUserContext({ userId, userRole, tenantId }) {
     return { 
       isSuperAdmin: false, 
       isAdmin: true, 
+      isAgente: false,
+      isCliente: false,
+      adminId, 
+      clienteAdminId: null 
+    };
+  }
+
+  // CASO 2.5: Finanzas o Inventarios - Buscar su admin responsable
+  if (isFinanzas || isInventarios) {
+    try {
+      const { rows } = await db.query(
+        `SELECT admin_responsable_id 
+         FROM administradores 
+         WHERE adminid = $1 AND tenant_id = $2 AND activo = true`,
+        [userId, tenantId]
+      );
+      
+      if (rows.length > 0 && rows[0].admin_responsable_id) {
+        adminId = rows[0].admin_responsable_id;
+      } else {
+        // Si no tiene admin asignado, usar su propio ID (fallback)
+        adminId = userId;
+      }
+    } catch (error) {
+      console.error('[SmartStockService] Error al obtener admin de finanzas/inventarios:', error);
+      // Fallback: usar su propio ID
+      adminId = userId;
+    }
+
+    return { 
+      isSuperAdmin: false, 
+      isAdmin: true, // Tratarlos como admin para acceso a stock_admin
       isAgente: false,
       isCliente: false,
       adminId, 
