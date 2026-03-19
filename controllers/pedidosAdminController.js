@@ -739,6 +739,7 @@ const surtirPedido = async (req, res) => {
     
     if (detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0) {
       // MODO SELECTIVO: Solo marcar productos específicos seleccionados por inventarios
+      // Solo productos con stock (esbackorder=false)
       const marcarSurtidosQuery = `
         UPDATE detallesdelpedido
         SET cantidadsurtida = cantidadpaquetes
@@ -775,6 +776,8 @@ const surtirPedido = async (req, res) => {
     // Actualizar estatus del pedido a "Pendiente de Confirmación" para que finanzas lo vea
     let nuevoEstatus = 'Pendiente de Confirmación';
     let completamenteSurtido = false;
+    
+    const productosSurtidos = marcarResult.rowCount;
     
     if (productosBackorder === 0) {
       // Todos los productos están listos - enviar a finanzas

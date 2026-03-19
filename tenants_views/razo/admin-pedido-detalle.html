@@ -1429,23 +1429,29 @@
                   
                   // Determinar estado del badge basado en esbackorder flag Y stock
                   const esBackorder = item.esbackorder === true || item.esbackorder === 'true';
-                  const pedidoConfirmado = pedido.estatus && (pedido.estatus.toLowerCase() === 'confirmado' || pedido.estatus.toLowerCase() === 'surtido');
+                  const cantidadSurtida = parseInt(item.cantidadSurtida || 0);
+                  const cantidadPaquetes = parseInt(item.cantidadPaquetes || 0);
+                  const productoSurtido = cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
                   
                   let badgeClass, badgeText;
-                  if (esBackorder) {
-                    // Marcado explícitamente como backorder - BAJO PEDIDO (rojo)
-                    badgeClass = 'badge-stock bajo-pedido';
-                    badgeText = 'BAJO PEDIDO';
-                  } else if (!hayStockSuficiente) {
-                    // No hay stock suficiente - BAJO PEDIDO (rojo)
-                    badgeClass = 'badge-stock bajo-pedido';
-                    badgeText = 'BAJO PEDIDO';
-                  } else if (pedidoConfirmado) {
-                    // Hay stock Y el pedido está confirmado - SURTIDO (naranja)
+                  
+                  // PRIORIDAD 1: Producto ya surtido
+                  if (productoSurtido) {
                     badgeClass = 'badge-stock surtido';
                     badgeText = 'SURTIDO';
-                  } else {
-                    // Hay stock pero el pedido NO está confirmado - CON STOCK (verde)
+                  }
+                  // PRIORIDAD 2: Marcado como backorder en el pedido (esbackorder=true)
+                  else if (esBackorder) {
+                    badgeClass = 'badge-stock bajo-pedido';
+                    badgeText = 'BAJO PEDIDO';
+                  }
+                  // PRIORIDAD 3: No hay stock suficiente
+                  else if (!hayStockSuficiente) {
+                    badgeClass = 'badge-stock bajo-pedido';
+                    badgeText = 'BAJO PEDIDO';
+                  }
+                  // PRIORIDAD 4: Hay stock y no está surtido
+                  else {
                     badgeClass = 'badge-stock con-stock';
                     badgeText = 'CON STOCK';
                   }
@@ -1457,17 +1463,6 @@
                   
                   return `
               <div class="item-row">
-                ${puedeSeleccionar ? `
-                <div style="display: flex; align-items: center; padding: 0 0.5rem;">
-                  <input 
-                    type="checkbox" 
-                    class="producto-surtir-checkbox" 
-                    data-detalle-id="${item.detalleId}"
-                    style="width: 1.25rem; height: 1.25rem; cursor: pointer;"
-                    title="Seleccionar para surtir"
-                  />
-                </div>
-                ` : ''}
                 ${
                   item.imagenUrl
                     ? `<img src="${item.imagenUrl}" alt="${item.nombre}" class="item-image-placeholder" style="object-fit: cover; border-radius: 0.5rem;" />`
@@ -1494,6 +1489,17 @@
                   <p class="item-unit-price">${
                     item.cantidadPaquetes
                   } paquetes × ${formatCurrency(item.precioPorPaquete)}</p>
+                </div>
+                ` : ''}
+                ${puedeSeleccionar ? `
+                <div style="display: flex; align-items: center; padding: 0 0.5rem;">
+                  <input 
+                    type="checkbox" 
+                    class="producto-surtir-checkbox" 
+                    data-detalle-id="${item.detalleId}"
+                    style="width: 1.25rem; height: 1.25rem; cursor: pointer;"
+                    title="Seleccionar para surtir"
+                  />
                 </div>
                 ` : ''}
               </div>
