@@ -279,6 +279,16 @@
 
   async function loadNotificationCount() {
     try {
+      // CRITICAL FIX: Role-aware notification loading
+      // Finanzas role should NOT call staff endpoints to avoid 403 errors
+      const adminData = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
+      const userRole = (adminData.rol || adminData.role || '').toString().toLowerCase().trim();
+      
+      if (userRole === 'finanzas') {
+        console.log('🚫 [HEADER] Rol finanzas - Notificaciones de staff no disponibles');
+        return;
+      }
+      
       let response;
       
       if (typeof window.AuthManager !== 'undefined') {

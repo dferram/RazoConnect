@@ -1,5 +1,7 @@
 // API Configuration
+// CRITICAL FIX: Explicitly assign to window for global access
 const API_BASE_URL = `${window.location.origin}/api`;
+window.API_BASE_URL = API_BASE_URL;
 
 // ============================================================================
 // INTEGRACIÓN CON AUTH MANAGER (Sistema Access + Refresh Tokens)
@@ -755,6 +757,9 @@ const API = {
   // Exponerapi Call genérico para uso en páginas admin
   apiCall: apiCall,
 };
+
+// CRITICAL FIX: Explicitly assign API object to window for global access
+window.API = API;
 
 /**
  * Wrapper function for fetch with automatic authentication

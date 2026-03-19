@@ -430,6 +430,9 @@ const authorizeRole = (rolesPermitidos = []) => {
 
     const rolUsuario = normalizeRole(req.user.rol);
 
+    // DEBUG: Log de acceso para diagnóstico
+    console.log('User Role:', req.user.rol, 'Accessing:', req.path);
+
     // super_admin y admin pasan SIEMPRE (backward compatible)
     if (rolUsuario === "super_admin" || rolUsuario === "admin") {
       return next();

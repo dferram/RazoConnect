@@ -1,16 +1,16 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GestiÃ³n de CategorÃ­as - Admin RazoConnect</title>
+    <title>Gestión de Categorías - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
     
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- Core Scripts - ORDEN CRÃTICO: api.js debe cargarse primero -->
-    <script src="js/api.js" defer></script>
+    <!-- Core Scripts - ORDEN CRÍTICO: api.js debe cargarse primero -->
+    <script src="js/api.js"></script>
     <script src="js/auth-guard-admin.js" defer></script>
     
 
@@ -22,7 +22,7 @@
     <link rel="stylesheet" href="css/admin.css" />
     <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
-  <body data-sidebar="admin" data-page-title="GestiÃ³n de categorÃ­as">
+  <body data-sidebar="admin" data-page-title="Gestión de categorías">
     <div class="admin-layout">
       <div id="admin-sidebar-container"></div>
 
@@ -32,14 +32,14 @@
         <div class="admin-content">
           <div id="instructionalBanner" class="instructional-banner">
             <p>
-              ğŸ’¡ <strong>GestiÃ³n de CategorÃ­as:</strong> Organiza tu catÃ¡logo de productos creando y administrando categorÃ­as.
+              ?? <strong>Gestión de Categorías:</strong> Organiza tu catálogo de productos creando y administrando categorías.
             </p>
-            <button class="instructional-banner-close" title="Cerrar">Ã—</button>
+            <button class="instructional-banner-close" title="Cerrar">×</button>
           </div>
 
           <div class="admin-table-container" style="margin-bottom: 2rem">
             <div class="admin-table-header">
-              <h2 class="admin-table-title">Agregar nueva categorÃ­a</h2>
+              <h2 class="admin-table-title">Agregar nueva categoría</h2>
             </div>
 
             <form id="categoriaForm" style="padding: 1.5rem">
@@ -49,12 +49,12 @@
               </div>
 
               <div class="form-group">
-                <label for="descripcion" class="form-label">DescripciÃ³n</label>
+                <label for="descripcion" class="form-label">Descripción</label>
                 <textarea
                   id="descripcion"
                   class="form-input"
                   rows="3"
-                  placeholder="Describe brevemente la categorÃ­a"
+                  placeholder="Describe brevemente la categoría"
                 ></textarea>
               </div>
 
@@ -77,14 +77,14 @@
 
               <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
                 <button type="reset" class="btn btn-secondary">Limpiar</button>
-                <button type="submit" class="btn btn-primary">Guardar categorÃ­a</button>
+                <button type="submit" class="btn btn-primary">Guardar categoría</button>
               </div>
             </form>
           </div>
 
           <div class="admin-table-container">
             <div class="admin-table-header">
-              <h2 class="admin-table-title">Listado de categorÃ­as</h2>
+              <h2 class="admin-table-title">Listado de categorías</h2>
             </div>
 
             <div id="loadingState" class="loading">
@@ -95,7 +95,7 @@
               <thead>
                 <tr>
                   <th>Nombre</th>
-                  <th>DescripciÃ³n</th>
+                  <th>Descripción</th>
                   <th>Imagen</th>
                   <th>Acciones</th>
                 </tr>
@@ -104,9 +104,9 @@
             </table>
 
             <div id="emptyState" class="empty-state" style="display: none">
-              <div class="empty-state-icon">ğŸ·ï¸</div>
-              <h3 class="empty-state-title">No hay categorÃ­as registradas</h3>
-              <p class="empty-state-text">Crea una categorÃ­a para iniciar la gestiÃ³n del catÃ¡logo.</p>
+              <div class="empty-state-icon">???</div>
+              <h3 class="empty-state-title">No hay categorías registradas</h3>
+              <p class="empty-state-text">Crea una categoría para iniciar la gestión del catálogo.</p>
             </div>
           </div>
         </div>

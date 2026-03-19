@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -9,8 +9,8 @@
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- Core Scripts - ORDEN CRÃTICO: api.js debe cargarse primero -->
-    <script src="js/api.js" defer></script>
+    <!-- Core Scripts - ORDEN CRÍTICO: api.js debe cargarse primero -->
+    <script src="js/api.js"></script>
     <script src="js/auth-guard-admin.js" defer></script>
     
     <link rel="stylesheet" href="css/styles.css" />
@@ -30,10 +30,10 @@
           <!-- Instructional Banner -->
           <div id="instructionalBanner" class="instructional-banner">
             <p>
-              ğŸ’¡ <strong>Reportes de Ventas:</strong> Genera reportes detallados de tus ventas por perÃ­odo. Puedes filtrar por fechas y estado para analizar el desempeÃ±o de tu negocio. Los reportes incluyen venta bruta, descuentos aplicados y venta neta.
+              ?? <strong>Reportes de Ventas:</strong> Genera reportes detallados de tus ventas por período. Puedes filtrar por fechas y estado para analizar el desempeño de tu negocio. Los reportes incluyen venta bruta, descuentos aplicados y venta neta.
             </p>
             <button class="instructional-banner-close" title="Cerrar">
-              Ã—
+              ×
             </button>
           </div>
 
@@ -194,7 +194,7 @@
                   color: var(--razo-gray-warm);
                 "
               >
-                Costo de envÃ­o total
+                Costo de envío total
               </h3>
               <p
                 id="totalCostoEnvio"
@@ -252,7 +252,7 @@
                   color: var(--razo-orange, #ff6b35);
                 "
               >
-                Detalle por lÃ­nea de pedido
+                Detalle por línea de pedido
               </h2>
               <span id="resultadosBadge" class="admin-badge secondary"
                 >0 resultados</span
@@ -278,13 +278,13 @@
                     <th>Fecha</th>
                     <th>Pedido ID</th>
                     <th>Producto maestro</th>
-                    <th>PresentaciÃ³n</th>
+                    <th>Presentación</th>
                     <th>Variante (SKU)</th>
                     <th>Venta bruta</th>
                     <th>Costo total</th>
                     <th>Ganancia bruta</th>
                     <th>Comisiones</th>
-                    <th>Costo envÃ­o</th>
+                    <th>Costo envío</th>
                     <th>Ganancia neta</th>
                   </tr>
                 </thead>
@@ -293,7 +293,7 @@
             </div>
 
             <div id="emptyReporte" class="empty-state" style="display: none">
-              <div class="empty-state-icon">ğŸ“‘</div>
+              <div class="empty-state-icon">??</div>
               <h3 class="empty-state-title">Sin resultados</h3>
               <p class="empty-state-text">
                 Ajusta los filtros de fecha y vuelve a generar el reporte.
@@ -318,7 +318,7 @@
                   color: var(--razo-orange, #ff6b35);
                 "
               >
-                Reporte de AntigÃ¼edad de Backorders
+                Reporte de Antigüedad de Backorders
               </h2>
               <span id="agingResultadosBadge" class="admin-badge secondary"
                 >0 pedidos</span
@@ -341,7 +341,7 @@
                     <th>Cliente</th>
                     <th>Fecha de Pedido</th>
                     <th>Estatus de Surtido</th>
-                    <th>DÃ­as Pendiente</th>
+                    <th>Días Pendiente</th>
                   </tr>
                 </thead>
                 <tbody id="agingTableBody"></tbody>
@@ -349,9 +349,9 @@
             </div>
 
             <div id="emptyAging" class="empty-state" style="display: none">
-              <div class="empty-state-icon">â³</div>
+              <div class="empty-state-icon">?</div>
               <h3 class="empty-state-title">Sin backorders pendientes</h3>
-              <p class="empty-state-text">Â¡Todos los pedidos estÃ¡n al dÃ­a!</p>
+              <p class="empty-state-text">¡Todos los pedidos están al día!</p>
             </div>
           </section>
         </div>

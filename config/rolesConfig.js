@@ -68,6 +68,7 @@ const ROLES_PERMISOS = {
    * BLOQUEADO: inventario, conciliacion, reportes_inventario, configuracion_sistema, productos
    */
   finanzas: {
+    finanzas: ['ver', 'read_totales'], // CRITICAL: Módulo finanzas con acción read_totales
     comisiones: ['ver', 'exportar'], // Comisiones de agentes
     validar_pagos: ['ver', 'modificar', 'aprobar', 'rechazar'], // Validación de comprobantes
     cxc: ['ver', 'crear_pago', 'exportar', 'modificar'], // Cuentas por cobrar

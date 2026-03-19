@@ -53,6 +53,7 @@ const configuracionController = require("../controllers/admin/configuracionContr
 const tamanosAdminController = require("../controllers/tamanosAdminController");
 const dashboardAdminController = require("../controllers/dashboardAdminController");
 const dashboardComprasController = require("../controllers/dashboardComprasController");
+const dashboardFinanzasController = require("../controllers/dashboardFinanzasController");
 const reportesVentasController = require("../controllers/reportesVentasController");
 const authAdminController = require("../controllers/authAdminController");
 const inventarioResumenController = require("../controllers/inventarioResumenController");
@@ -2442,6 +2443,42 @@ router.post(
   authenticate,
   authorizeRole(['super_admin', 'admin', 'compras']),
   dashboardComprasController.invalidarCacheCompras
+);
+
+/**
+ * @route   GET /api/admin/finanzas/resumen-totales
+ * @desc    Obtener resumen de totales financieros (CXC, CXP, Comisiones)
+ * @access  Private (Finanzas roles)
+ */
+router.get(
+  "/finanzas/resumen-totales",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas']),
+  dashboardFinanzasController.getFinanzasTotales
+);
+
+/**
+ * @route   POST /api/admin/finanzas/resumen-totales/invalidar-cache
+ * @desc    Invalidar caché de totales financieros
+ * @access  Private (Finanzas roles)
+ */
+router.post(
+  "/finanzas/resumen-totales/invalidar-cache",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas']),
+  dashboardFinanzasController.invalidarCacheFinanzas
+);
+
+/**
+ * @route   GET /api/admin/reportes/ventas-mes
+ * @desc    Reporte de ventas del mes actual
+ * @access  Private (Finanzas roles)
+ */
+router.get(
+  "/reportes/ventas-mes",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas']),
+  reportesVentasController.getReporteVentasPorAdmin
 );
 
 module.exports = router;

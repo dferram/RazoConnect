@@ -30,7 +30,7 @@ const securityHeaders = (req, res, next) => {
     "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com",
     "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com data:",
     "img-src 'self' data: https: blob: https://www.gstatic.com",
-    "connect-src 'self' https://accounts.google.com https://www.googleapis.com https://oauth2.googleapis.com https://api.mercadopago.com",
+    "connect-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com https://www.googleapis.com https://oauth2.googleapis.com https://api.mercadopago.com",
     "frame-src 'self' https://accounts.google.com https://www.mercadopago.com",
     "object-src 'none'",
     "base-uri 'self'",

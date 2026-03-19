@@ -299,8 +299,14 @@
     const userRole = adminData.rol ? adminData.rol.toLowerCase() : '';
     const isFinanzasRole = userRole === 'finanzas';
 
-    // Secciones bloqueadas para rol finanzas (restricción quirúrgica)
-    const blockedSectionsForFinanzas = ['ventas', 'catalogo', 'inventario', 'compras'];
+    // CRITICAL FIX: Filtro inverso para finanzas - solo mostrar secciones permitidas
+    const allowedSectionsForFinanzas = ['principal', 'finanzas', 'reportes'];
+    
+    // Items permitidos específicos para finanzas en cada sección
+    const allowedItemsForFinanzas = {
+      'finanzas': ['Comisiones', 'Validar pagos', 'Cuentas por cobrar', 'Cuentas por pagar', 'Historial Pagados'],
+      'reportes': ['Reportes'] // Solo el item principal de reportes
+    };
 
     // Generar cada sección del menú
     for (const [key, section] of Object.entries(MENU_STRUCTURE)) {
@@ -309,20 +315,29 @@
         continue;
       }
 
-      // Bloquear secciones específicas para rol finanzas
-      if (isFinanzasRole && blockedSectionsForFinanzas.includes(key)) {
+      // FILTRO QUIRÚRGICO PARA FINANZAS: Solo mostrar secciones permitidas
+      if (isFinanzasRole && !allowedSectionsForFinanzas.includes(key)) {
         continue;
       }
 
       // Filtrar items según permisos
       const visibleItems = section.items.filter(item => {
-        // FILTRO ESPECÍFICO PARA FINANZAS EN REPORTES
-        if (isFinanzasRole && key === 'reportes') {
-          // Solo mostrar el item "Reportes" principal, bloquear subopciones
-          return item.label === 'Reportes' && item.href === '/admin-reportes.html';
+        // FILTRO ESPECÍFICO PARA FINANZAS: Whitelist de items permitidos
+        if (isFinanzasRole) {
+          const allowedItems = allowedItemsForFinanzas[key];
+          if (allowedItems) {
+            // Solo mostrar items explícitamente permitidos
+            return allowedItems.includes(item.label);
+          }
+          // Para secciones sin whitelist específica (como 'principal'), mostrar todo
+          if (key === 'principal') {
+            return true;
+          }
+          // Bloquear todo lo demás
+          return false;
         }
 
-        // Items sin módulos requeridos siempre visibles
+        // Items sin módulos requeridos siempre visibles (para otros roles)
         if (!item.modules || item.modules.length === 0) {
           return true;
         }

@@ -6,11 +6,16 @@
     <title>Dashboard Admin - RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
+    <!-- CRITICAL: Emergency fallback for API_BASE_URL -->
+    <script>
+      window.API_BASE_URL = window.API_BASE_URL || window.location.origin + '/api';
+    </script>
+
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- Core Scripts - ORDEN CRÍTICO: api.js debe cargarse primero -->
-    <script src="js/api.js" defer></script>
+    <!-- Core Scripts - ORDEN CRÍTICO: api.js debe cargarse primero SIN defer -->
+    <script src="js/api.js"></script>
     <script src="js/auth-guard-admin.js" defer></script>
     <script src="js/route-guard.js" defer></script>
 
@@ -216,6 +221,9 @@
     <script src="js/dashboard-modular.js"></script>
     
     <script>
+      // CRITICAL FIX: Ensure API_BASE_URL is always available
+      window.API_BASE_URL = window.API_BASE_URL || '/api';
+      
       const adminToken = localStorage.getItem("razoconnect_admin_token");
       if (!adminToken) {
         window.location.href = "/login.html";
@@ -515,7 +523,12 @@
       }
 
       // Load recent orders (REAL DATA from database)
+      // CRITICAL FIX: Only execute if API object exists
       async function loadRecentOrders() {
+        if (typeof API === 'undefined') {
+          console.error('❌ [DASHBOARD] API no disponible, no se pueden cargar pedidos');
+          return;
+        }
         const userRole = getUserRole();
         const loadingOrders = document.getElementById("loadingOrders");
         const ordersTable = document.getElementById("ordersTable");

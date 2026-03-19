@@ -6,11 +6,18 @@
 (function() {
   'use strict';
 
-  // Validación crítica: Verificar que API esté disponible
-  if (typeof API === 'undefined') {
-    console.error('❌ [DASHBOARD] Error crítico: api.js no se cargó correctamente');
-    console.error('Verifica que <script src="js/api.js"></script> esté incluido en el HTML');
-    return;
+  // Validación crítica: Esperar a que API esté disponible
+  function waitForAPI(callback, maxAttempts = 10, attempt = 1) {
+    if (typeof API !== 'undefined' && typeof window.API !== 'undefined') {
+      console.log('✅ [DASHBOARD] API disponible, inicializando dashboard modular');
+      callback();
+    } else if (attempt < maxAttempts) {
+      console.log(`⏳ [DASHBOARD] Esperando API... (intento ${attempt}/${maxAttempts})`);
+      setTimeout(() => waitForAPI(callback, maxAttempts, attempt + 1), 100);
+    } else {
+      console.error('❌ [DASHBOARD] Error crítico: api.js no se cargó después de esperar');
+      console.error('Verifica que <script src="js/api.js"></script> esté incluido en el HTML');
+    }
   }
 
   /**
@@ -109,10 +116,10 @@
       
       if (isAllowed) {
         card.style.display = 'block';
-        console.log(`✅ [DASHBOARD] Mostrando tarjeta: ${cardId}`);
+        console.debug(`✅ [DASHBOARD] Mostrando tarjeta: ${cardId}`);
       } else {
         card.style.display = 'none';
-        console.log(`🚫 [DASHBOARD] Ocultando tarjeta: ${cardId}`);
+        console.debug(`🚫 [DASHBOARD] Ocultando tarjeta sin permiso: ${cardId}`);
       }
     });
 
@@ -318,10 +325,10 @@
 
     if (!roleConfig.fetchOrders) {
       ordersContainer.style.display = 'none';
-      console.log('🚫 [DASHBOARD] Ocultando tabla de pedidos recientes');
+      console.debug('🚫 [DASHBOARD] Ocultando tabla de pedidos recientes');
     } else {
       ordersContainer.style.display = 'block';
-      console.log('✅ [DASHBOARD] Mostrando tabla de pedidos recientes');
+      console.debug('✅ [DASHBOARD] Mostrando tabla de pedidos recientes');
     }
   }
 
@@ -482,7 +489,7 @@
       const titleElement = card.querySelector('h3');
       if (titleElement && titleElement.textContent.trim() === title) {
         card.style.display = 'none';
-        console.log(`🚫 [DASHBOARD] Card ocultada: ${title}`);
+        console.debug(`🚫 [DASHBOARD] Card ocultada: ${title}`);
       }
     });
   }
@@ -494,7 +501,7 @@
     hideCardByTitle('Cuentas por Cobrar');
     hideCardByTitle('Cuentas por Pagar');
     hideCardByTitle('Comisiones');
-    console.log('🚫 [DASHBOARD] Todas las cards financieras ocultadas');
+    console.debug('🚫 [DASHBOARD] Todas las cards financieras ocultadas');
   }
 
   /**
@@ -812,16 +819,18 @@
     console.log('✅ [DASHBOARD] Dashboard modular configurado correctamente');
   }
 
-  // Ejecutar cuando el DOM esté listo
+  // Ejecutar cuando el DOM esté listo, esperando a que API esté disponible
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initModularDashboard);
+    document.addEventListener('DOMContentLoaded', () => {
+      waitForAPI(initModularDashboard);
+    });
   } else {
-    initModularDashboard();
+    waitForAPI(initModularDashboard);
   }
 
   // Exportar para uso manual
   window.DashboardModular = {
-    init: initModularDashboard,
+    init: () => waitForAPI(initModularDashboard),
     getUserRole: getUserRole
   };
 

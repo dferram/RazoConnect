@@ -335,11 +335,17 @@ app.use((req, res, next) => {
   const tenantFolder = req.tenant?.tema || 'razo'; // Default a 'razo' si no hay tema
   const tenantPath = path.join(__dirname, 'tenants_views', tenantFolder);
   
-  // Archivos estáticos servidos desde carpeta del tenant
-  
+  // CRITICAL FIX: Properly invoke express.static middleware
   // AISLAMIENTO TOTAL: Cada tenant sirve SOLO sus propios archivos
   // Si un archivo no existe, debe dar error 404, NO cargar del otro tenant
-  express.static(tenantPath)(req, res, next);
+  const staticMiddleware = express.static(tenantPath, {
+    // Configuración para debugging
+    fallthrough: true, // Permitir que continúe al siguiente middleware si no encuentra el archivo
+    index: false, // No servir index.html automáticamente
+    redirect: false // No redirigir automáticamente
+  });
+  
+  staticMiddleware(req, res, next);
 });
 
 // Servir iconos (favicon y otros) desde la carpeta /icon

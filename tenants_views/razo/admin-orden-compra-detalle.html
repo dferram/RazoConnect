@@ -1,11 +1,11 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- Core Scripts - ORDEN CRÃTICO: api.js debe cargarse primero -->
-    <script src="js/api.js" defer></script>
+    <!-- Core Scripts - ORDEN CRÍTICO: api.js debe cargarse primero -->
+    <script src="js/api.js"></script>
     <script src="js/auth-guard-admin.js" defer></script>
     
     <meta charset="UTF-8">
@@ -29,10 +29,10 @@
             <!-- Instructional Banner -->
             <div id="instructionalBanner" class="instructional-banner">
                 <p>
-                    ðŸ’¡ <strong>Detalle de Orden de Compra:</strong> Visualiza la informaciÃ³n completa de una orden de compra (backorder). Puedes ver los productos solicitados, cantidades, proveedor, estatus y confirmar la recepciÃ³n de mercancÃ­a. Usa esta vista para dar seguimiento a cada orden.
+                    ?? <strong>Detalle de Orden de Compra:</strong> Visualiza la información completa de una orden de compra (backorder). Puedes ver los productos solicitados, cantidades, proveedor, estatus y confirmar la recepción de mercancía. Usa esta vista para dar seguimiento a cada orden.
                 </p>
                 <button class="instructional-banner-close" title="Cerrar">
-                    Ã—
+                    ×
                 </button>
             </div>
 
@@ -42,14 +42,14 @@
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="admin-dashboard.html">Dashboard</a></li>
-                            <li class="breadcrumb-item"><a href="admin-ordenes-compra.html">Ã“rdenes de Compra</a></li>
+                            <li class="breadcrumb-item"><a href="admin-ordenes-compra.html">Órdenes de Compra</a></li>
                             <li class="breadcrumb-item active" aria-current="page">Detalle</li>
                         </ol>
                     </nav>
                 </div>
             </div>
 
-            <!-- InformaciÃ³n de la OC -->
+            <!-- Información de la OC -->
             <div class="admin-stat-card mb-4" id="oc-info-card">
                 <div class="row">
                     <div class="col-md-3">
@@ -75,16 +75,16 @@
                 </div>
             </div>
 
-            <!-- Alerta de ediciÃ³n -->
+            <!-- Alerta de edición -->
             <div id="alert-editable" class="alert alert-info d-none" role="alert">
                 <i class="bi bi-info-circle"></i>
-                Esta orden estÃ¡ en estatus <strong id="alert-estatus-text"></strong> y puede ser editada. 
+                Esta orden está en estatus <strong id="alert-estatus-text"></strong> y puede ser editada. 
                 Puedes agregar, modificar o eliminar productos antes de recibir el inventario.
             </div>
 
             <div id="alert-no-editable" class="alert alert-warning d-none" role="alert">
                 <i class="bi bi-exclamation-triangle"></i>
-                Esta orden no puede ser editada porque ya estÃ¡ en estatus <strong id="alert-estatus-no-edit"></strong>.
+                Esta orden no puede ser editada porque ya está en estatus <strong id="alert-estatus-no-edit"></strong>.
             </div>
 
             <!-- Tabla de productos -->
@@ -221,11 +221,11 @@
     <script src="js/admin-orden-compra-detalle.js"></script>
     
     <script>
-      // Cargar botÃ³n de volver
+      // Cargar botón de volver
       window.addEventListener('DOMContentLoaded', function() {
         loadBackButton({
           backUrl: '/admin-ordenes-compra.html',
-          backText: 'Volver a Ã“rdenes de Compra'
+          backText: 'Volver a Órdenes de Compra'
         });
       });
     </script>

@@ -35,25 +35,47 @@
   try {
     // 1. Cargar permisos del usuario
     console.log('📥 Cargando permisos del usuario...');
-    const permissions = await window.PermissionsManager.loadPermissions();
+    let permissions = null;
+    
+    try {
+      permissions = await window.PermissionsManager.loadPermissions();
+    } catch (loadError) {
+      console.error('❌ Error crítico al cargar permisos:', loadError);
+      console.warn('⚠️ Continuando con permisos limitados para evitar bloqueo de UI');
+      // Don't return - allow UI to load with limited functionality
+    }
 
     if (!permissions) {
       console.warn('⚠️ No se pudieron cargar los permisos. Algunas funciones pueden no estar disponibles.');
-      return;
+      // Don't return - allow page to load
+    } else {
+      const rol = window.PermissionsManager.getRol();
+      console.log(`✅ Permisos cargados para rol: ${rol}`);
+      
+      // CRITICAL FIX: Safely handle permissions object
+      try {
+        const permKeys = permissions && typeof permissions === 'object' 
+          ? Object.keys(permissions) 
+          : [];
+        console.log('📋 Módulos disponibles:', permKeys);
+      } catch (e) {
+        console.warn('⚠️ Error al procesar módulos de permisos:', e);
+      }
     }
-
-    const rol = window.PermissionsManager.getRol();
-    console.log(`✅ Permisos cargados para rol: ${rol}`);
-    console.log('📋 Módulos disponibles:', Object.keys(permissions));
 
     // 2. Inicializar ActionButtonsManager
     if (window.ActionButtonsManager) {
-      await window.ActionButtonsManager.initialize();
-      
-      // Procesar botones después de un pequeño delay para asegurar que el DOM esté listo
-      setTimeout(() => {
-        window.ActionButtonsManager.processAllButtons();
-      }, 100);
+      try {
+        await window.ActionButtonsManager.initialize();
+        
+        // Procesar botones después de un pequeño delay para asegurar que el DOM esté listo
+        setTimeout(() => {
+          window.ActionButtonsManager.processAllButtons();
+        }, 100);
+      } catch (btnError) {
+        console.error('❌ Error al inicializar ActionButtonsManager:', btnError);
+        // Continue - don't break the page
+      }
     }
 
     // 3. Disparar evento personalizado para que otras partes de la app sepan que los permisos están listos

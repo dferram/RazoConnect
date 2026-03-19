@@ -62,7 +62,13 @@ class PermissionsManager {
       const data = await response.json();
       
       if (data.success && data.permisos) {
-        this.permissions = data.permisos;
+        // CRITICAL FIX: Handle permissions that may come as object with data property
+        // Backend might return {data: [...]} instead of direct array
+        const permsList = Array.isArray(data.permisos) 
+          ? data.permisos 
+          : (data.permisos?.data || data.permisos);
+        
+        this.permissions = permsList;
         this.rol = data.rol;
         this.lastUpdate = Date.now();
         
