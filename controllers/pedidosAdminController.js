@@ -697,7 +697,7 @@ const confirmarPedido = async (req, res) => {
  * POST /api/admin/pedidos/:id/surtir
  */
 const surtirPedido = async (req, res) => {
-  const client = await db.connect();
+  const client = await db.getClient();
   
   try {
     const { id: pedidoId } = req.params;
@@ -742,17 +742,17 @@ const surtirPedido = async (req, res) => {
     
     await client.query(marcarSurtidosQuery, [pedidoId, tenant_id]);
 
-    // Actualizar estatus del pedido a "Listo para Surtir" o "Parcialmente Surtido"
-    let nuevoEstatus = 'Listo para Surtir';
+    // Actualizar estatus del pedido a "Pendiente de Confirmación" para que finanzas lo vea
+    let nuevoEstatus = 'Pendiente de Confirmación';
     let completamenteSurtido = false;
     
     if (productosBackorder === 0) {
-      // Todos los productos están listos
-      nuevoEstatus = 'Listo para Surtir';
+      // Todos los productos están listos - enviar a finanzas
+      nuevoEstatus = 'Pendiente de Confirmación';
       completamenteSurtido = true;
     } else if (productosSurtidos > 0) {
-      // Algunos productos listos, otros en backorder
-      nuevoEstatus = 'Parcialmente Surtido';
+      // Algunos productos listos, otros en backorder - también enviar a finanzas
+      nuevoEstatus = 'Pendiente de Confirmación';
       completamenteSurtido = false;
     }
 
@@ -815,7 +815,7 @@ const surtirPedido = async (req, res) => {
  * POST /api/admin/pedidos/:id/confirmar-surtido
  */
 const confirmarSurtidoFinanzas = async (req, res) => {
-  const client = await db.connect();
+  const client = await db.getClient();
   
   try {
     const { id: pedidoId } = req.params;
@@ -997,7 +997,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
  * POST /api/admin/pedidos/:id/rechazar-finanzas
  */
 const rechazarPedidoFinanzas = async (req, res) => {
-  const client = await db.connect();
+  const client = await db.getClient();
   
   try {
     const { id: pedidoId } = req.params;

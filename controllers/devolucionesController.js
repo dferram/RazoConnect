@@ -26,7 +26,7 @@ const SmartStockService = require("../services/SmartStockService");
  * Crea una nueva solicitud de devolución
  */
 async function solicitarDevolucion(req, res) {
-  const client = await db.connect();
+  const client = await db.getClient();
   
   try {
     const { userId: clienteId, tenant_id } = req.user;
@@ -565,7 +565,7 @@ async function obtenerTodasDevoluciones(req, res) {
  * Aprueba una devolución y ejecuta todas las acciones financieras/inventario
  */
 async function aprobarDevolucion(req, res) {
-  const client = await db.connect();
+  const client = await db.getClient();
   
   try {
     const { userId: adminId, tenant_id } = req.user;
@@ -882,7 +882,7 @@ async function aprobarDevolucion(req, res) {
  * Rechaza una devolución con motivo
  */
 async function rechazarDevolucion(req, res) {
-  const client = await db.connect();
+  const client = await db.getClient();
   
   try {
     const { userId: adminId, tenant_id } = req.user;

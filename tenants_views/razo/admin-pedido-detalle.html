@@ -1271,14 +1271,20 @@
                 btnSurtir.style.background = '#f59e0b';
                 btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';
-              } else if (estatusValor === 'pendiente' || estatusValor === 'confirmado') {
-                // Can be marked as ready
+              } else if (estatusValor === 'pendiente' || estatusValor === 'confirmado' || estaParcialmenteSurtido) {
+                // Can be marked as ready - includes parcialmente_surtido for inventarios to mark remaining items
                 btnSurtir.innerHTML = '✅ Marcar Listo';
                 btnSurtir.style.background = '#16a34a';
                 btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';
+                console.log(`✅ [PEDIDO-DETALLE] Botón Surtir visible para inventarios (estatus: ${estatusValor})`);
               } else {
-                btnSurtir.style.display = 'none';
+                // For any other status, show the button but indicate current state
+                btnSurtir.innerHTML = '✅ Marcar Listo';
+                btnSurtir.style.background = '#16a34a';
+                btnSurtir.disabled = false;
+                btnSurtir.style.display = 'inline-block';
+                console.log(`✅ [PEDIDO-DETALLE] Botón Surtir visible para inventarios (estatus: ${estatusValor})`);
               }
             } else if (btnSurtir) {
               // Usuario sin permisos - ocultar botón
@@ -1859,7 +1865,7 @@
 
           const originalText = btnSurtir.innerHTML;
           btnSurtir.disabled = true;
-          btnSurtir.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Marcando...';
+          btnSurtir.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Marcando...';
 
           try {
             const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/surtir`, {

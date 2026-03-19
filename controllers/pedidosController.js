@@ -2734,7 +2734,7 @@ const simulatePriorityImpact = async (req, res) => {
  * When priority is enabled, the system will reallocate stock to prioritize this order
  */
 const togglePrioridad = async (req, res) => {
-  const client = await db.connect();
+  const client = await db.getClient();
   try {
     const { id } = req.params;
     const { tenant_id } = req.tenant;
