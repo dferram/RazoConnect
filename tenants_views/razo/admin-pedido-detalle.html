@@ -1400,15 +1400,16 @@
 
             // Render items
             // FASE 3 - TASK 3: Check if user is inventarios to hide pricing
-            // Filter out backorder products for finanzas role
+            // FIX: Render ALL products in DOM, but hide backorder visually for finanzas
             const currentUserRole = getUserRole();
             const isFinanzasRole = currentUserRole === 'finanzas' || currentUserRole === 'gerente_finanzas';
             
-            let productosToRender = productos;
+            // CRITICAL: Always render ALL products to DOM so checkboxes exist
+            // Finance role will hide backorder products via CSS, not by removing from DOM
+            const productosToRender = productos;
+            
             if (isFinanzasRole) {
-              // Finanzas only sees products with stock (not backorder)
-              productosToRender = productos.filter(item => !item.esBackorder);
-              console.log(`💰 [FINANZAS] Filtrando productos: ${productos.length} total, ${productosToRender.length} con stock, ${productos.length - productosToRender.length} backorder ocultos`);
+              console.log(`💰 [FINANZAS] Ocultando visualmente productos backorder: ${productos.length} total, ${productos.filter(item => !item.esBackorder).length} con stock, ${productos.filter(item => item.esBackorder).length} backorder (ocultos visualmente)`);
             }
             
             const itemsContainer = document.getElementById("itemsContainer");
@@ -1458,11 +1459,14 @@
                   
                   const isInventariosRole = getUserRole() === 'inventarios';
                   
-                  // Determinar si mostrar checkbox (solo para inventarios, productos con stock, no confirmados)
-                  const puedeSeleccionar = isInventariosRole && badgeText === 'CON STOCK' && (item.cantidadSurtida === 0 || !item.cantidadSurtida);
+                  // Determinar si mostrar checkbox (solo para inventarios, productos con stock, NO surtidos)
+                  // CRITICAL: Only show checkbox if cantidadSurtida is exactly 0 (not already surtido)
+                  const cantidadSurtidaNum = parseInt(item.cantidadSurtida) || 0;
+                  const noEstaSurtido = cantidadSurtidaNum === 0;
+                  const puedeSeleccionar = isInventariosRole && badgeText === 'CON STOCK' && noEstaSurtido;
                   
                   return `
-              <div class="item-row">
+              <div class="item-row" ${isFinanzasRole && item.esBackorder ? 'style="display: none;"' : ''} data-detalle-id="${item.detalleId}" data-es-backorder="${item.esBackorder || false}">
                 ${
                   item.imagenUrl
                     ? `<img src="${item.imagenUrl}" alt="${item.nombre}" class="item-image-placeholder" style="object-fit: cover; border-radius: 0.5rem;" />`
@@ -1512,7 +1516,8 @@
             let totalToShow = pedido.montoTotal;
             if (isFinanzasRole) {
               // Finanzas: solo mostrar total de productos con stock (no backorder)
-              totalToShow = productosToRender.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);
+              const productosConStock = productos.filter(item => !item.esBackorder);
+              totalToShow = productosConStock.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);
               console.log(`💰 [FINANZAS] Total calculado: ${totalToShow} (solo productos con stock)`);
             }
             
@@ -1875,10 +1880,14 @@
           const btnSurtir = document.getElementById('btnSurtirPedido');
           if (!btnSurtir) return;
 
-          // Recopilar productos seleccionados (checkboxes marcados)
+          // FIX: Recopilar productos seleccionados (checkboxes marcados)
+          // CRITICAL: querySelectorAll encuentra TODOS los checkboxes, incluso los ocultos visualmente
           const checkboxes = document.querySelectorAll('.producto-surtir-checkbox:checked');
           const productosSeleccionados = Array.from(checkboxes).map(cb => parseInt(cb.dataset.detalleId));
 
+          console.log(`[INVENTARIOS] Productos seleccionados para surtir: ${productosSeleccionados.length}`, productosSeleccionados);
+
+          // VALIDATION: Prevent sending empty array to backend
           if (productosSeleccionados.length === 0) {
             await Swal.fire({
               icon: 'warning',
