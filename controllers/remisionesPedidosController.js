@@ -68,14 +68,16 @@ const obtenerRemisionPedido = async (req, res) => {
       SELECT DISTINCT ON (dp.detalleid)
         dp.detalleid,
         dp.cantidadpaquetes,
+        dp.cantidadsurtida,
+        dp.esbackorder,
         dp.preciounitario,
+        dp.precioporpaquete,
         dp.piezastotales,
         pv.sku,
         pv.dimensiones,
         pv.stock AS stock_real_variante,
         prod.nombreproducto,
-        t.etiqueta as tamano_etiqueta,
-        t.valor as tamano_valor
+        t.cantidad as tamano_piezas
       FROM detallesdelpedido dp
       INNER JOIN producto_variantes pv ON pv.varianteid = dp.varianteid
       INNER JOIN productos prod ON prod.productoid = pv.productoid
@@ -86,21 +88,53 @@ const obtenerRemisionPedido = async (req, res) => {
 
     const detallesResult = await db.query(detallesQuery, [pedidoId]);
 
-    const items = detallesResult.rows.map((item) => ({
-      sku: item.sku,
-      nombreProducto: item.nombreproducto,
-      dimensiones: item.dimensiones,
-      tamano: item.tamano_etiqueta || 'N/A',
-      cantidad: parseInt(item.cantidadpaquetes, 10),
-      precioUnitario: parseFloat(item.preciounitario),
-      piezasTotales: item.piezastotales,
-      stockReal: parseInt(item.stock_real_variante || 0, 10),
-      subtotal: parseFloat(
-        (parseInt(item.cantidadpaquetes, 10) * 
-         (item.tamano_valor || 1) * 
-         parseFloat(item.preciounitario)).toFixed(2)
-      ),
-    }));
+    // FIX: Separar productos surtidos de productos pendientes (backorder)
+    const itemsSurtidos = [];
+    const itemsBackorder = [];
+
+    detallesResult.rows.forEach((item) => {
+      const cantidadSurtida = parseInt(item.cantidadsurtida || 0, 10);
+      const cantidadPaquetes = parseInt(item.cantidadpaquetes, 10);
+      const esBackorder = item.esbackorder || false;
+      
+      const precioPorPaquete = parseFloat(item.precioporpaquete || 0);
+      const tamanoPiezas = item.tamano_piezas || 1;
+      
+      const itemData = {
+        sku: item.sku,
+        nombreProducto: item.nombreproducto,
+        dimensiones: item.dimensiones,
+        tamano: tamanoPiezas > 1 ? `Pack ${tamanoPiezas}` : 'Pack 1',
+        cantidad: cantidadPaquetes,
+        cantidadSurtida: cantidadSurtida,
+        precioUnitario: precioPorPaquete,
+        piezasTotales: item.piezastotales,
+        stockReal: parseInt(item.stock_real_variante || 0, 10),
+        subtotal: parseFloat((cantidadPaquetes * precioPorPaquete).toFixed(2)),
+      };
+
+      // Solo incluir en surtidos si cantidadsurtida > 0
+      if (cantidadSurtida > 0) {
+        itemsSurtidos.push({
+          ...itemData,
+          cantidad: cantidadSurtida,
+          subtotal: parseFloat((cantidadSurtida * precioPorPaquete).toFixed(2)),
+        });
+      }
+      
+      // Incluir en backorder SOLO si hay cantidad pendiente (no completamente surtido)
+      const cantidadPendiente = cantidadPaquetes - cantidadSurtida;
+      if (cantidadPendiente > 0) {
+        itemsBackorder.push({
+          ...itemData,
+          cantidad: cantidadPendiente,
+          subtotal: parseFloat((cantidadPendiente * precioPorPaquete).toFixed(2)),
+        });
+      }
+    });
+
+    // Calcular total solo de productos surtidos
+    const totalSurtido = itemsSurtidos.reduce((sum, item) => sum + item.subtotal, 0);
 
     res.json({
       success: true,
@@ -109,6 +143,7 @@ const obtenerRemisionPedido = async (req, res) => {
           pedidoId: pedido.pedidoid,
           fechaPedido: pedido.fechapedido,
           montoTotal: parseFloat(pedido.montototal),
+          montoSurtido: parseFloat(totalSurtido.toFixed(2)), // Total de productos confirmados
           costoEnvio: parseFloat(pedido.costoenvio || 0),
           estatus: pedido.estatus,
           cliente: {
@@ -126,7 +161,8 @@ const obtenerRemisionPedido = async (req, res) => {
             nombre: `${pedido.agente_nombre} ${pedido.agente_apellido}`,
             codigo: pedido.codigoagente,
           } : null,
-          items,
+          items: itemsSurtidos, // Solo productos confirmados
+          itemsBackorder: itemsBackorder, // Productos pendientes
         },
       },
     });
