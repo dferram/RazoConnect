@@ -461,13 +461,37 @@ async function adjustStock({
           newStock = parseInt(rows[0].cantidad, 10);
           console.log('✅ [SmartStock] Registro creado:', { newStock });
         } else {
-          // No se puede decrementar si no existe registro
-          console.log('❌ [SmartStock] No se puede decrementar - no existe registro');
-          return { 
-            success: false, 
-            newStock: 0, 
-            message: 'No hay stock disponible para decrementar' 
-          };
+          // FALLBACK: Si no existe stock_admin y es decremento, usar stock global
+          console.log('🔄 [SmartStock] Fallback a stock global para decremento');
+          const { rows: globalRows } = await dbClient.query(
+            `SELECT COALESCE(stock, 0) as stock 
+             FROM producto_variantes 
+             WHERE varianteid = $1 AND tenant_id = $2`,
+            [varianteId, tenantId]
+          );
+          
+          const stockGlobal = globalRows.length > 0 ? parseInt(globalRows[0].stock, 10) : 0;
+          console.log('🔍 [SmartStock] Stock global disponible:', { stockGlobal, cantidadNecesaria: Math.abs(cantidad) });
+          
+          if (stockGlobal + cantidad < 0) {
+            console.log('❌ [SmartStock] Stock global insuficiente');
+            return { 
+              success: false, 
+              newStock: 0, 
+              message: 'No hay stock disponible para decrementar' 
+            };
+          }
+          
+          // Reducir del stock global
+          const { rows: updateRows } = await dbClient.query(
+            `UPDATE producto_variantes 
+             SET stock = GREATEST(stock + $1, 0)
+             WHERE varianteid = $2 AND tenant_id = $3
+             RETURNING stock`,
+            [cantidad, varianteId, tenantId]
+          );
+          newStock = updateRows.length > 0 ? parseInt(updateRows[0].stock, 10) : 0;
+          console.log('✅ [SmartStock] Stock global reducido (fallback):', { newStock });
         }
       }
 
