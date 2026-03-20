@@ -253,18 +253,16 @@ async function generarPDFPedido(req, res) {
         // Render header on first page manually
         renderHeader(doc, pedido, logoPath, logoExists);
 
-        // Separate items by REAL stock availability (FIXED CALCULATION)
+        // Separate items by SURTIDO status (confirmed by finanzas)
+        // SURTIDOS: cantidadsurtida > 0 (confirmed products)
+        // PENDIENTES: cantidadsurtida = 0 (backorder/pending products)
         let itemsEnExistencia = detalles.filter(item => {
-            const stockActual = parseInt(item.stock_actual_variante) || 0;
-            const cantidadRequerida = parseInt(item.cantidad) * parseInt(item.tamano_cantidad || 1);
-            const esBajoPedido = stockActual < cantidadRequerida;
-            return !esBajoPedido;
+            const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
+            return cantidadSurtida > 0;
         });
         let itemsBajoPedido = detalles.filter(item => {
-            const stockActual = parseInt(item.stock_actual_variante) || 0;
-            const cantidadRequerida = parseInt(item.cantidad) * parseInt(item.tamano_cantidad || 1);
-            const esBajoPedido = stockActual < cantidadRequerida;
-            return esBajoPedido;
+            const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
+            return cantidadSurtida === 0;
         });
 
         // ROLE-BASED FILTERING: Apply filtering if requested
@@ -414,53 +412,15 @@ const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = 
     return currentY;
 };
 
-// Render IN-STOCK items section
+// Render CONFIRMED items section (only products with cantidadsurtida > 0)
 if (itemsEnExistencia.length > 0) {
     yPosition = renderTableHeader('PRODUCTOS LISTOS PARA ENTREGA', yPosition, '#F97316');
     yPosition = renderItems(itemsEnExistencia, yPosition, '#F9F9F9', pedido.estatus, mostrarPrecios);
     yPosition += 10;
 }
 
-// Render BACKORDER items section with distinct styling
-if (itemsBajoPedido.length > 0) {
-    // Add minimal spacing if there were in-stock items
-    if (itemsEnExistencia.length > 0) {
-        yPosition += 5;
-    }
-
-    yPosition = renderTableHeader('PRODUCTOS BAJO PEDIDO (PENDIENTES)', yPosition, '#DC2626');
-    yPosition = renderItems(itemsBajoPedido, yPosition, '#FEE2E2', pedido.estatus, mostrarPrecios);
-    
-    // Add informative note immediately after backorder table
-    yPosition += 5;
-    
-    // Dashed border box for the note
-    doc.save();
-    doc.strokeColor('#DC2626')
-       .lineWidth(1)
-       .dash(5, { space: 3 })
-       .rect(50, yPosition, 512, 50)
-       .stroke();
-    doc.restore();
-
-    doc.fontSize(8)
-       .font('Helvetica-Bold')
-       .fillColor('#DC2626')
-       .text('NOTA IMPORTANTE:', 60, yPosition + 10);
-    
-    doc.fontSize(8)
-       .font('Helvetica')
-       .fillColor('#666666')
-       .text(
-           'Los productos marcados como BAJO PEDIDO tienen un tiempo estimado de fabricación de 7-15 días hábiles. ' +
-           'Se le notificará vía correo electrónico cuando estén listos para su entrega.',
-           60,
-           yPosition + 25,
-           { width: 492, align: 'left', lineGap: 2 }
-       );
-    
-    yPosition += 55;
-}
+// REMOVED: Backorder section - only show confirmed products in remision
+// Pending products (cantidadsurtida = 0) are not shown to avoid confusion
 
 yPosition += 5;
 

@@ -75,29 +75,29 @@ async function descargarFactura(req, res) {
 
     const pedido = pedidoResult.rows[0];
 
-    // Verificar que el pedido tiene remisiones confirmadas por finanzas
-    const remisionQuery = await pool.query(
+    // Verificar que el pedido tiene productos confirmados por finanzas (cantidadsurtida > 0)
+    const productosSurtidosQuery = await pool.query(
       `SELECT COUNT(*) as total_surtido
-       FROM remisiones
-       WHERE pedido_id = $1 AND tenant_id = $2 AND estado = 'SURTIDO'`,
+       FROM detallesdelpedido
+       WHERE pedidoid = $1 AND tenant_id = $2 AND cantidadsurtida > 0`,
       [pedidoId, tenant_id]
     );
 
-    const totalSurtido = parseInt(remisionQuery.rows[0]?.total_surtido || 0);
+    const totalSurtido = parseInt(productosSurtidosQuery.rows[0]?.total_surtido || 0);
 
     if (totalSurtido === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No se puede generar factura. El pedido debe tener al menos una remisión confirmada por finanzas (estado SURTIDO).'
+        message: 'No se puede generar factura. El pedido debe tener al menos un producto confirmado por finanzas.'
       });
     }
 
     // Validación adicional de estatus del pedido
-    const estatusPermitidos = ['Surtido', 'Completado', 'Enviado', 'Entregado', 'Parcial'];
+    const estatusPermitidos = ['Surtido', 'Completado', 'Enviado', 'Entregado', 'Parcial', 'Pendiente de Confirmación'];
     if (!estatusPermitidos.includes(pedido.estatus)) {
       return res.status(400).json({
         success: false,
-        message: `No se puede generar factura para pedidos en estatus "${pedido.estatus}". Solo se permite para pedidos con remisiones confirmadas.`
+        message: `No se puede generar factura para pedidos en estatus "${pedido.estatus}". Solo se permite para pedidos con productos confirmados.`
       });
     }
 

@@ -420,6 +420,7 @@ const getPedidoDetalle = async (req, res) => {
         dp.piezastotales,
         dp.preciounitario,
         dp.esbackorder,
+        dp.cantidadsurtida,
         COALESCE(
           dp.preciounitario, 
           ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
@@ -518,6 +519,7 @@ const getPedidoDetalle = async (req, res) => {
             nombre: row.nombreproducto,
             sku: row.sku,
             cantidadPaquetes: parseInt(row.cantidadpaquetes, 10),
+            cantidadSurtida: row.cantidadsurtida !== null ? parseInt(row.cantidadsurtida, 10) : 0,
             piezasPorPaquete,
             precioPorPaquete: row.precioporpaquete
               ? parseFloat(row.precioporpaquete)
@@ -734,20 +736,76 @@ const surtirPedido = async (req, res) => {
     const productosBackorder = parseInt(pedido.productos_backorder || 0);
     const totalProductos = parseInt(pedido.total_productos || 0);
 
+    // VALIDATION: Reject empty product arrays to prevent 0-product confirmations
+    if (!detalleIds || !Array.isArray(detalleIds) || detalleIds.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: 'Debes seleccionar al menos un producto para surtir. No se puede enviar un pedido vacío a finanzas.'
+      });
+    }
+
     // Marcar productos seleccionados como surtidos (NO reduce inventario)
     let marcarResult;
     
     if (detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0) {
       // MODO SELECTIVO: Solo marcar productos específicos seleccionados por inventarios
-      // Solo productos con stock (esbackorder=false)
+      // FIX: Trust frontend validation - if inventarios selected them, they have stock
+      // Don't filter by esbackorder flag as it can be inconsistent
+      
+      logger.info('Intentando marcar productos como surtidos:', {
+        pedidoId,
+        detalleIds,
+        cantidadSeleccionados: detalleIds.length,
+        tenantId: tenant_id
+      });
+      
+      // Check products with actual stock availability from stock_admin
+      const checkQuery = `
+        SELECT 
+          d.detalleid, 
+          d.cantidadpaquetes, 
+          d.cantidadsurtida, 
+          d.esbackorder,
+          d.varianteid,
+          d.piezastotales,
+          COALESCE(sa.cantidad, 0) as stock_disponible,
+          COALESCE(sa.cantidad_reservada, 0) as stock_reservado,
+          (COALESCE(sa.cantidad, 0) - COALESCE(sa.cantidad_reservada, 0)) as stock_libre
+        FROM detallesdelpedido d
+        LEFT JOIN stock_admin sa ON sa.variante_id = d.varianteid AND sa.tenant_id = d.tenant_id
+        WHERE d.pedidoid = $1 
+          AND d.detalleid = ANY($2::int[]) 
+          AND d.tenant_id = $3
+      `;
+      const checkResult = await client.query(checkQuery, [pedidoId, detalleIds, tenant_id]);
+      
+      logger.info('Estado actual de productos seleccionados:', {
+        encontrados: checkResult.rows.length,
+        detalles: checkResult.rows.map(r => ({
+          detalleid: r.detalleid,
+          cantidadsurtida: r.cantidadsurtida,
+          piezasNecesarias: r.piezastotales,
+          stockDisponible: r.stock_disponible,
+          stockLibre: r.stock_libre,
+          tieneStock: r.stock_libre >= r.piezastotales
+        }))
+      });
+      
+      // Only mark products that:
+      // 1. Are not already surtidos (cantidadsurtida = 0)
+      // 2. Have actual stock available (stock_libre >= piezastotales)
       const marcarSurtidosQuery = `
-        UPDATE detallesdelpedido
+        UPDATE detallesdelpedido d
         SET cantidadsurtida = cantidadpaquetes
-        WHERE pedidoid = $1 
-          AND detalleid = ANY($2::int[])
-          AND esbackorder = false
-          AND cantidadsurtida = 0
-          AND tenant_id = $3
+        FROM stock_admin sa
+        WHERE d.pedidoid = $1 
+          AND d.detalleid = ANY($2::int[])
+          AND d.cantidadsurtida = 0
+          AND d.tenant_id = $3
+          AND sa.variante_id = d.varianteid
+          AND sa.tenant_id = d.tenant_id
+          AND (sa.cantidad - sa.cantidad_reservada) >= d.piezastotales
       `;
       
       marcarResult = await client.query(marcarSurtidosQuery, [pedidoId, detalleIds, tenant_id]);
@@ -763,6 +821,34 @@ const surtirPedido = async (req, res) => {
       `;
       
       marcarResult = await client.query(marcarSurtidosQuery, [pedidoId, tenant_id]);
+    }
+    
+    // VALIDATION: Ensure at least one product was actually marked
+    if (marcarResult.rowCount === 0) {
+      // Provide detailed feedback about why products couldn't be marked
+      const yaSurtidos = checkResult.rows.filter(r => r.cantidadsurtida > 0);
+      const sinStock = checkResult.rows.filter(r => r.cantidadsurtida === 0 && r.stock_libre < r.piezastotales);
+      
+      let errorMsg = 'No se pudo marcar ningún producto. ';
+      if (yaSurtidos.length > 0) {
+        errorMsg += `${yaSurtidos.length} producto(s) ya están surtidos. `;
+      }
+      if (sinStock.length > 0) {
+        errorMsg += `${sinStock.length} producto(s) no tienen stock suficiente disponible.`;
+      }
+      
+      logger.warn('No se marcaron productos como surtidos:', {
+        pedidoId,
+        detalleIds,
+        yaSurtidos: yaSurtidos.map(r => r.detalleid),
+        sinStock: sinStock.map(r => ({ detalleid: r.detalleid, necesita: r.piezastotales, disponible: r.stock_libre }))
+      });
+      
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: errorMsg.trim()
+      });
     }
     
     logger.info('Productos marcados como surtidos:', {
@@ -887,7 +973,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       });
     }
 
-    // Obtener solo productos que NO son backorder (los que tienen stock)
+    // FIX: Obtener productos que están SURTIDOS (marcados por inventarios)
+    // No filtrar por esbackorder, sino por cantidadsurtida > 0
     const productosQuery = `
       SELECT 
         dp.detalleid,
@@ -901,7 +988,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
       INNER JOIN productos pr ON pv.productoid = pr.productoid
       WHERE dp.pedidoid = $1 
-        AND dp.esbackorder = false
+        AND dp.cantidadsurtida > 0
         AND dp.tenant_id = $2
     `;
     
@@ -911,7 +998,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        message: 'No hay productos con stock para confirmar'
+        message: 'No hay productos surtidos para confirmar. Inventarios debe marcar productos primero.'
       });
     }
 
