@@ -420,6 +420,7 @@ const getPedidoDetalle = async (req, res) => {
         dp.piezastotales,
         dp.preciounitario,
         dp.esbackorder,
+        dp.cantidadsurtida,
         COALESCE(
           dp.preciounitario, 
           ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
@@ -518,6 +519,7 @@ const getPedidoDetalle = async (req, res) => {
             nombre: row.nombreproducto,
             sku: row.sku,
             cantidadPaquetes: parseInt(row.cantidadpaquetes, 10),
+            cantidadSurtida: row.cantidadsurtida !== null ? parseInt(row.cantidadsurtida, 10) : 0,
             piezasPorPaquete,
             precioPorPaquete: row.precioporpaquete
               ? parseFloat(row.precioporpaquete)
@@ -971,7 +973,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       });
     }
 
-    // Obtener solo productos que NO son backorder (los que tienen stock)
+    // FIX: Obtener productos que están SURTIDOS (marcados por inventarios)
+    // No filtrar por esbackorder, sino por cantidadsurtida > 0
     const productosQuery = `
       SELECT 
         dp.detalleid,
@@ -985,7 +988,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
       INNER JOIN productos pr ON pv.productoid = pr.productoid
       WHERE dp.pedidoid = $1 
-        AND dp.esbackorder = false
+        AND dp.cantidadsurtida > 0
         AND dp.tenant_id = $2
     `;
     
@@ -995,7 +998,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        message: 'No hay productos con stock para confirmar'
+        message: 'No hay productos surtidos para confirmar. Inventarios debe marcar productos primero.'
       });
     }
 

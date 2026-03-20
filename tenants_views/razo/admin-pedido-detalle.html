@@ -1463,10 +1463,15 @@
                   // CRITICAL: Only show checkbox if cantidadSurtida is exactly 0 (not already surtido)
                   const cantidadSurtidaNum = parseInt(item.cantidadSurtida) || 0;
                   const noEstaSurtido = cantidadSurtidaNum === 0;
+                  const estaSurtido = cantidadSurtidaNum > 0;
                   const puedeSeleccionar = isInventariosRole && badgeText === 'CON STOCK' && noEstaSurtido;
                   
+                  // FIX: Finanzas debe ver productos SURTIDOS, no importa si son backorder
+                  // Solo ocultar productos backorder que NO están surtidos
+                  const ocultarParaFinanzas = isFinanzasRole && item.esBackorder && !estaSurtido;
+                  
                   return `
-              <div class="item-row" ${isFinanzasRole && item.esBackorder ? 'style="display: none;"' : ''} data-detalle-id="${item.detalleId}" data-es-backorder="${item.esBackorder || false}">
+              <div class="item-row" ${ocultarParaFinanzas ? 'style="display: none;"' : ''} data-detalle-id="${item.detalleId}" data-es-backorder="${item.esBackorder || false}" data-surtido="${estaSurtido}">
                 ${
                   item.imagenUrl
                     ? `<img src="${item.imagenUrl}" alt="${item.nombre}" class="item-image-placeholder" style="object-fit: cover; border-radius: 0.5rem;" />`
@@ -1515,10 +1520,13 @@
             // Calculate total based on role
             let totalToShow = pedido.montoTotal;
             if (isFinanzasRole) {
-              // Finanzas: solo mostrar total de productos con stock (no backorder)
-              const productosConStock = productos.filter(item => !item.esBackorder);
-              totalToShow = productosConStock.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);
-              console.log(`💰 [FINANZAS] Total calculado: ${totalToShow} (solo productos con stock)`);
+              // FIX: Finanzas debe ver total de productos SURTIDOS, no solo con stock
+              const productosSurtidos = productos.filter(item => {
+                const cantSurtida = parseInt(item.cantidadSurtida) || 0;
+                return cantSurtida > 0;
+              });
+              totalToShow = productosSurtidos.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);
+              console.log(`💰 [FINANZAS] Total calculado: ${totalToShow} (${productosSurtidos.length} productos surtidos)`);
             }
             
             document.getElementById("itemsTotal").textContent = formatCurrency(totalToShow);
