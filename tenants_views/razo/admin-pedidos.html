@@ -1635,51 +1635,31 @@
             <table class="admin-table">
               <thead>
                 <tr>
-                  <th>SKU</th>
-                  <th>Producto</th>
-                  <th>Tamaño</th>
-                  <th>Cantidad</th>
-                  <th>Precio Unit.</th>
-                  <th>Subtotal</th>
-                  <th>Estado</th>
+                  <th>CANT</th>
+                  <th>DESCRIPCIÓN</th>
+                  <th>TAMAÑO</th>
+                  <th>ESTADO</th>
+                  <th>P. UNIT</th>
+                  <th>TOTAL</th>
                 </tr>
               </thead>
               <tbody>
-                ${pedido.items.map(item => {
-                  const stockReal = item.stockReal || 0;
-                  const hayStockSuficiente = stockReal > 0;
-                  const pedidoConfirmado = pedido.estatus && pedido.estatus.toLowerCase() === 'confirmado';
-                  
-                  let badgeHtml;
-                  if (!hayStockSuficiente) {
-                    // No hay stock - BAJO PEDIDO (rojo)
-                    badgeHtml = '<span class="badge-stock bajo-pedido">BAJO PEDIDO</span>';
-                  } else if (pedidoConfirmado) {
-                    // Hay stock Y pedido confirmado - SURTIDO (naranja)
-                    badgeHtml = '<span class="badge-stock surtido">SURTIDO</span>';
-                  } else {
-                    // Hay stock pero NO confirmado - CON STOCK (verde)
-                    badgeHtml = '<span class="badge-stock con-stock">CON STOCK</span>';
-                  }
-                  
-                  return `
+                ${pedido.items && pedido.items.length > 0 ? pedido.items.map(item => `
                   <tr>
-                    <td>${item.sku}</td>
-                    <td>${item.nombreProducto}</td>
-                    <td>${item.tamano}</td>
                     <td>${item.cantidad}</td>
+                    <td>${item.nombreProducto}<br><small style="color: #666;">${item.sku} - Color: ${item.dimensiones || 'N/A'}</small></td>
+                    <td>${item.tamano}</td>
+                    <td><span class="badge-stock surtido">SURTIDO</span></td>
                     <td>$${item.precioUnitario.toFixed(2)}</td>
                     <td>$${item.subtotal.toFixed(2)}</td>
-                    <td>${badgeHtml}</td>
                   </tr>
-                `;
-                }).join('')}
+                `).join('') : '<tr><td colspan="6" style="text-align: center; color: #999;">No hay productos confirmados</td></tr>'}
               </tbody>
             </table>
 
             <div class="total">
               <div>Costo de Envío: $${pedido.costoEnvio.toFixed(2)}</div>
-              <div>Total: $${pedido.montoTotal.toFixed(2)} MXN</div>
+              <div><strong>Total: $${(pedido.montoSurtido || 0).toFixed(2)} MXN</strong></div>
             </div>
 
             <div class="firma-section">

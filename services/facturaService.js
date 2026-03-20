@@ -92,15 +92,21 @@ async function obtenerDatosPedido(pedidoId, tenantId) {
 async function obtenerDetallesPedido(pedidoId) {
   const result = await pool.query(
     `SELECT 
-      dp.detalleid, dp.cantidadpaquetes, dp.piezastotales,
-      dp.preciounitario, dp.precioporpaquete,
-      pv.sku, pr.nombreproducto,
+      dp.detalleid, 
+      dp.cantidadsurtida as cantidadpaquetes,
+      dp.cantidadpaquetes as cantidadpaquetes_original,
+      (dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0) * dp.cantidadsurtida) as piezastotales,
+      dp.preciounitario, 
+      dp.precioporpaquete,
+      pv.sku, 
+      pr.nombreproducto,
       t.cantidad as tamano
     FROM detallesdelpedido dp
     INNER JOIN producto_variantes pv ON pv.varianteid = dp.varianteid
     INNER JOIN productos pr ON pr.productoid = pv.productoid
     LEFT JOIN cat_tamanopaquetes t ON t.tamanoid = dp.tamanoid
-    WHERE dp.pedidoid = $1
+    WHERE dp.pedidoid = $1 
+      AND dp.cantidadsurtida > 0
     ORDER BY dp.detalleid`,
     [pedidoId]
   );
