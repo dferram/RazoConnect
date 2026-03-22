@@ -859,6 +859,67 @@ const surtirPedido = async (req, res) => {
       tenantId: tenant_id
     });
 
+    // BUG FIX 5: Insertar en histórico cuando Inventarios marca productos
+    // Obtener detalles de productos marcados para el histórico
+    const detallesMarcadosQuery = `
+      SELECT 
+        dp.detalleid,
+        dp.varianteid,
+        dp.cantidadsurtida,
+        dp.piezastotales,
+        pv.sku,
+        pr.nombreproducto
+      FROM detallesdelpedido dp
+      INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
+      INNER JOIN productos pr ON pv.productoid = pr.productoid
+      WHERE dp.pedidoid = $1 
+        AND dp.tenant_id = $2
+        AND dp.cantidadsurtida > 0
+        ${detalleIds && detalleIds.length > 0 ? 'AND dp.detalleid = ANY($3::int[])' : ''}
+    `;
+    
+    const detallesMarcadosParams = detalleIds && detalleIds.length > 0 
+      ? [pedidoId, tenant_id, detalleIds]
+      : [pedidoId, tenant_id];
+    
+    const detallesMarcadosResult = await client.query(detallesMarcadosQuery, detallesMarcadosParams);
+    
+    // Insertar registro en historial_pedidos para auditoría
+    await client.query(
+      `INSERT INTO historial_pedidos (
+        pedido_id,
+        accion,
+        detalles,
+        usuario_id,
+        tenant_id
+      ) VALUES ($1, $2, $3, $4, $5)`,
+      [
+        pedidoId,
+        'SURTIDO_INVENTARIOS',
+        JSON.stringify({
+          productos_marcados: detallesMarcadosResult.rows.map(r => ({
+            detalle_id: r.detalleid,
+            variante_id: r.varianteid,
+            sku: r.sku,
+            nombre: r.nombreproducto,
+            cantidad_surtida: r.cantidadsurtida,
+            piezas_totales: r.piezastotales
+          })),
+          cantidad_productos: marcarResult.rowCount,
+          modo: detalleIds && detalleIds.length > 0 ? 'selectivo' : 'todos',
+          timestamp: new Date().toISOString()
+        }),
+        req.user?.id || req.user?.adminid || null,
+        tenant_id
+      ]
+    );
+
+    logger.info('Registro insertado en historial_pedidos:', {
+      pedidoId,
+      accion: 'SURTIDO_INVENTARIOS',
+      productosRegistrados: detallesMarcadosResult.rows.length
+    });
+
     // Actualizar estatus del pedido a "Pendiente de Confirmación" para que finanzas lo vea
     let nuevoEstatus = 'Pendiente de Confirmación';
     let completamenteSurtido = false;
@@ -1087,6 +1148,29 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     // Solo marcar como histórico si NO tiene productos en backorder
     const esHistorico = !tieneBackorder;
     await client.query(updateQuery, [pedidoId, tenant_id, esHistorico]);
+
+    // BUG FIX 5: Insertar en histórico cuando Finanzas confirma
+    await client.query(
+      `INSERT INTO historial_pedidos (
+        pedido_id,
+        accion,
+        detalles,
+        usuario_id,
+        tenant_id
+      ) VALUES ($1, $2, $3, $4, $5)`,
+      [
+        pedidoId,
+        'CONFIRMADO_FINANZAS',
+        JSON.stringify({
+          productos_confirmados: productosConfirmados,
+          es_historico: esHistorico,
+          tiene_backorder: tieneBackorder,
+          timestamp: new Date().toISOString()
+        }),
+        userId,
+        tenant_id
+      ]
+    );
 
     await client.query('COMMIT');
 

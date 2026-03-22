@@ -101,7 +101,45 @@ async function descargarFactura(req, res) {
       });
     }
 
-    const pdfBuffer = await facturaService.generarFacturaPDF(pedidoId, tenant_id, rol);
+    // BUG FIX 2: Add timeout to prevent indefinite 'Procesando' state
+    const FACTURA_TIMEOUT = 30000; // 30 seconds
+    let pdfBuffer;
+    
+    try {
+      pdfBuffer = await Promise.race([
+        facturaService.generarFacturaPDF(pedidoId, tenant_id, rol),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout: La generación de factura excedió el tiempo límite de 30 segundos')), FACTURA_TIMEOUT)
+        )
+      ]);
+    } catch (timeoutError) {
+      logger.error(`[FacturaController] Timeout al generar factura para pedido ${pedidoId}:`, {
+        error: timeoutError.message,
+        pedidoId,
+        tenant_id,
+        requestId: req.requestId
+      });
+      
+      // Registrar el error en la base de datos para retry manual
+      try {
+        await pool.query(
+          `INSERT INTO facturas_errores (pedido_id, error_mensaje, tenant_id, fecha_error)
+           VALUES ($1, $2, $3, NOW())
+           ON CONFLICT (pedido_id, tenant_id) 
+           DO UPDATE SET error_mensaje = $2, fecha_error = NOW(), intentos = facturas_errores.intentos + 1`,
+          [pedidoId, timeoutError.message, tenant_id]
+        );
+      } catch (dbError) {
+        logger.error('[FacturaController] Error al registrar fallo de factura:', dbError);
+      }
+      
+      return res.status(504).json({
+        success: false,
+        message: 'La generación de factura está tardando más de lo esperado. Por favor intente nuevamente en unos momentos.',
+        error: 'TIMEOUT',
+        pedidoId
+      });
+    }
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="Factura-Pedido-${pedidoId}.pdf"`);

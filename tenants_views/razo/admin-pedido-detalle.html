@@ -655,14 +655,13 @@
                     ✏️ Ajustar Pedido
                   </button>
                   <button
+                    id="btnSurtir"
                     type="button"
-                    class="btn btn-success"
-                    id="btnSurtirPedido"
-                    onclick="surtirPedidoInventarios()"
+                    class="btn-action"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #16a34a; color: white; display: none;"
-                    title="Surtir productos con stock y enviar a finanzas"
+                    title="Marcar productos como surtidos y enviar a finanzas"
                   >
-                    📦 Surtir Pedido
+                    📦 Pedido surtido
                   </button>
                   <button
                     type="button"
@@ -986,10 +985,10 @@
         if (isInventarios) {
           console.log('📦 [PEDIDO-DETALLE] Rol inventarios - Configurando vista');
           
-          // Show Surtir Pedido button for inventarios
+          // Show Pedido surtido button for inventarios
           if (btnSurtir) {
             btnSurtir.style.display = 'inline-block';
-            console.log('✅ [PEDIDO-DETALLE] Botón Surtir Pedido habilitado');
+            console.log('✅ [PEDIDO-DETALLE] Botón Pedido surtido habilitado');
           }
           
           // Show Ajustar Pedido button for inventarios
@@ -1021,7 +1020,7 @@
         if (isFinanzas || isSecretaria) {
           console.log(`💰 [PEDIDO-DETALLE] Rol ${userRole} - Configurando vista`);
           
-          // Hide Surtir Pedido button for finanzas/secretaria
+          // Hide Pedido surtido button for finanzas/secretaria
           if (btnSurtir) btnSurtir.style.display = 'none';
           
           // Hide Ajustar Pedido button for finanzas/secretaria
@@ -1273,14 +1272,14 @@
                 btnSurtir.style.display = 'inline-block';
               } else if (estatusValor === 'pendiente' || estatusValor === 'confirmado' || estaParcialmenteSurtido) {
                 // Can be marked as ready - includes parcialmente_surtido for inventarios to mark remaining items
-                btnSurtir.innerHTML = '📦 Surtir Pedido';
+                btnSurtir.innerHTML = '📦 Pedido surtido';
                 btnSurtir.style.background = '#16a34a';
                 btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';
                 console.log(`✅ [PEDIDO-DETALLE] Botón Surtir visible para inventarios (estatus: ${estatusValor})`);
               } else {
                 // For any other status, show the button but indicate current state
-                btnSurtir.innerHTML = '📦 Surtir Pedido';
+                btnSurtir.innerHTML = '📦 Pedido surtido';
                 btnSurtir.style.background = '#16a34a';
                 btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';

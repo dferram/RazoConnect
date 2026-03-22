@@ -42,7 +42,7 @@ exports.generarRemision = async (req, res) => {
 
     await client.query('BEGIN');
 
-    // 1. Validar que el pedido existe y pertenece al tenant
+    // BUG FIX 2: Validar estado del pedido antes de generar remisión
     const pedidoQuery = await client.query(
       `SELECT p.*, c.nombre AS cliente_nombre, c.apellido AS cliente_apellido
        FROM pedidos p
@@ -57,6 +57,17 @@ exports.generarRemision = async (req, res) => {
     }
 
     const pedido = pedidoQuery.rows[0];
+
+    // BUG FIX 2: Validar que el pedido está en estado válido para generar remisión
+    const estadosValidos = ['Pendiente', 'Confirmado', 'Listo para Surtir', 'Parcial', 'Parcialmente Surtido', 'Pendiente de Confirmación'];
+    if (!estadosValidos.includes(pedido.estatus)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        error: `No se puede generar remisión. El pedido debe estar en un estado válido. Estado actual: ${pedido.estatus}`,
+        estado_actual: pedido.estatus,
+        estados_validos: estadosValidos
+      });
+    }
 
     // 2. Obtener detalles del pedido con información completa
     // CRÍTICO: Incluir stock REAL desde producto_variantes (NO desde sesiones de inventario)
@@ -1127,11 +1138,15 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
 
     const remision = remisionQuery.rows[0];
 
-    if (remision.estado !== 'PENDIENTE_CONFIRMACION_FINANZAS') {
+    // BUG FIX 2: Validar estado antes de confirmar
+    const estadosValidosConfirmacion = ['PENDIENTE_CONFIRMACION_FINANZAS', 'PENDIENTE_REVISION'];
+    if (!estadosValidosConfirmacion.includes(remision.estado)) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        error: `No se puede confirmar finanzas. Estado actual: ${remision.estado}. Se requiere PENDIENTE_CONFIRMACION_FINANZAS`
+        error: `No se puede confirmar finanzas. Estado actual: ${remision.estado}. Se requiere PENDIENTE_CONFIRMACION_FINANZAS o PENDIENTE_REVISION`,
+        estado_actual: remision.estado,
+        estados_validos: estadosValidosConfirmacion
       });
     }
 
