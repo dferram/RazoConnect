@@ -6,9 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "build": "npm install --production",
-    "test": "jest --testEnvironment=node --detectOpenHandles",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test": "cross-env NODE_ENV=test jest --testEnvironment=node --detectOpenHandles",
+    "test:watch": "cross-env NODE_ENV=test jest --watch",
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage"
   },
   "keywords": [
     "ecommerce",
@@ -67,6 +67,7 @@
   "devDependencies": {
     "@commitlint/cli": "^20.4.2",
     "@commitlint/config-conventional": "^20.4.2",
+    "cross-env": "^10.1.0",
     "jest": "^30.2.0",
     "nodemon": "^3.0.1",
     "supertest": "^7.2.2"

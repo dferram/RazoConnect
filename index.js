@@ -505,25 +505,28 @@ app.use((err, req, res, next) => {
 // Previene exposición de información sensible en errores (OWASP)
 app.use(sanitizeErrors);
 
-// Iniciar el servidor
-const server = app.listen(PORT, async () => {
-  logger.info('Servidor iniciado', { port: PORT });
+// Iniciar el servidor solo si NO estamos en modo test
+let server;
+if (process.env.NODE_ENV !== 'test') {
+  server = app.listen(PORT, async () => {
+    logger.info('Servidor iniciado', { port: PORT });
 
-  // Probar conexión a la base de datos
-  await db.testConnection();
+    // Probar conexión a la base de datos
+    await db.testConnection();
 
-  // Inicializar Redis para gestión de refresh tokens
-  try {
-    await initRedisClient();
-    logger.info('Redis cliente inicializado');
-  } catch (error) {
-    logger.error('Redis inicialización fallida', { error: error.message });
-    logger.warn('Sistema continuará sin Redis');
-  }
+    // Inicializar Redis para gestión de refresh tokens
+    try {
+      await initRedisClient();
+      logger.info('Redis cliente inicializado');
+    } catch (error) {
+      logger.error('Redis inicialización fallida', { error: error.message });
+      logger.warn('Sistema continuará sin Redis');
+    }
 
-  scheduleDailyMaintenance();
-  logger.info('Sistema de mantenimiento diario activado');
-});
+    scheduleDailyMaintenance();
+    logger.info('Sistema de mantenimiento diario activado');
+  });
+}
 
 // ============================================================================
 // GRACEFUL SHUTDOWN
@@ -532,7 +535,7 @@ const server = app.listen(PORT, async () => {
 const gracefulShutdown = async (signal) => {
   logger.info('Shutdown iniciado', { signal });
   
-  server.close(async () => {
+  const closeConnections = async () => {
     logger.info('Servidor HTTP cerrado');
     
     // Cerrar conexión de Redis
@@ -553,7 +556,13 @@ const gracefulShutdown = async (signal) => {
     
     logger.info('Proceso terminado correctamente');
     process.exit(0);
-  });
+  };
+  
+  if (server) {
+    server.close(closeConnections);
+  } else {
+    await closeConnections();
+  }
   
   // Forzar cierre después de 10 segundos
   setTimeout(() => {
