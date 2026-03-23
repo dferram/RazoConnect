@@ -921,18 +921,26 @@ const surtirPedido = async (req, res) => {
     });
 
     // Actualizar estatus del pedido a "Pendiente de Confirmación" para que finanzas lo vea
+    // FIX: Verificar que TODOS los detalles estén completamente surtidos
+    const verificacionSurtidoQuery = `
+      SELECT 
+        COUNT(*) as total_detalles,
+        COUNT(*) FILTER (WHERE cantidadsurtida >= cantidadpaquetes) as detalles_surtidos_completos,
+        COUNT(*) FILTER (WHERE cantidadsurtida > 0 AND cantidadsurtida < cantidadpaquetes) as detalles_parciales,
+        COUNT(*) FILTER (WHERE cantidadsurtida = 0 OR cantidadsurtida IS NULL) as detalles_pendientes
+      FROM detallesdelpedido
+      WHERE pedidoid = $1 AND tenant_id = $2
+    `;
+    const verificacionResult = await client.query(verificacionSurtidoQuery, [pedidoId, tenant_id]);
+    const { total_detalles, detalles_surtidos_completos, detalles_parciales, detalles_pendientes } = verificacionResult.rows[0];
+    
     let nuevoEstatus = 'Pendiente de Confirmación';
     let completamenteSurtido = false;
     
-    const productosSurtidos = marcarResult.rowCount;
-    
-    if (productosBackorder === 0) {
-      // Todos los productos están listos - enviar a finanzas
-      nuevoEstatus = 'Pendiente de Confirmación';
+    // Solo marcar como completamente surtido si TODOS los detalles están surtidos
+    if (parseInt(detalles_surtidos_completos) === parseInt(total_detalles) && parseInt(total_detalles) > 0) {
       completamenteSurtido = true;
-    } else if (productosSurtidos > 0) {
-      // Algunos productos listos, otros en backorder - también enviar a finanzas
-      nuevoEstatus = 'Pendiente de Confirmación';
+    } else if (parseInt(detalles_surtidos_completos) > 0 || parseInt(detalles_parciales) > 0) {
       completamenteSurtido = false;
     }
 
@@ -1124,30 +1132,54 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       }
     }
 
-    // Verificar si hay productos en backorder
-    const backorderCheckQuery = `
-      SELECT COUNT(*) as productos_backorder
+    // FIX: Verificar que TODOS los detalles estén completamente surtidos
+    const verificacionSurtidoQuery = `
+      SELECT 
+        COUNT(*) as total_detalles,
+        COUNT(*) FILTER (WHERE cantidadsurtida >= cantidadpaquetes) as detalles_surtidos_completos,
+        COUNT(*) FILTER (WHERE cantidadsurtida > 0 AND cantidadsurtida < cantidadpaquetes) as detalles_parciales,
+        COUNT(*) FILTER (WHERE cantidadsurtida = 0 OR cantidadsurtida IS NULL) as detalles_pendientes
       FROM detallesdelpedido
-      WHERE pedidoid = $1 AND esbackorder = true AND tenant_id = $2
+      WHERE pedidoid = $1 AND tenant_id = $2
     `;
-    const backorderResult = await client.query(backorderCheckQuery, [pedidoId, tenant_id]);
-    const tieneBackorder = parseInt(backorderResult.rows[0].productos_backorder) > 0;
+    const verificacionResult = await client.query(verificacionSurtidoQuery, [pedidoId, tenant_id]);
+    const { total_detalles, detalles_surtidos_completos, detalles_parciales, detalles_pendientes } = verificacionResult.rows[0];
+    
+    // Determinar estatus basado en si TODOS los detalles están completamente surtidos
+    let nuevoEstatus;
+    let completamenteSurtido;
+    let esHistorico;
+    
+    if (parseInt(detalles_surtidos_completos) === parseInt(total_detalles) && parseInt(total_detalles) > 0) {
+      // TODOS los detalles están completamente surtidos
+      nuevoEstatus = 'Surtido';
+      completamenteSurtido = true;
+      esHistorico = true;
+    } else if (parseInt(detalles_surtidos_completos) > 0 || parseInt(detalles_parciales) > 0) {
+      // Algunos detalles surtidos pero no todos
+      nuevoEstatus = 'Parcialmente Surtido';
+      completamenteSurtido = false;
+      esHistorico = false;
+    } else {
+      // Ningún detalle surtido (no debería llegar aquí)
+      nuevoEstatus = 'Pendiente';
+      completamenteSurtido = false;
+      esHistorico = false;
+    }
 
-    // Actualizar pedido a Surtido y marcar como histórico si está 100% surtido
+    // Actualizar pedido con el estatus correcto
     const updateQuery = `
       UPDATE pedidos 
       SET 
-        estatus = 'Surtido',
-        completamente_surtido = true,
-        es_historico = $3,
+        estatus = $3,
+        completamente_surtido = $4,
+        es_historico = $5,
         fecha_confirmacion = NOW()
       WHERE pedidoid = $1 AND tenant_id = $2
       RETURNING *
     `;
     
-    // Solo marcar como histórico si NO tiene productos en backorder
-    const esHistorico = !tieneBackorder;
-    await client.query(updateQuery, [pedidoId, tenant_id, esHistorico]);
+    await client.query(updateQuery, [pedidoId, tenant_id, nuevoEstatus, completamenteSurtido, esHistorico]);
 
     // BUG FIX 5: Insertar en histórico cuando Finanzas confirma
     await client.query(
@@ -1164,7 +1196,10 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         JSON.stringify({
           productos_confirmados: productosConfirmados,
           es_historico: esHistorico,
-          tiene_backorder: tieneBackorder,
+          estatus_final: nuevoEstatus,
+          detalles_surtidos_completos: parseInt(detalles_surtidos_completos),
+          detalles_parciales: parseInt(detalles_parciales),
+          detalles_pendientes: parseInt(detalles_pendientes),
           timestamp: new Date().toISOString()
         }),
         userId,
@@ -1178,7 +1213,9 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       pedidoId,
       productosConfirmados,
       esHistorico,
-      tieneBackorder,
+      nuevoEstatus,
+      detalles_surtidos_completos: parseInt(detalles_surtidos_completos),
+      detalles_parciales: parseInt(detalles_parciales),
       tenantId: tenant_id,
       userId,
       requestId: req.requestId

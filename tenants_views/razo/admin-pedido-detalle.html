@@ -658,6 +658,7 @@
                     id="btnSurtirPedido"
                     type="button"
                     class="btn-action"
+                    onclick="surtirPedidoInventarios()"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #16a34a; color: white; display: none;"
                     title="Marcar productos como surtidos y enviar a finanzas"
                   >
@@ -690,9 +691,9 @@
                     id="btnGenerarRemision"
                     onclick="descargarPDFPedidoDetalle()"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #17a2b8; color: white; display: none;"
-                    title="Descargar remisión en PDF"
+                    title="Generar PDF del pedido"
                   >
-                    📄 Generar Remisión
+                    📄 Generar PDF
                   </button>
                   <button 
                     type="button"
@@ -1337,9 +1338,9 @@
               if (btnRechazar) btnRechazar.style.display = 'none';
             }
             
-            // Update Generar Remisión button text if order is fulfilled
+            // Update Generar PDF button text if order is fulfilled
             if (btnRemision && estaSurtido) {
-              btnRemision.innerHTML = '📄 Descargar Remisión';
+              btnRemision.innerHTML = '📄 Generar PDF';
             }
 
             document.getElementById("pedidoMonto").textContent = formatCurrency(
