@@ -631,8 +631,20 @@
 
               <!-- Items list -->
               <div class="items-card">
-                <div class="items-card-header">
+                <div class="items-card-header" style="display: flex; justify-content: space-between; align-items: center;">
                   <h3>Productos del pedido</h3>
+                  <div id="selectAllContainer" style="display: none; align-items: center; gap: 0.5rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.875rem; font-weight: 500;">
+                      <input 
+                        type="checkbox" 
+                        id="selectAllConStock" 
+                        onchange="toggleSelectAllConStock(this.checked)"
+                        style="width: 1.25rem; height: 1.25rem; cursor: pointer;"
+                        title="Seleccionar todos los productos con stock"
+                      />
+                      <span>Seleccionar todos con stock</span>
+                    </label>
+                  </div>
                 </div>
                 <div id="itemsContainer">
                   <!-- Items will be rendered here -->
@@ -1397,8 +1409,8 @@
             }
             
             // Update Generar PDF button text if order is fulfilled
-            if (btnRemision && estaSurtido) {
-              btnRemision.innerHTML = '📄 Generar PDF';
+            if (btnGenerarPDF && estaSurtido) {
+              btnGenerarPDF.innerHTML = '📄 Generar PDF';
             }
 
             document.getElementById("pedidoMonto").textContent = formatCurrency(
@@ -2258,6 +2270,39 @@
             btnToggle.disabled = false;
           }
         };
+
+        // Function to toggle select all products with stock (for inventarios role)
+        window.toggleSelectAllConStock = function(checked) {
+          const checkboxes = document.querySelectorAll('.producto-surtir-checkbox');
+          checkboxes.forEach(cb => {
+            cb.checked = checked;
+          });
+          console.log(`[SELECT ALL] ${checked ? 'Seleccionados' : 'Deseleccionados'} ${checkboxes.length} productos con stock`);
+        };
+
+        // Show select all container for inventarios role after products are loaded
+        function showSelectAllForInventarios() {
+          const userRole = getUserRole();
+          const isInventarios = userRole === 'inventarios';
+          const selectAllContainer = document.getElementById('selectAllContainer');
+          
+          if (selectAllContainer && isInventarios) {
+            // Check if there are any checkboxes (products with stock)
+            const checkboxes = document.querySelectorAll('.producto-surtir-checkbox');
+            if (checkboxes.length > 0) {
+              selectAllContainer.style.display = 'flex';
+              console.log(`✅ [SELECT ALL] Mostrando selector para ${checkboxes.length} productos con stock`);
+            }
+          }
+        }
+
+        // Call after products are rendered
+        document.addEventListener('DOMContentLoaded', () => {
+          // Wait for products to be loaded, then show select all
+          setTimeout(() => {
+            showSelectAllForInventarios();
+          }, 500);
+        });
       })();
 
       // Cargar botón de volver

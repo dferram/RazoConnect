@@ -155,15 +155,6 @@
               <table class="admin-table" id="ordersTable" style="display: none">
                 <thead>
                   <tr>
-                    <th style="width: 50px; text-align: center;">
-                      <input 
-                        type="checkbox" 
-                        id="selectAllPedidos" 
-                        onchange="toggleSelectAll(this.checked)"
-                        title="Seleccionar todos"
-                        style="cursor: pointer; width: 18px; height: 18px;"
-                      />
-                    </th>
                     <th>#ID</th>
                     <th>Prioridad</th>
                     <th>Cliente</th>
@@ -189,51 +180,6 @@
             </div>
           </div>
 
-          <!-- Barra de acciones flotante para selección múltiple -->
-          <div id="bulkActionsBar" style="
-            display: none;
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: white;
-            padding: 1rem 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
-            border-radius: 12px;
-            z-index: 1000;
-            border: 2px solid var(--razo-orange);
-            min-width: 600px;
-          ">
-            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-              <span id="selectedCount" style="font-weight: 600; font-size: 1rem; color: var(--razo-gray-dark);">
-                0 pedidos seleccionados
-              </span>
-              <button 
-                class="btn btn-success" 
-                onclick="marcarComoEnviados()" 
-                style="padding: 0.75rem 1.5rem; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;"
-                title="Marcar seleccionados como Enviados"
-              >
-                🚚 Marcar como Enviados
-              </button>
-              <button 
-                class="btn btn-primary" 
-                onclick="exportarSeleccionados()" 
-                style="padding: 0.75rem 1.5rem; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;"
-                title="Exportar seleccionados a Excel"
-              >
-                📊 Exportar
-              </button>
-              <button 
-                class="btn btn-secondary" 
-                onclick="clearSelection()" 
-                style="padding: 0.75rem 1.5rem; font-size: 0.875rem;"
-                title="Cancelar selección"
-              >
-                ✖ Cancelar
-              </button>
-            </div>
-          </div>
         </div>
       </main>
     </div>
@@ -705,16 +651,6 @@
                   
                   return `
                 <tr style="${rowStyle}">
-                  <td style="text-align: center;">
-                    <input 
-                      type="checkbox" 
-                      class="pedido-checkbox" 
-                      data-pedido-id="${order.pedidoId}"
-                      onchange="togglePedidoSelection(${order.pedidoId}, this.checked)"
-                      style="cursor: pointer; width: 18px; height: 18px;"
-                      title="Seleccionar pedido"
-                    />
-                  </td>
                   <td><strong>#${order.pedidoId}</strong></td>
                   <td style="text-align: center;">
                     ${puedeTogglePrioridad ? `
@@ -1102,96 +1038,6 @@
           if (btnConfirmarSpinner) btnConfirmarSpinner.style.display = "none";
         }
       }
-
-      // ============================================================
-      // PROOF OF DELIVERY FUNCTIONS - COMMENTED OUT FOR FUTURE USE
-      // ============================================================
-      /*
-      let selectedPedidoIdEvidencia = null;
-
-      function abrirModalSubirEvidencia(pedidoId) {
-        selectedPedidoIdEvidencia = pedidoId;
-        document.getElementById("evidenciaPedidoId").textContent = pedidoId;
-        document.getElementById("evidenciaFile").value = "";
-        document.getElementById("evidenciaModal").style.display = "flex";
-      }
-
-      function cerrarModalEvidencia() {
-        document.getElementById("evidenciaModal").style.display = "none";
-        selectedPedidoIdEvidencia = null;
-      }
-
-      async function subirEvidencia() {
-        if (!selectedPedidoIdEvidencia) return;
-
-        const fileInput = document.getElementById("evidenciaFile");
-        const btnSubir = document.getElementById("btnSubirEvidencia");
-        const btnSubirText = document.getElementById("btnSubirEvidenciaText");
-        const btnSubirSpinner = document.getElementById("btnSubirEvidenciaSpinner");
-
-        if (!fileInput.files || fileInput.files.length === 0) {
-          showToast("Por favor selecciona un archivo", "error");
-          return;
-        }
-
-        const file = fileInput.files[0];
-        const maxSize = 10 * 1024 * 1024;
-
-        if (file.size > maxSize) {
-          showToast("El archivo es demasiado grande. Máximo 10MB", "error");
-          return;
-        }
-
-        try {
-          btnSubir.disabled = true;
-          btnSubirText.style.display = "none";
-          btnSubirSpinner.style.display = "block";
-
-          const formData = new FormData();
-          formData.append("evidencia", file);
-
-          const response = await fetch(
-            `${API_BASE_URL}/admin/pedidos/${selectedPedidoIdEvidencia}/evidencia`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${adminToken}`,
-              },
-              body: formData,
-            }
-          );
-
-          const data = await response.json();
-
-          if (response.ok && data.success) {
-            showToast("Evidencia de entrega subida exitosamente", "success");
-            cerrarModalEvidencia();
-            loadOrders();
-          } else {
-            showToast(data.message || "Error al subir evidencia", "error");
-          }
-        } catch (error) {
-          console.error("Error al subir evidencia:", error);
-          showToast("Error al conectar con el servidor", "error");
-        } finally {
-          btnSubir.disabled = false;
-          btnSubirText.style.display = "inline";
-          btnSubirSpinner.style.display = "none";
-        }
-      }
-      */
-
-      /*
-      function verEvidencia(url) {
-        document.getElementById("evidenciaImagen").src = url;
-        document.getElementById("evidenciaDownloadLink").href = url;
-        document.getElementById("verEvidenciaModal").style.display = "flex";
-      }
-
-      function cerrarModalVerEvidencia() {
-        document.getElementById("verEvidenciaModal").style.display = "none";
-      }
-      */
 
       async function generarRemision(pedidoId) {
         // CRITICAL FIX: Get admin token from localStorage
@@ -1987,151 +1833,6 @@
         // }
       };
 
-      // ============================================================
-      // FUNCIONES DE SELECCIÓN MÚLTIPLE
-      // ============================================================
-      
-      function toggleSelectAll(checked) {
-        const checkboxes = document.querySelectorAll('.pedido-checkbox');
-        checkboxes.forEach(cb => {
-          cb.checked = checked;
-          const pedidoId = parseInt(cb.dataset.pedidoId);
-          if (checked) {
-            selectedOrders.add(pedidoId);
-            selectedOrdersGlobal.add(pedidoId);
-          } else {
-            selectedOrders.delete(pedidoId);
-            selectedOrdersGlobal.delete(pedidoId);
-          }
-        });
-        updateBulkActionsBar();
-      }
-      
-      function togglePedidoSelection(pedidoId, checked) {
-        if (checked) {
-          selectedOrders.add(pedidoId);
-          selectedOrdersGlobal.add(pedidoId);
-        } else {
-          selectedOrders.delete(pedidoId);
-          selectedOrdersGlobal.delete(pedidoId);
-        }
-        updateBulkActionsBar();
-        
-        const totalCheckboxes = document.querySelectorAll('.pedido-checkbox').length;
-        const checkedCheckboxes = document.querySelectorAll('.pedido-checkbox:checked').length;
-        const selectAllCheckbox = document.getElementById('selectAllPedidos');
-        if (selectAllCheckbox) {
-          selectAllCheckbox.checked = totalCheckboxes > 0 && checkedCheckboxes === totalCheckboxes;
-        }
-      }
-      
-      function updateBulkActionsBar() {
-        const bar = document.getElementById('bulkActionsBar');
-        const count = document.getElementById('selectedCount');
-        
-        if (selectedOrders.size > 0) {
-          bar.style.display = 'block';
-          const plural = selectedOrders.size > 1 ? 's' : '';
-          count.textContent = `${selectedOrders.size} pedido${plural} seleccionado${plural}`;
-        } else {
-          bar.style.display = 'none';
-        }
-      }
-      
-      function clearSelection() {
-        selectedOrders.clear();
-        selectedOrdersGlobal.clear();
-        document.querySelectorAll('.pedido-checkbox').forEach(cb => cb.checked = false);
-        const selectAllCheckbox = document.getElementById('selectAllPedidos');
-        if (selectAllCheckbox) selectAllCheckbox.checked = false;
-        updateBulkActionsBar();
-      }
-      
-      async function marcarComoEnviados() {
-        if (selectedOrders.size === 0) return;
-        
-        const result = await Swal.fire({
-          title: '¿Marcar como Enviados?',
-          html: `
-            <p style="margin-bottom: 1rem;">Se actualizarán <strong>${selectedOrders.size}</strong> pedido${selectedOrders.size > 1 ? 's' : ''}</p>
-            <p style="font-size: 0.875rem; color: #666; background: #fff3cd; padding: 1rem; border-radius: 0.5rem;">
-              <strong>⚠️ Importante:</strong> Esta acción cambiará el estado de los pedidos seleccionados a "Enviado"
-            </p>
-          `,
-          icon: 'question',
-          showCancelButton: true,
-          confirmButtonColor: '#16A34A',
-          cancelButtonColor: '#6c757d',
-          confirmButtonText: 'Sí, marcar',
-          cancelButtonText: 'Cancelar'
-        });
-        
-        if (!result.isConfirmed) return;
-        
-        try {
-          Swal.fire({
-            title: 'Actualizando...',
-            html: 'Por favor espera',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-          });
-          
-          const token = localStorage.getItem("razoconnect_admin_token");
-          const promises = Array.from(selectedOrders).map(pedidoId =>
-            fetch(`/api/admin/pedidos/${pedidoId}`, {
-              method: 'PUT',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ estatus: 'Enviado' })
-            })
-          );
-          
-          const results = await Promise.allSettled(promises);
-          const successful = results.filter(r => r.status === 'fulfilled').length;
-          const failed = results.filter(r => r.status === 'rejected').length;
-          
-          if (failed === 0) {
-            await Swal.fire({
-              icon: 'success',
-              title: '¡Actualizado!',
-              text: `${successful} pedido${successful > 1 ? 's' : ''} marcado${successful > 1 ? 's' : ''} como Enviados`,
-              confirmButtonColor: '#F97316'
-            });
-          } else {
-            await Swal.fire({
-              icon: 'warning',
-              title: 'Parcialmente completado',
-              text: `${successful} exitosos, ${failed} fallidos`,
-              confirmButtonColor: '#F97316'
-            });
-          }
-          
-          clearSelection();
-          loadOrders();
-          
-        } catch (error) {
-          console.error('Error:', error);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'No se pudieron actualizar algunos pedidos',
-            confirmButtonColor: '#F97316'
-          });
-        }
-      }
-      
-      async function exportarSeleccionados() {
-        if (selectedOrders.size === 0) return;
-        
-        Swal.fire({
-          icon: 'info',
-          title: 'Función en desarrollo',
-          text: 'La exportación de pedidos estará disponible próximamente',
-          confirmButtonColor: '#F97316'
-        });
-      }
     </script>
 
     <style>
