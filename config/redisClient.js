@@ -235,9 +235,9 @@ const initRedisClient = async () => {
     // 🔍 DETECCIÓN DE ENTORNO
     const nodeEnv = process.env.NODE_ENV || 'development';
     
-    // Si estamos en desarrollo, usar mock en memoria
-    if (nodeEnv === 'development') {
-      console.log('⚠️ [REDIS] Modo desarrollo activo: Usando memoria RAM local');
+    // Si estamos en desarrollo o test, usar mock en memoria
+    if (nodeEnv === 'development' || nodeEnv === 'test') {
+      console.log('⚠️ [REDIS] Modo desarrollo/test activo: Usando memoria RAM local');
       console.log('💡 [REDIS] Para usar Redis real, configura NODE_ENV=production');
       
       redisClient = createMockRedisClient();

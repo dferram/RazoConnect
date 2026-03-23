@@ -42,6 +42,9 @@ jobs:
           SESSION_SECRET: test-session-secret-suficientemente-largo-ci
           FRONTEND_BASE_URL: https://tudominio.com
           BCRYPT_ROUNDS: 10
+          CLOUDINARY_CLOUD_NAME: test-cloud
+          CLOUDINARY_API_KEY: test-api-key
+          CLOUDINARY_API_SECRET: test-api-secret
 
       - name: Run tests with coverage
         run: npm run test:coverage
@@ -54,6 +57,9 @@ jobs:
           SESSION_SECRET: test-session-secret-suficientemente-largo-ci
           FRONTEND_BASE_URL: https://tudominio.com
           BCRYPT_ROUNDS: 10
+          CLOUDINARY_CLOUD_NAME: test-cloud
+          CLOUDINARY_API_KEY: test-api-key
+          CLOUDINARY_API_SECRET: test-api-secret
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4

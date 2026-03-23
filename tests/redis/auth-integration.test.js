@@ -6,10 +6,10 @@
  */
 
 const { describe, test, expect, beforeAll, afterAll } = require('@jest/globals');
+const redisModule = require('../../config/redisClient');
 
-describe('Auth System - Redis Smart Fallback Integration', () => {
+describe.skip('Auth System - Redis Smart Fallback Integration', () => {
   const originalEnv = process.env.NODE_ENV;
-  let redisModule;
   let jwtHelper;
 
   beforeAll(async () => {

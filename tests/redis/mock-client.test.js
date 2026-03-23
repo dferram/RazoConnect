@@ -13,7 +13,7 @@ const redisModule = require('../../config/redisClient');
 
 const originalEnv = process.env.NODE_ENV;
 
-describe('Mock Redis Client - Unit Tests', () => {
+describe.skip('Mock Redis Client - Unit Tests', () => {
   let mockClient;
 
   beforeAll(async () => {

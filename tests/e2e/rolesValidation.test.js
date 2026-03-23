@@ -58,8 +58,8 @@ describe('E2E - Validación de Roles en Controladores', () => {
       const rol = 'finanzas';
       const permisos = getPermisosRol(rol);
 
-      expect(permisos).toHaveProperty('cuentas_cobrar');
-      expect(permisos).toHaveProperty('gestion_creditos');
+      expect(permisos).toHaveProperty('cxc');
+      expect(permisos).toHaveProperty('credito');
     });
 
     test('compras debe retornar permisos de compras', () => {

@@ -103,9 +103,9 @@ describe('rolesConfig - Matriz de Permisos RBAC', () => {
 
     test('finanzas debe tener permisos de CxC y CxP', () => {
       const permisos = getPermisosRol('finanzas');
-      expect(permisos).toHaveProperty('cuentas_cobrar');
-      expect(permisos).toHaveProperty('cuentas_pagar');
-      expect(permisos).toHaveProperty('gestion_creditos');
+      expect(permisos).toHaveProperty('cxc');
+      expect(permisos).toHaveProperty('cxp');
+      expect(permisos).toHaveProperty('credito');
     });
 
     test('compras debe tener permisos de proveedores y OC', () => {
@@ -175,9 +175,9 @@ describe('rolesConfig - Matriz de Permisos RBAC', () => {
     });
 
     test('finanzas puede gestionar CxC y créditos', () => {
-      expect(tienePermiso('finanzas', 'cuentas_cobrar', 'ver')).toBe(true);
-      expect(tienePermiso('finanzas', 'cuentas_cobrar', 'crear_pago')).toBe(true);
-      expect(tienePermiso('finanzas', 'gestion_creditos', 'modificar')).toBe(true);
+      expect(tienePermiso('finanzas', 'cxc', 'ver')).toBe(true);
+      expect(tienePermiso('finanzas', 'cxc', 'crear_pago')).toBe(true);
+      expect(tienePermiso('finanzas', 'credito', 'modificar')).toBe(true);
       expect(tienePermiso('finanzas', 'validar_pagos', 'modificar')).toBe(true);
     });
 
@@ -232,7 +232,7 @@ describe('rolesConfig - Matriz de Permisos RBAC', () => {
     test('debe retornar descripciones correctas', () => {
       expect(getDescripcionRol('super_admin')).toBe('Super Administrador (Acceso Total en su Tenant)');
       expect(getDescripcionRol('admin')).toBe('Administrador (Acceso Total en su Tenant)');
-      expect(getDescripcionRol('inventarios')).toBe('Gestión de Inventarios y Auditorías');
+      expect(getDescripcionRol('inventarios')).toBe('Gestión de Inventarios, Auditorías y Surtido');
       expect(getDescripcionRol('catalogo')).toBe('Gestión de Productos y Catálogo');
       expect(getDescripcionRol('finanzas')).toBe('Gestión Financiera y Créditos');
       expect(getDescripcionRol('compras')).toBe('Gestión de Compras y Proveedores');
@@ -247,7 +247,7 @@ describe('rolesConfig - Matriz de Permisos RBAC', () => {
 
     test('debe ser case-insensitive', () => {
       expect(getDescripcionRol('ADMIN')).toBe('Administrador (Acceso Total en su Tenant)');
-      expect(getDescripcionRol('Inventarios')).toBe('Gestión de Inventarios y Auditorías');
+      expect(getDescripcionRol('Inventarios')).toBe('Gestión de Inventarios, Auditorías y Surtido');
     });
   });
 

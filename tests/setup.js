@@ -63,3 +63,8 @@ process.env.SESSION_SECRET = 'test-session-secret-suficientemente-largo';
 process.env.NODE_ENV = 'test';
 process.env.FRONTEND_BASE_URL = 'https://tudominio.com';
 process.env.BCRYPT_ROUNDS = '10';
+
+// Cloudinary mock credentials (para evitar errores en tests)
+process.env.CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'test-cloud';
+process.env.CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || 'test-api-key';
+process.env.CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || 'test-api-secret';
