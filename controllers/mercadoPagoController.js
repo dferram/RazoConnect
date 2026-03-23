@@ -4,15 +4,13 @@ const db = require("../db");
 
 const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
 
-if (!MP_ACCESS_TOKEN) {
-  throw new Error(
-    "MP_ACCESS_TOKEN no está configurado en las variables de entorno."
-  );
+// Solo configurar Mercado Pago si el token está disponible
+// Esto permite que el módulo se cargue en tests sin el token
+if (MP_ACCESS_TOKEN) {
+  mercadopago.configure({
+    access_token: MP_ACCESS_TOKEN,
+  });
 }
-
-mercadopago.configure({
-  access_token: MP_ACCESS_TOKEN,
-});
 
 const parseCurrency = (value) => {
   const parsed = Number.parseFloat(value);
@@ -30,6 +28,15 @@ const buildErrorResponse = (res, statusCode, message, details = null) =>
   });
 
 const procesarPagoTarjeta = async (req, res) => {
+  // Validar que Mercado Pago esté configurado
+  if (!MP_ACCESS_TOKEN) {
+    return buildErrorResponse(
+      res, 
+      503, 
+      "Mercado Pago no está configurado. Contacte al administrador."
+    );
+  }
+
   const {
     token,
     monto,

@@ -68,3 +68,6 @@ process.env.BCRYPT_ROUNDS = '10';
 process.env.CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || 'test-cloud';
 process.env.CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || 'test-api-key';
 process.env.CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || 'test-api-secret';
+
+// Mercado Pago mock credentials (para evitar errores en tests)
+process.env.MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN || 'test-mp-token-for-ci';

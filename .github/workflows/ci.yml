@@ -45,6 +45,7 @@ jobs:
           CLOUDINARY_CLOUD_NAME: test-cloud
           CLOUDINARY_API_KEY: test-api-key
           CLOUDINARY_API_SECRET: test-api-secret
+          MP_ACCESS_TOKEN: test-mp-token-for-ci
 
       - name: Run tests with coverage
         run: npm run test:coverage
@@ -60,6 +61,7 @@ jobs:
           CLOUDINARY_CLOUD_NAME: test-cloud
           CLOUDINARY_API_KEY: test-api-key
           CLOUDINARY_API_SECRET: test-api-secret
+          MP_ACCESS_TOKEN: test-mp-token-for-ci
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
