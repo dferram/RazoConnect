@@ -500,6 +500,14 @@ router.post(
   pedidosAdminController.rechazarPedidoFinanzas
 );
 
+// Marcar/desmarcar pedido como prioritario (finanzas)
+router.post(
+  "/pedidos/:id/prioritario",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas']),
+  pedidosAdminController.setPrioritario
+);
+
 // Generar PDF de remisión para pedido (admin)
 // Supports ?mostrarPrecios=false query param for inventarios role
 router.get(

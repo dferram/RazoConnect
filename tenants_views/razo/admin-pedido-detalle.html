@@ -247,6 +247,27 @@
         font-size: 0.8rem;
         color: var(--text-secondary);
       }
+
+      /* Estilos para items "Bajo pedido" */
+      .item-bajo-pedido {
+        opacity: 0.55;
+        background: #f9fafb;
+        position: relative;
+      }
+
+      .item-bajo-pedido::after {
+        content: '🔄 BAJO PEDIDO';
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: #fef3c7;
+        color: #92400e;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.025em;
+      }
       
       /* Tooltip for disabled button */
       .btn-disabled-wrapper {
@@ -569,6 +590,12 @@
                       id="pedidoEstatus"
                       >--</span
                     >
+                    <span
+                      class="pedido-estatus-badge"
+                      id="prioridadBadge"
+                      style="display: none; background: #fef2f2; color: #dc2626; font-weight: 700;"
+                      >⚠️ PRIORITARIO</span
+                    >
                   </div>
                 </div>
                 <div class="pedido-monto-section" id="montoTotalSection">
@@ -683,6 +710,16 @@
                     title="Rechazar y regresar al almacén para corrección"
                   >
                     ↩️ Regresar a Almacén
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-danger"
+                    id="btnTogglePrioridad"
+                    onclick="togglePrioridad()"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #dc2626; color: white; display: none;"
+                    title="Marcar/desmarcar pedido como prioritario"
+                  >
+                    ⚠️ Marcar Prioritario
                   </button>
                   <!-- Botones de Factura y Remisión (solo para finanzas, admin, superadmin) -->
                   <button
@@ -1298,6 +1335,26 @@
             const puedeConfirmarFinanzas = ['finanzas', 'gerente_finanzas', 'secretaria', 'admin', 'super_admin'].includes(currentRole);
             const puedeRechazarFinanzas = ['finanzas', 'gerente_finanzas', 'admin', 'super_admin'].includes(currentRole);
             
+            // Prioridad button - Solo para finanzas
+            const btnPrioridad = document.getElementById('btnTogglePrioridad');
+            const puedeMarcarPrioridad = ['finanzas', 'gerente_finanzas', 'admin', 'super_admin'].includes(currentRole);
+            
+            if (btnPrioridad && puedeMarcarPrioridad) {
+              // Cargar estado de prioridad desde backend
+              const esPrioritario = pedido.es_prioritario || pedido.esPrioritario || false;
+              const prioridadBadge = document.getElementById('prioridadBadge');
+              
+              if (prioridadBadge) {
+                prioridadBadge.style.display = esPrioritario ? 'inline-block' : 'none';
+              }
+              
+              btnPrioridad.innerHTML = esPrioritario ? '✓ Prioritario' : '⚠️ Marcar Prioritario';
+              btnPrioridad.style.background = esPrioritario ? '#10b981' : '#dc2626';
+              btnPrioridad.style.display = 'inline-block';
+            } else if (btnPrioridad) {
+              btnPrioridad.style.display = 'none';
+            }
+            
             if (puedeConfirmarFinanzas || puedeRechazarFinanzas) {
               if (estaSurtido) {
                 // Already confirmed
@@ -1405,9 +1462,26 @@
             const currentUserRole = getUserRole();
             const isFinanzasRole = currentUserRole === 'finanzas' || currentUserRole === 'gerente_finanzas';
             
+            // REORDENAR: Mover items "Bajo pedido" al final de la lista
+            const productosConStock = productos.filter(p => {
+              const esBackorder = p.esBackorder === true || p.esBackorder === 'true';
+              const stock = p.stock !== undefined ? p.stock : 0;
+              const piezasNecesarias = p.piezasTotales || 0;
+              const hayStockSuficiente = stock >= piezasNecesarias;
+              return !esBackorder && hayStockSuficiente;
+            });
+            
+            const productosBajoPedido = productos.filter(p => {
+              const esBackorder = p.esBackorder === true || p.esBackorder === 'true';
+              const stock = p.stock !== undefined ? p.stock : 0;
+              const piezasNecesarias = p.piezasTotales || 0;
+              const hayStockSuficiente = stock >= piezasNecesarias;
+              return esBackorder || !hayStockSuficiente;
+            });
+            
             // CRITICAL: Always render ALL products to DOM so checkboxes exist
-            // Finance role will hide backorder products via CSS, not by removing from DOM
-            const productosToRender = productos;
+            // Primero con stock, luego bajo pedido
+            const productosToRender = [...productosConStock, ...productosBajoPedido];
             
             if (isFinanzasRole) {
               console.log(`💰 [FINANZAS] Ocultando visualmente productos backorder: ${productos.length} total, ${productos.filter(item => !item.esBackorder).length} con stock, ${productos.filter(item => item.esBackorder).length} backorder (ocultos visualmente)`);
@@ -1471,8 +1545,12 @@
                   // Solo ocultar productos backorder que NO están surtidos
                   const ocultarParaFinanzas = isFinanzasRole && item.esBackorder && !estaSurtido;
                   
+                  // Aplicar clase item-bajo-pedido para gray layer
+                  const esBajoPedido = badgeText === 'BAJO PEDIDO';
+                  const claseItemRow = esBajoPedido ? 'item-row item-bajo-pedido' : 'item-row';
+                  
                   return `
-              <div class="item-row" ${ocultarParaFinanzas ? 'style="display: none;"' : ''} data-detalle-id="${item.detalleId}" data-es-backorder="${item.esBackorder || false}" data-surtido="${estaSurtido}">
+              <div class="${claseItemRow}" style="${ocultarParaFinanzas ? 'display: none;' : ''}" data-detalle-id="${item.detalleId}" data-es-backorder="${item.esBackorder || false}" data-surtido="${estaSurtido}">
                 ${
                   item.imagenUrl
                     ? `<img src="${item.imagenUrl}" alt="${item.nombre}" class="item-image-placeholder" style="object-fit: cover; border-radius: 0.5rem;" />`
@@ -2095,6 +2173,89 @@
             showToast(error.message || 'Error al confirmar el pedido', 'error');
             btnConfirmar.disabled = false;
             btnConfirmar.innerHTML = originalText;
+          }
+        };
+
+        // Toggle pedido prioritario (for finanzas role)
+        window.togglePrioridad = async function() {
+          if (!selectedOrderId) {
+            showToast("No se pudo identificar el pedido", "error");
+            return;
+          }
+
+          const btnToggle = document.getElementById('btnTogglePrioridad');
+          if (!btnToggle) return;
+
+          // Determinar estado actual desde el badge
+          const prioridadBadge = document.getElementById('prioridadBadge');
+          const esPrioritario = prioridadBadge && prioridadBadge.style.display !== 'none';
+
+          // Solicitar motivo
+          const { value: motivo, isDismissed } = await Swal.fire({
+            title: esPrioritario ? 'Remover Prioridad' : 'Marcar como Prioritario',
+            input: 'textarea',
+            inputLabel: 'Motivo (opcional)',
+            inputPlaceholder: 'Ingresa el motivo...',
+            showCancelButton: true,
+            confirmButtonText: esPrioritario ? 'Remover' : 'Marcar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: esPrioritario ? '#6c757d' : '#dc2626',
+            inputValidator: (value) => {
+              // Motivo opcional, no requerido
+            }
+          });
+
+          if (isDismissed) return;
+
+          const originalText = btnToggle.innerHTML;
+          btnToggle.disabled = true;
+          btnToggle.innerHTML = '<span class="spinner"></span>';
+
+          try {
+            const adminToken = localStorage.getItem('token') || localStorage.getItem('razoconnect_admin_token');
+            if (!adminToken) {
+              throw new Error('No hay sesión activa');
+            }
+
+            const response = await fetch(`${API_BASE_URL}/api/admin/pedidos/${selectedOrderId}/prioritario`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${adminToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                prioritario: !esPrioritario,
+                motivo: motivo || ''
+              })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+              // Actualizar badge de prioridad
+              if (prioridadBadge) {
+                prioridadBadge.style.display = data.prioritario ? 'inline-block' : 'none';
+              }
+
+              // Actualizar botón
+              btnToggle.innerHTML = data.prioritario ? '✓ Prioritario' : '⚠️ Marcar Prioritario';
+              btnToggle.style.background = data.prioritario ? '#10b981' : '#dc2626';
+
+              await Swal.fire({
+                icon: 'success',
+                title: data.prioritario ? 'Pedido Marcado como Prioritario' : 'Prioridad Removida',
+                text: data.message,
+                confirmButtonColor: '#0d6efd'
+              });
+            } else {
+              throw new Error(data.message || 'Error al actualizar prioridad');
+            }
+          } catch (error) {
+            console.error('Error actualizando prioridad:', error);
+            showToast(error.message || 'Error al actualizar prioridad', 'error');
+            btnToggle.innerHTML = originalText;
+          } finally {
+            btnToggle.disabled = false;
           }
         };
       })();

@@ -1311,11 +1311,142 @@ const rechazarPedidoFinanzas = async (req, res) => {
   }
 };
 
+/**
+ * Marcar/desmarcar pedido como prioritario
+ * POST /api/admin/pedidos/:id/prioritario
+ * Solo accesible por roles: finanzas, admin, super_admin
+ */
+const setPrioritario = async (req, res) => {
+  const client = await db.pool.connect();
+
+  try {
+    const { tenant_id } = req.tenant;
+    const pedidoId = Number.parseInt(req.params.id, 10);
+    const { prioritario, motivo } = req.body;
+    const usuarioId = req.user?.id || req.user?.userId;
+
+    if (!Number.isInteger(pedidoId) || pedidoId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de pedido inválido',
+      });
+    }
+
+    if (typeof prioritario !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'El campo prioritario debe ser boolean',
+      });
+    }
+
+    await client.query('BEGIN');
+
+    const pedidoResult = await client.query(
+      'SELECT pedidoid, estatus, es_prioritario FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2',
+      [pedidoId, tenant_id]
+    );
+
+    if (pedidoResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        message: 'Pedido no encontrado',
+      });
+    }
+
+    await client.query(
+      'UPDATE pedidos SET es_prioritario = $1 WHERE pedidoid = $2 AND tenant_id = $3',
+      [prioritario, pedidoId, tenant_id]
+    );
+
+    const userName = req.user?.nombre || req.user?.username || 'Usuario';
+    const titulo = prioritario
+      ? `⚠️ Pedido #${pedidoId} Marcado como PRIORITARIO`
+      : `Prioridad Removida - Pedido #${pedidoId}`;
+    
+    const mensaje = prioritario
+      ? `El pedido #${pedidoId} ha sido marcado como PRIORITARIO por ${userName}. Motivo: ${motivo || 'Sin motivo especificado'}`
+      : `La prioridad del pedido #${pedidoId} ha sido removida por ${userName}. Motivo: ${motivo || 'Sin motivo'}`;
+
+    const almacenistasResult = await client.query(
+      `SELECT DISTINCT a.adminid
+       FROM administradores a
+       WHERE LOWER(a.rol) IN ('inventarios', 'almacenista')
+         AND a.activo = TRUE
+         AND a.tenant_id = $1`,
+      [tenant_id]
+    );
+
+    const destinatarios = almacenistasResult.rows.map(r => r.adminid);
+
+    for (const destId of destinatarios) {
+      await client.query(
+        `INSERT INTO notificaciones (
+          administrador_id, tipo, titulo, mensaje, metadata, prioridad, leida, tenant_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          destId,
+          'prioridad_pedido',
+          titulo,
+          mensaje,
+          JSON.stringify({
+            pedidoId,
+            motivo: motivo || '',
+            marcado_por: usuarioId,
+            prioritario,
+            usuario_nombre: userName,
+            timestamp: new Date().toISOString(),
+          }),
+          prioritario ? 'alta' : 'normal',
+          false,
+          tenant_id,
+        ]
+      );
+    }
+
+    logger.info('Pedido prioritario actualizado:', {
+      pedidoId,
+      prioritario,
+      motivo,
+      usuarioId,
+      destinatarios: destinatarios.length,
+      tenantId: tenant_id,
+    });
+
+    await client.query('COMMIT');
+
+    return res.json({
+      success: true,
+      pedidoId,
+      prioritario,
+      message: prioritario
+        ? `Pedido marcado como prioritario. Se notificó a ${destinatarios.length} miembro(s) del equipo de inventarios.`
+        : 'Prioridad removida del pedido',
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    logger.error('Error al actualizar prioridad de pedido:', {
+      error: error.message,
+      stack: error.stack,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id,
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Error al actualizar prioridad del pedido',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  } finally {
+    client.release();
+  }
+};
+
 module.exports = {
   getAllPedidos,
   getPedidoDetalle,
   confirmarPedido,
   surtirPedido,
   confirmarSurtidoFinanzas,
-  rechazarPedidoFinanzas
+  rechazarPedidoFinanzas,
+  setPrioritario,
 };
