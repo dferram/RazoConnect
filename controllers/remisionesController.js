@@ -1,6 +1,7 @@
 const pool = require('../db');
 const logger = require('../utils/logger');
 const kardexService = require('../services/kardexService');
+const { calcularTotalSurtido } = require('../utils/calcularTotalSurtido');
 
 /**
  * CONTROLADOR DE REMISIONES
