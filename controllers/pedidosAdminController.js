@@ -13,6 +13,7 @@ const db = require('../db');
 const logger = require('../utils/logger');
 const inventoryService = require('../services/inventoryService');
 const { getPaginationParams, buildPaginationMeta } = require('../utils/pagination');
+const { calcularEstadoPedido, getDetallesPedido, updatePedidoStatus } = require('../utils/pedidoStatus');
 
 /**
  * @swagger
@@ -920,22 +921,16 @@ const surtirPedido = async (req, res) => {
       productosRegistrados: detallesMarcadosResult.rows.length
     });
 
-    // Actualizar estatus del pedido a "Pendiente de Confirmación" para que finanzas lo vea
-    let nuevoEstatus = 'Pendiente de Confirmación';
-    let completamenteSurtido = false;
+    // Actualizar estatus del pedido usando utilidad centralizada
+    const detalles = await getDetallesPedido(client, pedidoId, tenant_id);
+    const nuevoEstado = calcularEstadoPedido(detalles);
     
-    const productosSurtidos = marcarResult.rowCount;
+    // Determinar si está completamente surtido
+    const completamenteSurtido = nuevoEstado === 'Surtido';
     
-    if (productosBackorder === 0) {
-      // Todos los productos están listos - enviar a finanzas
-      nuevoEstatus = 'Pendiente de Confirmación';
-      completamenteSurtido = true;
-    } else if (productosSurtidos > 0) {
-      // Algunos productos listos, otros en backorder - también enviar a finanzas
-      nuevoEstatus = 'Pendiente de Confirmación';
-      completamenteSurtido = false;
-    }
-
+    // Mantener "Pendiente de Confirmación" como estado visible, pero guardar info de surtido
+    const estatusPendiente = 'Pendiente de Confirmación';
+    
     const updateQuery = `
       UPDATE pedidos 
       SET 
@@ -945,15 +940,15 @@ const surtirPedido = async (req, res) => {
       RETURNING *
     `;
     
-    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, nuevoEstatus, completamenteSurtido]);
+    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, estatusPendiente, completamenteSurtido]);
 
     await client.query('COMMIT');
 
     logger.info('Pedido enviado a finanzas para confirmación (sin reducir stock):', {
       pedidoId,
-      nuevoEstatus,
-      productosSurtidos,
-      productosBackorder,
+      estatusMostrado: estatusPendiente,
+      estadoCalculado: nuevoEstado,
+      completamenteSurtido,
       userRole,
       tenantId: tenant_id,
       requestId: req.requestId
@@ -1124,32 +1119,29 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       }
     }
 
-    // Verificar si hay productos en backorder
-    const backorderCheckQuery = `
-      SELECT COUNT(*) as productos_backorder
-      FROM detallesdelpedido
-      WHERE pedidoid = $1 AND esbackorder = true AND tenant_id = $2
-    `;
-    const backorderResult = await client.query(backorderCheckQuery, [pedidoId, tenant_id]);
-    const tieneBackorder = parseInt(backorderResult.rows[0].productos_backorder) > 0;
+    // Calcular estado usando utilidad centralizada
+    const detalles = await getDetallesPedido(client, pedidoId, tenant_id);
+    const nuevoEstatus = calcularEstadoPedido(detalles);
+    
+    // Determinar flags basados en el estado calculado
+    const completamenteSurtido = nuevoEstatus === 'Surtido';
+    const esHistorico = completamenteSurtido;
 
-    // Actualizar pedido a Surtido y marcar como histórico si está 100% surtido
+    // Actualizar pedido con el estatus correcto
     const updateQuery = `
       UPDATE pedidos 
       SET 
-        estatus = 'Surtido',
-        completamente_surtido = true,
-        es_historico = $3,
+        estatus = $3,
+        completamente_surtido = $4,
+        es_historico = $5,
         fecha_confirmacion = NOW()
       WHERE pedidoid = $1 AND tenant_id = $2
       RETURNING *
     `;
     
-    // Solo marcar como histórico si NO tiene productos en backorder
-    const esHistorico = !tieneBackorder;
-    await client.query(updateQuery, [pedidoId, tenant_id, esHistorico]);
+    await client.query(updateQuery, [pedidoId, tenant_id, nuevoEstatus, completamenteSurtido, esHistorico]);
 
-    // BUG FIX 5: Insertar en histórico cuando Finanzas confirma
+    // BUG FIX 6: Insertar en histórico cuando Finanzas confirma
     await client.query(
       `INSERT INTO historial_pedidos (
         pedido_id,
@@ -1164,7 +1156,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         JSON.stringify({
           productos_confirmados: productosConfirmados,
           es_historico: esHistorico,
-          tiene_backorder: tieneBackorder,
+          estatus_final: nuevoEstatus,
+          total_detalles: detalles.length,
           timestamp: new Date().toISOString()
         }),
         userId,
@@ -1178,7 +1171,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       pedidoId,
       productosConfirmados,
       esHistorico,
-      tieneBackorder,
+      nuevoEstatus,
       tenantId: tenant_id,
       userId,
       requestId: req.requestId
@@ -1189,10 +1182,9 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       message: `Pedido confirmado. ${productosConfirmados} producto(s) descontado(s) del inventario.${esHistorico ? ' Pedido movido a histórico.' : ' Pedido con productos pendientes.'}`,
       data: {
         pedidoId,
-        estatus: 'Surtido',
+        estatus: nuevoEstatus,
         productosConfirmados,
-        esHistorico,
-        tieneBackorder
+        esHistorico
       }
     });
 

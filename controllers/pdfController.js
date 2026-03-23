@@ -253,7 +253,8 @@ async function generarPDFPedido(req, res) {
         // Render header on first page manually
         renderHeader(doc, pedido, logoPath, logoExists);
 
-        // Separate items by SURTIDO status (confirmed by finanzas)
+        // FIX: Show ALL items in the remisión, regardless of surtido status
+        // Items are categorized for display purposes but ALL are shown
         // SURTIDOS: cantidadsurtida > 0 (confirmed products)
         // PENDIENTES: cantidadsurtida = 0 (backorder/pending products)
         let itemsEnExistencia = detalles.filter(item => {
@@ -419,8 +420,13 @@ if (itemsEnExistencia.length > 0) {
     yPosition += 10;
 }
 
-// REMOVED: Backorder section - only show confirmed products in remision
-// Pending products (cantidadsurtida = 0) are not shown to avoid confusion
+// FIX: Show backorder section to include ALL items in remisión
+// Items with cantidadsurtida = 0 are shown as "BAJO PEDIDO"
+if (itemsBajoPedido.length > 0) {
+    yPosition = renderTableHeader('PRODUCTOS BAJO PEDIDO', yPosition, '#DC2626');
+    yPosition = renderItems(itemsBajoPedido, yPosition, '#FEF2F2', pedido.estatus, mostrarPrecios);
+    yPosition += 10;
+}
 
 yPosition += 5;
 
