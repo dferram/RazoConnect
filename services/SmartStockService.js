@@ -1136,35 +1136,30 @@ async function reallocateStockForVariant(varianteId, tenantId) {
     // PASO 4: Actualizar estatus de los pedidos afectados
     const pedidosAfectados = [...new Set(cambios.map(c => c.pedidoId))];
     
+    // Usar utilidad centralizada para calcular estados
+    const { calcularEstadoPedido, getDetallesPedido } = require('../utils/pedidoStatus');
+    
     for (const pedidoId of pedidosAfectados) {
-      // Verificar si el pedido está completamente surtido o parcialmente
-      const { rows: estatusRows } = await client.query(
-        `SELECT 
-           COUNT(*) as total_detalles,
-           COUNT(*) FILTER (WHERE esbackorder = false) as detalles_surtidos,
-           COUNT(*) FILTER (WHERE esbackorder = true) as detalles_backorder
-         FROM detallesdelpedido
-         WHERE pedidoid = $1`,
-        [pedidoId]
-      );
-      
-      const { total_detalles, detalles_surtidos, detalles_backorder } = estatusRows[0];
-      
-      let nuevoEstatusPedido;
-      if (detalles_backorder > 0 && detalles_surtidos > 0) {
-        nuevoEstatusPedido = 'Parcialmente Surtido';
-      } else if (detalles_backorder > 0) {
-        nuevoEstatusPedido = 'Backorder';
-      } else {
-        nuevoEstatusPedido = 'Aprobado'; // Totalmente surtido
+      try {
+        // Obtener detalles del pedido con cantidades
+        const detalles = await getDetallesPedido(client, pedidoId, tenantId);
+        
+        // Calcular estado usando lógica centralizada
+        const nuevoEstatus = calcularEstadoPedido(detalles);
+        
+        // Actualizar estado del pedido
+        await client.query(
+          `UPDATE pedidos
+           SET estatus = $1
+           WHERE pedidoid = $2 AND tenant_id = $3`,
+          [nuevoEstatus, pedidoId, tenantId]
+        );
+        
+        logger.info(`[SmartStock] Pedido #${pedidoId} actualizado a: ${nuevoEstatus}`);
+      } catch (error) {
+        logger.error(`[SmartStock] Error actualizando estado pedido #${pedidoId}:`, error);
+        // Continuar con otros pedidos
       }
-      
-      await client.query(
-        `UPDATE pedidos
-         SET estatus = $1
-         WHERE pedidoid = $2`,
-        [nuevoEstatusPedido, pedidoId]
-      );
     }
     
     await client.query('COMMIT');
