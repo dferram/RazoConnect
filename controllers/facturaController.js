@@ -106,15 +106,22 @@ async function descargarFactura(req, res) {
     let pdfBuffer;
     
     try {
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('TIMEOUT_ERROR')), FACTURA_TIMEOUT)
+      );
+      
       pdfBuffer = await Promise.race([
         facturaService.generarFacturaPDF(pedidoId, tenant_id, rol),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: La generación de factura excedió el tiempo límite de 30 segundos')), FACTURA_TIMEOUT)
-        )
+        timeoutPromise
       ]);
-    } catch (timeoutError) {
-      logger.error(`[FacturaController] Timeout al generar factura para pedido ${pedidoId}:`, {
-        error: timeoutError.message,
+    } catch (pdfError) {
+      // Distinguish between timeout and other errors
+      const isTimeout = pdfError.message === 'TIMEOUT_ERROR';
+      
+      logger.error(`[FacturaController] ${isTimeout ? 'Timeout' : 'Error'} al generar factura para pedido ${pedidoId}:`, {
+        error: pdfError.message,
+        stack: pdfError.stack,
+        isTimeout,
         pedidoId,
         tenant_id,
         requestId: req.requestId
@@ -127,18 +134,23 @@ async function descargarFactura(req, res) {
            VALUES ($1, $2, $3, NOW())
            ON CONFLICT (pedido_id, tenant_id) 
            DO UPDATE SET error_mensaje = $2, fecha_error = NOW(), intentos = facturas_errores.intentos + 1`,
-          [pedidoId, timeoutError.message, tenant_id]
+          [pedidoId, isTimeout ? 'Timeout: Generación excedió 30 segundos' : pdfError.message, tenant_id]
         );
       } catch (dbError) {
         logger.error('[FacturaController] Error al registrar fallo de factura:', dbError);
       }
       
-      return res.status(504).json({
-        success: false,
-        message: 'La generación de factura está tardando más de lo esperado. Por favor intente nuevamente en unos momentos.',
-        error: 'TIMEOUT',
-        pedidoId
-      });
+      if (isTimeout) {
+        return res.status(504).json({
+          success: false,
+          message: 'La generación de factura está tardando más de lo esperado. Por favor intente nuevamente en unos momentos.',
+          error: 'TIMEOUT',
+          pedidoId
+        });
+      } else {
+        // Re-throw non-timeout errors to be handled by outer catch
+        throw pdfError;
+      }
     }
 
     res.setHeader('Content-Type', 'application/pdf');

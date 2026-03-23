@@ -59,7 +59,7 @@ exports.generarRemision = async (req, res) => {
     const pedido = pedidoQuery.rows[0];
 
     // BUG FIX 2: Validar que el pedido está en estado válido para generar remisión
-    const estadosValidos = ['Pendiente', 'Confirmado', 'Listo para Surtir', 'Parcial', 'Parcialmente Surtido', 'Pendiente de Confirmación'];
+    const estadosValidos = ['Pendiente', 'Confirmado', 'Listo para Surtir', 'Parcial', 'Parcialmente Surtido', 'Pendiente de Confirmación', 'Pendiente de Confirmacion'];
     if (!estadosValidos.includes(pedido.estatus)) {
       await client.query('ROLLBACK');
       return res.status(400).json({ 
@@ -1139,14 +1139,15 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
     const remision = remisionQuery.rows[0];
 
     // BUG FIX 2: Validar estado antes de confirmar
-    const estadosValidosConfirmacion = ['PENDIENTE_CONFIRMACION_FINANZAS', 'PENDIENTE_REVISION'];
-    if (!estadosValidosConfirmacion.includes(remision.estado)) {
+    // Solo permitir confirmación desde PENDIENTE_CONFIRMACION_FINANZAS
+    // PENDIENTE_REVISION debe ser corregido por almacén primero
+    if (remision.estado !== 'PENDIENTE_CONFIRMACION_FINANZAS') {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        error: `No se puede confirmar finanzas. Estado actual: ${remision.estado}. Se requiere PENDIENTE_CONFIRMACION_FINANZAS o PENDIENTE_REVISION`,
+        error: `No se puede confirmar finanzas. Estado actual: ${remision.estado}. Se requiere PENDIENTE_CONFIRMACION_FINANZAS`,
         estado_actual: remision.estado,
-        estados_validos: estadosValidosConfirmacion
+        estado_requerido: 'PENDIENTE_CONFIRMACION_FINANZAS'
       });
     }
 

@@ -870,8 +870,8 @@ const surtirPedido = async (req, res) => {
         pv.sku,
         pr.nombreproducto
       FROM detallesdelpedido dp
-      INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
-      INNER JOIN productos pr ON pv.productoid = pr.productoid
+      INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid AND pv.tenant_id = $2
+      INNER JOIN productos pr ON pv.productoid = pr.productoid AND pr.tenant_id = $2
       WHERE dp.pedidoid = $1 
         AND dp.tenant_id = $2
         AND dp.cantidadsurtida > 0
