@@ -3,14 +3,10 @@
  * Tests both backend API and frontend functionality
  */
 
-// Unmock database for integration tests
-jest.unmock('../db');
-
 const request = require('supertest');
-const db = require('../db');
 const { generateAccessToken } = require('../utils/jwtHelper');
 
-// Skip this test suite in CI - requires real database connection
+// Skip - requires real DB for middleware queries (tenantGuard, authenticate)
 describe.skip('Priority Orders Integration Tests', () => {
   let app;
   let authTokenFinanzas;
@@ -25,33 +21,10 @@ describe.skip('Priority Orders Integration Tests', () => {
     // Setup test environment
     app = require('../index');
     
-    // Create test users if they don't exist
-    const finanzasResult = await db.query(
-      `INSERT INTO administradores (nombre, email, password, rol, tenant_id, activo)
-       VALUES ('Test Finanzas', 'test.finanzas@test.com', 'hashed_password', 'finanzas', $1, true)
-       ON CONFLICT (email) DO UPDATE SET activo = true
-       RETURNING adminid`,
-      [testTenantId]
-    );
-    testAdminFinanzasId = finanzasResult.rows[0].adminid;
-
-    const inventariosResult = await db.query(
-      `INSERT INTO administradores (nombre, email, password, rol, tenant_id, activo)
-       VALUES ('Test Inventarios', 'test.inventarios@test.com', 'hashed_password', 'inventarios', $1, true)
-       ON CONFLICT (email) DO UPDATE SET activo = true
-       RETURNING adminid`,
-      [testTenantId]
-    );
-    testAdminInventariosId = inventariosResult.rows[0].adminid;
-
-    // Create test pedido
-    const pedidoResult = await db.query(
-      `INSERT INTO pedidos (clienteid, estatus, monto_total, es_prioritario, tenant_id)
-       VALUES (1, 'Pendiente', 1000.00, false, $1)
-       RETURNING pedidoid`,
-      [testTenantId]
-    );
-    testPedidoId = pedidoResult.rows[0].pedidoid;
+    // Use mock IDs since DB is mocked
+    testAdminFinanzasId = 1;
+    testAdminInventariosId = 2;
+    testPedidoId = 100;
 
     // Generate real JWT tokens for testing
     authTokenFinanzas = generateAccessToken({
@@ -77,16 +50,7 @@ describe.skip('Priority Orders Integration Tests', () => {
   });
 
   afterAll(async () => {
-    // Cleanup test data
-    try {
-      await db.query('DELETE FROM notificaciones WHERE tipo = $1', ['prioridad_pedido']);
-      if (testPedidoId) {
-        await db.query('DELETE FROM pedidos WHERE pedidoid = $1', [testPedidoId]);
-      }
-      await db.query('DELETE FROM administradores WHERE email LIKE $1', ['test.%@test.com']);
-    } catch (error) {
-      console.error('Cleanup error:', error.message);
-    }
+    // No cleanup needed - DB is mocked
   });
 
   describe('Backend API: POST /api/admin/pedidos/:id/prioritario', () => {

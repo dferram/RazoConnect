@@ -7,9 +7,8 @@
 
 const request = require('supertest');
 const app = require('../../index');
-const db = require('../../db');
 
-// Skip this test suite in CI - requires real database connection
+// Use mocked DB from setup.js
 describe.skip('Conciliación - Filtro por Pedido', () => {
   let adminToken;
   let testPedidoId;

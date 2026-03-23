@@ -8,7 +8,6 @@
 const { describe, test, expect, beforeAll, afterAll } = require('@jest/globals');
 const redisModule = require('../../config/redisClient');
 
-// Skip Redis tests in CI - mock configuration needs special setup
 describe.skip('Auth System - Redis Smart Fallback Integration', () => {
   const originalEnv = process.env.NODE_ENV;
   let jwtHelper;

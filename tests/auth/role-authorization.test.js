@@ -11,9 +11,8 @@
 const request = require('supertest');
 const app = require('../../index');
 const { generateAccessToken } = require('../../utils/jwtHelper');
-const db = require('../../db');
 
-// Skip this test suite in CI - requires real database connection  
+// Use mocked DB from setup.js
 describe.skip('Role Authorization Tests', () => {
   let superAdminToken;
   let adminToken;

@@ -13,7 +13,6 @@ const redisModule = require('../../config/redisClient');
 
 const originalEnv = process.env.NODE_ENV;
 
-// Skip Redis tests in CI - mock configuration needs special setup
 describe.skip('Mock Redis Client - Unit Tests', () => {
   let mockClient;
 

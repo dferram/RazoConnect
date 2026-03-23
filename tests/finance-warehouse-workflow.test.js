@@ -12,12 +12,11 @@
 
 const request = require('supertest');
 const app = require('../index');
-const pool = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { generateAccessToken } = require('../utils/jwtHelper');
 
-// Skip this test suite in CI - requires real database connection
+// Use mocked DB from setup.js
 describe.skip('Finance-Warehouse Workflow', () => {
   let adminToken;
   let finanzasToken;
