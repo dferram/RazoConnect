@@ -217,14 +217,14 @@ describe('requirePermission Middleware - Integración', () => {
     });
 
     test('debe permitir ver cuentas por cobrar', () => {
-      const middleware = requirePermission('cuentas_cobrar', 'ver');
+      const middleware = requirePermission('cxc', 'ver');
       middleware(req, res, next);
 
       expect(next).toHaveBeenCalled();
     });
 
     test('debe permitir crear pagos en CxC', () => {
-      const middleware = requirePermission('cuentas_cobrar', 'crear_pago');
+      const middleware = requirePermission('cxc', 'crear_pago');
       middleware(req, res, next);
 
       expect(next).toHaveBeenCalled();
@@ -238,7 +238,7 @@ describe('requirePermission Middleware - Integración', () => {
     });
 
     test('debe permitir gestionar créditos', () => {
-      const middleware = requirePermission('gestion_creditos', 'modificar');
+      const middleware = requirePermission('credito', 'modificar');
       middleware(req, res, next);
 
       expect(next).toHaveBeenCalled();

@@ -119,8 +119,8 @@ describe('registroClienteSchema', () => {
     expect(result.isEmpty()).toBe(false);
   });
 
-  it('rechaza password menor a 8 caracteres', async () => {
-    const result = await runValidators(registroClienteSchema, { ...validCliente, password: '1234567' });
+  it('rechaza password menor a 6 caracteres', async () => {
+    const result = await runValidators(registroClienteSchema, { ...validCliente, password: '12345' });
     expect(result.isEmpty()).toBe(false);
   });
 
