@@ -696,7 +696,7 @@
                   <button
                     id="btnSurtirPedido"
                     type="button"
-                    class="btn-action"
+                    class="btn btn-success"
                     onclick="surtirPedidoInventarios()"
                     style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #16a34a; color: white; display: none;"
                     title="Marcar productos como surtidos y enviar a finanzas"
@@ -1496,7 +1496,7 @@
             const productosToRender = [...productosConStock, ...productosBajoPedido];
             
             if (isFinanzasRole) {
-              console.log(`💰 [FINANZAS] Ocultando visualmente productos backorder: ${productos.length} total, ${productos.filter(item => !item.esBackorder).length} con stock, ${productos.filter(item => item.esBackorder).length} backorder (ocultos visualmente)`);
+              console.log(`💰 [FINANZAS] Mostrando todos los productos: ${productos.length} total, ${productosConStock.length} con stock, ${productosBajoPedido.length} bajo pedido (con layer gris)`);
             }
             
             const itemsContainer = document.getElementById("itemsContainer");
@@ -1553,16 +1553,12 @@
                   const estaSurtido = cantidadSurtidaNum > 0;
                   const puedeSeleccionar = isInventariosRole && badgeText === 'CON STOCK' && noEstaSurtido;
                   
-                  // FIX: Finanzas debe ver productos SURTIDOS, no importa si son backorder
-                  // Solo ocultar productos backorder que NO están surtidos
-                  const ocultarParaFinanzas = isFinanzasRole && item.esBackorder && !estaSurtido;
-                  
-                  // Aplicar clase item-bajo-pedido para gray layer
+                  // Aplicar clase item-bajo-pedido para gray layer (visible para todos los roles)
                   const esBajoPedido = badgeText === 'BAJO PEDIDO';
                   const claseItemRow = esBajoPedido ? 'item-row item-bajo-pedido' : 'item-row';
                   
                   return `
-              <div class="${claseItemRow}" style="${ocultarParaFinanzas ? 'display: none;' : ''}" data-detalle-id="${item.detalleId}" data-es-backorder="${item.esBackorder || false}" data-surtido="${estaSurtido}">
+              <div class="${claseItemRow}" data-detalle-id="${item.detalleId}" data-es-backorder="${item.esBackorder || false}" data-surtido="${estaSurtido}">
                 ${
                   item.imagenUrl
                     ? `<img src="${item.imagenUrl}" alt="${item.nombre}" class="item-image-placeholder" style="object-fit: cover; border-radius: 0.5rem;" />`
@@ -1611,13 +1607,17 @@
             // Calculate total based on role
             let totalToShow = pedido.montoTotal;
             if (isFinanzasRole) {
-              // FIX: Finanzas debe ver total de productos SURTIDOS, no solo con stock
-              const productosSurtidos = productos.filter(item => {
-                const cantSurtida = parseInt(item.cantidadSurtida) || 0;
-                return cantSurtida > 0;
+              // Finanzas: Solo sumar productos CON STOCK (los que inventarios marcó para surtir)
+              // Excluir productos "bajo pedido" de la suma
+              const productosConStock = productos.filter(item => {
+                const esBackorder = item.esbackorder === true || item.esbackorder === 'true';
+                const stock = item.stock !== undefined ? item.stock : 0;
+                const piezasNecesarias = item.piezasTotales || 0;
+                const hayStockSuficiente = stock >= piezasNecesarias;
+                return !esBackorder && hayStockSuficiente;
               });
-              totalToShow = productosSurtidos.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);
-              console.log(`💰 [FINANZAS] Total calculado: ${totalToShow} (${productosSurtidos.length} productos surtidos)`);
+              totalToShow = productosConStock.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);
+              console.log(`💰 [FINANZAS] Total solo con stock: ${totalToShow} (${productosConStock.length} productos con stock, ${productos.length - productosConStock.length} bajo pedido excluidos)`);
             }
             
             document.getElementById("itemsTotal").textContent = formatCurrency(totalToShow);
@@ -2229,14 +2229,13 @@
               throw new Error('No hay sesión activa');
             }
 
-            const response = await fetch(`${API_BASE_URL}/api/admin/pedidos/${selectedOrderId}/prioritario`, {
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/toggle-priority`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${adminToken}`,
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({
-                prioritario: !esPrioritario,
                 motivo: motivo || ''
               })
             });
