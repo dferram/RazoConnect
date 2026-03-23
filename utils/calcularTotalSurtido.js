@@ -9,6 +9,10 @@
  * @returns {number} - Total calculado con 2 decimales
  */
 function calcularTotalSurtido(detalles = []) {
+  if (!detalles || !Array.isArray(detalles) || detalles.length === 0) {
+    return 0;
+  }
+  
   const total = detalles.reduce((sum, d) => {
     const cantidad = Number(d.cantidad_surtida || d.cantidadsurtida || 0);
     const precio = Number(d.precio_unitario || d.preciounitario || d.precioporpaquete || 0);
