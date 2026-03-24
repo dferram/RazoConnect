@@ -629,6 +629,20 @@
                 </div>
               </div>
 
+              <!-- Resumen de cobro (solo para finanzas) -->
+              <div id="resumenCobroCard" class="items-card" style="display: none; margin-bottom: 1.5rem; border: 2px solid #10b981;">
+                <div class="items-card-header" style="background: #dcfce7;">
+                  <h3 style="color: #16a34a;">💰 Resumen de Cobro - Productos Surtidos</h3>
+                </div>
+                <div id="resumenCobroContainer" style="padding: 1rem;">
+                  <!-- Will be populated dynamically -->
+                </div>
+                <div class="items-total" style="background: #dcfce7; border-top: 2px solid #10b981;">
+                  <span class="items-total-label" style="color: #16a34a;">Total a Cobrar (Solo Surtidos)</span>
+                  <span class="items-total-value" id="totalSurtidos" style="color: #16a34a;">$0.00</span>
+                </div>
+              </div>
+
               <!-- Items list -->
               <div class="items-card">
                 <div class="items-card-header" style="display: flex; justify-content: space-between; align-items: center;">
@@ -1474,8 +1488,19 @@
             const currentUserRole = getUserRole();
             const isFinanzasRole = currentUserRole === 'finanzas' || currentUserRole === 'gerente_finanzas';
             
-            // REORDENAR: Mover items "Bajo pedido" al final de la lista
+            // REORDENAR: Productos por estado - Surtido > Con Stock > Bajo Pedido
+            const productosSurtidos = productos.filter(p => {
+              const cantidadSurtida = parseInt(p.cantidadSurtida || 0);
+              const cantidadPaquetes = parseInt(p.cantidadPaquetes || 0);
+              return cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
+            });
+            
             const productosConStock = productos.filter(p => {
+              const cantidadSurtida = parseInt(p.cantidadSurtida || 0);
+              const cantidadPaquetes = parseInt(p.cantidadPaquetes || 0);
+              const productoSurtido = cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
+              if (productoSurtido) return false; // Ya está en productosSurtidos
+              
               const esBackorder = p.esBackorder === true || p.esBackorder === 'true';
               const stock = p.stock !== undefined ? p.stock : 0;
               const piezasNecesarias = p.piezasTotales || 0;
@@ -1484,6 +1509,11 @@
             });
             
             const productosBajoPedido = productos.filter(p => {
+              const cantidadSurtida = parseInt(p.cantidadSurtida || 0);
+              const cantidadPaquetes = parseInt(p.cantidadPaquetes || 0);
+              const productoSurtido = cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
+              if (productoSurtido) return false; // Ya está en productosSurtidos
+              
               const esBackorder = p.esBackorder === true || p.esBackorder === 'true';
               const stock = p.stock !== undefined ? p.stock : 0;
               const piezasNecesarias = p.piezasTotales || 0;
@@ -1492,8 +1522,8 @@
             });
             
             // CRITICAL: Always render ALL products to DOM so checkboxes exist
-            // Primero con stock, luego bajo pedido
-            const productosToRender = [...productosConStock, ...productosBajoPedido];
+            // Orden: Surtidos > Con Stock > Bajo Pedido
+            const productosToRender = [...productosSurtidos, ...productosConStock, ...productosBajoPedido];
             
             if (isFinanzasRole) {
               console.log(`💰 [FINANZAS] Mostrando todos los productos: ${productos.length} total, ${productosConStock.length} con stock, ${productosBajoPedido.length} bajo pedido (con layer gris)`);
@@ -1604,20 +1634,45 @@
               )
               .join("");
 
-            // Calculate total based on role
+            // Calculate total based on role - SOLO PRODUCTOS SURTIDOS
             let totalToShow = pedido.montoTotal;
+            let totalSurtidos = 0;
+            
+            // Calcular total de productos SURTIDOS (no solo con stock)
+            const productosSurtidosParaTotal = productos.filter(item => {
+              const cantidadSurtida = parseInt(item.cantidadSurtida || 0);
+              const cantidadPaquetes = parseInt(item.cantidadPaquetes || 0);
+              return cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
+            });
+            
+            totalSurtidos = productosSurtidosParaTotal.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);
+            
             if (isFinanzasRole) {
-              // Finanzas: Solo sumar productos CON STOCK (los que inventarios marcó para surtir)
-              // Excluir productos "bajo pedido" de la suma
-              const productosConStock = productos.filter(item => {
-                const esBackorder = item.esbackorder === true || item.esbackorder === 'true';
-                const stock = item.stock !== undefined ? item.stock : 0;
-                const piezasNecesarias = item.piezasTotales || 0;
-                const hayStockSuficiente = stock >= piezasNecesarias;
-                return !esBackorder && hayStockSuficiente;
-              });
-              totalToShow = productosConStock.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);
-              console.log(`💰 [FINANZAS] Total solo con stock: ${totalToShow} (${productosConStock.length} productos con stock, ${productos.length - productosConStock.length} bajo pedido excluidos)`);
+              // Finanzas: Mostrar SOLO productos SURTIDOS en el total
+              totalToShow = totalSurtidos;
+              console.log(`💰 [FINANZAS] Total solo surtidos: ${totalToShow} (${productosSurtidosParaTotal.length} productos surtidos, ${productos.length - productosSurtidosParaTotal.length} pendientes excluidos)`);
+              
+              // Mostrar resumen de cobro
+              const resumenCard = document.getElementById('resumenCobroCard');
+              const resumenContainer = document.getElementById('resumenCobroContainer');
+              const totalSurtidosEl = document.getElementById('totalSurtidos');
+              
+              if (resumenCard && resumenContainer && productosSurtidosParaTotal.length > 0) {
+                resumenCard.style.display = 'block';
+                resumenContainer.innerHTML = productosSurtidosParaTotal.map(item => `
+                  <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #d1fae5;">
+                    <div>
+                      <strong>${item.nombre}</strong><br>
+                      <span style="font-size: 0.875rem; color: #6b7280;">SKU: ${item.sku} | ${item.cantidadPaquetes} paquetes × ${formatCurrency(item.precioPorPaquete)}</span>
+                    </div>
+                    <div style="font-weight: 600; color: #16a34a;">${formatCurrency(item.subtotal)}</div>
+                  </div>
+                `).join('');
+                
+                if (totalSurtidosEl) {
+                  totalSurtidosEl.textContent = formatCurrency(totalSurtidos);
+                }
+              }
             }
             
             document.getElementById("itemsTotal").textContent = formatCurrency(totalToShow);
@@ -2307,7 +2362,7 @@
       // Cargar botón de volver
       window.addEventListener('DOMContentLoaded', function() {
         loadBackButton({
-          backUrl: '/admin-pedidos.html',
+          backUrl: '/admin-clientes-facturacion.html',
           backText: 'Volver a pedidos'
         });
       });
