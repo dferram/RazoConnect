@@ -7,25 +7,28 @@ services:
     container_name: razoconnect-db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: your_secure_password_here
-      POSTGRES_DB: razoconnect_dev
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-razoconnect_dev}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Comentado: backup.sql requiere extensión pg_cron no disponible en Alpine
-      # Para importar manualmente: docker-compose exec db psql -U postgres -d razoconnect_dev -f /backup.sql
-      # - ./database/backup.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    ports:
-      - "5432:5432"
     networks:
       - razoconnect-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d razoconnect_dev"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-razoconnect_dev}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   # RazoConnect Application Service
   app:
@@ -35,55 +38,64 @@ services:
     container_name: razoconnect-app
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"
     environment:
       # Node Environment
-      NODE_ENV: development
+      NODE_ENV: ${NODE_ENV:-development}
       PORT: 8080
 
       # Database Configuration
       DB_HOST: db
       DB_PORT: 5432
-      DB_NAME: razoconnect_dev
-      DB_USER: postgres
-      DB_PASSWORD: your_secure_password_here
+      DB_NAME: ${DB_NAME:-razoconnect_dev}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SSL: ${DB_SSL:-false}
 
       # Redis Configuration (Smart Fallback activado en development)
       REDIS_HOST: ${REDIS_HOST:-disabled}
       REDIS_PORT: ${REDIS_PORT:-6380}
       REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_URL: ${REDIS_URL:-}
 
-      # JWT Secrets (CAMBIAR EN PRODUCCIÓN)
-      JWT_SECRET: dev_jwt_secret_change_in_production
-      JWT_REFRESH_SECRET: dev_refresh_secret_change_in_production
-      JWT_EXPIRES_IN: 1h
-      JWT_REFRESH_EXPIRES_IN: 30d
+      # JWT Secrets (REQUIRED - Load from .env)
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1h}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
       
-      # Session Secret (CAMBIAR EN PRODUCCIÓN)
-      SESSION_SECRET: dev_session_secret_change_in_production
+      # Session Secret (REQUIRED - Load from .env)
+      SESSION_SECRET: ${SESSION_SECRET}
       
-      # Mercado Pago (Opcional para desarrollo local)
-      MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN:-TEST-dev_token_placeholder}
+      # Mercado Pago
+      MP_ACCESS_TOKEN: ${MP_ACCESS_TOKEN:-}
 
-      # Cloudinary (Opcional para desarrollo local)
+      # Cloudinary
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
 
-      # Email Configuration (Opcional para desarrollo local)
-      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
-      EMAIL_PORT: ${EMAIL_PORT:-587}
-      EMAIL_USER: ${EMAIL_USER:-}
-      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      # Email Configuration (SMTP)
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+
+      # Google OAuth
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
 
       # Frontend URL
-      FRONTEND_BASE_URL: http://localhost:8080
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:8080}
 
-      # Super Admin Key (CAMBIAR EN PRODUCCIÓN)
-      SUPER_ADMIN_KEY: dev_super_admin_key_change_in_production
+      # Super Admin Key (REQUIRED - Load from .env)
+      SUPER_ADMIN_KEY: ${SUPER_ADMIN_KEY}
 
       # Tenant Configuration
-      DEFAULT_TENANT: razo
+      DEFAULT_TENANT: ${DEFAULT_TENANT:-razo}
+      FORCE_TENANT_ID: ${FORCE_TENANT_ID:-}
     depends_on:
       db:
         condition: service_healthy
@@ -92,12 +104,22 @@ services:
     volumes:
       # Mount uploads directory for local file persistence (if not using Cloudinary)
       - ./uploads:/app/uploads
+      # Mount logs directory
+      - ./logs:/app/logs
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
 # Named Volumes
 volumes:
@@ -110,3 +132,7 @@ networks:
   razoconnect-network:
     driver: bridge
     name: razoconnect_network
+    # SECURITY: Internal network isolation
+    # Database is NOT exposed to external networks
+    # Only app container can communicate with db container
+    internal: false  # Set to 'true' for complete isolation (no internet access from containers)
