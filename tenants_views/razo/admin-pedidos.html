@@ -533,6 +533,25 @@
         }
       }
 
+      // Normaliza el estatus a un valor canónico para comparaciones
+      function normalizeStatus(estatus) {
+        const value = (estatus || "").toString().toLowerCase().trim()
+          .replace(/_/g, ' ')  // Reemplazar guiones bajos con espacios
+          .replace(/\s+/g, ' '); // Normalizar espacios múltiples
+
+        // Mapear variantes a valores canónicos
+        if (value === "pendiente") return "pendiente";
+        if (value === "confirmado" || value === "surtido") return "confirmado";
+        if (value === "parcialmente surtido" || value === "surtido parcial") return "surtido parcial";
+        if (value === "enviado" || value === "en ruta" || value === "en-ruta") return "enviado";
+        if (value === "entregado" || value === "completado") return "entregado";
+        if (value === "cancelado") return "cancelado";
+        if (value === "pendiente de confirmación" || value === "pendiente de confirmacion") return "pendiente de confirmación";
+        if (value === "revisión de almacén" || value === "revision de almacen") return "revisión de almacén";
+
+        return value; // Retornar valor normalizado si no hay mapeo específico
+      }
+
       // Mapea el estatus del pedido a un badge normalizado con diseño admin-badge info
       function getPedidoStatusBadgeClass(estatus) {
         const value = (estatus || "").toString().toLowerCase().trim();
@@ -608,8 +627,10 @@
             let filteredOrders = currentOrders;
             
             if (statusFilter) {
+              // CRITICAL FIX: Normalize both sides to match all status variants
+              const normalizedFilterStatus = normalizeStatus(statusFilter);
               filteredOrders = filteredOrders.filter(
-                (order) => order.estatus === statusFilter
+                (order) => normalizeStatus(order.estatus) === normalizedFilterStatus
               );
             }
             

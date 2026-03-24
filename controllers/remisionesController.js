@@ -1288,8 +1288,8 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
 
     // AHORA SÍ: Generar movimiento en CXC si es crédito
     // ⚠️ PROTECCIÓN DE LÓGICA FINANCIERA PARA SURTIDO PARCIAL:
-    // - Se libera la RESERVA del pedido completo (montototal)
-    // - Se genera CARGO solo por lo realmente surtido (total_remision)
+    // - Se libera la RESERVA del pedido completo (montototal) SOLO EN LA PRIMERA REMISIÓN
+    // - Se genera CARGO solo por lo realmente surtido (total_remision) EN CADA REMISIÓN
     // - Si es surtido parcial, el resto queda pendiente para futuras entregas
     // - Esto permite entregas parciales sin cobrar de más al cliente
     if (remision.es_credito) {
@@ -1306,53 +1306,96 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
         const saldoActual = parseFloat(creditoInfo.saldo_deudor || 0);
         const montoRemision = parseFloat(remision.total_remision);
         
-        // Liberar reserva del pedido completo y sumar cargo real
-        // IMPORTANTE: montoRemision solo incluye lo que se surtió en esta remisión
-        const saldoSinReserva = parseFloat((saldoActual - remision.montototal).toFixed(2));
-        const nuevoSaldo = parseFloat((saldoSinReserva + montoRemision).toFixed(2));
-
-        await client.query(
-          `UPDATE cliente_creditos
-           SET saldo_deudor = $1, ultima_actualizacion = NOW()
-           WHERE credito_id = $2`,
-          [nuevoSaldo, creditoInfo.credito_id]
+        // CRITICAL FIX: Check if this is the first confirmed remision for this order
+        // Only release the reserve on the first remision, not on subsequent ones
+        const priorRemisionesQuery = await client.query(
+          `SELECT COUNT(*) as count
+           FROM remisiones
+           WHERE pedido_id = $1 
+             AND remision_id != $2
+             AND estado IN ('SURTIDO', 'EMPACADA', 'ENVIADA', 'ENTREGADA')
+             AND tenant_id = $3`,
+          [remision.pedidoid, id, tenant_id]
         );
+        
+        const isPrimeraRemision = parseInt(priorRemisionesQuery.rows[0].count) === 0;
+        let nuevoSaldo = saldoActual;
+        
+        if (isPrimeraRemision) {
+          // Primera remisión: Liberar reserva del pedido completo y sumar cargo real
+          const saldoSinReserva = parseFloat((saldoActual - remision.montototal).toFixed(2));
+          nuevoSaldo = parseFloat((saldoSinReserva + montoRemision).toFixed(2));
 
-        // Registrar AJUSTE (quitar reserva)
-        await client.query(
-          `INSERT INTO credito_movimientos (
-             credito_id, tipo_movimiento, monto, referencia_id, 
-             descripcion, saldo_despues_movimiento, tenant_id
-           )
-           VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6)`,
-          [
-            creditoInfo.credito_id,
-            (-remision.montototal).toFixed(2),
-            `PED-${remision.pedidoid}`,
-            `Liberación de reserva del pedido #${remision.pedidoid}`,
-            saldoSinReserva.toFixed(2),
-            tenant_id
-          ]
-        );
+          await client.query(
+            `UPDATE cliente_creditos
+             SET saldo_deudor = $1, ultima_actualizacion = NOW()
+             WHERE credito_id = $2`,
+            [nuevoSaldo, creditoInfo.credito_id]
+          );
 
-        // Registrar CARGO (cargo real)
-        await client.query(
-          `INSERT INTO credito_movimientos (
-             credito_id, tipo_movimiento, monto, referencia_id,
-             descripcion, saldo_despues_movimiento, tenant_id
-           )
-           VALUES ($1, 'CARGO', $2, $3, $4, $5, $6)`,
-          [
-            creditoInfo.credito_id,
-            montoRemision.toFixed(2),
-            `REM-${id}`,
-            `Cargo confirmado por remisión ${remision.folio} (Pedido #${remision.pedidoid})`,
-            nuevoSaldo.toFixed(2),
-            tenant_id
-          ]
-        );
+          // Registrar AJUSTE (quitar reserva) - SOLO EN PRIMERA REMISIÓN
+          await client.query(
+            `INSERT INTO credito_movimientos (
+               credito_id, tipo_movimiento, monto, referencia_id, 
+               descripcion, saldo_despues_movimiento, tenant_id
+             )
+             VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6)`,
+            [
+              creditoInfo.credito_id,
+              (-remision.montototal).toFixed(2),
+              `PED-${remision.pedidoid}`,
+              `Liberación de reserva del pedido #${remision.pedidoid} (Primera remisión)`,
+              saldoSinReserva.toFixed(2),
+              tenant_id
+            ]
+          );
 
-        // Crear registro en CXC
+          // Registrar CARGO (cargo real de la primera remisión)
+          await client.query(
+            `INSERT INTO credito_movimientos (
+               credito_id, tipo_movimiento, monto, referencia_id,
+               descripcion, saldo_despues_movimiento, tenant_id
+             )
+             VALUES ($1, 'CARGO', $2, $3, $4, $5, $6)`,
+            [
+              creditoInfo.credito_id,
+              montoRemision.toFixed(2),
+              `REM-${id}`,
+              `Cargo confirmado por remisión ${remision.folio} (Pedido #${remision.pedidoid} - Primera remisión)`,
+              nuevoSaldo.toFixed(2),
+              tenant_id
+            ]
+          );
+        } else {
+          // Remisiones subsecuentes: SOLO sumar cargo, NO liberar reserva
+          nuevoSaldo = parseFloat((saldoActual + montoRemision).toFixed(2));
+
+          await client.query(
+            `UPDATE cliente_creditos
+             SET saldo_deudor = $1, ultima_actualizacion = NOW()
+             WHERE credito_id = $2`,
+            [nuevoSaldo, creditoInfo.credito_id]
+          );
+
+          // Registrar CARGO (cargo real) - SIN AJUSTE DE RESERVA
+          await client.query(
+            `INSERT INTO credito_movimientos (
+               credito_id, tipo_movimiento, monto, referencia_id,
+               descripcion, saldo_despues_movimiento, tenant_id
+             )
+             VALUES ($1, 'CARGO', $2, $3, $4, $5, $6)`,
+            [
+              creditoInfo.credito_id,
+              montoRemision.toFixed(2),
+              `REM-${id}`,
+              `Cargo confirmado por remisión ${remision.folio} (Pedido #${remision.pedidoid} - Remisión adicional)`,
+              nuevoSaldo.toFixed(2),
+              tenant_id
+            ]
+          );
+        }
+
+        // Crear registro en CXC (siempre, en todas las remisiones)
         await client.query(
           `INSERT INTO cuentas_por_cobrar 
            (pedido_id, cliente_id, remision_id, tipo_movimiento, monto, descripcion, tenant_id)
