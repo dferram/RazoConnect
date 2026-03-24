@@ -758,6 +758,27 @@
                   >
                     📄 Generar PDF
                   </button>
+                  <!-- ⚡ NEW: Mode selection buttons for CLIENTE role only -->
+                  <button
+                    type="button"
+                    class="btn btn-info"
+                    id="btnPDFFull"
+                    onclick="descargarPDFPedidoDetalle('full')"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #17a2b8; color: white; display: none;"
+                    title="Ver remisión completa con todos los productos"
+                  >
+                    📄 Ver Remisión Completa
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-success"
+                    id="btnPDFSurtido"
+                    onclick="descargarPDFPedidoDetalle('surtido_only')"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #10b981; color: white; display: none;"
+                    title="Ver solo productos surtidos/listos para entrega"
+                  >
+                    📦 Ver Solo lo Surtido
+                  </button>
                   <button 
                     type="button"
                     class="btn btn-danger"
@@ -1168,10 +1189,28 @@
             const btnFactura = document.getElementById('btnGenerarFactura');
             const btnAjustarPedido = document.getElementById('btnAjustarPedido');
             
-            // Generar PDF: Available for inventarios, finanzas, and admin roles
+            // ⚡ NEW: PDF button visibility logic based on role
             const rolesConPDF = ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas', 'inventarios'];
-            if (btnGenerarPDF) {
-              btnGenerarPDF.style.display = rolesConPDF.includes(userRole) ? 'inline-block' : 'none';
+            const btnPDFFull = document.getElementById('btnPDFFull');
+            const btnPDFSurtido = document.getElementById('btnPDFSurtido');
+            
+            // Cliente role: Show mode selection buttons
+            if (userRole === 'cliente') {
+              if (btnPDFFull) btnPDFFull.style.display = 'inline-block';
+              if (btnPDFSurtido) btnPDFSurtido.style.display = 'inline-block';
+              if (btnGenerarPDF) btnGenerarPDF.style.display = 'none'; // Hide single button
+            } 
+            // Other roles (admin, finanzas, inventarios): Show single button with role-enforced mode
+            else if (rolesConPDF.includes(userRole)) {
+              if (btnGenerarPDF) btnGenerarPDF.style.display = 'inline-block';
+              if (btnPDFFull) btnPDFFull.style.display = 'none';
+              if (btnPDFSurtido) btnPDFSurtido.style.display = 'none';
+            }
+            // No access: Hide all
+            else {
+              if (btnGenerarPDF) btnGenerarPDF.style.display = 'none';
+              if (btnPDFFull) btnPDFFull.style.display = 'none';
+              if (btnPDFSurtido) btnPDFSurtido.style.display = 'none';
             }
             
             // Generar Factura: Only for finanzas and admin roles
@@ -1954,8 +1993,8 @@
           }
         };
 
-        // Funciones de generación de PDF
-        window.descargarPDFPedidoDetalle = async function() {
+        // ⚡ REFACTORED: Funciones de generación de PDF con soporte para modos dinámicos
+        window.descargarPDFPedidoDetalle = async function(mode = null) {
           if (!selectedOrderId) {
             showToast("No se pudo identificar el pedido", "error");
             return;
@@ -1974,15 +2013,26 @@
             const userRole = getUserRole();
             const isInventarios = userRole === 'inventarios';
             const isFinanzas = userRole === 'finanzas' || userRole === 'gerente_finanzas';
+            const isCliente = userRole === 'cliente';
             
-            // Build query params based on role
+            // Build query params based on role and mode
             let queryParams = [];
             
+            // ⚡ MODE PARAMETER: Add mode to query if specified (for cliente role)
+            // Backend will enforce role-based rules regardless
+            if (mode) {
+              queryParams.push(`mode=${mode}`);
+            }
+            
+            // Price visibility based on role
             if (isInventarios) {
-              // Inventarios: No prices, show all products
+              // Inventarios: No prices, always show full (to know what's missing)
               queryParams.push('mostrarPrecios=false');
             } else if (isFinanzas) {
-              // Finanzas: With prices, show all products
+              // Finanzas: With prices, always surtido_only (backend enforces this)
+              queryParams.push('mostrarPrecios=true');
+            } else if (isCliente) {
+              // Cliente: With prices, mode is controlled by button clicked
               queryParams.push('mostrarPrecios=true');
             }
             // Admin/other roles: Show everything with prices (default behavior)
@@ -2002,13 +2052,15 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `remision-pedido-${selectedOrderId}.pdf`;
+            const modeLabel = mode === 'surtido_only' ? '-surtido' : '';
+            a.download = `remision-pedido-${selectedOrderId}${modeLabel}.pdf`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
             
-            showToast("Remisión generada exitosamente", "success");
+            const modeText = mode === 'surtido_only' ? ' (Solo Surtido)' : mode === 'full' ? ' (Completa)' : '';
+            showToast(`Remisión${modeText} generada exitosamente`, "success");
           } catch (error) {
             console.error('Error generando remisión:', error);
             showToast("Error al generar remisión", "error");
