@@ -1362,37 +1362,46 @@
             const puedeMarcarSurtido = ['inventarios', 'gerente_operaciones', 'jefe_almacen', 'admin', 'super_admin'].includes(currentRole);
             
             if (btnSurtir && puedeMarcarSurtido) {
+              // ⚡ FIXED BUTTON STATE LOGIC: Support incremental fulfillment
+              // ENABLED states: Pendiente, Confirmado, Revision de Almacen, Surtido Parcial
+              // BLOCKED states: Pendiente de Confirmación (waiting for finance), Surtido (already closed)
+              
               if (estaSurtido) {
-                // Already confirmed by finanzas
+                // Already confirmed by finanzas - BLOCKED
                 btnSurtir.innerHTML = '✅ Pedido Surtido';
                 btnSurtir.style.background = '#10b981';
                 btnSurtir.disabled = true;
                 btnSurtir.style.display = 'inline-block';
+                btnSurtir.title = 'El pedido ya fue confirmado por Finanzas';
               } else if (estaPendienteConfirmacion) {
-                // Sent to finance, waiting for confirmation
+                // Sent to finance, waiting for confirmation - BLOCKED
                 btnSurtir.innerHTML = '⏳ Esperando Finanzas';
                 btnSurtir.style.background = '#6c757d';
                 btnSurtir.disabled = true;
                 btnSurtir.style.display = 'inline-block';
+                btnSurtir.title = 'Esperando confirmación de Finanzas. No se pueden hacer cambios mientras tanto.';
               } else if (estaRevisionAlmacen) {
-                // Rejected by finance, needs correction - can resend
+                // Rejected by finance, needs correction - ENABLED
                 btnSurtir.innerHTML = '⚠️ Corregir y Reenviar';
                 btnSurtir.style.background = '#f59e0b';
                 btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';
+                btnSurtir.title = 'El pedido fue rechazado por Finanzas. Corrija y reenvíe.';
               } else if (estatusValor === 'pendiente' || estatusValor === 'confirmado' || estaParcialmenteSurtido) {
-                // Can be marked as ready - includes parcialmente_surtido for inventarios to mark remaining items
+                // Can be marked as ready - ENABLED (includes Surtido Parcial for incremental fulfillment)
                 btnSurtir.innerHTML = '📦 Pedido surtido';
                 btnSurtir.style.background = '#16a34a';
                 btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';
-                console.log(`✅ [PEDIDO-DETALLE] Botón Surtir visible para inventarios (estatus: ${estatusValor})`);
+                btnSurtir.title = 'Marcar productos seleccionados como surtidos y enviar a Finanzas';
+                console.log(`✅ [PEDIDO-DETALLE] Botón Surtir HABILITADO para inventarios (estatus: ${estatusValor})`);
               } else {
-                // For any other status, show the button but indicate current state
+                // For any other status, show enabled by default
                 btnSurtir.innerHTML = '📦 Pedido surtido';
                 btnSurtir.style.background = '#16a34a';
                 btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';
+                btnSurtir.title = 'Marcar productos seleccionados como surtidos';
                 console.log(`✅ [PEDIDO-DETALLE] Botón Surtir visible para inventarios (estatus: ${estatusValor})`);
               }
             } else if (btnSurtir) {
@@ -1648,12 +1657,17 @@
                   
                   const isInventariosRole = getUserRole() === 'inventarios';
                   
-                  // Determinar si mostrar checkbox (solo para inventarios, productos con stock, NO surtidos)
-                  // CRITICAL: Only show checkbox if cantidadSurtida is exactly 0 (not already surtido)
+                  // ⚡ FIX: Checkbox visibility for INCREMENTAL fulfillment
+                  // Show checkbox when: stock > 0 AND cantidad_surtida < cantidad_paquetes
+                  // This allows partial shipments and incremental surtido
                   const cantidadSurtidaNum = parseInt(item.cantidadSurtida) || 0;
-                  const noEstaSurtido = cantidadSurtidaNum === 0;
+                  const cantidadPaquetesNum = parseInt(item.cantidadPaquetes) || 0;
+                  const tieneStockDisponible = hayStockSuficiente && stock > 0;
+                  const faltanPorSurtir = cantidadSurtidaNum < cantidadPaquetesNum;
                   const estaSurtido = cantidadSurtidaNum > 0;
-                  const puedeSeleccionar = isInventariosRole && badgeText === 'CON STOCK' && noEstaSurtido;
+                  
+                  // Show checkbox if: inventarios role + has stock + not fully fulfilled
+                  const puedeSeleccionar = isInventariosRole && tieneStockDisponible && faltanPorSurtir;
                   
                   // ⚡ FINANCE-ONLY STYLING: Apply gray layer only for finance roles
                   // This creates visual separation between chargeable (bright) and informational (dimmed) items
@@ -2412,11 +2426,17 @@
           }
         };
 
-        // Function to toggle select all products with stock (for inventarios role)
+        // ⚡ FIXED: Function to toggle select all products with stock (for inventarios role)
+        // Only selects checkboxes that are actually visible (not hidden due to backorder/fully surtido)
         window.toggleSelectAllConStock = function(checked) {
           const checkboxes = document.querySelectorAll('.producto-surtir-checkbox');
           checkboxes.forEach(cb => {
-            cb.checked = checked;
+            // Only toggle checkboxes that are visible and enabled
+            // This filters out backorder items and fully surtido items
+            const isVisible = cb.offsetParent !== null; // Check if element is visible in DOM
+            if (isVisible && !cb.disabled) {
+              cb.checked = checked;
+            }
           });
           console.log(`[SELECT ALL] ${checked ? 'Seleccionados' : 'Deseleccionados'} ${checkboxes.length} productos con stock`);
         };
