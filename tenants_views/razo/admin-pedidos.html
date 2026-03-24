@@ -108,6 +108,7 @@
                   <option value="">Todos</option>
                   <option value="Pendiente">Pendiente</option>
                   <option value="Confirmado">Confirmado</option>
+                  <option value="Surtido Parcial">🟡 Surtido Parcial</option>
                   <option value="Enviado">Enviado</option>
                   <option value="Entregado">Entregado</option>
                   <option value="Cancelado">Cancelado</option>
@@ -538,7 +539,7 @@
 
         if (value === "pendiente") return "pedido-estatus-badge pendiente";
         if (value === "confirmado" || value === "surtido") return "pedido-estatus-badge confirmado";
-        if (value === "parcialmente surtido" || value === "parcialmente_surtido") return "pedido-estatus-badge parcialmente-surtido";
+        if (value === "parcialmente surtido" || value === "parcialmente_surtido" || value === "surtido parcial") return "pedido-estatus-badge parcialmente-surtido";
         if (
           value === "enviado" ||
           value === "en ruta" ||

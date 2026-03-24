@@ -1287,6 +1287,11 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
     );
 
     // AHORA SÍ: Generar movimiento en CXC si es crédito
+    // ⚠️ PROTECCIÓN DE LÓGICA FINANCIERA PARA SURTIDO PARCIAL:
+    // - Se libera la RESERVA del pedido completo (montototal)
+    // - Se genera CARGO solo por lo realmente surtido (total_remision)
+    // - Si es surtido parcial, el resto queda pendiente para futuras entregas
+    // - Esto permite entregas parciales sin cobrar de más al cliente
     if (remision.es_credito) {
       const creditoQuery = await client.query(
         `SELECT credito_id, saldo_deudor, limite_credito
@@ -1302,6 +1307,7 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
         const montoRemision = parseFloat(remision.total_remision);
         
         // Liberar reserva del pedido completo y sumar cargo real
+        // IMPORTANTE: montoRemision solo incluye lo que se surtió en esta remisión
         const saldoSinReserva = parseFloat((saldoActual - remision.montototal).toFixed(2));
         const nuevoSaldo = parseFloat((saldoSinReserva + montoRemision).toFixed(2));
 
