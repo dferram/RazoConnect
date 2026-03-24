@@ -641,6 +641,12 @@
                   <span class="items-total-label" style="color: #16a34a;">Total a Cobrar (Solo Surtidos)</span>
                   <span class="items-total-value" id="totalSurtidos" style="color: #16a34a;">$0.00</span>
                 </div>
+                <!-- ⚡ FINANCE NOTE: Clarify what's included in the total -->
+                <div style="padding: 0.75rem 1rem; background: #f0fdf4; border-top: 1px solid #d1fae5;">
+                  <p style="font-size: 0.875rem; color: #15803d; margin: 0; text-align: center;">
+                    <strong>📌 Nota:</strong> El total refleja únicamente los productos listos para despacho (Surtidos)
+                  </p>
+                </div>
               </div>
 
               <!-- Items list -->
@@ -757,6 +763,27 @@
                     title="Generar PDF del pedido"
                   >
                     📄 Generar PDF
+                  </button>
+                  <!-- ⚡ NEW: Mode selection buttons for CLIENTE role only -->
+                  <button
+                    type="button"
+                    class="btn btn-info"
+                    id="btnPDFFull"
+                    onclick="descargarPDFPedidoDetalle('full')"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #17a2b8; color: white; display: none;"
+                    title="Ver remisión completa con todos los productos"
+                  >
+                    📄 Ver Remisión Completa
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-success"
+                    id="btnPDFSurtido"
+                    onclick="descargarPDFPedidoDetalle('surtido_only')"
+                    style="padding: 0.5rem 1rem; font-size: 0.875rem; background: #10b981; color: white; display: none;"
+                    title="Ver solo productos surtidos/listos para entrega"
+                  >
+                    📦 Ver Solo lo Surtido
                   </button>
                   <button 
                     type="button"
@@ -1168,10 +1195,28 @@
             const btnFactura = document.getElementById('btnGenerarFactura');
             const btnAjustarPedido = document.getElementById('btnAjustarPedido');
             
-            // Generar PDF: Available for inventarios, finanzas, and admin roles
+            // ⚡ NEW: PDF button visibility logic based on role
             const rolesConPDF = ['super_admin', 'superadmin', 'super admin', 'admin', 'finanzas', 'gerente_finanzas', 'inventarios'];
-            if (btnGenerarPDF) {
-              btnGenerarPDF.style.display = rolesConPDF.includes(userRole) ? 'inline-block' : 'none';
+            const btnPDFFull = document.getElementById('btnPDFFull');
+            const btnPDFSurtido = document.getElementById('btnPDFSurtido');
+            
+            // Cliente role: Show mode selection buttons
+            if (userRole === 'cliente') {
+              if (btnPDFFull) btnPDFFull.style.display = 'inline-block';
+              if (btnPDFSurtido) btnPDFSurtido.style.display = 'inline-block';
+              if (btnGenerarPDF) btnGenerarPDF.style.display = 'none'; // Hide single button
+            } 
+            // Other roles (admin, finanzas, inventarios): Show single button with role-enforced mode
+            else if (rolesConPDF.includes(userRole)) {
+              if (btnGenerarPDF) btnGenerarPDF.style.display = 'inline-block';
+              if (btnPDFFull) btnPDFFull.style.display = 'none';
+              if (btnPDFSurtido) btnPDFSurtido.style.display = 'none';
+            }
+            // No access: Hide all
+            else {
+              if (btnGenerarPDF) btnGenerarPDF.style.display = 'none';
+              if (btnPDFFull) btnPDFFull.style.display = 'none';
+              if (btnPDFSurtido) btnPDFSurtido.style.display = 'none';
             }
             
             // Generar Factura: Only for finanzas and admin roles
@@ -1247,7 +1292,7 @@
 
             if (estatusValor === "pendiente") estatusClass = "pedido-estatus-badge pendiente";
             else if (estatusValor === "confirmado" || estatusValor === "surtido") estatusClass = "pedido-estatus-badge confirmado";
-            else if (estatusValor === "parcialmente surtido" || estatusValor === "parcialmente_surtido") estatusClass = "pedido-estatus-badge parcialmente-surtido";
+            else if (estatusValor === "parcialmente surtido" || estatusValor === "parcialmente_surtido" || estatusValor === "surtido parcial") estatusClass = "pedido-estatus-badge parcialmente-surtido";
             else if (
               estatusValor === "enviado" ||
               estatusValor === "en ruta" ||
@@ -1317,37 +1362,46 @@
             const puedeMarcarSurtido = ['inventarios', 'gerente_operaciones', 'jefe_almacen', 'admin', 'super_admin'].includes(currentRole);
             
             if (btnSurtir && puedeMarcarSurtido) {
+              // ⚡ FIXED BUTTON STATE LOGIC: Support incremental fulfillment
+              // ENABLED states: Pendiente, Confirmado, Revision de Almacen, Surtido Parcial
+              // BLOCKED states: Pendiente de Confirmación (waiting for finance), Surtido (already closed)
+              
               if (estaSurtido) {
-                // Already confirmed by finanzas
+                // Already confirmed by finanzas - BLOCKED
                 btnSurtir.innerHTML = '✅ Pedido Surtido';
                 btnSurtir.style.background = '#10b981';
                 btnSurtir.disabled = true;
                 btnSurtir.style.display = 'inline-block';
+                btnSurtir.title = 'El pedido ya fue confirmado por Finanzas';
               } else if (estaPendienteConfirmacion) {
-                // Sent to finance, waiting for confirmation
+                // Sent to finance, waiting for confirmation - BLOCKED
                 btnSurtir.innerHTML = '⏳ Esperando Finanzas';
                 btnSurtir.style.background = '#6c757d';
                 btnSurtir.disabled = true;
                 btnSurtir.style.display = 'inline-block';
+                btnSurtir.title = 'Esperando confirmación de Finanzas. No se pueden hacer cambios mientras tanto.';
               } else if (estaRevisionAlmacen) {
-                // Rejected by finance, needs correction - can resend
+                // Rejected by finance, needs correction - ENABLED
                 btnSurtir.innerHTML = '⚠️ Corregir y Reenviar';
                 btnSurtir.style.background = '#f59e0b';
                 btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';
+                btnSurtir.title = 'El pedido fue rechazado por Finanzas. Corrija y reenvíe.';
               } else if (estatusValor === 'pendiente' || estatusValor === 'confirmado' || estaParcialmenteSurtido) {
-                // Can be marked as ready - includes parcialmente_surtido for inventarios to mark remaining items
+                // Can be marked as ready - ENABLED (includes Surtido Parcial for incremental fulfillment)
                 btnSurtir.innerHTML = '📦 Pedido surtido';
                 btnSurtir.style.background = '#16a34a';
                 btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';
-                console.log(`✅ [PEDIDO-DETALLE] Botón Surtir visible para inventarios (estatus: ${estatusValor})`);
+                btnSurtir.title = 'Marcar productos seleccionados como surtidos y enviar a Finanzas';
+                console.log(`✅ [PEDIDO-DETALLE] Botón Surtir HABILITADO para inventarios (estatus: ${estatusValor})`);
               } else {
-                // For any other status, show the button but indicate current state
+                // For any other status, show enabled by default
                 btnSurtir.innerHTML = '📦 Pedido surtido';
                 btnSurtir.style.background = '#16a34a';
                 btnSurtir.disabled = false;
                 btnSurtir.style.display = 'inline-block';
+                btnSurtir.title = 'Marcar productos seleccionados como surtidos';
                 console.log(`✅ [PEDIDO-DETALLE] Botón Surtir visible para inventarios (estatus: ${estatusValor})`);
               }
             } else if (btnSurtir) {
@@ -1488,42 +1542,69 @@
             const currentUserRole = getUserRole();
             const isFinanzasRole = currentUserRole === 'finanzas' || currentUserRole === 'gerente_finanzas';
             
-            // REORDENAR: Productos por estado - Surtido > Con Stock > Bajo Pedido
-            const productosSurtidos = productos.filter(p => {
-              const cantidadSurtida = parseInt(p.cantidadSurtida || 0);
-              const cantidadPaquetes = parseInt(p.cantidadPaquetes || 0);
-              return cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
-            });
+            // ⚡ DYNAMIC SORTING: Finance roles see surtido-first order, others see original order
+            let productosToRender;
+            let productosSurtidos, productosConStock, productosBajoPedido;
             
-            const productosConStock = productos.filter(p => {
-              const cantidadSurtida = parseInt(p.cantidadSurtida || 0);
-              const cantidadPaquetes = parseInt(p.cantidadPaquetes || 0);
-              const productoSurtido = cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
-              if (productoSurtido) return false; // Ya está en productosSurtidos
+            if (isFinanzasRole) {
+              // FINANCE SORTING: Surtido > Con Stock > Bajo Pedido
+              // This helps finance focus on what's ready to charge
+              productosSurtidos = productos.filter(p => {
+                const cantidadSurtida = parseInt(p.cantidadSurtida || 0);
+                const cantidadPaquetes = parseInt(p.cantidadPaquetes || 0);
+                return cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
+              });
               
-              const esBackorder = p.esBackorder === true || p.esBackorder === 'true';
-              const stock = p.stock !== undefined ? p.stock : 0;
-              const piezasNecesarias = p.piezasTotales || 0;
-              const hayStockSuficiente = stock >= piezasNecesarias;
-              return !esBackorder && hayStockSuficiente;
-            });
-            
-            const productosBajoPedido = productos.filter(p => {
-              const cantidadSurtida = parseInt(p.cantidadSurtida || 0);
-              const cantidadPaquetes = parseInt(p.cantidadPaquetes || 0);
-              const productoSurtido = cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
-              if (productoSurtido) return false; // Ya está en productosSurtidos
+              productosConStock = productos.filter(p => {
+                const cantidadSurtida = parseInt(p.cantidadSurtida || 0);
+                const cantidadPaquetes = parseInt(p.cantidadPaquetes || 0);
+                const productoSurtido = cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
+                if (productoSurtido) return false;
+                
+                const esBackorder = p.esBackorder === true || p.esBackorder === 'true';
+                const stock = p.stock !== undefined ? p.stock : 0;
+                const piezasNecesarias = p.piezasTotales || 0;
+                const hayStockSuficiente = stock >= piezasNecesarias;
+                return !esBackorder && hayStockSuficiente;
+              });
               
-              const esBackorder = p.esBackorder === true || p.esBackorder === 'true';
-              const stock = p.stock !== undefined ? p.stock : 0;
-              const piezasNecesarias = p.piezasTotales || 0;
-              const hayStockSuficiente = stock >= piezasNecesarias;
-              return esBackorder || !hayStockSuficiente;
-            });
-            
-            // CRITICAL: Always render ALL products to DOM so checkboxes exist
-            // Orden: Surtidos > Con Stock > Bajo Pedido
-            const productosToRender = [...productosSurtidos, ...productosConStock, ...productosBajoPedido];
+              productosBajoPedido = productos.filter(p => {
+                const cantidadSurtida = parseInt(p.cantidadSurtida || 0);
+                const cantidadPaquetes = parseInt(p.cantidadPaquetes || 0);
+                const productoSurtido = cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
+                if (productoSurtido) return false;
+                
+                const esBackorder = p.esBackorder === true || p.esBackorder === 'true';
+                const stock = p.stock !== undefined ? p.stock : 0;
+                const piezasNecesarias = p.piezasTotales || 0;
+                const hayStockSuficiente = stock >= piezasNecesarias;
+                return esBackorder || !hayStockSuficiente;
+              });
+              
+              productosToRender = [...productosSurtidos, ...productosConStock, ...productosBajoPedido];
+              console.log(`💰 [FINANZAS] Ordenamiento dinámico aplicado: ${productosSurtidos.length} surtidos primero, ${productosBajoPedido.length} bajo pedido al final`);
+            } else {
+              // INVENTORY/OTHER ROLES: Keep original order from API
+              productosToRender = productos;
+              // Still categorize for badge logic
+              productosSurtidos = productos.filter(p => {
+                const cantidadSurtida = parseInt(p.cantidadSurtida || 0);
+                const cantidadPaquetes = parseInt(p.cantidadPaquetes || 0);
+                return cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
+              });
+              productosBajoPedido = productos.filter(p => {
+                const cantidadSurtida = parseInt(p.cantidadSurtida || 0);
+                const cantidadPaquetes = parseInt(p.cantidadPaquetes || 0);
+                const productoSurtido = cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
+                if (productoSurtido) return false;
+                const esBackorder = p.esBackorder === true || p.esBackorder === 'true';
+                const stock = p.stock !== undefined ? p.stock : 0;
+                const piezasNecesarias = p.piezasTotales || 0;
+                const hayStockSuficiente = stock >= piezasNecesarias;
+                return esBackorder || !hayStockSuficiente;
+              });
+              console.log(`📦 [INVENTARIOS/OTROS] Mostrando orden original de API`);
+            }
             
             if (isFinanzasRole) {
               console.log(`💰 [FINANZAS] Mostrando todos los productos: ${productos.length} total, ${productosConStock.length} con stock, ${productosBajoPedido.length} bajo pedido (con layer gris)`);
@@ -1576,16 +1657,23 @@
                   
                   const isInventariosRole = getUserRole() === 'inventarios';
                   
-                  // Determinar si mostrar checkbox (solo para inventarios, productos con stock, NO surtidos)
-                  // CRITICAL: Only show checkbox if cantidadSurtida is exactly 0 (not already surtido)
+                  // ⚡ FIX: Checkbox visibility for INCREMENTAL fulfillment
+                  // Show checkbox when: stock > 0 AND cantidad_surtida < cantidad_paquetes
+                  // This allows partial shipments and incremental surtido
                   const cantidadSurtidaNum = parseInt(item.cantidadSurtida) || 0;
-                  const noEstaSurtido = cantidadSurtidaNum === 0;
+                  const cantidadPaquetesNum = parseInt(item.cantidadPaquetes) || 0;
+                  const tieneStockDisponible = hayStockSuficiente && stock > 0;
+                  const faltanPorSurtir = cantidadSurtidaNum < cantidadPaquetesNum;
                   const estaSurtido = cantidadSurtidaNum > 0;
-                  const puedeSeleccionar = isInventariosRole && badgeText === 'CON STOCK' && noEstaSurtido;
                   
-                  // Aplicar clase item-bajo-pedido para gray layer (visible para todos los roles)
+                  // Show checkbox if: inventarios role + has stock + not fully fulfilled
+                  const puedeSeleccionar = isInventariosRole && tieneStockDisponible && faltanPorSurtir;
+                  
+                  // ⚡ FINANCE-ONLY STYLING: Apply gray layer only for finance roles
+                  // This creates visual separation between chargeable (bright) and informational (dimmed) items
                   const esBajoPedido = badgeText === 'BAJO PEDIDO';
-                  const claseItemRow = esBajoPedido ? 'item-row item-bajo-pedido' : 'item-row';
+                  const aplicarLayerGris = isFinanzasRole && esBajoPedido;
+                  const claseItemRow = aplicarLayerGris ? 'item-row item-bajo-pedido' : 'item-row';
                   
                   return `
               <div class="${claseItemRow}" data-detalle-id="${item.detalleId}" data-es-backorder="${item.esBackorder || false}" data-surtido="${estaSurtido}">
@@ -1954,8 +2042,8 @@
           }
         };
 
-        // Funciones de generación de PDF
-        window.descargarPDFPedidoDetalle = async function() {
+        // ⚡ REFACTORED: Funciones de generación de PDF con soporte para modos dinámicos
+        window.descargarPDFPedidoDetalle = async function(mode = null) {
           if (!selectedOrderId) {
             showToast("No se pudo identificar el pedido", "error");
             return;
@@ -1974,15 +2062,26 @@
             const userRole = getUserRole();
             const isInventarios = userRole === 'inventarios';
             const isFinanzas = userRole === 'finanzas' || userRole === 'gerente_finanzas';
+            const isCliente = userRole === 'cliente';
             
-            // Build query params based on role
+            // Build query params based on role and mode
             let queryParams = [];
             
+            // ⚡ MODE PARAMETER: Add mode to query if specified (for cliente role)
+            // Backend will enforce role-based rules regardless
+            if (mode) {
+              queryParams.push(`mode=${mode}`);
+            }
+            
+            // Price visibility based on role
             if (isInventarios) {
-              // Inventarios: No prices, show all products
+              // Inventarios: No prices, always show full (to know what's missing)
               queryParams.push('mostrarPrecios=false');
             } else if (isFinanzas) {
-              // Finanzas: With prices, show all products
+              // Finanzas: With prices, always surtido_only (backend enforces this)
+              queryParams.push('mostrarPrecios=true');
+            } else if (isCliente) {
+              // Cliente: With prices, mode is controlled by button clicked
               queryParams.push('mostrarPrecios=true');
             }
             // Admin/other roles: Show everything with prices (default behavior)
@@ -2002,13 +2101,15 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `remision-pedido-${selectedOrderId}.pdf`;
+            const modeLabel = mode === 'surtido_only' ? '-surtido' : '';
+            a.download = `remision-pedido-${selectedOrderId}${modeLabel}.pdf`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
             
-            showToast("Remisión generada exitosamente", "success");
+            const modeText = mode === 'surtido_only' ? ' (Solo Surtido)' : mode === 'full' ? ' (Completa)' : '';
+            showToast(`Remisión${modeText} generada exitosamente`, "success");
           } catch (error) {
             console.error('Error generando remisión:', error);
             showToast("Error al generar remisión", "error");
@@ -2325,11 +2426,17 @@
           }
         };
 
-        // Function to toggle select all products with stock (for inventarios role)
+        // ⚡ FIXED: Function to toggle select all products with stock (for inventarios role)
+        // Only selects checkboxes that are actually visible (not hidden due to backorder/fully surtido)
         window.toggleSelectAllConStock = function(checked) {
           const checkboxes = document.querySelectorAll('.producto-surtir-checkbox');
           checkboxes.forEach(cb => {
-            cb.checked = checked;
+            // Only toggle checkboxes that are visible and enabled
+            // This filters out backorder items and fully surtido items
+            const isVisible = cb.offsetParent !== null; // Check if element is visible in DOM
+            if (isVisible && !cb.disabled) {
+              cb.checked = checked;
+            }
           });
           console.log(`[SELECT ALL] ${checked ? 'Seleccionados' : 'Deseleccionados'} ${checkboxes.length} productos con stock`);
         };

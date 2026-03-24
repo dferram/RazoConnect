@@ -23,7 +23,7 @@ function calcularEstadoPedido(detalles = []) {
   });
   
   if (allSurtido) return 'Surtido';
-  if (anySurtido) return 'Parcialmente Surtido';
+  if (anySurtido) return 'Surtido Parcial';
   return 'Pendiente';
 }
 

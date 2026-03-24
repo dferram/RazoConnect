@@ -923,13 +923,30 @@ const surtirPedido = async (req, res) => {
 
     // Actualizar estatus del pedido usando utilidad centralizada
     const detalles = await getDetallesPedido(client, pedidoId, tenant_id);
-    const nuevoEstado = calcularEstadoPedido(detalles);
+    const estadoCalculado = calcularEstadoPedido(detalles);
     
     // Determinar si está completamente surtido
-    const completamenteSurtido = nuevoEstado === 'Surtido';
+    const completamenteSurtido = estadoCalculado === 'Surtido';
     
-    // Mantener "Pendiente de Confirmación" como estado visible, pero guardar info de surtido
-    const estatusPendiente = 'Pendiente de Confirmación';
+    // NUEVA LÓGICA DE TRANSICIÓN DE ESTADOS
+    let nuevoEstatus;
+    const totalItems = detalles.length;
+    const itemsSurtidosCompletos = detalles.filter(d => {
+      const surtida = Number(d.cantidad_surtida || 0);
+      const pedida = Number(d.cantidad_pedida || 0);
+      return surtida >= pedida;
+    }).length;
+    
+    if (itemsSurtidosCompletos === totalItems) {
+      // Todos los items están completamente surtidos
+      nuevoEstatus = 'Pendiente de Confirmación';
+    } else if (itemsSurtidosCompletos > 0) {
+      // Algunos items están surtidos (parcialmente)
+      nuevoEstatus = 'Surtido Parcial';
+    } else {
+      // Ningún item está surtido
+      nuevoEstatus = 'Revisión de almacén';
+    }
     
     const updateQuery = `
       UPDATE pedidos 
@@ -940,14 +957,14 @@ const surtirPedido = async (req, res) => {
       RETURNING *
     `;
     
-    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, estatusPendiente, completamenteSurtido]);
+    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, nuevoEstatus, completamenteSurtido]);
 
     await client.query('COMMIT');
 
     logger.info('Pedido enviado a finanzas para confirmación (sin reducir stock):', {
       pedidoId,
-      estatusMostrado: estatusPendiente,
-      estadoCalculado: nuevoEstado,
+      estatusMostrado: nuevoEstatus,
+      estadoCalculado: estadoCalculado,
       completamenteSurtido,
       userRole,
       tenantId: tenant_id,
@@ -987,6 +1004,13 @@ const surtirPedido = async (req, res) => {
 /**
  * Confirmar surtido y reducir inventario (finanzas)
  * Usado por finanzas para confirmar que el pedido está listo y reducir stock
+ * 
+ * ⚠️ PROTECCIÓN DE LÓGICA FINANCIERA PARA SURTIDO PARCIAL:
+ * - Solo reduce stock de productos que fueron marcados como surtidos (cantidadsurtida > 0)
+ * - Si el pedido está en "Surtido Parcial", solo procesa los items completados
+ * - El resto de items quedan pendientes para futuras entregas
+ * - La CXC se genera posteriormente en remisionesController basada en lo realmente entregado
+ * 
  * POST /api/admin/pedidos/:id/confirmar-surtido
  */
 const confirmarSurtidoFinanzas = async (req, res) => {
@@ -1021,16 +1045,16 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     const estatusActual = (pedido.estatus || '').toLowerCase().trim();
     
     // Validar que el pedido está en estado correcto
-    if (!['listo para surtir', 'parcialmente surtido', 'parcialmente_surtido', 'pendiente de confirmación', 'pendiente de confirmacion'].includes(estatusActual)) {
+    if (!['listo para surtir', 'parcialmente surtido', 'parcialmente_surtido', 'surtido parcial', 'pendiente de confirmación', 'pendiente de confirmacion'].includes(estatusActual)) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        message: `No se puede confirmar. El pedido debe estar en estado "Listo para Surtir", "Parcialmente Surtido" o "Pendiente de Confirmación". Estado actual: ${pedido.estatus}`
+        message: `No se puede confirmar. El pedido debe estar en estado "Listo para Surtir", "Surtido Parcial" o "Pendiente de Confirmación". Estado actual: ${pedido.estatus}`
       });
     }
 
-    // FIX: Obtener productos que están SURTIDOS (marcados por inventarios)
-    // No filtrar por esbackorder, sino por cantidadsurtida > 0
+    // PROTECCIÓN PARA SURTIDO PARCIAL: Obtener productos que están SURTIDOS (marcados por inventarios)
+    // Solo procesar items con cantidadsurtida > 0, sin importar el flag esbackorder
     const productosQuery = `
       SELECT 
         dp.detalleid,

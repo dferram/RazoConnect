@@ -22,7 +22,8 @@ const ESTADOS_PEDIDO = {
 const ESTADOS_LEGACY = {
   'Parcial': ESTADOS_PEDIDO.PARCIALMENTE_SURTIDO,
   'Confirmado': ESTADOS_PEDIDO.LISTO_PARA_SURTIR,
-  'Aprobado': ESTADOS_PEDIDO.LISTO_PARA_SURTIR
+  'Aprobado': ESTADOS_PEDIDO.LISTO_PARA_SURTIR,
+  'Surtido Parcial': ESTADOS_PEDIDO.PARCIALMENTE_SURTIDO // Nueva variante del estado
 };
 
 /**
@@ -34,10 +35,19 @@ function normalizarEstado(estado) {
   if (!estado) return ESTADOS_PEDIDO.PENDIENTE;
   
   const estadoTrimmed = estado.toString().trim();
+  const estadoLower = estadoTrimmed.toLowerCase().replace(/_/g, ' ');
   
-  // Buscar en estados legacy
-  if (ESTADOS_LEGACY[estadoTrimmed]) {
-    return ESTADOS_LEGACY[estadoTrimmed];
+  // CRITICAL: Handle 'Surtido Parcial' and 'Parcialmente Surtido' as same state
+  if (estadoLower === 'surtido parcial' || estadoLower === 'parcialmente surtido') {
+    return ESTADOS_PEDIDO.PARCIALMENTE_SURTIDO;
+  }
+  
+  // CRITICAL FIX: Buscar en estados legacy (case-insensitive)
+  // Build lowercase version of ESTADOS_LEGACY for matching
+  for (const [legacyKey, legacyValue] of Object.entries(ESTADOS_LEGACY)) {
+    if (legacyKey.toLowerCase() === estadoLower) {
+      return legacyValue;
+    }
   }
   
   // Buscar en estados principales (case-insensitive)

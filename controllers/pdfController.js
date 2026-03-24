@@ -8,8 +8,12 @@ async function generarPDFPedido(req, res) {
     const pedidoId = parseInt(req.params.id);
     const { tenant_id } = req.tenant;
     
+    // ⚡ NEW: Extract mode parameter from query (?mode=surtido_only or ?mode=full)
+    const requestedMode = (req.query.mode || 'full').toLowerCase().trim();
+    
     // Support for hiding prices (for inventarios role)
-    const mostrarPrecios = req.query.mostrarPrecios !== 'false';
+    // Changed to 'let' to allow role-based enforcement
+    let mostrarPrecios = req.query.mostrarPrecios !== 'false';
     
     // Support for role-based filtering (inventarios vs finanzas)
     const filtrarPorRol = req.query.filtrarPorRol === 'true';
@@ -27,6 +31,40 @@ async function generarPDFPedido(req, res) {
     const userRoles = Array.isArray(req.user?.roles) && req.user.roles.length > 0
         ? req.user.roles.map(r => (r || '').toString().toLowerCase().trim())
         : [userRole].filter(Boolean);
+
+    // ⚡ ROLE-BASED MODE ENFORCEMENT
+    let finalMode = requestedMode;
+    
+    // Finanzas: ALWAYS force surtido_only (they only see/charge what's ready)
+    if (userRoles.some(r => ['finanzas', 'gerente_finanzas'].includes(r))) {
+        finalMode = 'surtido_only';
+        logger.info('PDF: Finanzas role detected - forcing surtido_only mode', {
+            pedidoId,
+            userId,
+            requestId: req.requestId
+        });
+    }
+    
+    // Inventarios: ALWAYS show full (to know what's missing), but without prices
+    if (userRoles.some(r => r === 'inventarios')) {
+        finalMode = 'full';
+        mostrarPrecios = false; // CRITICAL: Force hide prices, ignore client request
+        logger.info('PDF: Inventarios role detected - forcing full mode without prices', {
+            pedidoId,
+            userId,
+            requestId: req.requestId
+        });
+    }
+    
+    // Admin/Super Admin: Default to full, but allow override
+    // Cliente: Allow mode selection (respect their choice)
+    logger.info('PDF: Mode determined', {
+        requestedMode,
+        finalMode,
+        userRole,
+        pedidoId,
+        requestId: req.requestId
+    });
 
     // Log de diagnóstico para detectar problemas de permisos
     logger.info('PDF request iniciada', {
@@ -253,10 +291,8 @@ async function generarPDFPedido(req, res) {
         // Render header on first page manually
         renderHeader(doc, pedido, logoPath, logoExists);
 
-        // FIX: Show ALL items in the remisión, regardless of surtido status
-        // Items are categorized for display purposes but ALL are shown
-        // SURTIDOS: cantidadsurtida > 0 (confirmed products)
-        // PENDIENTES: cantidadsurtida = 0 (backorder/pending products)
+        // ⚡ MODE-BASED FILTERING (DRY refactor)
+        // Categorize items by surtido status
         let itemsEnExistencia = detalles.filter(item => {
             const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
             return cantidadSurtida > 0;
@@ -266,20 +302,27 @@ async function generarPDFPedido(req, res) {
             return cantidadSurtida === 0;
         });
 
-        // ROLE-BASED FILTERING: Apply filtering if requested
-        if (filtrarPorRol) {
-            const isInventarios = userRole === 'inventarios';
-            const isFinanzas = ['finanzas', 'gerente_finanzas'].includes(userRole);
-            
-            if (isInventarios) {
-                // Inventarios only sees BACKORDER items (without prices)
-                itemsEnExistencia = [];
-                // itemsBajoPedido stays as is
-            } else if (isFinanzas) {
-                // Finanzas only sees IN-STOCK items (with prices)
-                itemsBajoPedido = [];
-                // itemsEnExistencia stays as is
-            }
+        // Apply mode filtering
+        if (finalMode === 'surtido_only') {
+            // Mode: surtido_only - Only show items with cantidadsurtida > 0
+            // Used by Finanzas (only charge what's ready to ship)
+            const hiddenCount = itemsBajoPedido.length; // CRITICAL: Capture count BEFORE resetting
+            itemsBajoPedido = []; // Hide backorder items
+            logger.info('PDF: Applying surtido_only filter', {
+                itemsShown: itemsEnExistencia.length,
+                itemsHidden: hiddenCount, // Use captured count
+                pedidoId,
+                requestId: req.requestId
+            });
+        } else {
+            // Mode: full - Show ALL items (default)
+            // Used by Inventarios (need to see what's missing), Admin, Cliente
+            logger.info('PDF: Showing full remision', {
+                itemsSurtidos: itemsEnExistencia.length,
+                itemsPendientes: itemsBajoPedido.length,
+                pedidoId,
+                requestId: req.requestId
+            });
         }
 
         let yPosition = 260;
@@ -459,12 +502,22 @@ if (!mostrarPrecios) {
     return;
 }
 
-// Calculate totals by stock status - FORCED RECALCULATION WITH CORRECT FORMULA
+// CRITICAL FIX: Calculate totals from VISIBLE items only (not all detalles)
+// Choose items array based on current display mode
+let chosenItems;
+if (finalMode === 'surtido_only') {
+    // Only calculate from items actually shown (surtido items)
+    chosenItems = itemsEnExistencia;
+} else {
+    // Full mode: combine both visible arrays
+    chosenItems = [...itemsEnExistencia, ...itemsBajoPedido];
+}
+
 let totalEnStock = 0;
 let totalSinStock = 0;
 let totalPiezasEntregadas = 0;
 
-detalles.forEach((item) => {
+chosenItems.forEach((item) => {
     // CORRECT SUBTOTAL CALCULATION: (precioUnitario * tamano_cantidad) * cantidad
     const precioUnitario = parseFloat(item.preciounitario) || 0;
     const tamanoCantidad = parseInt(item.tamano_cantidad || 1);

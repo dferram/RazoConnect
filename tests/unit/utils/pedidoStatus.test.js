@@ -21,22 +21,22 @@ describe('calcularEstadoPedido', () => {
     expect(calcularEstadoPedido(detalles)).toBe('Pendiente');
   });
 
-  test('debe retornar "Parcialmente Surtido" cuando algún producto está surtido pero no todos', () => {
+  test('debe retornar "Surtido Parcial" cuando algún producto está surtido pero no todos', () => {
     const detalles = [
       { cantidad_pedida: 10, cantidad_surtida: 10 },
       { cantidad_pedida: 5, cantidad_surtida: 0 },
       { cantidad_pedida: 2, cantidad_surtida: 0 }
     ];
-    expect(calcularEstadoPedido(detalles)).toBe('Parcialmente Surtido');
+    expect(calcularEstadoPedido(detalles)).toBe('Surtido Parcial');
   });
 
-  test('debe retornar "Parcialmente Surtido" cuando algún producto está parcialmente surtido', () => {
+  test('debe retornar "Surtido Parcial" cuando algún producto está parcialmente surtido', () => {
     const detalles = [
       { cantidad_pedida: 10, cantidad_surtida: 5 },
       { cantidad_pedida: 5, cantidad_surtida: 3 },
       { cantidad_pedida: 2, cantidad_surtida: 2 }
     ];
-    expect(calcularEstadoPedido(detalles)).toBe('Parcialmente Surtido');
+    expect(calcularEstadoPedido(detalles)).toBe('Surtido Parcial');
   });
 
   test('debe retornar "Surtido" cuando todos los productos están completamente surtidos', () => {
@@ -86,7 +86,7 @@ describe('calcularEstadoPedido', () => {
       { cantidad_pedida: 5, cantidad_surtida: 0 },
       { cantidad_pedida: 2, cantidad_surtida: 0 }
     ];
-    expect(calcularEstadoPedido(detalles)).toBe('Parcialmente Surtido');
+    expect(calcularEstadoPedido(detalles)).toBe('Surtido Parcial');
   });
 
   test('caso real: pedido de prueba con todos surtidos', () => {
