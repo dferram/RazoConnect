@@ -18,6 +18,9 @@ pnpm-lock.yaml
 .env.*.local
 *.env
 
+# EXCEPCIÓN: Permitir .env.docker como template de referencia
+!.env.docker
+
 # Archivos de configuración con credenciales
 config/database.json
 config/secrets.json
