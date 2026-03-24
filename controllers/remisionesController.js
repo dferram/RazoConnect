@@ -1308,17 +1308,19 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
         
         // CRITICAL FIX: Check if this is the first confirmed remision for this order
         // Only release the reserve on the first remision, not on subsequent ones
+        // LOCK FIX: Add FOR UPDATE to serialize concurrent confirmations and prevent race
         const priorRemisionesQuery = await client.query(
-          `SELECT COUNT(*) as count
+          `SELECT remision_id
            FROM remisiones
            WHERE pedido_id = $1 
              AND remision_id != $2
              AND estado IN ('SURTIDO', 'EMPACADA', 'ENVIADA', 'ENTREGADA')
-             AND tenant_id = $3`,
+             AND tenant_id = $3
+           FOR UPDATE`,
           [remision.pedidoid, id, tenant_id]
         );
         
-        const isPrimeraRemision = parseInt(priorRemisionesQuery.rows[0].count) === 0;
+        const isPrimeraRemision = priorRemisionesQuery.rows.length === 0;
         let nuevoSaldo = saldoActual;
         
         if (isPrimeraRemision) {

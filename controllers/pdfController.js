@@ -12,7 +12,8 @@ async function generarPDFPedido(req, res) {
     const requestedMode = (req.query.mode || 'full').toLowerCase().trim();
     
     // Support for hiding prices (for inventarios role)
-    const mostrarPrecios = req.query.mostrarPrecios !== 'false';
+    // Changed to 'let' to allow role-based enforcement
+    let mostrarPrecios = req.query.mostrarPrecios !== 'false';
     
     // Support for role-based filtering (inventarios vs finanzas)
     const filtrarPorRol = req.query.filtrarPorRol === 'true';
@@ -47,6 +48,7 @@ async function generarPDFPedido(req, res) {
     // Inventarios: ALWAYS show full (to know what's missing), but without prices
     if (userRoles.some(r => r === 'inventarios')) {
         finalMode = 'full';
+        mostrarPrecios = false; // CRITICAL: Force hide prices, ignore client request
         logger.info('PDF: Inventarios role detected - forcing full mode without prices', {
             pedidoId,
             userId,
@@ -304,10 +306,11 @@ async function generarPDFPedido(req, res) {
         if (finalMode === 'surtido_only') {
             // Mode: surtido_only - Only show items with cantidadsurtida > 0
             // Used by Finanzas (only charge what's ready to ship)
+            const hiddenCount = itemsBajoPedido.length; // CRITICAL: Capture count BEFORE resetting
             itemsBajoPedido = []; // Hide backorder items
             logger.info('PDF: Applying surtido_only filter', {
                 itemsShown: itemsEnExistencia.length,
-                itemsHidden: itemsBajoPedido.length,
+                itemsHidden: hiddenCount, // Use captured count
                 pedidoId,
                 requestId: req.requestId
             });
@@ -499,12 +502,22 @@ if (!mostrarPrecios) {
     return;
 }
 
-// Calculate totals by stock status - FORCED RECALCULATION WITH CORRECT FORMULA
+// CRITICAL FIX: Calculate totals from VISIBLE items only (not all detalles)
+// Choose items array based on current display mode
+let chosenItems;
+if (finalMode === 'surtido_only') {
+    // Only calculate from items actually shown (surtido items)
+    chosenItems = itemsEnExistencia;
+} else {
+    // Full mode: combine both visible arrays
+    chosenItems = [...itemsEnExistencia, ...itemsBajoPedido];
+}
+
 let totalEnStock = 0;
 let totalSinStock = 0;
 let totalPiezasEntregadas = 0;
 
-detalles.forEach((item) => {
+chosenItems.forEach((item) => {
     // CORRECT SUBTOTAL CALCULATION: (precioUnitario * tamano_cantidad) * cantidad
     const precioUnitario = parseFloat(item.preciounitario) || 0;
     const tamanoCantidad = parseInt(item.tamano_cantidad || 1);

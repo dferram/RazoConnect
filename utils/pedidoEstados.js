@@ -42,9 +42,12 @@ function normalizarEstado(estado) {
     return ESTADOS_PEDIDO.PARCIALMENTE_SURTIDO;
   }
   
-  // Buscar en estados legacy
-  if (ESTADOS_LEGACY[estadoTrimmed]) {
-    return ESTADOS_LEGACY[estadoTrimmed];
+  // CRITICAL FIX: Buscar en estados legacy (case-insensitive)
+  // Build lowercase version of ESTADOS_LEGACY for matching
+  for (const [legacyKey, legacyValue] of Object.entries(ESTADOS_LEGACY)) {
+    if (legacyKey.toLowerCase() === estadoLower) {
+      return legacyValue;
+    }
   }
   
   // Buscar en estados principales (case-insensitive)
