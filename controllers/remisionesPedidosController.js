@@ -64,11 +64,14 @@ const obtenerRemisionPedido = async (req, res) => {
 
     const pedido = pedidoResult.rows[0];
 
+    // FIX 2: Obtener cantidades REALES de remisiones confirmadas
+    // No usar cantidadsurtida de detallesdelpedido (que es para inventarios)
+    // Usar cantidad_surtida_remisiones que refleja lo realmente remisionado
     const detallesQuery = `
       SELECT DISTINCT ON (dp.detalleid)
         dp.detalleid,
         dp.cantidadpaquetes,
-        dp.cantidadsurtida,
+        COALESCE(dp.cantidad_surtida_remisiones, 0) as cantidad_remisionada,
         dp.esbackorder,
         dp.preciounitario,
         dp.precioporpaquete,
@@ -88,12 +91,12 @@ const obtenerRemisionPedido = async (req, res) => {
 
     const detallesResult = await db.query(detallesQuery, [pedidoId]);
 
-    // FIX: Separar productos surtidos de productos pendientes (backorder)
+    // FIX: Separar productos remisionados de productos pendientes (backorder)
     const itemsSurtidos = [];
     const itemsBackorder = [];
 
     detallesResult.rows.forEach((item) => {
-      const cantidadSurtida = parseInt(item.cantidadsurtida || 0, 10);
+      const cantidadRemisionada = parseInt(item.cantidad_remisionada || 0, 10);
       const cantidadPaquetes = parseInt(item.cantidadpaquetes, 10);
       const esBackorder = item.esbackorder || false;
       
@@ -106,24 +109,24 @@ const obtenerRemisionPedido = async (req, res) => {
         dimensiones: item.dimensiones,
         tamano: tamanoPiezas > 1 ? `Pack ${tamanoPiezas}` : 'Pack 1',
         cantidad: cantidadPaquetes,
-        cantidadSurtida: cantidadSurtida,
+        cantidadSurtida: cantidadRemisionada,
         precioUnitario: precioPorPaquete,
         piezasTotales: item.piezastotales,
         stockReal: parseInt(item.stock_real_variante || 0, 10),
         subtotal: parseFloat((cantidadPaquetes * precioPorPaquete).toFixed(2)),
       };
 
-      // Solo incluir en surtidos si cantidadsurtida > 0
-      if (cantidadSurtida > 0) {
+      // Solo incluir en surtidos si cantidad_remisionada > 0
+      if (cantidadRemisionada > 0) {
         itemsSurtidos.push({
           ...itemData,
-          cantidad: cantidadSurtida,
-          subtotal: parseFloat((cantidadSurtida * precioPorPaquete).toFixed(2)),
+          cantidad: cantidadRemisionada,
+          subtotal: parseFloat((cantidadRemisionada * precioPorPaquete).toFixed(2)),
         });
       }
       
-      // Incluir en backorder SOLO si hay cantidad pendiente (no completamente surtido)
-      const cantidadPendiente = cantidadPaquetes - cantidadSurtida;
+      // Incluir en backorder SOLO si hay cantidad pendiente (no completamente remisionado)
+      const cantidadPendiente = cantidadPaquetes - cantidadRemisionada;
       if (cantidadPendiente > 0) {
         itemsBackorder.push({
           ...itemData,
@@ -133,7 +136,7 @@ const obtenerRemisionPedido = async (req, res) => {
       }
     });
 
-    // Calcular total solo de productos surtidos
+    // Calcular total solo de productos remisionados
     const totalSurtido = itemsSurtidos.reduce((sum, item) => sum + item.subtotal, 0);
 
     res.json({
