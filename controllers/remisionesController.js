@@ -327,6 +327,10 @@ exports.generarRemision = async (req, res) => {
       nuevoEstatus = 'Listo para Pago';
     }
 
+    // FIX 3: es_historico solo debe ser true cuando el pedido está 100% completado y remisionado
+    // No marcar como histórico hasta que todo esté confirmado por finanzas
+    const esHistorico = false; // Solo finanzas puede marcar como histórico tras confirmar remisión
+    
     // CRÍTICO: Actualizar con montos reales, no solo banderas booleanas
     await client.query(
       `UPDATE pedidos 
@@ -334,9 +338,10 @@ exports.generarRemision = async (req, res) => {
            completamente_surtido = $1,
            estatus = $2,
            monto_surtido = $3,
-           monto_backorder = $4
-       WHERE pedidoid = $5 AND tenant_id = $6`,
-      [completamenteSurtido, nuevoEstatus, nuevoMontoSurtido, montoBackorder, pedido_id, tenant_id]
+           monto_backorder = $4,
+           es_historico = $5
+       WHERE pedidoid = $6 AND tenant_id = $7`,
+      [completamenteSurtido, nuevoEstatus, nuevoMontoSurtido, montoBackorder, esHistorico, pedido_id, tenant_id]
     );
 
     // 9. CRÍTICO: NO generar CXC hasta que finanzas confirme
@@ -1430,6 +1435,38 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
         tenant_id
       ]
     );
+
+    // FIX 3: Actualizar es_historico del pedido si está 100% completado
+    // Verificar si todos los productos del pedido han sido completamente remisionados
+    const verificacionQuery = await client.query(
+      `SELECT 
+        COALESCE(SUM(dp.cantidadpaquetes), 0) as total_pedido,
+        COALESCE(SUM(COALESCE(dp.cantidad_surtida_remisiones, 0)), 0) as total_remisionado
+       FROM detallesdelpedido dp
+       WHERE dp.pedidoid = $1 AND dp.tenant_id = $2`,
+      [remision.pedidoid, tenant_id]
+    );
+
+    const totalPedido = parseFloat(verificacionQuery.rows[0].total_pedido || 0);
+    const totalRemisionado = parseFloat(verificacionQuery.rows[0].total_remisionado || 0);
+    const pedidoCompletado = totalPedido > 0 && Math.abs(totalPedido - totalRemisionado) < 0.01;
+
+    if (pedidoCompletado) {
+      await client.query(
+        `UPDATE pedidos 
+         SET es_historico = TRUE,
+             estatus = 'Completado'
+         WHERE pedidoid = $1 AND tenant_id = $2`,
+        [remision.pedidoid, tenant_id]
+      );
+
+      logger.info('Pedido marcado como histórico tras completar última remisión:', {
+        pedidoId: remision.pedidoid,
+        remisionId: id,
+        totalPedido,
+        totalRemisionado
+      });
+    }
 
     await client.query('COMMIT');
 
