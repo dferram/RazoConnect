@@ -557,6 +557,10 @@ const getPedidoDetalle = async (req, res) => {
 /**
  * Confirmar pedido
  * POST /api/admin/pedidos/:id/confirmar
+ * 
+ * FIX: Este endpoint ahora SOLO cambia el estado del pedido.
+ * El inventario se descuenta cuando finanzas confirma el surtido en confirmarSurtidoFinanzas.
+ * Esto previene el doble descuento de inventario.
  */
 const confirmarPedido = async (req, res) => {
   const client = await db.pool.connect();
@@ -617,65 +621,22 @@ const confirmarPedido = async (req, res) => {
       });
     }
 
-    const motivo = `Venta Pedido #${pedidoId}`;
-
-    for (const item of itemsResult.rows) {
-      const varianteId = Number.parseInt(item.varianteid, 10);
-      const piezasTotales = Number.parseInt(item.piezastotales, 10);
-
-      if (!Number.isInteger(varianteId) || varianteId <= 0) {
-        await client.query("ROLLBACK");
-        return res.status(400).json({
-          success: false,
-          message: "No se pudo confirmar: item inválido (varianteId)",
-        });
-      }
-
-      if (!Number.isInteger(piezasTotales) || piezasTotales <= 0) {
-        continue;
-      }
-
-      try {
-        await inventoryService.registrarMovimiento(client, {
-          varianteId,
-          cantidadDelta: -1 * piezasTotales,
-          motivo,
-          usuarioId: req.user.id,
-          esExcepcion: false,
-        });
-      } catch (invError) {
-        await client.query("ROLLBACK");
-
-        const nombre = (item.nombreproducto || "Producto").toString().trim();
-        const sku = (item.sku || "").toString().trim();
-        const ref = sku ? `${nombre} (${sku})` : nombre;
-
-        if (invError && invError.code === "STOCK_INSUFICIENTE") {
-          return res.status(400).json({
-            success: false,
-            message: `No se pudo confirmar: Stock insuficiente para el producto ${ref}`,
-            code: invError.code,
-          });
-        }
-
-        return res.status(500).json({
-          success: false,
-          message: `No se pudo confirmar: Error al descontar inventario para ${ref}`,
-          code: invError.code,
-        });
-      }
-    }
-
     await client.query(
-      "UPDATE Pedidos SET Estatus = 'Confirmado' WHERE PedidoID = $1",
+      "UPDATE Pedidos SET Estatus = 'Confirmado', fecha_confirmacion = NOW() WHERE PedidoID = $1",
       [pedidoId]
     );
 
     await client.query("COMMIT");
 
+    logger.info('Pedido confirmado (sin afectar inventario):', {
+      pedidoId,
+      tenantId: tenant_id,
+      mensaje: 'El inventario se descontará cuando finanzas confirme el surtido'
+    });
+
     return res.status(200).json({
       success: true,
-      message: "Pedido confirmado exitosamente",
+      message: "Pedido confirmado exitosamente. El inventario se descontará cuando finanzas confirme el surtido.",
     });
   } catch (error) {
     try {
@@ -1149,7 +1110,21 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     
     // Determinar flags basados en el estado calculado
     const completamenteSurtido = nuevoEstatus === 'Surtido';
-    const esHistorico = completamenteSurtido;
+    
+    // FIX 3: es_historico solo debe ser true cuando el pedido está 100% completado
+    // No solo cuando inventarios marcó todo como surtido, sino cuando finanzas confirmó TODO
+    // Verificar si hay productos pendientes de confirmación por finanzas
+    const productosPendientesQuery = await client.query(
+      `SELECT COUNT(*) as pendientes
+       FROM detallesdelpedido
+       WHERE pedidoid = $1 
+         AND tenant_id = $2
+         AND cantidadpaquetes > COALESCE(cantidadsurtida, 0)`,
+      [pedidoId, tenant_id]
+    );
+    
+    const tienePendientes = parseInt(productosPendientesQuery.rows[0].pendientes) > 0;
+    const esHistorico = completamenteSurtido && !tienePendientes;
 
     // Actualizar pedido con el estatus correcto
     const updateQuery = `
