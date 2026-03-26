@@ -397,31 +397,6 @@ const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = 
         const cantidadSegura = Math.round(parseInt(item.cantidad) || 0);
         const tamanoSeguro = Math.round(parseInt(item.tamano_cantidad) || 1);
         
-        // Determinar estado del badge
-        const stockActual = parseInt(item.stock_actual_variante) || 0;
-        const cantidadRequerida = cantidadSegura * tamanoSeguro;
-        const hayStockSuficiente = stockActual >= cantidadRequerida;
-        
-        // Determinar si el pedido ya fue procesado/surtido por su estatus real
-        // Los estatus que indican que el pedido ya fue atendido:
-        const estatusSurtido = ['surtido', 'enviado', 'entregado', 'confirmado'];
-        const pedidoProcesado = pedidoEstatus && estatusSurtido.includes(pedidoEstatus.toLowerCase().trim());
-        
-        let badgeColor, badgeText;
-        if (!hayStockSuficiente) {
-            // Sin stock suficiente al momento del pedido → Bajo Pedido
-            badgeColor = '#DC2626'; // Rojo
-            badgeText = 'BAJO PEDIDO';
-        } else if (pedidoProcesado) {
-            // El pedido ya fue surtido/enviado/entregado → Surtido
-            badgeColor = '#F97316'; // Naranja
-            badgeText = 'SURTIDO';
-        } else {
-            // Hay stock y el pedido aún está pendiente → Con Stock
-            badgeColor = '#16A34A'; // Verde
-            badgeText = 'CON STOCK';
-        }
-        
         doc.fillColor('#333333')
            .fontSize(9)
            .font('Helvetica')
@@ -429,17 +404,6 @@ const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = 
            .text(descripcionLinea1, 110, currentY, { width: 170 })
            .text(descripcionLinea2, 110, currentY + 10, { width: 170 })
            .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unit.', 290, currentY);
-        
-        // Badge de estado con color
-        doc.save();
-        doc.roundedRect(350, currentY - 2, 60, 12, 3)
-           .fillAndStroke(badgeColor, badgeColor);
-        doc.restore();
-        
-        doc.fontSize(7)
-           .font('Helvetica-Bold')
-           .fillColor('#FFFFFF')
-           .text(badgeText, 350, currentY + 1, { width: 60, align: 'center' });
         
         // Only show prices if mostrarPrecios is true
         if (mostrarPrecios) {
@@ -458,13 +422,13 @@ const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = 
 
 // Render CONFIRMED items section (only products with cantidadsurtida > 0)
 if (itemsEnExistencia.length > 0) {
-    yPosition = renderTableHeader('PRODUCTOS LISTOS PARA ENTREGA', yPosition, '#F97316');
+    yPosition = renderTableHeader('PRODUCTOS SURTIDOS', yPosition, '#F97316');
     yPosition = renderItems(itemsEnExistencia, yPosition, '#F9F9F9', pedido.estatus, mostrarPrecios);
     yPosition += 10;
 }
 
-// FIX: Show backorder section to include ALL items in remisión
-// Items with cantidadsurtida = 0 are shown as "BAJO PEDIDO"
+// Show backorder section - ALL items with cantidadsurtida = 0
+// Includes items waiting for stock AND items with stock but not yet fulfilled
 if (itemsBajoPedido.length > 0) {
     yPosition = renderTableHeader('PRODUCTOS BAJO PEDIDO', yPosition, '#DC2626');
     yPosition = renderItems(itemsBajoPedido, yPosition, '#FEF2F2', pedido.estatus, mostrarPrecios);
