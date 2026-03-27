@@ -423,7 +423,8 @@ async function rechazarCambios(req, res) {
     // Procesar cambios regulares
     for (const cambioId of cambiosRegulares) {
       const { rows } = await client.query(
-        `SELECT * FROM control_cambios
+        `SELECT id, entidad, entidad_id, tipo_cambio, datos_anteriores, datos_nuevos, usuario_solicitante_id, estado, tenant_id
+         FROM control_cambios
          WHERE id = $1 AND estado = 'PENDIENTE'
          FOR UPDATE`,
         [cambioId]
