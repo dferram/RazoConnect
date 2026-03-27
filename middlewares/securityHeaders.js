@@ -24,8 +24,26 @@ const securityHeaders = (req, res, next) => {
   // ============================================================================
   // Previene XSS, clickjacking y otros ataques de inyección de código
   // 
-  // NOTA: Si alguna librería externa (SweetAlert2, Bootstrap) falla en consola,
-  // podría necesitar eval(). Monitorear logs de CSP en producción.
+  // ESTADO ACTUAL (2026-03-26):
+  // 'unsafe-inline' ELIMINADO de script-src
+  // 'unsafe-eval' ELIMINADO de script-src
+  // Scripts inline migrados a archivos externos (/js/login.js)
+  // Event handlers inline convertidos a addEventListener
+  // 
+  // MIGRACIÓN COMPLETADA:
+  //   - login.html: Todo el JS movido a /js/login.js
+  //   - onclick="..." convertido a addEventListener en login.js
+  //   - CSP ahora cumple con mejores prácticas de OWASP
+  // 
+  // PRÓXIMOS PASOS (si otras páginas tienen inline scripts):
+  //   - registro.html
+  //   - forgot-password.html
+  //   - admin-dashboard.html
+  // 
+  // SEGURIDAD ROBUSTA:
+  // No se permite código JavaScript inline
+  // No se permite eval() ni Function()
+  // Estilos inline permitidos solo donde necesario
   const cspDirectives = [
     "default-src 'self'",
     "script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com https://accounts.google.com https://apis.google.com",
