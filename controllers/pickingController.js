@@ -148,7 +148,9 @@ const marcarProductoSeparado = async (req, res) => {
 
     // Verificar que el detalle existe y pertenece al pedido
     const detalleResult = await client.query(
-      `SELECT dp.*, p.estatus
+      `SELECT dp.detalleid, dp.pedidoid, dp.varianteid, dp.cantidadpaquetes, dp.preciofinal, 
+              dp.tamanoid, dp.descuento, dp.piezastotales, dp.esbackorder, dp.cantidadsurtida, 
+              dp.cantidad_surtida_remisiones, dp.tenant_id, p.estatus
        FROM detallesdelpedido dp
        INNER JOIN pedidos p ON dp.pedidoid = p.pedidoid
        WHERE dp.detalleid = $1 AND dp.pedidoid = $2 AND dp.tenant_id = $3`,

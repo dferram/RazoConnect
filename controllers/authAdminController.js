@@ -76,7 +76,7 @@ const loginAdmin = async (req, res) => {
     // Buscar administrador por email Y tenant_id (aislamiento multi-tenant)
     // NOTA: La tabla administradores NO tiene columna telefono
     const result = await db.query(
-      "SELECT * FROM administradores WHERE email = $1 AND tenant_id = $2 AND activo = TRUE",
+      "SELECT adminid, email, nombre, apellido, rol, passwordhash, tenant_id FROM administradores WHERE email = $1 AND tenant_id = $2 AND activo = TRUE",
       [email, tenant_id]
     );
 

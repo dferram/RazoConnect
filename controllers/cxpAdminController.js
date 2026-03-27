@@ -419,7 +419,7 @@ const getEstadoCuentaProveedorMovimientos = async (req, res) => {
     const saldo = Math.max(total - pagado, 0);
 
     const movResult = await db.query(
-      `SELECT * FROM (
+      `SELECT tipo, cxp_id, orden_compra_id, fecha, monto, monto_pagado, estatus, referencia, comprobante_url, pago_id FROM (
         SELECT
           'cargo'::text AS tipo,
           cxp.cxp_id,

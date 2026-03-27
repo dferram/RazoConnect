@@ -257,7 +257,9 @@ const aprobarSolicitud = async (req, res) => {
 
     // Obtener solicitud
     const solicitudResult = await client.query(
-      `SELECT s.*, p.pedidoid 
+      `SELECT s.solicitud_id, s.pedido_id, s.solicitante_id, s.tipo_modificacion, s.descripcion, 
+              s.datos_modificacion, s.estado, s.aprobador_id, s.fecha_solicitud, s.fecha_respuesta, 
+              s.observaciones_aprobador, s.motivo_rechazo, s.tenant_id, p.pedidoid 
        FROM solicitudes_modificacion_pedido s
        INNER JOIN pedidos p ON s.pedido_id = p.pedidoid
        WHERE s.solicitud_id = $1 AND s.tenant_id = $2
@@ -405,7 +407,7 @@ const rechazarSolicitud = async (req, res) => {
 
     // Obtener solicitud
     const solicitudResult = await client.query(
-      `SELECT * FROM solicitudes_modificacion_pedido
+      `SELECT solicitud_id, estado, tenant_id FROM solicitudes_modificacion_pedido
        WHERE solicitud_id = $1 AND tenant_id = $2
        FOR UPDATE`,
       [solicitudId, tenant_id]

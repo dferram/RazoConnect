@@ -80,8 +80,8 @@ async function gestionarPago(req, res) {
         await client.query('BEGIN');
 
         const { rows: [pago] } = await client.query(
-            'SELECT * FROM pagos_clientes WHERE pago_id = $1',
-            [id]
+            'SELECT pago_id, cliente_id, credito_id, monto, tipo_pago, estatus, comprobante_url, referencia_bancaria, transaccion_id, movimientos_aplicados, tenant_id FROM pagos_clientes WHERE pago_id = $1 AND tenant_id = $2',
+            [id, req.tenant?.tenant_id]
         );
 
         if (!pago) {
