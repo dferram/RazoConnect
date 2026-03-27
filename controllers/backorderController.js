@@ -110,7 +110,7 @@ const cancelarOrdenBackorder = async (req, res) => {
     const { tenant_id } = req.tenant;
     // Verificar que la orden existe
     const ordenResult = await db.query(
-      `SELECT * FROM ordenesdecompra WHERE ordencompraid = $1 AND tenant_id = $2`,
+      `SELECT ordencompraid, estatus, tenant_id FROM ordenesdecompra WHERE ordencompraid = $1 AND tenant_id = $2`,
       [ordenCompraId, tenant_id]
     );
 

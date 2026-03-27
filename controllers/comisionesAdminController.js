@@ -110,7 +110,7 @@ const pagarComision = async (req, res) => {
 
     // Verificar que la comisión existe y está pendiente
     const checkResult = await db.query(
-      "SELECT * FROM Comisiones WHERE ComisionID = $1",
+      "SELECT comisionid, estatus FROM Comisiones WHERE ComisionID = $1",
       [comisionId]
     );
 

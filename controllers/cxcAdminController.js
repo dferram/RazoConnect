@@ -168,7 +168,7 @@ const registrarAbonoCxC = async (req, res) => {
     let creditoRow;
     if (Number.isInteger(creditoIdBody) && creditoIdBody > 0) {
       const creditoResult = await client.query(
-        "SELECT * FROM cliente_creditos WHERE credito_id = $1",
+        "SELECT credito_id, cliente_id, saldo_deudor, tenant_id FROM cliente_creditos WHERE credito_id = $1",
         [creditoIdBody]
       );
       if (creditoResult.rows.length === 0) {
@@ -181,7 +181,7 @@ const registrarAbonoCxC = async (req, res) => {
       creditoRow = creditoResult.rows[0];
     } else {
       const creditoResult = await client.query(
-        "SELECT * FROM cliente_creditos WHERE cliente_id = $1",
+        "SELECT credito_id, cliente_id, saldo_deudor, tenant_id FROM cliente_creditos WHERE cliente_id = $1",
         [clienteIdBody]
       );
       if (creditoResult.rows.length === 0) {

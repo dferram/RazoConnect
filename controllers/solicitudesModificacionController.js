@@ -405,7 +405,7 @@ const rechazarSolicitud = async (req, res) => {
 
     // Obtener solicitud
     const solicitudResult = await client.query(
-      `SELECT * FROM solicitudes_modificacion_pedido
+      `SELECT solicitud_id, estado, tenant_id FROM solicitudes_modificacion_pedido
        WHERE solicitud_id = $1 AND tenant_id = $2
        FOR UPDATE`,
       [solicitudId, tenant_id]

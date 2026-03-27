@@ -32,7 +32,7 @@ const desvincularClienteDeAgente = async (req, res) => {
     const { tenant_id } = req.tenant;
 
     const snapshotResult = await db.query(
-      "SELECT * FROM Clientes WHERE ClienteID = $1 AND tenant_id = $2",
+      "SELECT clienteid, nombre, apellido, email, telefono, activo, agenteid, tenant_id FROM Clientes WHERE ClienteID = $1 AND tenant_id = $2",
       [clienteId, tenant_id]
     );
 

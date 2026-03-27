@@ -736,7 +736,7 @@ exports.cancelarRemision = async (req, res) => {
 
     // Verificar que la remisión existe y puede cancelarse
     const remisionQuery = await client.query(
-      `SELECT * FROM remisiones 
+      `SELECT remision_id, pedido_id, estado, tenant_id FROM remisiones 
        WHERE remision_id = $1 AND tenant_id = $2`,
       [id, tenant_id]
     );
@@ -760,7 +760,7 @@ exports.cancelarRemision = async (req, res) => {
 
     // Obtener detalles para revertir cantidades
     const detallesQuery = await client.query(
-      `SELECT * FROM detalles_remision 
+      `SELECT detalle_remision_id, detalle_pedido_id, variante_id, cantidad_paquetes_surtidos, piezas_surtidas, tenant_id FROM detalles_remision 
        WHERE remision_id = $1 AND tenant_id = $2`,
       [id, tenant_id]
     );
@@ -1000,7 +1000,7 @@ exports.corregirRemision = async (req, res) => {
 
     // Verificar remisión
     const remisionQuery = await client.query(
-      `SELECT * FROM remisiones WHERE remision_id = $1 AND tenant_id = $2 FOR UPDATE`,
+      `SELECT remision_id, estado, tenant_id FROM remisiones WHERE remision_id = $1 AND tenant_id = $2 FOR UPDATE`,
       [id, tenant_id]
     );
 

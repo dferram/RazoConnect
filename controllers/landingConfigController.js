@@ -95,7 +95,7 @@ async function updateLandingItem(req, res) {
 
   try {
     const checkResult = await pool.query(
-      `SELECT * FROM landing_page_config WHERE config_id = $1 AND tenant_id = $2`,
+      `SELECT config_id, tenant_id FROM landing_page_config WHERE config_id = $1 AND tenant_id = $2`,
       [id, tenant_id]
     );
 

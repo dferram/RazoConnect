@@ -104,7 +104,11 @@ const getProveedorById = async (req, res) => {
     }
 
     const result = await db.query(
-      `SELECT * FROM proveedores WHERE proveedorid = $1 AND tenant_id = $2`,
+      `SELECT proveedorid, nombreempresa, contactonombre, email, telefono, razonsocial, rfc, regimenfiscal,
+              calle, colonia, codigopostal, ciudad, estado, nombrerepresentanteventas, celularventas, emailventas,
+              nombrecontactocobranza, telefonocobranza, emailcobranza, clabe, banco, numerocuenta, tipocuenta,
+              cuentahabiente, notas, activo, fechacreacion, tenant_id
+       FROM proveedores WHERE proveedorid = $1 AND tenant_id = $2`,
       [proveedorId, tenant_id]
     );
 
