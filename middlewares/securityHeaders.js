@@ -20,13 +20,15 @@
  */
 const securityHeaders = (req, res, next) => {
   // ============================================================================
-  // CONTENT SECURITY POLICY (CSP)
+  // CONTENT SECURITY POLICY (CSP) - HARDENED
   // ============================================================================
   // Previene XSS, clickjacking y otros ataques de inyección de código
-  // Política moderada que permite recursos necesarios para la app
+  // 
+  // NOTA: Si alguna librería externa (SweetAlert2, Bootstrap) falla en consola,
+  // podría necesitar eval(). Monitorear logs de CSP en producción.
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com https://accounts.google.com https://apis.google.com",
+    "script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com https://accounts.google.com https://apis.google.com",
     "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com",
     "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https://www.gstatic.com https://res.cloudinary.com https://*.cloudinary.com",
