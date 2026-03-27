@@ -742,7 +742,7 @@ exports.cancelarRemision = async (req, res) => {
 
     // Verificar que la remisión existe y puede cancelarse
     const remisionQuery = await client.query(
-      `SELECT remision_id, pedido_id, estado, tenant_id FROM remisiones 
+      `SELECT remision_id, pedido_id, estado, folio, tenant_id FROM remisiones 
        WHERE remision_id = $1 AND tenant_id = $2`,
       [id, tenant_id]
     );
