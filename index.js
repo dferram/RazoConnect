@@ -214,17 +214,45 @@ app.get('/tienda-no-encontrada.html', (req, res) => {
 // HEALTH CHECK — Azure App Service probe & Docker HEALTHCHECK
 // ============================================================================
 // Endpoint robusto para Docker HEALTHCHECK (sin autenticación)
-// Verifica: DB, Redis y uptime del servidor
+// Verifica: DB, Redis, Memoria y uptime del servidor
 app.get('/health', async (req, res) => {
+  // ============================================================================
+  // MÉTRICAS DE MEMORIA EN TIEMPO REAL
+  // ============================================================================
+  const memUsage = process.memoryUsage();
+  const memoryMetrics = {
+    heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024), // MB
+    heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024), // MB
+    rss: Math.round(memUsage.rss / 1024 / 1024), // MB (Resident Set Size)
+    external: Math.round(memUsage.external / 1024 / 1024) // MB (C++ objects)
+  };
+
+  // Formatear uptime de forma legible
+  const uptimeSeconds = Math.floor(process.uptime());
+  const uptimeFormatted = `${Math.floor(uptimeSeconds / 3600)}h ${Math.floor((uptimeSeconds % 3600) / 60)}m ${uptimeSeconds % 60}s`;
+
   const health = {
     status: 'ok',
     timestamp: new Date().toISOString(),
-    uptime: Math.floor(process.uptime()),
+    uptime: uptimeSeconds,
+    uptimeFormatted,
+    memory: memoryMetrics,
     services: {
       database: 'unknown',
       redis: 'unknown'
-    }
+    },
+    warnings: []
   };
+
+  // ============================================================================
+  // VALIDACIÓN DE MEMORIA: Alerta si heap > 500MB
+  // ============================================================================
+  const MEMORY_THRESHOLD_MB = 500;
+  if (memoryMetrics.heapUsed > MEMORY_THRESHOLD_MB) {
+    health.status = 'degraded';
+    health.warnings.push(`High memory usage detected: ${memoryMetrics.heapUsed}MB (threshold: ${MEMORY_THRESHOLD_MB}MB)`);
+    logger.warn(`[HEALTH] Memory warning: heapUsed=${memoryMetrics.heapUsed}MB, threshold=${MEMORY_THRESHOLD_MB}MB`);
+  }
 
   try {
     // 1. Verificar conexión a PostgreSQL con query simple
@@ -234,6 +262,7 @@ app.get('/health', async (req, res) => {
     logger.error('[HEALTH] Database check failed:', err.message);
     health.services.database = 'error';
     health.status = 'degraded';
+    health.warnings.push(`Database connection failed: ${err.message}`);
   }
 
   try {
@@ -250,9 +279,10 @@ app.get('/health', async (req, res) => {
     logger.error('[HEALTH] Redis check failed:', err.message);
     health.services.redis = 'error';
     health.status = 'degraded';
+    health.warnings.push(`Redis connection failed: ${err.message}`);
   }
 
-  // Retornar 503 si algún servicio crítico falló, 200 si todo ok
+  // Retornar 503 si algún servicio crítico falló o memoria alta, 200 si todo ok
   const httpStatus = health.status === 'ok' ? 200 : 503;
   return res.status(httpStatus).json(health);
 });
