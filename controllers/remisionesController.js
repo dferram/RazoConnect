@@ -45,7 +45,13 @@ exports.generarRemision = async (req, res) => {
 
     // BUG FIX 2: Validar estado del pedido antes de generar remisión
     const pedidoQuery = await client.query(
-      `SELECT p.*, c.nombre AS cliente_nombre, c.apellido AS cliente_apellido
+      `SELECT p.pedidoid, p.clienteid, p.agenteid, p.direccionenvioid, p.fechapedido, p.montototal, p.estatus, 
+              p.costoenvio, p.es_credito, p.fecha_vencimiento, p.pagado, p.transaccion_id, p.comprobante_url, 
+              p.metodo_pago, p.cupon_id, p.monto_descuento, p.saldo_pendiente, p.url_evidencia_entrega, 
+              p.fecha_entrega_real, p.tenant_id, p.estatus_deuda, p.dias_atraso, p.tiene_remisiones, 
+              p.completamente_surtido, p.monto_surtido, p.monto_backorder, p.es_prioritario, p.es_historico, 
+              p.fecha_confirmacion, p.observaciones_finanzas, p.rechazado_por_finanzas, p.fecha_rechazo_finanzas,
+              c.nombre AS cliente_nombre, c.apellido AS cliente_apellido
        FROM pedidos p
        INNER JOIN clientes c ON p.clienteid = c.clienteid
        WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
@@ -1029,7 +1035,9 @@ exports.corregirRemision = async (req, res) => {
       const { detalle_remision_id, nueva_cantidad_paquetes } = item;
 
       const detalleQuery = await client.query(
-        `SELECT dr.*, pv.sku, p.nombre as producto_nombre
+        `SELECT dr.detalle_remision_id, dr.remision_id, dr.detalle_pedido_id, dr.variante_id, 
+                dr.cantidad_paquetes_surtidos, dr.piezas_surtidas, dr.precio_unitario, dr.tamano_id, 
+                dr.subtotal, dr.tenant_id, pv.sku, p.nombre as producto_nombre
          FROM detalles_remision dr
          INNER JOIN producto_variantes pv ON dr.variante_id = pv.varianteid
          INNER JOIN productos p ON pv.productoid = p.productoid
@@ -1129,7 +1137,10 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
 
     // Verificar remisión
     const remisionQuery = await client.query(
-      `SELECT r.*, p.pedidoid, p.clienteid, p.es_credito, p.montototal
+      `SELECT r.remision_id, r.pedido_id, r.cliente_id, r.agente_id, r.folio, r.fecha_emision, 
+              r.total_remision, r.estado, r.pdf_url, r.notas, r.tenant_id, r.created_at, r.updated_at, 
+              r.fecha_confirmacion_almacen, r.confirmado_por_almacen, r.fecha_emision_final, 
+              r.confirmado_por_finanzas, p.pedidoid, p.clienteid, p.es_credito, p.montototal
        FROM remisiones r
        INNER JOIN pedidos p ON r.pedido_id = p.pedidoid
        WHERE r.remision_id = $1 AND r.tenant_id = $2
@@ -1159,7 +1170,9 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
 
     // Obtener detalles de la remisión para descontar stock
     const detallesQuery = await client.query(
-      `SELECT dr.*, pv.sku
+      `SELECT dr.detalle_remision_id, dr.remision_id, dr.detalle_pedido_id, dr.variante_id, 
+              dr.cantidad_paquetes_surtidos, dr.piezas_surtidas, dr.precio_unitario, dr.tamano_id, 
+              dr.subtotal, dr.tenant_id, pv.sku
        FROM detalles_remision dr
        INNER JOIN producto_variantes pv ON dr.variante_id = pv.varianteid
        WHERE dr.remision_id = $1 AND dr.tenant_id = $2`,
@@ -1512,7 +1525,10 @@ exports.confirmarRemisionAlmacen = async (req, res) => {
 
     // Verificar que la remisión existe y está en estado correcto
     const remisionQuery = await client.query(
-      `SELECT r.*, p.pedidoid, p.clienteid
+      `SELECT r.remision_id, r.pedido_id, r.cliente_id, r.agente_id, r.folio, r.fecha_emision, 
+              r.total_remision, r.estado, r.pdf_url, r.notas, r.tenant_id, r.created_at, r.updated_at, 
+              r.fecha_confirmacion_almacen, r.confirmado_por_almacen, r.fecha_emision_final, 
+              r.confirmado_por_finanzas, r.observaciones_finanzas, p.pedidoid, p.clienteid
        FROM remisiones r
        INNER JOIN pedidos p ON r.pedido_id = p.pedidoid
        WHERE r.remision_id = $1 AND r.tenant_id = $2
@@ -1625,7 +1641,10 @@ exports.rechazarRemisionFinanzas = async (req, res) => {
 
     // Verificar remisión
     const remisionQuery = await client.query(
-      `SELECT r.*, p.pedidoid
+      `SELECT r.remision_id, r.pedido_id, r.cliente_id, r.agente_id, r.folio, r.fecha_emision, 
+              r.total_remision, r.estado, r.pdf_url, r.notas, r.tenant_id, r.created_at, r.updated_at, 
+              r.fecha_confirmacion_almacen, r.confirmado_por_almacen, r.fecha_emision_final, 
+              r.confirmado_por_finanzas, p.pedidoid
        FROM remisiones r
        INNER JOIN pedidos p ON r.pedido_id = p.pedidoid
        WHERE r.remision_id = $1 AND r.tenant_id = $2
