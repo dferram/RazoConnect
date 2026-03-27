@@ -213,12 +213,48 @@ app.get('/tienda-no-encontrada.html', (req, res) => {
 // ============================================================================
 // HEALTH CHECK — Azure App Service probe & Docker HEALTHCHECK
 // ============================================================================
-// Endpoint simple para Docker HEALTHCHECK (sin autenticación)
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString() 
-  });
+// Endpoint robusto para Docker HEALTHCHECK (sin autenticación)
+// Verifica: DB, Redis y uptime del servidor
+app.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
+    services: {
+      database: 'unknown',
+      redis: 'unknown'
+    }
+  };
+
+  try {
+    // 1. Verificar conexión a PostgreSQL con query simple
+    await db.query('SELECT 1');
+    health.services.database = 'ok';
+  } catch (err) {
+    logger.error('[HEALTH] Database check failed:', err.message);
+    health.services.database = 'error';
+    health.status = 'degraded';
+  }
+
+  try {
+    // 2. Verificar conexión a Redis
+    const { getRedisClient } = require('./config/redisClient');
+    const redisClient = await getRedisClient();
+    if (redisClient) {
+      await redisClient.ping();
+      health.services.redis = 'ok';
+    } else {
+      health.services.redis = 'not_configured';
+    }
+  } catch (err) {
+    logger.error('[HEALTH] Redis check failed:', err.message);
+    health.services.redis = 'error';
+    health.status = 'degraded';
+  }
+
+  // Retornar 503 si algún servicio crítico falló, 200 si todo ok
+  const httpStatus = health.status === 'ok' ? 200 : 503;
+  return res.status(httpStatus).json(health);
 });
 
 // Endpoint detallado para monitoreo (Azure)
