@@ -267,11 +267,20 @@ exports.generarRemision = async (req, res) => {
 
     // 6. Insertar detalles de remisión
     for (const item of itemsValidados) {
+      // Calcular número de ronda: contar cuántas veces se ha surtido este detalle antes
+      const rondaQuery = await client.query(
+        `SELECT COALESCE(MAX(ronda_surtido), 0) + 1 AS siguiente_ronda
+         FROM detalles_remision
+         WHERE detalle_pedido_id = $1 AND tenant_id = $2`,
+        [item.detalle_pedido_id, tenant_id]
+      );
+      const rondaSurtido = rondaQuery.rows[0].siguiente_ronda;
+
       await client.query(
         `INSERT INTO detalles_remision 
          (remision_id, detalle_pedido_id, variante_id, cantidad_paquetes_surtidos, 
-          piezas_surtidas, precio_unitario, tamano_id, subtotal, tenant_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          piezas_surtidas, precio_unitario, tamano_id, subtotal, tenant_id, ronda_surtido)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
         [
           remision.remision_id,
           item.detalle_pedido_id,
@@ -281,7 +290,8 @@ exports.generarRemision = async (req, res) => {
           item.precio_unitario,
           item.tamano_id,
           item.subtotal,
-          tenant_id
+          tenant_id,
+          rondaSurtido
         ]
       );
 
@@ -589,13 +599,14 @@ exports.obtenerRemision = async (req, res) => {
         pv.sku,
         pv.nombre AS variante_nombre,
         p.nombre AS producto_nombre,
-        tp.tamanopaquete
+        tp.tamanopaquete,
+        COALESCE(dr.ronda_surtido, 1) AS ronda_surtido
        FROM detalles_remision dr
        INNER JOIN producto_variantes pv ON dr.variante_id = pv.varianteid
        INNER JOIN productos p ON pv.productoid = p.productoid
        LEFT JOIN cat_tamanopaquetes tp ON dr.tamano_id = tp.tamanoid
        WHERE dr.remision_id = $1 AND dr.tenant_id = $2
-       ORDER BY dr.detalle_remision_id`,
+       ORDER BY dr.ronda_surtido, dr.detalle_remision_id`,
       [id, tenant_id]
     );
 

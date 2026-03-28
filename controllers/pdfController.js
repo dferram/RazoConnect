@@ -167,6 +167,7 @@ async function generarPDFPedido(req, res) {
 
         // 🚨 CRITICAL FIX: Added DISTINCT ON to prevent duplicate rows from JOIN
         // This fixes the "factor 4" bug where cat_tamanopaquetes duplicates cause double counting
+        // INCLUIR ronda_surtido para mostrar en qué ronda se surtió cada producto
         const detallesQuery = await db.query(
             `SELECT DISTINCT ON (dp.detalleid)
                 dp.detalleid,
@@ -182,7 +183,16 @@ async function generarPDFPedido(req, res) {
                 pv.color_nombre,
                 pv.sku,
                 pv.stock AS stock_actual_variante,
-                t.cantidad AS tamano_cantidad
+                t.cantidad AS tamano_cantidad,
+                (
+                  SELECT json_agg(json_build_object(
+                    'ronda', COALESCE(dr.ronda_surtido, 1),
+                    'cantidad', dr.cantidad_paquetes_surtidos
+                  ) ORDER BY dr.ronda_surtido)
+                  FROM detalles_remision dr
+                  INNER JOIN remisiones r ON dr.remision_id = r.remision_id
+                  WHERE dr.detalle_pedido_id = dp.detalleid
+                ) as rondas_surtido
             FROM detallesdelpedido dp
             INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
             INNER JOIN productos p ON pv.productoid = p.productoid AND p.tenant_id = $2
@@ -393,6 +403,13 @@ const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = 
             ? `${item.variante_nombre} - Color: ${item.color_nombre}`
             : `${item.variante_nombre}`;
 
+        // Determinar ronda de surtido para mostrar indicador
+        let rondaTexto = '';
+        if (item.rondas_surtido && Array.isArray(item.rondas_surtido) && item.rondas_surtido.length > 0) {
+            const rondas = item.rondas_surtido.map(r => `R${r.ronda}`).join(', ');
+            rondaTexto = ` [${rondas}]`;
+        }
+
         // 🚨 MISIÓN 4: Use Math.round() to prevent decimal issues in cantidad
         const cantidadSegura = Math.round(parseInt(item.cantidad) || 0);
         const tamanoSeguro = Math.round(parseInt(item.tamano_cantidad) || 1);
@@ -402,7 +419,7 @@ const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = 
            .font('Helvetica')
            .text(cantidadSegura, 55, currentY)
            .text(descripcionLinea1, 110, currentY, { width: 170 })
-           .text(descripcionLinea2, 110, currentY + 10, { width: 170 })
+           .text(descripcionLinea2 + rondaTexto, 110, currentY + 10, { width: 170 })
            .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unit.', 290, currentY);
         
         // Only show prices if mostrarPrecios is true
