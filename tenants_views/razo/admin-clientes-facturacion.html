@@ -590,7 +590,7 @@
               return ['pendiente', 'aprobado', 'confirmado', 'listo para surtir', 'parcialmente surtido', 'parcialmente_surtido'].includes(estatus);
             });
             
-            // 3. HISTÓRICOS: Ya confirmados completamente por finanzas (SURTIDO = confirmado por finanzas)
+            // 3. HISTÓRICOS: Solo contar para mostrar el badge
             const pedidosHistoricos = allPedidos.filter(pedido => {
               const estatus = (pedido.estatus || '').toLowerCase();
               return ['surtido', 'enviado', 'entregado'].includes(estatus);
@@ -599,7 +599,11 @@
             pedidosData = allPedidos;
             
             console.log(`📊 [CLIENTES-FACTURACIÓN] Total: ${allPedidos.length}, Surtidos: ${pedidosSurtidos.length}, Pendientes: ${pedidosPendientes.length}, Históricos: ${pedidosHistoricos.length}`);
-            renderPedidos({ surtidos: pedidosSurtidos, pendientes: pedidosPendientes, historicos: pedidosHistoricos });
+            
+            // Actualizar contador de históricos
+            document.getElementById("countHistoricos").textContent = pedidosHistoricos.length;
+            
+            renderPedidos({ surtidos: pedidosSurtidos, pendientes: pedidosPendientes });
           }
         } catch (error) {
           console.error("Error loading pedidos:", error);
@@ -610,12 +614,11 @@
       }
 
       function renderPedidos(data) {
-        const { surtidos = [], pendientes = [], historicos = [] } = data;
+        const { surtidos = [], pendientes = [] } = data;
         
         // Update counts
         document.getElementById("countSurtidos").textContent = surtidos.length;
         document.getElementById("countPendientes").textContent = pendientes.length;
-        document.getElementById("countHistoricos").textContent = historicos.length;
         
         // Render Surtidos (PRIORIDAD: Los que inventarios envió a finanzas)
         const surtidosTable = document.getElementById("pedidosSurtidosTable");
@@ -704,64 +707,12 @@
           pendientesTable.style.display = "table";
           emptyPendientes.style.display = "none";
         }
-        
-        // Render Históricos (Ya confirmados por finanzas)
-        const historicosTable = document.getElementById("pedidosHistoricosTable");
-        const historicosBody = document.getElementById("pedidosHistoricosBody");
-        const emptyHistoricos = document.getElementById("emptyHistoricos");
-        
-        if (historicos.length === 0) {
-          historicosTable.style.display = "none";
-          emptyHistoricos.style.display = "block";
-        } else {
-          historicosBody.innerHTML = historicos.map((pedido) => {
-            const estatusBadge = getEstatusBadge(pedido.estatus);
-            const fecha = new Date(pedido.fechaPedido).toLocaleDateString("es-MX");
-            const monto = formatCurrency(pedido.montoTotal);
-
-            return `
-              <tr style="background-color: #f9fafb;">
-                <td>
-                  <div style="font-weight: 600; color: var(--razo-gray-dark);">#${String(pedido.pedidoId).padStart(6, "0")}</div>
-                </td>
-                <td>${pedido.clienteNombre || "-"}</td>
-                <td>${fecha}</td>
-                <td style="font-weight: 600;">${monto}</td>
-                <td>${estatusBadge}</td>
-                <td>
-                  <div class="action-buttons">
-                    <a class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" href="/admin-pedido-detalle.html?id=${pedido.pedidoId}" onclick="setNavigationContext('clientes-facturacion')">
-                      Ver detalle
-                    </a>
-                    <button 
-                      class="btn btn-info" 
-                      style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #17a2b8; color: white;"
-                      onclick="generarRemision(${pedido.pedidoId})"
-                      title="Generar remisión PDF">
-                      📄 Remisión
-                    </button>
-                    <button 
-                      class="btn btn-danger" 
-                      style="padding: 0.5rem 1rem; font-size: 0.85rem; background: #dc2626; color: white;"
-                      onclick="generarFactura(${pedido.pedidoId})"
-                      title="Generar factura PDF">
-                      🧾 Factura
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            `;
-          }).join("");
-          historicosTable.style.display = "table";
-          emptyHistoricos.style.display = "none";
-        }
       }
 
       function filterPedidos() {
         const idFilter = document.getElementById("filterPedidoId").value.toLowerCase();
         const clienteFilter = document.getElementById("filterPedidoCliente").value.toLowerCase();
         const tipoFilter = document.getElementById("filterPedidoTipo").value;
-        const historicoFilter = document.getElementById("filterPedidoHistorico").value;
         const fechaDesde = document.getElementById("filterPedidoFechaDesde").value;
         const fechaHasta = document.getElementById("filterPedidoFechaHasta").value;
 
@@ -769,13 +720,10 @@
           const matchesId = !idFilter || String(pedido.pedidoId).includes(idFilter);
           const matchesCliente = !clienteFilter || (pedido.clienteNombre || "").toLowerCase().includes(clienteFilter);
           
-          // Filter by historical status
-          let matchesHistorico = true;
-          if (historicoFilter === 'activos') {
-            matchesHistorico = !pedido.es_historico;
-          } else if (historicoFilter === 'historicos') {
-            matchesHistorico = pedido.es_historico === true;
-          }
+          // Excluir históricos de esta vista
+          const estatus = (pedido.estatus || '').toLowerCase();
+          const esHistorico = ['surtido', 'enviado', 'entregado'].includes(estatus);
+          if (esHistorico) return false;
           
           let matchesFecha = true;
           if (fechaDesde || fechaHasta) {
@@ -788,7 +736,7 @@
             }
           }
 
-          return matchesId && matchesCliente && matchesHistorico && matchesFecha;
+          return matchesId && matchesCliente && matchesFecha;
         });
 
         // Separate into 3 categories
@@ -801,22 +749,15 @@
           const estatus = (pedido.estatus || '').toLowerCase();
           return ['pendiente', 'aprobado', 'confirmado', 'listo para surtir', 'parcialmente surtido', 'parcialmente_surtido'].includes(estatus);
         });
-        
-        let historicos = filtered.filter(pedido => {
-          const estatus = (pedido.estatus || '').toLowerCase();
-          return ['surtido', 'enviado', 'entregado'].includes(estatus);
-        });
 
         // Apply tipo filter
         if (tipoFilter === 'pendientes') {
           surtidos = [];
-          historicos = [];
         } else if (tipoFilter === 'surtidos') {
           pendientes = [];
-          historicos = [];
         }
 
-        renderPedidos({ surtidos, pendientes, historicos });
+        renderPedidos({ surtidos, pendientes });
       }
 
       // ════════════════════════════════════════════════════════════
