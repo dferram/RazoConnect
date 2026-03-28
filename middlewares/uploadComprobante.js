@@ -2,6 +2,7 @@ const multer = require("multer");
 const CloudinaryStorage = require("./cloudinaryStorage");
 const cloudinary = require("../config/cloudinary");
 const path = require("path");
+const { UPLOAD_LIMITS, formatBytes } = require("../config/uploadLimits");
 
 // Configuración de almacenamiento en Cloudinary para comprobantes
 // IMPORTANTE: processImages: false porque los comprobantes pueden ser PDFs
@@ -38,8 +39,40 @@ const uploadComprobante = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 15 * 1024 * 1024, // Aumentado para iOS
+    fileSize: UPLOAD_LIMITS.PAYMENT_RECEIPTS.maxSizeBytes,
   },
 });
 
+// Middleware de manejo de errores
+const handleUploadError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      const maxSize = formatBytes(UPLOAD_LIMITS.PAYMENT_RECEIPTS.maxSizeBytes);
+      return res.status(413).json({
+        success: false,
+        error: 'FILE_TOO_LARGE',
+        message: `El archivo excede el tamaño máximo permitido de ${maxSize}`,
+        maxSize: UPLOAD_LIMITS.PAYMENT_RECEIPTS.maxSizeMB,
+        hint: 'Si es un PDF, intenta comprimirlo. Si es una imagen, reduce su tamaño'
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      error: err.code,
+      message: err.message
+    });
+  }
+  
+  if (err) {
+    return res.status(400).json({
+      success: false,
+      error: 'UPLOAD_ERROR',
+      message: err.message
+    });
+  }
+  
+  next();
+};
+
 module.exports = uploadComprobante;
+module.exports.handleUploadError = handleUploadError;

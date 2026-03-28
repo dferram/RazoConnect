@@ -8,6 +8,7 @@ const multer = require("multer");
 const CloudinaryStorage = require("./cloudinaryStorage");
 const cloudinary = require("../config/cloudinary");
 const path = require("path");
+const { UPLOAD_LIMITS, formatBytes } = require("../config/uploadLimits");
 
 // Configuración de almacenamiento en Cloudinary
 const storage = new CloudinaryStorage({
@@ -39,13 +40,45 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Configurar multer
+// Configurar multer con límites centralizados
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // Límite de 5MB
+    fileSize: UPLOAD_LIMITS.PRODUCT_IMAGES.maxSizeBytes,
   },
 });
 
+// Middleware de manejo de errores mejorado
+const handleUploadError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      const maxSize = formatBytes(UPLOAD_LIMITS.PRODUCT_IMAGES.maxSizeBytes);
+      return res.status(413).json({
+        success: false,
+        error: 'FILE_TOO_LARGE',
+        message: `La imagen excede el tamaño máximo permitido de ${maxSize}`,
+        maxSize: UPLOAD_LIMITS.PRODUCT_IMAGES.maxSizeMB,
+        hint: 'Por favor, reduce el tamaño de la imagen o usa un formato más comprimido (WEBP recomendado)'
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      error: err.code,
+      message: err.message
+    });
+  }
+  
+  if (err) {
+    return res.status(400).json({
+      success: false,
+      error: 'UPLOAD_ERROR',
+      message: err.message
+    });
+  }
+  
+  next();
+};
+
 module.exports = upload;
+module.exports.handleUploadError = handleUploadError;

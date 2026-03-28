@@ -229,8 +229,11 @@
 
           <div style="display:grid; gap: 0.5rem;">
             <label for="pagoComprobante" class="form-label">Subir comprobante</label>
-            <input id="pagoComprobante" type="file" class="form-input" accept="image/*,application/pdf" />
-            <div style="font-size: 0.85rem; color: #6b7280;"><i class="bi bi-info-circle"></i> PDF o imagen. Máx. 8MB. Opcional pero recomendado.</div>
+            <input id="pagoComprobante" type="file" class="form-input" accept="image/*,image/heic,image/heif,.heic,.heif,application/pdf" />
+            <div style="font-size: 0.85rem; color: #6b7280; display: flex; align-items: start; gap: 0.5rem;">
+              <i class="bi bi-info-circle" style="color: #3b82f6; font-size: 1rem; margin-top: 0.1rem;"></i>
+              <span><strong>Tamaño máximo: 10MB por archivo.</strong> Formatos: JPG, PNG, PDF, HEIC. Opcional pero recomendado para respaldo.</span>
+            </div>
           </div>
 
           <!-- Historial de pagos previos -->
@@ -335,6 +338,7 @@
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/admin-sidebar-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
+    <script src="js/shared/file-validator.js"></script>
     <script src="js/instructional-banner.js"></script>
     <script src="js/admin-cuentaspagar.js?v=4" defer></script>
 

@@ -495,8 +495,10 @@
                       accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif"
                       multiple
                     />
-                    <small class="form-hint"
-                      >Sube las imágenes del producto (portada + galería). Puedes seleccionar archivos en múltiples tandas y se acumularán. La primera imagen será la portada. Formatos: JPG, PNG, WEBP, HEIC (iOS). Máximo 15MB c/u, hasta 12 imágenes total. Las imágenes se optimizan automáticamente.</small
+                    <small class="form-hint" style="display: flex; align-items: start; gap: 0.5rem;">
+                      <i class="bi bi-info-circle" style="color: #3b82f6; font-size: 1rem; margin-top: 0.1rem;"></i>
+                      <span><strong>Tamaño máximo: 5MB por imagen.</strong> Formatos: JPG, PNG, WEBP, HEIC (iOS). Puedes seleccionar múltiples archivos. La primera imagen será la portada. Hasta 12 imágenes total.</span>
+                    </small
                     >
 
                     <div id="area-imagenes-existentes" class="preview-section mt-3 d-none">
@@ -735,7 +737,7 @@
     <script src="js/shared/network-status.js"></script>
     <script src="js/shared/api-client.js"></script>
     <script src="js/shared/ui-helpers.js"></script>
-    
+    <script src="js/shared/file-validator.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/admin-sidebar-loader.js"></script>
     <script src="js/components/tipo-producto-loader.js"></script>
@@ -2175,25 +2177,12 @@
             return;
           }
 
-          const validTypes = [
-            "image/jpeg",
-            "image/jpg",
-            "image/png",
-            "image/webp",
-          ];
-          const maxSize = 5 * 1024 * 1024; // 5MB
-
-          // Validar archivos nuevos antes de agregarlos
-          for (const file of newFiles) {
-            if (!validTypes.includes(file.type)) {
-              showToast("Solo se permiten imágenes JPG, PNG o WEBP", "error");
-              // Limpiar el input pero NO el array de archivos seleccionados
-              e.target.value = "";
-              return;
-            }
-            if (file.size > maxSize) {
-              showToast("Cada imagen no debe superar 5MB", "error");
-              // Limpiar el input pero NO el array de archivos seleccionados
+          // Usar FileValidator para validar los archivos
+          if (window.FileValidator) {
+            const validation = window.FileValidator.validateFiles(newFiles, 'PRODUCT_IMAGES');
+            
+            if (!validation.valid) {
+              validation.errors.forEach(error => showToast(error, "error"));
               e.target.value = "";
               return;
             }

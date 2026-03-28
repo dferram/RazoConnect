@@ -367,6 +367,20 @@ async function guardarPago() {
         return;
     }
     
+    // Validar comprobante antes de enviar (doble verificación)
+    if (comprobante && window.FileValidator) {
+        const validation = window.FileValidator.validateFile(comprobante, 'PAYMENT_RECEIPTS');
+        if (!validation.valid) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Comprobante no válido',
+                text: validation.error,
+                confirmButtonColor: '#F97316'
+            });
+            return;
+        }
+    }
+    
     try {
         document.getElementById('btnGuardarPagoText').style.display = 'none';
         document.getElementById('btnGuardarPagoSpinner').style.display = 'inline-block';
@@ -411,7 +425,7 @@ async function guardarPago() {
     }
 }
 
-// Ver detalle de cuenta en modal personalizado
+// Ver detalle de CxP
 async function verDetalle(cxpId) {
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/admin/cuentas-por-pagar/${cxpId}`);
@@ -422,69 +436,17 @@ async function verDetalle(cxpId) {
         
         const cxp = data.data;
         
-        // Llenar datos del modal
         document.getElementById('detalleModalTitle').textContent = `Cuenta por Pagar #${cxp.cxp_id}`;
         document.getElementById('detalleProveedor').textContent = cxp.proveedor;
         document.getElementById('detalleReferencia').textContent = cxp.referencia_factura || 'N/A';
         
-        const origenContainer = document.getElementById('detalleOrigenContainer');
-        const origenEl = document.getElementById('detalleOrigen');
-        if (cxp.orden_compra_id) {
-            origenEl.textContent = `Entrada de Almacén - OC #${cxp.orden_compra_id}`;
-            origenContainer.style.display = 'block';
-        } else {
-            origenContainer.style.display = 'none';
-        }
-        
-        document.getElementById('detalleFechaEmision').textContent = formatDate(cxp.fecha_emision);
-        document.getElementById('detalleFechaVencimiento').textContent = formatDate(cxp.fecha_vencimiento);
-        document.getElementById('detalleMontoTotal').textContent = formatCurrency(cxp.monto_total);
-        document.getElementById('detalleMontoPagado').textContent = formatCurrency(cxp.monto_pagado || 0);
-        
-        const saldoEl = document.getElementById('detalleSaldoRestante');
-        saldoEl.textContent = formatCurrency(cxp.saldo_restante);
-        saldoEl.style.color = cxp.saldo_restante > 0 ? '#dc3545' : '#28a745';
-        
-        const notasContainer = document.getElementById('detalleNotasContainer');
-        const notasEl = document.getElementById('detalleNotas');
-        if (cxp.notas) {
-            notasEl.textContent = cxp.notas;
-            notasContainer.style.display = 'block';
-        } else {
-            notasContainer.style.display = 'none';
-        }
-        
-        // Renderizar historial de pagos
-        const historialContainer = document.getElementById('detalleHistorialPagos');
-        const historialSection = document.getElementById('detalleHistorialSection');
-        
-        if (cxp.historial_pagos && cxp.historial_pagos.length > 0) {
-            historialContainer.innerHTML = cxp.historial_pagos.map(pago => `
-                <div style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: start;">
-                    <div>
-                        <div class="fw-semibold" style="color: #059669;">${formatCurrency(pago.monto)}</div>
-                        <div class="text-muted small">${formatDate(pago.fecha_pago)}</div>
-                        <div class="text-muted small">Método: ${escapeHtml(pago.metodo_pago || 'N/A')}</div>
-                        ${pago.referencia ? `<div class="text-muted small">Ref: ${escapeHtml(pago.referencia)}</div>` : ''}
-                    </div>
-                    ${pago.comprobante_url ? `<a href="${pago.comprobante_url}" target="_blank" class="btn btn-sm btn-link" title="Ver comprobante"><i class="bi bi-paperclip"></i></a>` : ''}
-                </div>
-            `).join('');
-            historialSection.style.display = 'block';
-        } else {
-            historialSection.style.display = 'none';
-        }
-        
-        // Mostrar modal
         document.getElementById('detalleModal').style.display = 'flex';
-        
     } catch (error) {
         console.error('Error:', error);
         Swal.fire('Error', 'No se pudo cargar el detalle.', 'error');
     }
 }
 
-// Cerrar modal de detalle
 function cerrarModalDetalle() {
     document.getElementById('detalleModal').style.display = 'none';
 }
@@ -493,87 +455,51 @@ function cerrarModalDetalle() {
 function aplicarFiltros() {
     state.filters.search = document.getElementById('searchInput')?.value || '';
     state.filters.estatus = document.getElementById('filtroEstatus')?.value || '';
-    state.filters.fechaInicio = document.getElementById('fechaInicio')?.value || '';
-    state.filters.fechaFin = document.getElementById('fechaFin')?.value || '';
-    state.filters.adminId = document.getElementById('filtroAdmin')?.value || '';
-    
+    state.filters.fechaInicio = document.getElementById('filtroFechaInicio')?.value || '';
+    state.filters.fechaFin = document.getElementById('filtroFechaFin')?.value || '';
     state.currentPage = 1;
     cargarTablaCxP();
-    cargarKPIs();
 }
 
-// Limpiar filtros
 function limpiarFiltros() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('filtroEstatus').value = '';
-    document.getElementById('fechaInicio').value = '';
-    document.getElementById('fechaFin').value = '';
-    if (document.getElementById('filtroAdmin')) {
-        document.getElementById('filtroAdmin').value = '';
-    }
-    
     state.filters = {
         search: '',
         estatus: '',
         fechaInicio: '',
         fechaFin: '',
-        adminId: ''
+        adminId: state.filters.adminId
     };
-    
     state.currentPage = 1;
+    
+    if (document.getElementById('searchInput')) document.getElementById('searchInput').value = '';
+    if (document.getElementById('filtroEstatus')) document.getElementById('filtroEstatus').value = '';
+    if (document.getElementById('filtroFechaInicio')) document.getElementById('filtroFechaInicio').value = '';
+    if (document.getElementById('filtroFechaFin')) document.getElementById('filtroFechaFin').value = '';
+    
     cargarTablaCxP();
-    cargarKPIs();
 }
 
-// Cargar lista de administradores para el filtro
-async function loadAdminList() {
-    try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/admin/administradores`);
-        if (!response.ok) return;
-        
-        const data = await response.json();
-        if (data.success && data.data) {
-            const admins = data.data;
-            const filtroAdmin = document.getElementById('filtroAdmin');
-            if (filtroAdmin) {
-                filtroAdmin.innerHTML = '<option value="">Todos los administradores</option>';
-                admins.forEach(admin => {
-                    const option = document.createElement('option');
-                    option.value = admin.adminid;
-                    option.textContent = `${admin.nombre} (${admin.rol === 'superadmin' ? 'Super Admin' : 'Admin'})`;
-                    filtroAdmin.appendChild(option);
-                });
-            }
-        }
-    } catch (error) {
-        console.error('Error cargando lista de administradores:', error);
-    }
-}
-
-// Verificar rol del usuario y mostrar filtro si es superadmin
+// Verificar rol de usuario
 async function verificarRolUsuario() {
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/admin/verify`);
-        if (!response.ok) return;
+        if (!response.ok) throw new Error('No autorizado');
         
         const data = await response.json();
-        if (data.success && data.data.admin) {
-            state.currentUserRole = data.data.admin.rol;
+        if (data.success && data.data?.admin) {
+            const rol = data.data.admin.rol?.toLowerCase() || '';
+            state.currentUserRole = rol;
             
-            if (data.data.admin.rol === 'superadmin') {
-                const filtroAdminContainer = document.getElementById('filtroAdminContainer');
-                const thPropietario = document.getElementById('thPropietario');
-                if (filtroAdminContainer) filtroAdminContainer.style.display = 'block';
-                if (thPropietario) thPropietario.style.display = '';
-                await loadAdminList();
+            if (rol === 'superadmin') {
+                const filtroAdmin = document.getElementById('filtroAdmin');
+                if (filtroAdmin) filtroAdmin.style.display = 'block';
             }
         }
     } catch (error) {
-        console.error('Error verificando rol de usuario:', error);
+        console.error('Error verificando rol:', error);
     }
 }
 
-// Inicializar y Event Listeners
 document.addEventListener('DOMContentLoaded', async () => {
     await verificarRolUsuario();
     cargarKPIs();
@@ -588,24 +514,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnCancelarPago')?.addEventListener('click', cerrarModalPago);
     document.getElementById('btnGuardarPago')?.addEventListener('click', guardarPago);
     
-    document.getElementById('btnAplicarFiltros')?.addEventListener('click', aplicarFiltros);
-    document.getElementById('btnLimpiarFiltros')?.addEventListener('click', limpiarFiltros);
-    
-    document.getElementById('searchInput')?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') aplicarFiltros();
-    });
-    
-    document.getElementById('selectAll')?.addEventListener('change', (e) => {
-        const checkboxes = document.querySelectorAll('.cxp-checkbox:not([disabled])');
-        checkboxes.forEach(cb => {
-            cb.checked = e.target.checked;
-            const id = parseInt(cb.dataset.id);
-            if (e.target.checked) {
-                state.selectedIds.add(id);
+    // Validación de archivo de comprobante
+    document.getElementById('pagoComprobante')?.addEventListener('change', function(e) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        // Usar FileValidator para validar el archivo
+        if (window.FileValidator) {
+            const validation = window.FileValidator.validateFile(file, 'PAYMENT_RECEIPTS');
+            
+            if (!validation.valid) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Archivo no válido',
+                    text: validation.error,
+                    confirmButtonColor: '#F97316'
+                });
+                e.target.value = '';
             } else {
-                state.selectedIds.delete(id);
+                const sizeInfo = window.FileValidator.formatBytes(file.size);
+                console.log(`✅ Comprobante válido: ${file.name} (${sizeInfo})`);
             }
-        });
+        }
     });
     
     document.getElementById('pagoModal')?.addEventListener('click', (e) => {
