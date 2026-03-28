@@ -44,11 +44,18 @@ const FILE_UPLOAD_LIMITS = {
  * @returns {string} Formato legible (ej: "3.5 MB")
  */
 function formatBytes(bytes) {
-  if (bytes === 0) return '0 Bytes';
+  // Guard against invalid input
+  if (bytes <= 0) return '0 Bytes';
+  if (!isFinite(bytes)) return 'Invalid size';
+  
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  
+  // Clamp index to valid range
+  const clampedIndex = Math.max(0, Math.min(i, sizes.length - 1));
+  
+  return Math.round((bytes / Math.pow(k, clampedIndex)) * 100) / 100 + ' ' + sizes[clampedIndex];
 }
 
 /**
@@ -81,8 +88,19 @@ function validateFile(file, limitType) {
     };
   }
 
-  // Validar formato
-  const extension = file.name.split('.').pop().toLowerCase();
+  // Validar formato con mejor detección de extensión
+  const dot = file.name.lastIndexOf('.');
+  const extension = dot > 0 ? file.name.slice(dot + 1).toLowerCase() : '';
+  
+  if (!extension) {
+    return {
+      valid: false,
+      error: `⚠️ Archivo sin extensión: "${file.name}"\n` +
+             `Formatos permitidos: ${limits.allowedFormats.join(', ').toUpperCase()}`,
+      sizeMB: fileSizeMB
+    };
+  }
+  
   if (!limits.allowedFormats.includes(extension)) {
     return {
       valid: false,
@@ -143,10 +161,12 @@ function getLimitMessage(limitType) {
  */
 function showFileError(message) {
   if (typeof Swal !== 'undefined') {
+    // Convertir newlines a HTML breaks para mejor renderizado
+    const htmlMessage = message.replace(/\n/g, '<br>');
     Swal.fire({
       icon: 'error',
       title: 'Error de Validación',
-      text: message,
+      html: htmlMessage,
       confirmButtonColor: '#F97316',
       timer: 5000
     });

@@ -425,7 +425,80 @@ async function guardarPago() {
     }
 }
 
-// ... (rest of the code remains the same)
+// Ver detalle de CxP
+async function verDetalle(cxpId) {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/admin/cuentas-por-pagar/${cxpId}`);
+        if (!response.ok) throw new Error('Error al cargar detalle');
+        
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'Error del servidor');
+        
+        const cxp = data.data;
+        
+        document.getElementById('detalleModalTitle').textContent = `Cuenta por Pagar #${cxp.cxp_id}`;
+        document.getElementById('detalleProveedor').textContent = cxp.proveedor;
+        document.getElementById('detalleReferencia').textContent = cxp.referencia_factura || 'N/A';
+        
+        document.getElementById('detalleModal').style.display = 'flex';
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire('Error', 'No se pudo cargar el detalle.', 'error');
+    }
+}
+
+function cerrarModalDetalle() {
+    document.getElementById('detalleModal').style.display = 'none';
+}
+
+// Aplicar filtros
+function aplicarFiltros() {
+    state.filters.search = document.getElementById('searchInput')?.value || '';
+    state.filters.estatus = document.getElementById('filtroEstatus')?.value || '';
+    state.filters.fechaInicio = document.getElementById('filtroFechaInicio')?.value || '';
+    state.filters.fechaFin = document.getElementById('filtroFechaFin')?.value || '';
+    state.currentPage = 1;
+    cargarTablaCxP();
+}
+
+function limpiarFiltros() {
+    state.filters = {
+        search: '',
+        estatus: '',
+        fechaInicio: '',
+        fechaFin: '',
+        adminId: state.filters.adminId
+    };
+    state.currentPage = 1;
+    
+    if (document.getElementById('searchInput')) document.getElementById('searchInput').value = '';
+    if (document.getElementById('filtroEstatus')) document.getElementById('filtroEstatus').value = '';
+    if (document.getElementById('filtroFechaInicio')) document.getElementById('filtroFechaInicio').value = '';
+    if (document.getElementById('filtroFechaFin')) document.getElementById('filtroFechaFin').value = '';
+    
+    cargarTablaCxP();
+}
+
+// Verificar rol de usuario
+async function verificarRolUsuario() {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/admin/verify`);
+        if (!response.ok) throw new Error('No autorizado');
+        
+        const data = await response.json();
+        if (data.success && data.data?.admin) {
+            const rol = data.data.admin.rol?.toLowerCase() || '';
+            state.currentUserRole = rol;
+            
+            if (rol === 'superadmin') {
+                const filtroAdmin = document.getElementById('filtroAdmin');
+                if (filtroAdmin) filtroAdmin.style.display = 'block';
+            }
+        }
+    } catch (error) {
+        console.error('Error verificando rol:', error);
+    }
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
     await verificarRolUsuario();
