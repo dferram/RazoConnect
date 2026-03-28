@@ -414,13 +414,21 @@ const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = 
         const cantidadSegura = Math.round(parseInt(item.cantidad) || 0);
         const tamanoSeguro = Math.round(parseInt(item.tamano_cantidad) || 1);
         
+        // Determinar texto de estado para mostrar
+        const estadoTexto = pedidoEstatus || 'N/A';
+        
         doc.fillColor('#333333')
            .fontSize(9)
            .font('Helvetica')
            .text(cantidadSegura, 55, currentY)
            .text(descripcionLinea1, 110, currentY, { width: 170 })
            .text(descripcionLinea2 + rondaTexto, 110, currentY + 10, { width: 170 })
-           .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unit.', 290, currentY);
+           .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unit.', 290, currentY)
+           .font('Helvetica-Bold')
+           .fontSize(8)
+           .text(estadoTexto, 350, currentY + 5, { width: 65 })
+           .font('Helvetica')
+           .fontSize(9);
         
         // Only show prices if mostrarPrecios is true
         if (mostrarPrecios) {

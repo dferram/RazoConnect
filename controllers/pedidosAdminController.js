@@ -139,6 +139,10 @@ const getAllPedidos = async (req, res) => {
     const { estatus, clienteId, agenteId, fechaInicio, fechaFin } = req.query;
     const { limit, offset, page } = getPaginationParams(req.query);
 
+    // Detectar rol del usuario
+    const userRole = req.user?.rol?.toLowerCase()?.trim() || '';
+    const isInventarios = userRole === 'inventarios';
+
     let query = `
       SELECT 
         p.PedidoID,
@@ -167,6 +171,15 @@ const getAllPedidos = async (req, res) => {
       LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
       WHERE p.tenant_id = $1
     `;
+
+    // FILTRO PARA INVENTARIOS: Excluir pedidos ya surtidos/entregados (deben estar en histórico)
+    if (isInventarios) {
+      query += ` AND p.Estatus NOT IN ('Surtido', 'Enviado', 'Entregado')`;
+      logger.info('⚠️ [PEDIDOS] Aplicando filtro para rol inventarios - excluyendo Surtido/Enviado/Entregado', {
+        userId: req.user?.id,
+        rol: userRole
+      });
+    }
 
     const params = [tenant_id];
     let paramIndex = 2;
@@ -205,6 +218,11 @@ const getAllPedidos = async (req, res) => {
     const countParams = [tenant_id];
     let countParamIndex = 2;
     let countQuery = `SELECT COUNT(*) FROM Pedidos p WHERE p.tenant_id = $1`;
+    
+    // Aplicar mismo filtro de inventarios en el count
+    if (isInventarios) {
+      countQuery += ` AND p.Estatus NOT IN ('Surtido', 'Enviado', 'Entregado')`;
+    }
     
     if (estatus) {
       countQuery += ` AND p.Estatus = $${countParamIndex}`;
