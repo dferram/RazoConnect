@@ -308,20 +308,29 @@ function renderizarDetalleRemision(remision) {
         minute: '2-digit'
     });
 
-    const detallesHTML = remision.detalles.map(item => `
-        <tr>
-            <td>
-                <strong>${item.sku}</strong><br>
-                <small class="text-muted">${item.producto_nombre} - ${item.variante_nombre}</small>
-            </td>
-            <td class="text-center">${item.cantidad_paquetes_surtidos}</td>
-            <td class="text-center">${item.piezas_surtidas}</td>
-            <td class="text-end">$${parseFloat(item.precio_unitario).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
-            <td class="text-end">
-                <strong>$${parseFloat(item.subtotal).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong>
-            </td>
-        </tr>
-    `).join('');
+    const detallesHTML = remision.detalles.map(item => {
+        const ronda = item.ronda_surtido || 1;
+        const rondaBadge = ronda > 1 
+            ? `<span class="badge bg-warning text-dark ms-2" title="Surtido en ronda ${ronda}">Ronda ${ronda}</span>`
+            : `<span class="badge bg-success ms-2" title="Primera vez surtido">1ª vez</span>`;
+        
+        return `
+            <tr>
+                <td>
+                    <strong>${item.sku}</strong>
+                    ${rondaBadge}
+                    <br>
+                    <small class="text-muted">${item.producto_nombre} - ${item.variante_nombre}</small>
+                </td>
+                <td class="text-center">${item.cantidad_paquetes_surtidos}</td>
+                <td class="text-center">${item.piezas_surtidas}</td>
+                <td class="text-end">$${parseFloat(item.precio_unitario).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</td>
+                <td class="text-end">
+                    <strong>$${parseFloat(item.subtotal).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong>
+                </td>
+            </tr>
+        `;
+    }).join('');
 
     contentDiv.innerHTML = `
         <div class="row mb-4">

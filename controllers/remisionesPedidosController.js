@@ -67,6 +67,7 @@ const obtenerRemisionPedido = async (req, res) => {
     // FIX 2: Obtener cantidades REALES de remisiones confirmadas
     // No usar cantidadsurtida de detallesdelpedido (que es para inventarios)
     // Usar cantidad_surtida_remisiones que refleja lo realmente remisionado
+    // INCLUIR ronda_surtido para mostrar en qué ronda se surtió cada producto
     const detallesQuery = `
       SELECT DISTINCT ON (dp.detalleid)
         dp.detalleid,
@@ -80,7 +81,18 @@ const obtenerRemisionPedido = async (req, res) => {
         pv.dimensiones,
         pv.stock AS stock_real_variante,
         prod.nombreproducto,
-        t.cantidad as tamano_piezas
+        t.cantidad as tamano_piezas,
+        (
+          SELECT json_agg(json_build_object(
+            'ronda', COALESCE(dr.ronda_surtido, 1),
+            'cantidad', dr.cantidad_paquetes_surtidos,
+            'folio', r.folio,
+            'fecha', r.fecha_emision
+          ) ORDER BY dr.ronda_surtido)
+          FROM detalles_remision dr
+          INNER JOIN remisiones r ON dr.remision_id = r.remision_id
+          WHERE dr.detalle_pedido_id = dp.detalleid
+        ) as rondas_surtido
       FROM detallesdelpedido dp
       INNER JOIN producto_variantes pv ON pv.varianteid = dp.varianteid
       INNER JOIN productos prod ON prod.productoid = pv.productoid
@@ -114,6 +126,7 @@ const obtenerRemisionPedido = async (req, res) => {
         piezasTotales: item.piezastotales,
         stockReal: parseInt(item.stock_real_variante || 0, 10),
         subtotal: parseFloat((cantidadPaquetes * precioPorPaquete).toFixed(2)),
+        rondasSurtido: item.rondas_surtido || []
       };
 
       // Solo incluir en surtidos si cantidad_remisionada > 0
