@@ -228,14 +228,6 @@
                   </select>
                 </div>
                 <div class="filter-group">
-                  <label class="filter-label">Estado</label>
-                  <select id="filterPedidoHistorico" class="filter-input" onchange="filterPedidos()">
-                    <option value="">Todos</option>
-                    <option value="activos">Activos</option>
-                    <option value="historicos">Históricos</option>
-                  </select>
-                </div>
-                <div class="filter-group">
                   <label class="filter-label">Fecha desde</label>
                   <input
                     type="date"
@@ -319,32 +311,19 @@
               </div>
             </div>
 
-            <!-- Pedidos Históricos Section -->
-            <div id="pedidosHistoricosSection">
-              <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--razo-gray-warm);">
-                📚 Histórico <span id="countHistoricos" class="admin-badge" style="margin-left: 0.5rem; background: #6c757d;">0</span>
-              </h3>
-              <div class="admin-table-container">
-                <div style="overflow-x: auto">
-                  <table class="admin-table" id="pedidosHistoricosTable" style="display: none">
-                    <thead>
-                      <tr>
-                        <th>Pedido</th>
-                        <th>Cliente</th>
-                        <th>Fecha</th>
-                        <th>Monto</th>
-                        <th>Estatus</th>
-                        <th>Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody id="pedidosHistoricosBody"></tbody>
-                  </table>
-                </div>
-                <div id="emptyHistoricos" class="empty-state" style="display: none">
-                  <div class="empty-state-icon">�</div>
-                  <h3 class="empty-state-title">No hay pedidos históricos</h3>
-                  <p class="empty-state-text">Los pedidos completamente confirmados aparecerán aquí.</p>
-                </div>
+            <!-- Acceso a Pedidos Históricos -->
+            <div id="pedidosHistoricosSection" style="margin-top: 2rem;">
+              <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); padding: 2rem; border-radius: 0.75rem; text-align: center; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
+                <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--razo-gray-dark);">
+                  Pedidos Históricos <span id="countHistoricos" class="admin-badge" style="margin-left: 0.5rem; background: #6c757d;">0</span>
+                </h3>
+                <p style="color: var(--razo-gray-warm); margin-bottom: 1.5rem; font-size: 0.95rem;">
+                  Consulta todos los pedidos completamente confirmados y entregados
+                </p>
+                <a href="/admin-pedidos-historico.html" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem; display: inline-flex; align-items: center; gap: 0.5rem;">
+                  <i class="bi bi-archive"></i> Ver Histórico Completo
+                </a>
               </div>
             </div>
           </div>
