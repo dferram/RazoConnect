@@ -207,7 +207,7 @@
           });
 
           const adminData = await adminResponse.json();
-          console.log('� Intento admin login:', adminData);
+          console.log('Intento admin login:', adminData);
 
           if (adminResponse.ok && adminData.success) {
             const { accessToken, refreshToken, usuario } = adminData.data;

@@ -192,7 +192,7 @@ window.safeClearTokens = () => {
       // Contexto de admin - limpiar solo tokens de admin
       localStorage.removeItem(ADMIN_TOKEN_KEY);
       localStorage.removeItem(ADMIN_DATA_KEY);
-      console.log("� Tokens de admin limpiados");
+      console.log("Tokens de admin limpiados");
       return true;
     } else {
       // Contexto de cliente

@@ -3,27 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Recepciï¿½n de Inventario - Admin RazoConnect</title>
+    <title>Recepción de Inventario - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
     
-    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- Core Scripts - ORDEN CRÃTICO: api.js debe cargarse primero -->
     <script src="js/api.js"></script>
     <script src="js/auth-guard-admin.js"></script>
     
-
-    <!-- SWEETALERT2 -->
-    <!-- EXCELJS -->
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
 
-    <!-- jsPDF & AutoTable -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
-    <!-- PROTECCIï¿½N DE AUTENTICACIï¿½N ADMIN -->
-    <!-- SISTEMA DE RENOVACIï¿½N DE TOKENS -->
 
     <link rel="stylesheet" href="css/styles.css" />
     <link rel="stylesheet" href="css/admin.css" />
@@ -35,54 +26,46 @@
   </head>
   <body data-page-title="Recibir inventario">
     <div class="admin-layout">
-      <!-- Sidebar -->
       <div id="admin-sidebar-container"></div>
 
-      <!-- Main Content -->
       <main class="admin-main">
         <div id="admin-header-container"></div>
 
         <div class="admin-content" style="display: grid; gap: 1.5rem">
-          <!-- Instructional Banner -->
           <div id="instructionalBanner" class="instructional-banner">
             <p>
-              ?? <strong>Recepciï¿½n de Inventario:</strong> Registra la llegada de productos de tus proveedores. Selecciona la orden de compra, verifica las cantidades recibidas y asigna costos. El sistema actualizarï¿½ automï¿½ticamente tu inventario disponible.
+              ?? <strong>Recepción de Inventario:</strong> Registra la llegada de productos de tus proveedores. Selecciona la orden de compra, verifica las cantidades recibidas y asigna costos. El sistema actualizará automáticamente tu inventario disponible.
             </p>
             <button class="instructional-banner-close" title="Cerrar">
-              ï¿½
+              &times;
             </button>
           </div>
 
-          <!-- Session Status Bar -->
           <div id="sessionStatusBar" style="display: none; background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%); border: 2px solid #D1D5DB; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
               <div style="display: flex; align-items: center; gap: 1rem; flex: 1;">
-                <!-- Mode Badge -->
                 <div id="modeBadge" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.875rem;">
                   <i class="bi bi-pencil-square"></i>
                   <span id="modeText">Modo Operador</span>
                 </div>
                 
-                <!-- Session Info -->
                 <div id="sessionInfo" style="display: flex; align-items: center; gap: 0.5rem; color: #6B7280; font-size: 0.875rem;">
                   <i class="bi bi-person-circle"></i>
                   <span id="sessionInfoText">Trabajando en esta orden</span>
                 </div>
               </div>
               
-              <!-- Super Admin Controls -->
               <div id="superAdminControls" style="display: none; gap: 0.5rem;">
                 <button id="btnReasignarSesion" class="btn btn-sm" style="background: #3B82F6; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
-                  <i class="bi bi-arrow-left-right"></i> Reasignar Sesiï¿½n
+                  <i class="bi bi-arrow-left-right"></i> Reasignar Sesión
                 </button>
                 <button id="btnLiberarSesion" class="btn btn-sm" style="background: #DC2626; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
-                  <i class="bi bi-unlock"></i> Liberar Sesiï¿½n
+                  <i class="bi bi-unlock"></i> Liberar Sesión
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- ï¿½rdenes de Compra Pendientes -->
           <section class="admin-card" style="padding: 1.25rem">
             <div
               style="
@@ -99,21 +82,21 @@
                   id="ocSearch"
                   type="text"
                   class="form-input"
-                  placeholder="Ej: 120 ï¿½ Proveedor..."
+                  placeholder="Ej: 120 ? Proveedor..."
                 />
               </div>
 
               <div style="min-width: 320px; flex: 1">
                 <label for="ocSelect" class="form-label">Orden de Compra</label>
                 <select id="ocSelect" class="form-input" disabled>
-                  <option value="">Cargando ï¿½rdenesï¿½</option>
+                  <option value="">Cargando Órdenes...</option>
                 </select>
               </div>
 
               <div style="display: grid; gap: 0.25rem; min-width: 240px">
                 <div style="font-size: 0.85rem; color: #6b7280">Proveedor</div>
-                <div id="ocProveedor" style="font-weight: 700; color: #111827">ï¿½</div>
-                <div id="ocMeta" style="font-size: 0.85rem; color: #6b7280">ï¿½</div>
+                <div id="ocProveedor" style="font-weight: 700; color: #111827">?</div>
+                <div id="ocMeta" style="font-size: 0.85rem; color: #6b7280">?</div>
               </div>
             </div>
           </section>
@@ -130,13 +113,12 @@
               "
             >
               <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                <h2 style="margin: 0; font-size: 1.1rem">Auditorï¿½a de Recepciï¿½n</h2>
+                <h2 style="margin: 0; font-size: 1.1rem">Auditoría de Recepción</h2>
                 <span id="tipoBadge" style="display: none;"></span>
               </div>
-              <span id="ocBadge" class="admin-badge secondary">ï¿½</span>
+              <span id="ocBadge" class="admin-badge secondary">?</span>
             </div>
 
-            <!-- Botones de Gestiï¿½n de Productos -->
             <div id="botonesGestion" style="display: none; margin-bottom: 1rem; padding: 0.75rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
               <div style="display: flex; gap: 0.75rem; justify-content: flex-end; flex-wrap: wrap;">
                 <button id="btnAgregarProducto" type="button" class="btn btn-success" style="font-size: 0.875rem; padding: 0.5rem 1rem;">
@@ -148,7 +130,6 @@
               </div>
             </div>
 
-            <!-- Barra de Filtros -->
             <div id="filtrosContainer" style="display: none; margin-bottom: 1rem; padding: 1rem; background: #f9fafb; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: end;">
                 <div>
@@ -162,9 +143,9 @@
                   />
                 </div>
                 <div>
-                  <label for="filtroCategoria" class="form-label" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">Filtrar por Categorï¿½a</label>
+                  <label for="filtroCategoria" class="form-label" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">Filtrar por Categoría</label>
                   <select id="filtroCategoria" class="form-input" style="font-size: 0.875rem;">
-                    <option value="">Todas las categorï¿½as</option>
+                    <option value="">Todas las categorías</option>
                   </select>
                 </div>
                 <div>
@@ -205,7 +186,6 @@
             </div>
 
             <div id="recepcionSplit" style="display: none">
-              <!-- Tabla 1: Productos Pendientes de Recibir (100% ancho) -->
               <div class="recepcion-panel" style="margin-bottom: 2rem;">
                 <div
                   style="
@@ -228,7 +208,7 @@
                       <tr>
                         <th style="width: 60px">Imagen</th>
                         <th style="min-width: 200px">Producto</th>
-                        <th style="min-width: 110px">Categorï¿½a</th>
+                        <th style="min-width: 110px">Categoría</th>
                         <th style="min-width: 110px">Color</th>
                         <th style="min-width: 110px">Medidas</th>
                         <th style="text-align: center; width: 110px">Solicitado (pzas)</th>
@@ -252,52 +232,6 @@
                 </div>
               </div>
 
-              <!-- Tabla 2: Productos Ya Recibidos (100% ancho) -->
-              <!-- COMENTADA - No es ï¿½til en este momento. Mostraba el progreso de recepciï¿½n con emojis -->
-              <!--
-              <div class="recepcion-panel" style="margin-bottom: 2rem;">
-                <div
-                  style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    flex-wrap: wrap;
-                    gap: 0.5rem;
-                    margin-bottom: 0.75rem;
-                  "
-                >
-                  <div style="font-weight: 800; color: #111827">
-                    Recepciï¿½n de Mercancï¿½a (Confirmado)
-                  </div>
-                  <div id="recibidoBadge" class="admin-badge secondary">0 RECIBIDOS</div>
-                </div>
-                <div class="table-responsive">
-                  <table class="admin-table" id="tablaRecibido">
-                    <thead class="thead-sticky thead-recibido">
-                      <tr>
-                        <th style="width: 60px">Imagen</th>
-                        <th style="min-width: 200px">Producto</th>
-                        <th style="min-width: 120px">Categorï¿½a</th>
-                        <th style="min-width: 120px">Color</th>
-                        <th style="min-width: 150px">Dimensiones</th>
-                        <th style="text-align: center; width: 140px">Total recibido (pzas)</th>
-                        <th style="min-width: 200px">Progreso</th>
-                      </tr>
-                    </thead>
-                    <tbody id="tbodyRecibido"></tbody>
-                  </table>
-                </div>
-                <div
-                  id="footer-resumen-recibido"
-                  class="d-flex justify-content-between align-items-center mt-3 p-3 bg-light rounded border"
-                >
-                  <span class="fw-bold text-muted">Valor Recibido:</span>
-                  <span class="fs-5 fw-bold text-success" id="lbl-total-recibido">$0.00</span>
-                </div>
-              </div>
-              -->
-
-              <!-- Tabla 3: Resumen de Sesiï¿½n -->
               <div class="recepcion-panel">
                   <div
                     style="
@@ -310,13 +244,13 @@
                     "
                   >
                     <div style="font-weight: 800; color: #111827">
-                      Resumen de Sesiï¿½n
+                      Resumen de Sesión
                     </div>
-                    <div id="sesionBadge" class="admin-badge secondary">0 ï¿½TEMS</div>
+                    <div id="sesionBadge" class="admin-badge secondary">0 ÍTEMS</div>
                   </div>
 
                   <div id="sesionEmpty" style="color: #6b7280; font-size: 0.95rem; padding: 0.75rem; border: 1px dashed rgba(107, 114, 128, 0.35); border-radius: 0.75rem;">
-                    Agrega cantidades a la sesiï¿½n para finalizar la recepciï¿½n en un solo paso.
+                    Agrega cantidades a la sesión para finalizar la recepción en un solo paso.
                   </div>
 
                   <div id="sesionTableWrap" class="table-responsive" style="display:none;">
@@ -325,7 +259,7 @@
                         <tr>
                           <th>Producto</th>
                           <th style="width: 140px;">SKU</th>
-                          <th style="width: 120px;">Categorï¿½a</th>
+                          <th style="width: 120px;">Categoría</th>
                           <th style="width: 100px;">Color</th>
                           <th style="width: 120px;">Medida</th>
                           <th style="text-align:center; width: 140px;">Cantidad (pzas)</th>
@@ -361,17 +295,15 @@
                       class="btn btn-primary w-100"
                       disabled
                     >
-                      Finalizar Recepciï¿½n y Generar Cuenta por Pagar
+                      Finalizar Recepción y Generar Cuenta por Pagar
                     </button>
                     <button
                       id="btnCerrarSesion"
                       type="button"
                       class="btn w-100"
                       style="display: none; background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); color: white; font-weight: 600; border: none; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); transition: all 0.3s ease;"
-                      onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(220, 38, 38, 0.4)';"
-                      onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(220, 38, 38, 0.3)';"
                     >
-                      <i class="bi bi-x-octagon-fill"></i> Cerrar Sesiï¿½n y Marcar Pendientes como No Recibidos
+                      <i class="bi bi-x-octagon-fill"></i> Cerrar Sesión y Marcar Pendientes como No Recibidos
                     </button>
                   </div>
                 </div>
@@ -380,7 +312,6 @@
             <div id="pagination-controls" class="pagination-controls"></div>
           </section>
 
-          <!-- Botones de Exportar (siempre visible cuando hay datos) -->
           <div id="exportButtonsContainer" style="margin-top: 1rem; display: none;">
             <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
               <button id="btn-exportar-excel" type="button" class="btn btn-success">
@@ -397,7 +328,6 @@
       </main>
     </div>
 
-    <!-- Modal: Agregar Producto a la Orden -->
     <div id="modalAgregarProducto" class="modal" style="display: none;">
       <div class="modal-content" style="max-width: 1200px; width: 95%; background: white; border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f3f4f6;">
@@ -414,7 +344,7 @@
         </div>
 
         <div style="margin-bottom: 1rem; padding: 0.75rem; background: #dbeafe; border-left: 4px solid #3b82f6; border-radius: 0.375rem;">
-          <strong>?? Informaciï¿½n:</strong> Las cantidades se ingresan en <strong>paquetes</strong>. Cada producto muestra cuï¿½ntas piezas contiene por paquete.
+          <strong>?? Información:</strong> Las cantidades se ingresan en <strong>paquetes</strong>. Cada producto muestra cuántas piezas contiene por paquete.
         </div>
 
         <div style="max-height: 500px; overflow-y: auto; margin-bottom: 1.5rem;">
@@ -424,7 +354,7 @@
                 <th style="width: 60px;">Imagen</th>
                 <th>Producto / Variante</th>
                 <th style="width: 120px;">SKU</th>
-                <th style="width: 120px;">Categorï¿½a</th>
+                <th style="width: 120px;">Categoría</th>
                 <th style="width: 80px;">Stock</th>
                 <th style="width: 120px;">Paquetes</th>
                 <th style="width: 100px;"></th>
@@ -448,7 +378,6 @@
       </div>
     </div>
 
-    <!-- Modal: Quitar Producto de la Orden -->
     <div id="modalQuitarProducto" class="modal" style="display: none;">
       <div class="modal-content" style="max-width: 1000px; width: 95%; background: white; border-radius: 1rem; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid #f3f4f6;">
@@ -461,7 +390,7 @@
         </div>
 
         <div style="margin-bottom: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem;">
-          <strong>?? Advertencia:</strong> Solo puedes quitar productos que NO hayan sido recibidos aï¿½n.
+          <strong>?? Advertencia:</strong> Solo puedes quitar productos que NO hayan sido recibidos aún.
         </div>
 
         <div style="max-height: 400px; overflow-y: auto; margin-bottom: 1.5rem;">
@@ -506,7 +435,6 @@
     <script src="js/sidebar-toggle.js" defer></script>
     <script src="js/auth-manager.js"></script><script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Utilidades compartidas -->
     <script src="js/shared/network-status.js"></script>
     <script src="js/shared/api-client.js"></script>
     <script src="js/shared/ui-helpers.js"></script>
@@ -520,7 +448,7 @@
         .then(html => {
           document.getElementById('modal-optimizacion-container').innerHTML = html;
         })
-        .catch(error => console.error('Error cargando modal de optimizaciï¿½n:', error));
+        .catch(error => console.error('Error cargando modal de optimización:', error));
     </script>
     <script>
       const ocSearch = document.getElementById("ocSearch");
@@ -545,11 +473,8 @@
       const sesionTableWrap = document.getElementById("sesionTableWrap");
       const tbodySesion = document.getElementById("tbodySesion");
       const lblTotalSesion = document.getElementById("lbl-total-sesion");
-      const btnFinalizarRecepcion = document.getElementById("btnFinalizarRecepcion");
       const btnConfirmarGenerarCxp = document.getElementById("btnConfirmarGenerarCxp");
-      const sesionFloatingCounter = document.getElementById("sesionFloatingCounter");
 
-      // Exponer state globalmente para que las funciones de modales puedan acceder
       window.recepcionState = {
         ordenes: [],
         orden: null,
@@ -572,13 +497,13 @@
           (x) => String(x.detalleId) === String(detalleId)
         );
         if (!item) {
-          showToastError("No se encontrï¿½ el item");
+          showToastError("No se encontró el ítem");
           return;
         }
 
         const input = inputEl || (tbodyPendiente ? tbodyPendiente.querySelector(`.input-qty-recibida[data-detalle-id="${detalleId}"]`) : null);
         if (!input) {
-          showToastError("No se encontrï¿½ el campo de cantidad");
+          showToastError("No se encontró el campo de cantidad");
           return;
         }
 
@@ -587,11 +512,10 @@
         const max = Number.parseInt(input.dataset.pendiente, 10) || 0;
 
         if (!Number.isInteger(cantidad) || cantidad <= 0) {
-          showToastError("Ingresa una cantidad vï¿½lida");
+          showToastError("Ingresa una cantidad válida");
           return;
         }
 
-        // Calcular cuï¿½nto ya estï¿½ en sesiï¿½n para este item
         const enSesion = sesionRecepcion
           .filter((x) => String(x.detalleId) === String(item.detalleId))
           .reduce((acc, x) => acc + (Number.parseInt(x.cantidadPiezas || x.cantidad, 10) || 0), 0);
@@ -599,7 +523,7 @@
         const totalAcumulado = enSesion + cantidad;
         
         if (max > 0 && totalAcumulado > max) {
-          showToastError(`No puedes recibir mï¿½s de lo solicitado. Solicitado: ${max} pzas, Ya en sesiï¿½n: ${enSesion} pzas, Intentando agregar: ${cantidad} pzas`);
+          showToastError(`No puedes recibir más de lo solicitado. Solicitado: ${max} pzas, Ya en sesión: ${enSesion} pzas, Intentando agregar: ${cantidad} pzas`);
           return;
         }
 
@@ -616,19 +540,10 @@
           };
         } else {
           const costoCalculado = costoUnitarioValue(item);
-          console.log('?? [SESION] Guardando nuevo item:', {
-            detalleId: item.detalleId,
-            nombreProducto: item.nombreProducto,
-            cantidad,
-            piezas,
-            costoCalculado,
-            itemCompleto: item
-          });
-          
           sesionRecepcion.push({
             detalleId: item.detalleId,
             varianteId: item.varianteId,
-            cantidadPiezas: cantidad,  // ? EXPLï¿½CITO: Son PIEZAS, no paquetes
+            cantidadPiezas: cantidad,
             nombreProducto: safeText(item.nombreProducto),
             sku: safeText(item.sku),
             categoria: safeText(item.categoria || 'N/A'),
@@ -639,20 +554,11 @@
           });
         }
 
-        // FEATURE 2: Mantener el valor en el input despuï¿½s de agregar (NO limpiar)
-        // El valor se mantiene para que el usuario vea lo que acaba de registrar
-        // input.value = ''; // ? COMENTADO: Ya no limpiamos el input
-        
-        hasSessionData = true;
-        showToastSuccess("Agregado a sesiï¿½n");
+        showToastSuccess("Agregado a sesión");
         persistSesionRecepcion();
         renderizarTablaSesion();
-        
-        // CRï¿½TICO: Solo actualizar el contador del item especï¿½fico, NO renderizar toda la tabla
-        // para evitar que se reseteen los valores de otros inputs
         actualizarContadorPorRecibir(item.detalleId);
         
-        // FEATURE 3: Si el producto estï¿½ completamente recibido, removerlo de la tabla pendientes
         const solicitadoPzas = solicitadoPzasValue(item);
         const recibidoPzas = recibidoPzasValue(item);
         const enSesionPzas = sesionRecepcion
@@ -661,13 +567,9 @@
         const pendientePzas = Math.max(solicitadoPzas - recibidoPzas - enSesionPzas, 0);
         
         if (pendientePzas === 0) {
-          // Producto completamente recibido - remover de la tabla pendientes
-          console.log(`? [COMPLETADO] Producto ${item.sku} completamente recibido, removiendo de pendientes`);
           const row = tbodyPendiente?.querySelector(`tr[data-detalle-id="${item.detalleId}"]`);
-          if (row) {
-            row.remove();
-          }
-          // Actualizar el badge de pendientes
+          if (row) row.remove();
+          
           const items = Array.isArray(state.items) ? state.items : [];
           const pendientes = items.filter((i) => {
             const sol = solicitadoPzasValue(i);
@@ -678,9 +580,7 @@
             const pen = Math.max(sol - rec - ses, 0);
             return pen > 0;
           });
-          if (pendienteBadge) {
-            pendienteBadge.textContent = `${pendientes.length} PENDIENTES`;
-          }
+          if (pendienteBadge) pendienteBadge.textContent = `${pendientes.length} PENDIENTES`;
         }
       };
 
@@ -701,9 +601,7 @@
             return;
           }
           localStorage.setItem(key, JSON.stringify(sesionRecepcion));
-        } catch (e) {
-          // ignore
-        }
+        } catch (e) {}
       };
 
       const readSesionRecepcionFromStorage = (ordenCompraId) => {
@@ -714,9 +612,7 @@
           if (!raw) return [];
           const parsed = JSON.parse(raw);
           return Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
-          return [];
-        }
+        } catch (e) { return []; }
       };
 
       const clearSesionRecepcionStorage = (ordenCompraId) => {
@@ -724,9 +620,7 @@
           const key = getRecepcionStorageKey(ordenCompraId);
           if (!key) return;
           localStorage.removeItem(key);
-        } catch (e) {
-          // ignore
-        }
+        } catch (e) {}
       };
 
       const ocRestorePrompted = new Set();
@@ -734,76 +628,32 @@
       const normalizeRestoredSesion = (stored) => {
         const items = Array.isArray(state.items) ? state.items : [];
         const byDetalle = new Map(items.map((i) => [String(i.detalleId), i]));
-
         const normalized = [];
         for (const raw of Array.isArray(stored) ? stored : []) {
-          const detalleId = raw?.detalleId;
-          const base = byDetalle.get(String(detalleId));
+          const base = byDetalle.get(String(raw?.detalleId));
           if (!base) continue;
-
-          const cantidad = Number.parseInt(raw?.cantidadPiezas ?? raw?.cantidad, 10);  // ? Compatibilidad
+          const cantidad = Number.parseInt(raw?.cantidadPiezas ?? raw?.cantidad, 10);
           if (!Number.isInteger(cantidad) || cantidad <= 0) continue;
-
-          const piezasPorPaqueteStored = Number.parseInt(
-            raw?.piezasPorPaquete ?? raw?.piezasporpaquete,
-            10
-          );
-
-          if (Number.isInteger(piezasPorPaqueteStored) && piezasPorPaqueteStored > 0) {
-            base._piezasPorPaquete = piezasPorPaqueteStored;
-          }
-
-          const piezasForCalc = getPiezasPorPaquete(base);
-
-          const solicitadoPzas = (() => {
-            const paqRaw = base.cantidadSolicitadaPaquetes ?? base.cantidadsolicitadaPaquetes;
-            const paq = Number.parseInt(paqRaw, 10);
-            if (Number.isInteger(paq) && paq >= 0) return paq * piezasForCalc;
-            return Number.parseInt(base.cantidadSolicitada, 10) || 0;
-          })();
-
-          const recibidoPzas = (() => {
-            const rawRec = base.piezasRecibidas ?? base.piezasrecibidas;
-            const parsed = Number.parseInt(rawRec, 10);
-            if (Number.isInteger(parsed) && parsed >= 0) return parsed;
-            return Number.parseInt(base.cantidadRecibida, 10) || 0;
-          })();
-
-          const max = Math.max(solicitadoPzas - recibidoPzas, 0);
-          const cantidadFinal = Math.min(cantidad, max);
-          if (cantidadFinal <= 0) continue;
-
           normalized.push({
             detalleId: base.detalleId,
             varianteId: base.varianteId,
-            cantidadPiezas: cantidadFinal,  // ? EXPLï¿½CITO: Son PIEZAS
+            cantidadPiezas: cantidad,
             nombreProducto: safeText(base.nombreProducto),
             sku: safeText(base.sku),
-            categoria: safeText(base.categoria || raw?.categoria || 'N/A'),
-            color: safeText(base.color || raw?.color || 'N/A'),
-            dimensiones: safeText(base.dimensionesFisicas || base.dimensiones || raw?.dimensiones || 'N/A'),
-            piezasPorPaquete:
-              (Number.isInteger(piezasPorPaqueteStored) && piezasPorPaqueteStored > 0
-                ? piezasPorPaqueteStored
-                : piezasForCalc),
+            categoria: safeText(base.categoria || 'N/A'),
+            color: safeText(base.color || 'N/A'),
+            dimensiones: safeText(base.dimensionesFisicas || base.dimensiones || 'N/A'),
+            piezasPorPaquete: getPiezasPorPaquete(base),
             costoUnitario: costoUnitarioValue(base)
           });
         }
-
         return normalized;
       };
 
       const safeText = (value) => (value == null ? "" : String(value));
 
-      const moneyFormatterMx = new Intl.NumberFormat("es-MX", {
-        style: "currency",
-        currency: "MXN",
-      });
-
       const formatMoneyMx = (amount) => {
-        const parsed = Number.parseFloat(amount);
-        const safe = Number.isFinite(parsed) ? parsed : 0;
-        return moneyFormatterMx.format(safe);
+        return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount || 0);
       };
 
       const setLoading = (isLoading) => {
@@ -817,2438 +667,169 @@
         setLoading(false);
       };
 
-      const buildOptionLabel = (oc) => {
-        const id = safeText(oc.ordenCompraId);
-        const prov = safeText(oc.proveedorNombre);
-        const est = safeText(oc.estatus);
-        return `OC #${id} ï¿½ ${prov} (${est})`;
-      };
-
-      // Funciï¿½n para verificar si una orden tiene sesiï¿½n activa
-      const tieneSesionActiva = (ordenCompraId) => {
-        try {
-          const key = getRecepcionStorageKey(ordenCompraId);
-          if (!key) return false;
-          const raw = localStorage.getItem(key);
-          if (!raw) return false;
-          const parsed = JSON.parse(raw);
-          return Array.isArray(parsed) && parsed.length > 0;
-        } catch (e) {
-          return false;
-        }
-      };
-
       const renderOrdenes = (filterText) => {
         const text = (filterText || "").toString().trim().toLowerCase();
-        const ordenes = state.ordenes.filter((o) => {
-          if (!text) return true;
-          const label = buildOptionLabel(o).toLowerCase();
-          return label.includes(text);
+        const ordenes = state.ordenes.filter(o => !text || (o.ordenCompraId + " " + o.proveedorNombre).toLowerCase().includes(text));
+        
+        ocSelect.innerHTML = `<option value="">${ordenes.length ? "Selecciona una OC..." : "No hay resultados"}</option>`;
+        ordenes.forEach(oc => {
+          const opt = document.createElement("option");
+          opt.value = oc.ordenCompraId;
+          opt.textContent = `OC #${oc.ordenCompraId} ? ${oc.proveedorNombre} (${oc.estatus})`;
+          opt.dataset.proveedorNombre = oc.proveedorNombre;
+          ocSelect.appendChild(opt);
         });
-
-        // Filtrar grupos
-        const grupos = (state.grupos || []).filter((g) => {
-          if (!text) return true;
-          const nombreGrupo = (g.nombre_grupo || `Grupo #${g.grupoid}`).toLowerCase();
-          const proveedor = (g.proveedor_nombre || '').toLowerCase();
-          return nombreGrupo.includes(text) || proveedor.includes(text);
-        });
-
-        ocSelect.innerHTML = "";
-        const placeholder = document.createElement("option");
-        placeholder.value = "";
-        placeholder.textContent = (ordenes.length + grupos.length)
-          ? "Selecciona una OC o Grupoï¿½"
-          : "No hay OCs con ese filtro";
-        ocSelect.appendChild(placeholder);
-
-        // Agregar grupos primero con color morado
-        if (grupos.length > 0) {
-          const optgroupGrupos = document.createElement("optgroup");
-          optgroupGrupos.label = "?? Grupos de ï¿½rdenes";
-          for (const grupo of grupos) {
-            const opt = document.createElement("option");
-            opt.value = `GRUPO-${grupo.grupoid}`;
-            opt.textContent = `?? ${grupo.nombre_grupo || `Grupo #${grupo.grupoid}`} (${grupo.total_ordenes || 0} ï¿½rdenes)`;
-            opt.style.color = "#8b5cf6";
-            opt.style.fontWeight = "600";
-            opt.dataset.esGrupo = "true";
-            opt.dataset.grupoId = String(grupo.grupoid);
-            opt.dataset.proveedorNombre = safeText(grupo.proveedor_nombre);
-            opt.dataset.totalOrdenes = String(grupo.total_ordenes || 0);
-            optgroupGrupos.appendChild(opt);
-          }
-          ocSelect.appendChild(optgroupGrupos);
-        }
-
-        // Agregar ï¿½rdenes individuales
-        if (ordenes.length > 0) {
-          const optgroupOrdenes = document.createElement("optgroup");
-          optgroupOrdenes.label = "?? ï¿½rdenes Individuales";
-          for (const oc of ordenes) {
-            const opt = document.createElement("option");
-            opt.value = String(oc.ordenCompraId);
-            
-            // Verificar si tiene sesiï¿½n activa
-            const tieneSesion = tieneSesionActiva(oc.ordenCompraId);
-            
-            // Marcar visualmente las ï¿½rdenes con sesiï¿½n activa
-            if (tieneSesion) {
-              opt.textContent = `?? ${buildOptionLabel(oc)} [En progreso]`;
-              opt.style.color = "#10b981";  // Verde
-              opt.style.fontWeight = "700";
-              opt.style.background = "#ecfdf5";  // Fondo verde claro
-            } else {
-              opt.textContent = buildOptionLabel(oc);
-            }
-            
-            opt.dataset.proveedorNombre = safeText(oc.proveedorNombre);
-            opt.dataset.fechaCreacion = safeText(oc.fechaCreacion);
-            opt.dataset.fechaEntrega = safeText(oc.fechaEntregaEsperada);
-            opt.dataset.estatus = safeText(oc.estatus);
-            opt.dataset.tieneSesion = tieneSesion ? "true" : "false";
-            optgroupOrdenes.appendChild(opt);
-          }
-          ocSelect.appendChild(optgroupOrdenes);
-        }
-
         ocSelect.disabled = false;
       };
 
       const loadOrdenes = async () => {
-        ocSelect.disabled = true;
-        ocSelect.innerHTML = "<option value=\"\">Cargando ï¿½rdenesï¿½</option>";
         try {
-          // Cargar ï¿½rdenes individuales
-          const resp = await apiCall("/admin/ordenes-compra?estatus=Pendiente,Parcial", {
-            method: "GET",
-          });
-
-          if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudieron cargar ï¿½rdenes");
-          }
-
-          state.ordenes = Array.isArray(resp.data?.data?.ordenes)
-            ? resp.data.data.ordenes
-            : [];
-
-          // Cargar grupos de ï¿½rdenes
-          try {
-            const respGrupos = await apiCall("/admin/ordenes-compra/grupos", {
-              method: "GET",
-            });
-            console.log('[GRUPOS] Respuesta API:', respGrupos);
-            if (respGrupos.ok && Array.isArray(respGrupos.data?.grupos)) {
-              state.grupos = respGrupos.data.grupos;
-              console.log('[GRUPOS] Grupos cargados:', state.grupos.length);
-            } else {
-              console.warn('[GRUPOS] No hay grupos o formato incorrecto:', respGrupos.data);
-              state.grupos = [];
-            }
-          } catch (error) {
-            console.error('[GRUPOS] Error cargando grupos:', error);
-            state.grupos = [];
-          }
-
+          const resp = await apiCall("/admin/ordenes-compra?estatus=Pendiente,Parcial", { method: "GET" });
+          state.ordenes = resp.data?.data?.ordenes || [];
           renderOrdenes(ocSearch.value);
-
-          const params = new URLSearchParams(window.location.search);
-          
-          // Verificar si viene grupo_id en URL
-          const grupoIdParam = params.get("grupo_id");
-          if (grupoIdParam) {
-            console.log('[GRUPOS] Auto-seleccionando grupo:', grupoIdParam);
-            const grupoValue = `GRUPO-${grupoIdParam}`;
-            const hasGrupo = Array.from(ocSelect.options).some(
-              (o) => String(o.value) === grupoValue
-            );
-            if (hasGrupo) {
-              ocSelect.value = grupoValue;
-              ocSelect.dispatchEvent(new Event("change"));
-            } else {
-              console.warn('[GRUPOS] Grupo no encontrado en select:', grupoValue);
-            }
-          } else {
-            // Verificar si viene ordenId en URL
-            const ordenIdParam = params.get("ordenId");
-            const ordenId = Number.parseInt(ordenIdParam, 10);
-            if (Number.isInteger(ordenId) && ordenId > 0) {
-              const hasOption = Array.from(ocSelect.options).some(
-                (o) => String(o.value) === String(ordenId)
-              );
-              if (hasOption) {
-                ocSelect.value = String(ordenId);
-                ocSelect.dispatchEvent(new Event("change"));
-              }
-            }
-          }
-        } catch (error) {
-          ocSelect.disabled = true;
-          ocSelect.innerHTML = "<option value=\"\">Error cargando OCs</option>";
-          setEmpty(error.message || "No se pudieron cargar ï¿½rdenes");
-        }
-      };
-
-      const piezasPorPaqueteValue = (item) => {
-        return getPiezasPorPaquete(item);
+        } catch (error) { setEmpty("Error al cargar órdenes"); }
       };
 
       const solicitadoPzasValue = (item) => {
-        const paquetesRaw = item.cantidadSolicitadaPaquetes ?? item.cantidadsolicitadaPaquetes;
-        const paquetes = Number.parseInt(paquetesRaw, 10);
-        if (Number.isInteger(paquetes) && paquetes >= 0) {
-          return paquetes * piezasPorPaqueteValue(item);
-        }
-        return Number.parseInt(item.cantidadSolicitada, 10) || 0;
+        const paq = Number.parseInt(item.cantidadSolicitadaPaquetes ?? item.cantidadsolicitadaPaquetes, 10);
+        return Number.isInteger(paq) ? paq * getPiezasPorPaquete(item) : (Number.parseInt(item.cantidadSolicitada, 10) || 0);
       };
 
-      const recibidoPzasValue = (item) => {
-        const raw = item.piezasRecibidas ?? item.piezasrecibidas;
-        const parsed = Number.parseInt(raw, 10);
-        if (Number.isInteger(parsed) && parsed >= 0) return parsed;
-        return Number.parseInt(item.cantidadRecibida, 10) || 0;
-      };
+      const recibidoPzasValue = (item) => Number.parseInt(item.piezasRecibidas ?? item.piezasrecibidas ?? item.cantidadRecibida, 10) || 0;
 
       const costoUnitarioValue = (item) => {
-        const raw =
-          item.costounitario ??
-          item.costoUnitario ??
-          item.costo_unitario ??
-          item.costoPaquete ??
-          item.costo_paquete;
-        const parsed = Number.parseFloat(raw);
-        return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+        const raw = item.costounitario ?? item.costoUnitario ?? item.costo_unitario ?? item.costoPaquete;
+        return parseFloat(raw) || 0;
       };
 
-      const montoDePiezas = (piezas, piezasPorPaquete, costoUnitario) => {
-        const pzas = Number.parseInt(piezas, 10) || 0;
-        const ppp = Number.parseInt(piezasPorPaquete, 10) || 1;
-        const cu = Number.parseFloat(costoUnitario) || 0;
-        if (pzas <= 0 || ppp <= 0 || cu <= 0) return 0;
-        return pzas * cu;
-      };
+      const montoDePiezas = (pzas, ppp, cu) => (parseInt(pzas, 10) || 0) * (parseFloat(cu) || 0);
 
-      const showToastOk = (title) => {
-        if (typeof Swal === "undefined" || !Swal) return;
-        Swal.fire({
-          toast: true,
-          position: "top-end",
-          icon: "success",
-          title: title || "Listo",
-          showConfirmButton: false,
-          timer: 1400,
-          timerProgressBar: true,
-        });
-      };
-
-      const showToastSuccess = showToastOk;
-
-      const showToastError = (title) => {
-        if (typeof Swal === "undefined" || !Swal) return;
-        Swal.fire({
-          toast: true,
-          position: "top-end",
-          icon: "error",
-          title: title || "Error",
-          showConfirmButton: false,
-          timer: 2200,
-          timerProgressBar: true,
-        });
-      };
+      const showToastSuccess = (title) => Swal.fire({ toast: true, position: "top-end", icon: "success", title: title || "Listo", showConfirmButton: false, timer: 1400 });
+      const showToastError = (title) => Swal.fire({ toast: true, position: "top-end", icon: "error", title: title || "Error", showConfirmButton: false, timer: 2200 });
 
       const renderSplit = () => {
-        const drafts = new Map();
-        try {
-          const inputs = tbodyPendiente?.querySelectorAll?.("input.cantidad-hoy") || [];
-          for (const el of inputs) {
-            const id = el?.dataset?.detalleId;
-            if (!id) continue;
-            const val = Number.parseInt(el.value, 10);
-            if (Number.isInteger(val) && val > 0) {
-              drafts.set(String(id), val);
-            }
-          }
-        } catch (e) {
-          // ignore
-        }
+        const items = state.items || [];
+        const pendientes = items.filter(i => (solicitadoPzasValue(i) - recibidoPzasValue(i)) > 0);
+        
+        if (pendienteBadge) pendienteBadge.textContent = `${pendientes.length} PENDIENTES`;
+        if (tbodyPendiente) tbodyPendiente.innerHTML = "";
 
-        const items = Array.isArray(state.items) ? state.items : [];
-        const pendientes = items.filter((i) => {
-          const solicitado = solicitadoPzasValue(i);
-          const recibido = recibidoPzasValue(i);
-          const enSesion = sesionRecepcion
-            .filter((x) => String(x.detalleId) === String(i.detalleId))
-            .reduce((acc, x) => acc + (Number.parseInt(x.cantidad, 10) || 0), 0);
-          const pendiente = Math.max(solicitado - recibido - enSesion, 0);
-          return pendiente > 0;
+        pendientes.forEach(item => {
+          const piezas = getPiezasPorPaquete(item);
+          const pendiente = solicitadoPzasValue(item) - recibidoPzasValue(item);
+          const tr = document.createElement("tr");
+          tr.dataset.detalleId = item.detalleId;
+          tr.innerHTML = `
+            <td><img src="${item.imagen || '/icon/Logo_Razo.png'}" class="img-mini-tabla"></td>
+            <td><strong>${safeText(item.nombreProducto)}</strong></td>
+            <td>${safeText(item.categoria)}</td>
+            <td>${safeText(item.color)}</td>
+            <td>${safeText(item.dimensiones)}</td>
+            <td style="text-align:center;">${solicitadoPzasValue(item)}</td>
+            <td style="text-align:center;" class="td-por-recibir" data-detalle-id="${item.detalleId}"><strong>${pendiente}</strong></td>
+            <td><input type="number" class="form-input input-mini-tabla cantidad-hoy" data-detalle-id="${item.detalleId}" data-pendiente="${pendiente}" data-piezas="${piezas}" placeholder="0"></td>
+            <td><button type="button" class="btn btn-primary btn-sm btn-agregar-sesion" data-detalle-id="${item.detalleId}">?? Agregar</button></td>
+          `;
+          tbodyPendiente.appendChild(tr);
         });
-
-        const totalOrden = items.reduce((acc, item) => {
-          const piezas = piezasPorPaqueteValue(item);
-          const costo = costoUnitarioValue(item);
-          return acc + montoDePiezas(solicitadoPzasValue(item), piezas, costo);
-        }, 0);
-
-        const valorRecibido = items.reduce((acc, item) => {
-          const piezas = piezasPorPaqueteValue(item);
-          const costo = costoUnitarioValue(item);
-          return acc + montoDePiezas(recibidoPzasValue(item), piezas, costo);
-        }, 0);
-
-        if (lblTotalSolicitado) {
-          lblTotalSolicitado.textContent = formatMoneyMx(totalOrden);
-        }
-        if (lblTotalRecibido) {
-          lblTotalRecibido.textContent = formatMoneyMx(valorRecibido);
-        }
-
-        if (pendienteBadge) {
-          pendienteBadge.textContent = `${pendientes.length} PENDIENTES`;
-        }
-        if (recibidoBadge) {
-          recibidoBadge.textContent = `${items.length} ITEMS`;
-        }
-
-        if (tbodyPendiente) {
-          tbodyPendiente.innerHTML = "";
-        }
-        if (tbodyRecibido) {
-          tbodyRecibido.innerHTML = "";
-        }
-
-        for (const item of pendientes) {
-          const piezas = piezasPorPaqueteValue(item);
-          const solicitadoPzas = solicitadoPzasValue(item);
-          const recibidoPzas = recibidoPzasValue(item);
-          const enSesionPzas = sesionRecepcion
-            .filter((x) => String(x.detalleId) === String(item.detalleId))
-            .reduce((acc, x) => acc + (Number.parseInt(x.cantidad, 10) || 0), 0);
-          const pendientePzas = Math.max(solicitadoPzas - recibidoPzas - enSesionPzas, 0);
-
-          const tr = document.createElement("tr");
-          tr.dataset.detalleId = String(item.detalleId);
-          
-          // VISUAL INDICATOR: Aplicar color segï¿½n estado de recepciï¿½n
-          if (enSesionPzas > 0 && pendientePzas === 0) {
-            // Completamente agregado a sesiï¿½n - verde tenue
-            tr.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
-            tr.style.borderLeft = "4px solid #10b981";
-          } else if (enSesionPzas > 0) {
-            // Parcialmente en sesiï¿½n - amarillo tenue
-            tr.style.backgroundColor = "rgba(245, 158, 11, 0.1)";
-            tr.style.borderLeft = "4px solid #f59e0b";
-          }
-
-          const tdImg = document.createElement("td");
-          const img = document.createElement("img");
-          img.alt = safeText(item.nombreProducto);
-          img.src = item.imagen || '/icon/Logo_Razo.png';
-          img.className = "img-mini-tabla";
-          img.style.border = "1px solid rgba(0,0,0,0.06)";
-          img.onerror = function() { this.src = '/icon/Logo_Razo.png'; };
-          tdImg.appendChild(img);
-
-          const tdProducto = document.createElement("td");
-          tdProducto.innerHTML = `
-            <div style="font-weight: 800; color: #111827;">${safeText(item.nombreProducto)}</div>
-          `;
-
-          const tdCategoria = document.createElement("td");
-          tdCategoria.innerHTML = `
-            <div style="font-weight: 600; color: #111827;">${safeText(item.categoria || 'N/A')}</div>
-          `;
-
-          const tdColor = document.createElement("td");
-          tdColor.innerHTML = `
-            <div style="font-weight: 600; color: #111827;">${safeText(item.color || 'N/A')}</div>
-          `;
-
-          const tdDimensiones = document.createElement("td");
-          tdDimensiones.innerHTML = `
-            <div style="font-weight: 600; font-size: 0.875rem; color: #111827;">${safeText(item.dimensiones || 'N/A')}</div>
-          `;
-
-          const tdSol = document.createElement("td");
-          tdSol.style.textAlign = "center";
-          tdSol.innerHTML = `<strong>${solicitadoPzas}</strong>`;
-
-          const tdPen = document.createElement("td");
-          tdPen.style.textAlign = "center";
-          tdPen.className = 'td-por-recibir';
-          tdPen.dataset.detalleId = String(item.detalleId);
-          tdPen.innerHTML = `<strong>${pendientePzas}</strong>`;
-
-          const tdInput = document.createElement("td");
-          tdInput.style.position = "relative";
-          
-          const input = document.createElement("input");
-          input.type = "number";
-          input.min = "1";
-          input.max = String(pendientePzas);
-          input.step = "1";
-          input.placeholder = 0;
-          input.className = "form-input input-mini-tabla cantidad-hoy";
-          input.title = `Ingresa la cantidad en PIEZAS (${piezas} pzas = 1 paquete)`;
-          input.dataset.detalleId = String(item.detalleId);
-          input.dataset.varianteId = String(item.varianteId);
-          input.dataset.pendiente = String(pendientePzas);
-          input.dataset.piezas = String(piezas);
-          const draft = drafts.get(String(item.detalleId));
-          if (draft) {
-            input.value = String(draft);
-            updateHelper();
-          }
-
-          const renderColor = () => {
-            const val = Number.parseInt(input.value, 10);
-            if (!Number.isInteger(val) || val <= 0) {
-              input.style.borderColor = "";
-              return;
-            }
-            if (val < pendientePzas) {
-              input.style.borderColor = "#f59e0b";
-            } else {
-              input.style.borderColor = "#10b981";
-            }
-          };
-
-          // Helper text que muestra conversiï¿½n a paquetes
-          const helperText = document.createElement("div");
-          helperText.style.cssText = "font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem; min-height: 1rem;";
-          
-          const updateHelper = () => {
-            const val = Number.parseInt(input.value, 10);
-            if (Number.isInteger(val) && val > 0) {
-              const paquetes = Math.floor(val / piezas);
-              const resto = val % piezas;
-              if (paquetes > 0) {
-                helperText.textContent = `ï¿½ ${paquetes} paq${resto > 0 ? ` + ${resto} pzas` : ''}`;
-                helperText.style.color = "#10b981";
-              } else {
-                helperText.textContent = `${val} pzas (< 1 paq)`;
-                helperText.style.color = "#f59e0b";
-              }
-            } else {
-              helperText.textContent = "";
-            }
-          };
-          
-          input.addEventListener("input", () => {
-            renderColor();
-            updateHelper();
-          });
-          input.addEventListener("change", () => {
-            renderColor();
-            updateHelper();
-          });
-          renderColor();
-          updateHelper();
-          
-          const wrapper = document.createElement("div");
-          wrapper.appendChild(input);
-          wrapper.appendChild(helperText);
-          tdInput.appendChild(wrapper);
-
-          const tdBtn = document.createElement("td");
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "btn btn-primary btn-agregar-sesion";
-          btn.textContent = "? Agregar";
-          btn.style.padding = "0.45rem 0.75rem";
-          btn.style.fontSize = "0.875rem";
-          btn.dataset.detalleId = String(item.detalleId);
-          tdBtn.appendChild(btn);
-
-          tr.appendChild(tdImg);
-          tr.appendChild(tdProducto);
-          tr.appendChild(tdCategoria);
-          tr.appendChild(tdColor);
-          tr.appendChild(tdDimensiones);
-          tr.appendChild(tdSol);
-          tr.appendChild(tdPen);
-          tr.appendChild(tdInput);
-          tr.appendChild(tdBtn);
-          if (tbodyPendiente) {
-            tbodyPendiente.appendChild(tr);
-          }
-        }
-
-        for (const item of items) {
-          const piezas = piezasPorPaqueteValue(item);
-          const solicitadoPzas = solicitadoPzasValue(item);
-          const recibidoPzas = recibidoPzasValue(item);
-
-          const pct = solicitadoPzas > 0 ? Math.min(100, Math.round((recibidoPzas / solicitadoPzas) * 100)) : 0;
-          const isDone = recibidoPzas >= solicitadoPzas && solicitadoPzas > 0;
-
-          const tr = document.createElement("tr");
-          // Visual indicator: green for complete, yellow for partial
-          if (isDone) {
-            tr.style.backgroundColor = "rgba(16, 185, 129, 0.1)"; // Verde tenue
-            tr.style.borderLeft = "4px solid #10b981";
-          } else if (recibidoPzas > 0) {
-            tr.style.backgroundColor = "rgba(245, 158, 11, 0.1)"; // Amarillo tenue
-            tr.style.borderLeft = "4px solid #f59e0b";
-          }
-
-          const tdImg = document.createElement("td");
-          const img = document.createElement("img");
-          img.alt = safeText(item.nombreProducto);
-          img.src = item.imagen || '/icon/Logo_Razo.png';
-          img.className = "img-mini-tabla";
-          img.style.border = "1px solid rgba(0,0,0,0.06)";
-          img.onerror = function() { this.src = '/icon/Logo_Razo.png'; };
-          tdImg.appendChild(img);
-
-          const tdProducto = document.createElement("td");
-          tdProducto.innerHTML = `
-            <div style="font-weight: 800; color: #111827;">${safeText(item.nombreProducto)}</div>
-          `;
-
-          const tdCategoria = document.createElement("td");
-          tdCategoria.innerHTML = `
-            <div style="font-weight: 600; color: #111827;">${safeText(item.categoria || 'N/A')}</div>
-          `;
-
-          const tdColor = document.createElement("td");
-          tdColor.innerHTML = `
-            <div style="font-weight: 600; color: #111827;">${safeText(item.color || 'N/A')}</div>
-          `;
-
-          const tdDimensiones = document.createElement("td");
-          tdDimensiones.innerHTML = `
-            <div style="font-weight: 600; font-size: 0.875rem; color: #111827;">${safeText(item.dimensiones || 'N/A')}</div>
-          `;
-
-          const tdRec = document.createElement("td");
-          tdRec.style.textAlign = "center";
-          tdRec.innerHTML = `<strong>${recibidoPzas}</strong>`;
-
-          const tdProg = document.createElement("td");
-          const wrap = document.createElement("div");
-          wrap.style.display = "grid";
-          wrap.style.gap = "0.35rem";
-
-          const top = document.createElement("div");
-          top.style.display = "flex";
-          top.style.alignItems = "center";
-          top.style.justifyContent = "space-between";
-          top.style.gap = "0.75rem";
-          top.innerHTML = `
-            <div style="font-weight: 800; color: ${isDone ? "#10b981" : "#f59e0b"}">
-              ${isDone ? "? Completo" : "?? Parcial"}
-            </div>
-            <div style="font-size: 0.85rem; color: #6b7280">${recibidoPzas}/${solicitadoPzas}</div>
-          `;
-
-          const barOuter = document.createElement("div");
-          barOuter.className = "recepcion-progress-outer";
-          const barInner = document.createElement("div");
-          barInner.className = "recepcion-progress-inner";
-          barInner.style.width = `${pct}%`;
-          barInner.style.background = isDone ? "#10b981" : "#f59e0b";
-          barOuter.appendChild(barInner);
-
-          wrap.appendChild(top);
-          wrap.appendChild(barOuter);
-          tdProg.appendChild(wrap);
-
-          tr.appendChild(tdImg);
-          tr.appendChild(tdProducto);
-          tr.appendChild(tdCategoria);
-          tr.appendChild(tdColor);
-          tr.appendChild(tdDimensiones);
-          tr.appendChild(tdRec);
-          tr.appendChild(tdProg);
-          if (tbodyRecibido) {
-            tbodyRecibido.appendChild(tr);
-          }
-        }
-
-        if (!pendientes.length) {
-          const tr = document.createElement("tr");
-          const td = document.createElement("td");
-          td.colSpan = 8;
-          td.style.textAlign = "center";
-          td.style.color = "#6b7280";
-          td.style.padding = "1rem";
-          td.textContent = "No hay pendientes por recibir.";
-          tr.appendChild(td);
-          if (tbodyPendiente) {
-            tbodyPendiente.appendChild(tr);
-          }
-        }
-      };
-
-      // Funciï¿½n para actualizar el contador "Por recibir" de un item especï¿½fico
-      const actualizarContadorPorRecibir = (detalleId) => {
-        const item = (Array.isArray(state.items) ? state.items : []).find(
-          (x) => String(x.detalleId) === String(detalleId)
-        );
-        if (!item) return;
-
-        const solicitadoPzas = solicitadoPzasValue(item);
-        const recibidoPzas = recibidoPzasValue(item);
-        const enSesionPzas = sesionRecepcion
-          .filter((x) => String(x.detalleId) === String(detalleId))
-          .reduce((acc, x) => acc + (Number.parseInt(x.cantidadPiezas || x.cantidad, 10) || 0), 0);
-        const pendientePzas = Math.max(solicitadoPzas - recibidoPzas - enSesionPzas, 0);
-
-        // Actualizar celda "Por recibir"
-        const tdPorRecibir = document.querySelector(`.td-por-recibir[data-detalle-id="${detalleId}"]`);
-        if (tdPorRecibir) {
-          tdPorRecibir.innerHTML = `<strong>${pendientePzas}</strong>`;
-        }
-
-        // Actualizar color de fila
-        const row = document.querySelector(`tr[data-detalle-id="${detalleId}"]`);
-        if (row) {
-          if (enSesionPzas > 0 && pendientePzas === 0) {
-            row.style.backgroundColor = "rgba(16, 185, 129, 0.1)"; // Verde tenue
-            row.style.borderLeft = "4px solid #10b981";
-          } else if (enSesionPzas > 0) {
-            row.style.backgroundColor = "rgba(245, 158, 11, 0.1)"; // Amarillo tenue
-            row.style.borderLeft = "4px solid #f59e0b";
-          } else {
-            row.style.backgroundColor = ""; // Sin color
-          }
-        }
       };
 
       const renderizarTablaSesion = () => {
-        const items = Array.isArray(sesionRecepcion) ? sesionRecepcion : [];
-        const count = items.length;
-        const totalMonto = items.reduce((acc, x) => {
-          const piezas = x.piezasPorPaquete ?? x.piezasporpaquete;
-          const costo = x.costoUnitario ?? x.costounitario;
-          const cantidadPzas = x.cantidadPiezas ?? x.cantidad;  // ? Compatibilidad con datos antiguos
-          return acc + montoDePiezas(cantidadPzas, piezas, costo);
-        }, 0);
-
-        hasSessionData = count > 0;
-
-        if (sesionBadge) {
-          sesionBadge.textContent = `${count} ï¿½TEMS`;
+        const items = sesionRecepcion || [];
+        if (sesionBadge) sesionBadge.textContent = `${items.length} ÍTEMS`;
+        if (sesionEmpty) sesionEmpty.style.display = items.length ? "none" : "block";
+        if (sesionTableWrap) sesionTableWrap.style.display = items.length ? "block" : "none";
+        if (tbodySesion) {
+          tbodySesion.innerHTML = items.map(it => `
+            <tr>
+              <td><strong>${it.nombreProducto}</strong></td>
+              <td><code>${it.sku}</code></td>
+              <td>${it.categoria}</td>
+              <td>${it.color}</td>
+              <td>${it.dimensiones}</td>
+              <td style="text-align:center;"><strong>${it.cantidadPiezas}</strong></td>
+              <td style="text-align:right;"><button class="btn btn-danger btn-sm" onclick="removerItemSesion('${it.detalleId}')"><i class="bi bi-trash"></i></button></td>
+            </tr>
+          `).join("");
         }
-        if (lblTotalSesion) {
-          lblTotalSesion.textContent = formatMoneyMx(totalMonto);
-        }
-
-        if (sesionEmpty) {
-          sesionEmpty.style.display = count ? "none" : "block";
-        }
-        if (sesionTableWrap) {
-          sesionTableWrap.style.display = count ? "block" : "none";
-        }
-        if (btnFinalizarRecepcion) {
-          btnFinalizarRecepcion.style.display = count ? "inline-flex" : "none";
-          btnFinalizarRecepcion.textContent = `?? Finalizar Recepciï¿½n y Generar Cuenta por Pagar (${count} ï¿½tems)`;
-        }
-
-        if (btnConfirmarGenerarCxp) {
-          btnConfirmarGenerarCxp.style.display = count ? "inline-flex" : "none";
-          btnConfirmarGenerarCxp.disabled = !count;
-        }
-
-        // FEATURE 1: Mostrar botï¿½n de cerrar sesiï¿½n SOLO si el admin estï¿½ trabajando en la sesiï¿½n Y hay items pendientes
-        const btnCerrarSesion = document.getElementById('btnCerrarSesion');
-        if (btnCerrarSesion) {
-          // Calcular si hay items pendientes de recibir
-          const items = Array.isArray(state.items) ? state.items : [];
-          const hasPendientes = items.some((i) => {
-            const sol = solicitadoPzasValue(i);
-            const rec = recibidoPzasValue(i);
-            const ses = sesionRecepcion
-              .filter((x) => String(x.detalleId) === String(i.detalleId))
-              .reduce((acc, x) => acc + (Number.parseInt(x.cantidad, 10) || 0), 0);
-            const pen = Math.max(sol - rec - ses, 0);
-            return pen > 0;
-          });
-          
-          // CRï¿½TICO: Solo mostrar si NO estï¿½ en modo lectura (sesionBloqueada = false significa que el admin Sï¿½ estï¿½ trabajando)
-          // Y ademï¿½s hay productos pendientes
-          const puedeTrabajar = !sesionBloqueada;
-          btnCerrarSesion.style.display = (puedeTrabajar && hasPendientes) ? "block" : "none";
-        }
-
-        if (sesionFloatingCounter) {
-          sesionFloatingCounter.style.display = count ? "block" : "none";
-          sesionFloatingCounter.textContent = `Items en sesiï¿½n: ${count} | Total: ${formatMoneyMx(totalMonto)}`;
-        }
-
-        if (!tbodySesion) return;
-        tbodySesion.innerHTML = "";
-
-        for (const it of items) {
-          const tr = document.createElement("tr");
-
-          // Obtener informaciï¿½n adicional del item desde state.items
-          const itemInfo = Array.isArray(state.items) ? state.items.find(x => String(x.detalleId) === String(it.detalleId)) : null;
-
-          const tdNombre = document.createElement("td");
-          tdNombre.className = "td-truncado";
-          tdNombre.title = safeText(it.nombreProducto);
-          tdNombre.innerHTML = `<div style="font-weight: 800; color: #111827;">${safeText(
-            it.nombreProducto
-          )}</div>`;
-
-          const tdSku = document.createElement("td");
-          tdSku.className = "td-truncado";
-          tdSku.title = safeText(it.sku);
-          tdSku.innerHTML = `<code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(
-            it.sku
-          )}</code>`;
-
-          const tdCategoria = document.createElement("td");
-          tdCategoria.textContent = safeText(itemInfo?.categoria || it.categoria || 'N/A');
-
-          const tdColor = document.createElement("td");
-          tdColor.textContent = safeText(itemInfo?.color || it.color || 'N/A');
-
-          const tdMedida = document.createElement("td");
-          tdMedida.textContent = safeText(itemInfo?.dimensionesFisicas || itemInfo?.dimensiones || it.dimensiones || 'N/A');
-
-          const tdCant = document.createElement("td");
-          tdCant.style.textAlign = "center";
-          const cantidadPzas = it.cantidadPiezas ?? it.cantidad;  // ? Compatibilidad con datos antiguos
-          tdCant.innerHTML = `<strong>${(Number.parseInt(cantidadPzas, 10) || 0).toLocaleString("es-MX")}</strong>`;
-
-          const tdAcc = document.createElement("td");
-          tdAcc.style.textAlign = "right";
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "btn btn-danger btn-sm";
-          btn.innerHTML = '<i class="bi bi-trash"></i>';
-          btn.style.padding = "0.35rem 0.6rem";
-          btn.addEventListener("click", () => {
-            sesionRecepcion = sesionRecepcion.filter(
-              (x) => String(x.detalleId) !== String(it.detalleId)
-            );
-            persistSesionRecepcion();
-            renderizarTablaSesion();
-            renderSplit();
-          });
-          tdAcc.appendChild(btn);
-
-          tr.appendChild(tdNombre);
-          tr.appendChild(tdSku);
-          tr.appendChild(tdCategoria);
-          tr.appendChild(tdColor);
-          tr.appendChild(tdMedida);
-          tr.appendChild(tdCant);
-          tr.appendChild(tdAcc);
-          tbodySesion.appendChild(tr);
-        }
-
-        // Calcular totales financieros directamente
-        let totalPiezas = 0;
-        let totalCosto = 0;
-        let totalVenta = 0;
-
-        items.forEach(item => {
-          const cantidadPiezas = parseInt(item.cantidadPiezas || item.cantidad, 10) || 0;
-          const costoUnitario = parseFloat(item.costoUnitario || item.costounitario || 0);
-          
-          // Obtener precio de venta desde state.items
-          const itemInfo = Array.isArray(state.items) ? state.items.find(x => String(x.detalleId) === String(item.detalleId)) : null;
-          const precioVenta = parseFloat(itemInfo?.precioofertaunitario || itemInfo?.preciounitario || 0);
-          
-          totalPiezas += cantidadPiezas;
-          totalCosto += cantidadPiezas * costoUnitario;
-          totalVenta += cantidadPiezas * precioVenta;
+        
+        let tPzas = 0, tCosto = 0, tVenta = 0;
+        items.forEach(it => {
+          tPzas += it.cantidadPiezas;
+          tCosto += it.cantidadPiezas * it.costoUnitario;
+          const info = state.items.find(x => String(x.detalleId) === String(it.detalleId));
+          tVenta += it.cantidadPiezas * parseFloat(info?.precioofertaunitario || info?.preciounitario || 0);
         });
-
-        // Actualizar labels de totales
-        const lblTotalPiezas = document.getElementById('lbl-total-piezas');
-        const lblTotalVenta = document.getElementById('lbl-total-venta');
-
-        if (lblTotalPiezas) {
-          lblTotalPiezas.textContent = `${totalPiezas.toLocaleString('es-MX')} pzas`;
-        }
-        if (lblTotalSesion) {
-          lblTotalSesion.textContent = `$${totalCosto.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        }
-        if (lblTotalVenta) {
-          lblTotalVenta.textContent = `$${totalVenta.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        }
+        document.getElementById('lbl-total-piezas').textContent = `${tPzas} pzas`;
+        document.getElementById('lbl-total-sesion').textContent = formatMoneyMx(tCosto);
+        document.getElementById('lbl-total-venta').textContent = formatMoneyMx(tVenta);
+        if (btnConfirmarGenerarCxp) btnConfirmarGenerarCxp.disabled = !items.length;
       };
 
-      // API call helper function
-      const apiCall = async (endpoint, options = {}) => {
-        const token = typeof getEffectiveToken === "function" ? getEffectiveToken() : null;
-        const headers = options.headers || {};
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-        if (!headers["Content-Type"] && options.method !== "GET") {
-          headers["Content-Type"] = "application/json";
-        }
-
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-          ...options,
-          headers,
-        });
-
-        let data = null;
-        try {
-          data = await response.json();
-        } catch (e) {
-          data = null;
-        }
-
-        if (response.status === 401) {
-          if (typeof clearAuthData === "function") {
-            clearAuthData();
-          }
-          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
-            await Swal.fire({
-              icon: "warning",
-              title: "Sesiï¿½n Expirada",
-              text: "Tu sesiï¿½n ha expirado. Por favor inicia sesiï¿½n nuevamente.",
-              confirmButtonColor: "#F97316",
-              allowOutsideClick: false,
-            });
-          }
-          window.location.href = "/login.html";
-          throw new Error("Sesiï¿½n expirada");
-        }
-
-        return { ok: response.ok, status: response.status, data };
-      };
-
-      const apiCallFormData = async (endpoint, formData) => {
-        const token = typeof getEffectiveToken === "function" ? getEffectiveToken() : null;
-        const headers = {};
-        if (token) {
-          headers["Authorization"] = `Bearer ${token}`;
-        }
-
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-          method: "POST",
-          headers,
-          body: formData,
-        });
-
-        let data = null;
-        try {
-          data = await response.json();
-        } catch (e) {
-          data = null;
-        }
-
-        if (response.status === 401) {
-          if (typeof clearAuthData === "function") {
-            clearAuthData();
-          }
-          if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
-            await Swal.fire({
-              icon: "warning",
-              title: "Sesiï¿½n Expirada",
-              text: "Tu sesiï¿½n ha expirado. Por favor inicia sesiï¿½n nuevamente.",
-              confirmButtonColor: "#F97316",
-              allowOutsideClick: false,
-            });
-          }
-          window.location.href = "/login.html";
-          throw new Error("Sesiï¿½n expirada");
-        }
-
-        return { ok: response.ok, status: response.status, data };
+      window.removerItemSesion = (id) => {
+        sesionRecepcion = sesionRecepcion.filter(x => String(x.detalleId) !== String(id));
+        persistSesionRecepcion();
+        renderizarTablaSesion();
+        renderSplit();
       };
 
       const finalizarRecepcion = async () => {
-        if (!state.orden || !state.orden.ordenCompraId) {
-          showToastError("Selecciona una OC");
-          return;
-        }
-        if (!Array.isArray(sesionRecepcion) || sesionRecepcion.length === 0) {
-          showToastError("No hay items en la sesiï¿½n");
-          return;
-        }
-
-        // Calcular totales para el modal de confirmaciï¿½n
-        let totalPiezasSesion = 0;
-        let montoTotalSesion = 0;
-        const itemsOrden = Array.isArray(state.items) ? state.items : [];
-        
-        // Construir tabla de resumen
-        let tablaResumen = '<table class="admin-table" style="margin: 1rem 0; font-size: 0.875rem;">';
-        tablaResumen += '<thead><tr>';
-        tablaResumen += '<th>Producto</th>';
-        tablaResumen += '<th style="text-align: center;">Piezas Sesiï¿½n</th>';
-        tablaResumen += '<th style="text-align: center;">Total Recibido</th>';
-        tablaResumen += '<th style="text-align: right;">Subtotal</th>';
-        tablaResumen += '</tr></thead><tbody>';
-
-        for (const itemSesion of sesionRecepcion) {
-          // Buscar el item correspondiente en la orden para obtener datos completos
-          const itemOC = itemsOrden.find(x => String(x.detalleId) === String(itemSesion.detalleId));
-          
-          const cantidadSesion = Number.parseInt(itemSesion.cantidadPiezas || itemSesion.cantidad, 10) || 0;  // ? Compatibilidad
-          const piezasPorPaquete = Number.parseInt(itemSesion.piezasPorPaquete || itemSesion.piezasporpaquete, 10) || 1;
-          const costoUnitario = Number.parseFloat(itemSesion.costoUnitario || itemSesion.costounitario) || 0;
-          
-          // Cantidad ya recibida en BD (antes de esta sesiï¿½n)
-          const cantidadRecibidaBD = itemOC ? recibidoPzasValue(itemOC) : 0;
-          
-          // Total final = Lo que ya habï¿½a + Lo que acabo de picar
-          const totalFinal = cantidadRecibidaBD + cantidadSesion;
-          
-          // Calcular subtotal
-          const subtotal = montoDePiezas(cantidadSesion, piezasPorPaquete, costoUnitario);
-          
-          totalPiezasSesion += cantidadSesion;
-          montoTotalSesion += subtotal;
-          
-          tablaResumen += '<tr>';
-          tablaResumen += `<td style="padding: 0.5rem; border: 1px solid #e5e7eb;"><strong>${safeText(itemSesion.nombreProducto)}</strong><br/><small>${safeText(itemSesion.sku)}</small></td>`;
-          tablaResumen += `<td style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center; color: #F97316; font-weight: 700;">${cantidadSesion.toLocaleString('es-MX')}</td>`;
-          tablaResumen += `<td style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center; color: #10b981; font-weight: 700;">${totalFinal.toLocaleString('es-MX')}</td>`;
-          tablaResumen += `<td style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: right;">${formatMoneyMx(subtotal)}</td>`;
-          tablaResumen += '</tr>';
-        }
-        
-        tablaResumen += '</tbody>';
-        tablaResumen += '<tfoot><tr style="background: #f9fafb; font-weight: 700;">';
-        tablaResumen += '<td style="padding: 0.75rem; border: 1px solid #e5e7eb;" colspan="2">TOTALES</td>';
-        tablaResumen += `<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: center; color: #10b981;">${totalPiezasSesion.toLocaleString('es-MX')} pzas</td>`;
-        tablaResumen += `<td style="padding: 0.75rem; border: 1px solid #e5e7eb; text-align: right; color: #F97316; font-size: 1.1rem;">${formatMoneyMx(montoTotalSesion)}</td>`;
-        tablaResumen += '</tr></tfoot></table>';
-
-        // Modal de confirmaciï¿½n con resumen
-        const confirmacion = await Swal.fire({
-          title: '?? Confirmar Recepciï¿½n',
-          html: `
-            <div style="text-align: left;">
-              <p style="margin-bottom: 1rem; color: #6b7280;">Revisa el resumen de la recepciï¿½n antes de continuar:</p>
-              ${tablaResumen}
-              <div style="margin-top: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem;">
-                <strong>?? Nota:</strong> Esta acciï¿½n generarï¿½ una Cuenta por Pagar y actualizarï¿½ el inventario.
-              </div>
-            </div>
-          `,
-          width: '800px',
+        const result = await Swal.fire({
+          title: '?? Finalizar Recepción',
+          html: '<input id="swalRef" class="swal2-input" placeholder="Número de Remisión">',
           showCancelButton: true,
-          confirmButtonText: 'Continuar',
-          cancelButtonText: 'Cancelar',
+          confirmButtonText: 'Finalizar',
           confirmButtonColor: '#F97316',
-          focusCancel: true
-        });
-
-        if (!confirmacion.isConfirmed) {
-          return;
-        }
-
-        // Modal para capturar remisiï¿½n y archivo con sugerencia inteligente
-        const sugerenciaRemision = getSuggestedRemision();
-        const lastRemision = localStorage.getItem('last_remision_code');
-        
-        const modal = await Swal.fire({
-          title: "?? Finalizar Recepciï¿½n y Generar Cuenta por Pagar",
-          html: `
-            <div style="text-align:left;">
-              <label for="swalRef" style="display:block; font-weight:700; margin-bottom:0.35rem;">Nï¿½mero de Remisiï¿½n/Factura</label>
-              <input id="swalRef" class="swal2-input" value="${sugerenciaRemision}" placeholder="Ej: REM-5002" style="margin:0;" />
-              ${sugerenciaRemision ? `
-                <div style="margin-top: 0.5rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem; font-size: 0.875rem;">
-                  <strong>?? Sugerencia:</strong> El consecutivo anterior fue <strong>${lastRemision}</strong>
-                </div>
-              ` : ''}
-              <div style="height: 0.75rem;"></div>
-              <label for="swalFile" style="display:block; font-weight:700; margin-bottom:0.35rem;">Foto de Remisiï¿½n (opcional)</label>
-              <input id="swalFile" type="file" class="swal2-file" accept="image/*,application/pdf" />
-            </div>
-          `,
-          focusConfirm: false,
-          showCancelButton: true,
-          confirmButtonText: "Finalizar y Generar Cuenta",
-          confirmButtonColor: "#F97316",
-          cancelButtonText: "Cancelar",
           preConfirm: () => {
-            const ref = document.getElementById("swalRef")?.value?.trim();
-            if (!ref) {
-              Swal.showValidationMessage("El nï¿½mero de remisiï¿½n/factura es obligatorio");
-              return null;
-            }
-            
-            // Guardar la remisiï¿½n para la prï¿½xima vez
-            saveLastRemision(ref);
-            
-            const file = document.getElementById("swalFile")?.files?.[0] || null;
-            return { ref, file };
-          },
+            const ref = document.getElementById('swalRef').value;
+            if (!ref) return Swal.showValidationMessage('La remisión es obligatoria');
+            return ref;
+          }
         });
 
-        if (!modal.isConfirmed || !modal.value) {
-          return;
-        }
+        if (!result.isConfirmed) return;
 
         const fd = new FormData();
-        fd.append("ordenCompraId", String(state.orden.ordenCompraId));
-        fd.append("referenciaProveedor", modal.value.ref);
+        fd.append("ordenCompraId", state.orden.ordenCompraId);
+        fd.append("referenciaProveedor", result.value);
         fd.append("items", JSON.stringify(sesionRecepcion));
-        if (modal.value.file) {
-          fd.append("archivoRemision", modal.value.file);
-        }
 
         try {
-          // MISIï¿½N 2: Anti-double-click protection
-          const btnToDisable = btnConfirmarGenerarCxp || btnFinalizarRecepcion;
-          if (btnToDisable) {
-            btnToDisable.disabled = true;
-            const originalHTML = btnToDisable.innerHTML;
-            btnToDisable.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
-            btnToDisable.dataset.originalHtml = originalHTML;
-          }
-
           const resp = await apiCallFormData("/admin/recepcion-masiva", fd);
-          if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudo finalizar recepciï¿½n");
-          }
-
-          clearSesionRecepcionStorage(state.orden.ordenCompraId);
-          sesionRecepcion = [];
-          hasSessionData = false;
-          isExported = false;
-          renderizarTablaSesion();
-          await loadRecepcion(state.orden.ordenCompraId);
-          showToastSuccess("Recepciï¿½n finalizada");
-          
-          // NO re-habilitar el botï¿½n en caso de ï¿½xito (la pï¿½gina se recarga)
-        } catch (error) {
-          console.error(error);
-          showToastError(error.message || "Error al finalizar");
-          
-          // Solo re-habilitar el botï¿½n si hay error
-          const btnToEnable = btnConfirmarGenerarCxp || btnFinalizarRecepcion;
-          if (btnToEnable) {
-            btnToEnable.disabled = false;
-            if (btnToEnable.dataset.originalHtml) {
-              btnToEnable.innerHTML = btnToEnable.dataset.originalHtml;
-            }
-          }
-        }
-      };
-
-      // Variables de bloqueo de sesiï¿½n
-      let sesionBloqueada = false;
-      let adminTrabajando = null;
-      let esSuperAdmin = false;
-
-      const verificarBloqueoSesion = async (ordenCompraId) => {
-        try {
-          const resp = await apiCall(
-            `/admin/ordenes-compra/${encodeURIComponent(ordenCompraId)}/verificar-bloqueo`,
-            { method: "GET" }
-          );
-
-          if (!resp.ok) {
-            console.warn('No se pudo verificar bloqueo de sesiï¿½n');
-            return { bloqueada: false, puedeEditar: true };
-          }
-
-          console.log('?? [DEBUG RESPUESTA] resp completo:', resp);
-          console.log('?? [DEBUG RESPUESTA] resp.data:', resp.data);
-          console.log('?? [DEBUG RESPUESTA] resp.data.data:', resp.data?.data);
-          
-          const data = resp.data?.data || resp.data || {};
-          console.log('?? [DEBUG RESPUESTA] data final:', data);
-          console.log('?? [DEBUG RESPUESTA] data.bloqueada:', data.bloqueada, 'tipo:', typeof data.bloqueada);
-          console.log('?? [DEBUG RESPUESTA] data.esPropietario:', data.esPropietario, 'tipo:', typeof data.esPropietario);
-          
-          // Verificar si el usuario actual es super admin
-          const adminInfo = JSON.parse(localStorage.getItem('razoconnect_admin') || '{}');
-          console.log('?? [DEBUG ROL] Admin Info:', adminInfo);
-          console.log('?? [DEBUG ROL] Rol original:', adminInfo.rol);
-          const rolNormalizado = (adminInfo.rol || '').toLowerCase().replace(/\s+/g, '');
-          console.log('?? [DEBUG ROL] Rol normalizado:', rolNormalizado);
-          esSuperAdmin = rolNormalizado === 'superadmin';
-          console.log('?? [DEBUG ROL] Es super admin:', esSuperAdmin);
-          
-          // CRï¿½TICO: Super admin debe ver modo lectura si OTRO admin estï¿½ trabajando
-          // Solo puede editar si es propietario O si la sesiï¿½n estï¿½ libre
-          sesionBloqueada = data.bloqueada && !data.esPropietario;
-          adminTrabajando = data.nombreAdmin;
-
-          return data;
-        } catch (error) {
-          console.error('Error verificando bloqueo:', error);
-          return { bloqueada: false, puedeEditar: true };
-        }
-      };
-
-      const bloquearSesion = async (ordenCompraId) => {
-        try {
-          const resp = await apiCall(
-            `/admin/ordenes-compra/${encodeURIComponent(ordenCompraId)}/bloquear-sesion`,
-            { method: "POST" }
-          );
-          return resp.ok;
-        } catch (error) {
-          console.error('Error bloqueando sesiï¿½n:', error);
-          return false;
-        }
-      };
-
-      const desbloquearSesion = async (ordenCompraId) => {
-        try {
-          await apiCall(
-            `/admin/ordenes-compra/${encodeURIComponent(ordenCompraId)}/desbloquear-sesion`,
-            { method: "POST" }
-          );
-        } catch (error) {
-          console.error('Error desbloqueando sesiï¿½n:', error);
-        }
-      };
-
-      const forzarLiberacion = async (ordenCompraId) => {
-        try {
-          const confirmacion = await Swal.fire({
-            title: '?? Forzar Liberaciï¿½n de Sesiï¿½n',
-            html: `<p>ï¿½Estï¿½s seguro de que deseas liberar la sesiï¿½n de <strong>${adminTrabajando}</strong>?</p>
-                   <p class="text-muted" style="font-size: 0.875rem;">Esta acciï¿½n permitirï¿½ que otros administradores editen esta orden.</p>`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Sï¿½, liberar sesiï¿½n',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#F97316'
-          });
-
-          if (!confirmacion.isConfirmed) return;
-
-          const resp = await apiCall(
-            `/admin/ordenes-compra/${encodeURIComponent(ordenCompraId)}/forzar-liberacion`,
-            { method: "POST" }
-          );
-
           if (resp.ok) {
-            showToastSuccess('Sesiï¿½n liberada exitosamente');
-            await loadRecepcion(ordenCompraId);
-          } else {
-            showToastError('No se pudo liberar la sesiï¿½n');
-          }
-        } catch (error) {
-          console.error('Error forzando liberaciï¿½n:', error);
-          showToastError('Error al liberar sesiï¿½n');
-        }
-      };
-
-      const actualizarBarraEstado = (bloqueo) => {
-        console.log('?? [ACTUALIZAR BARRA] Llamada con bloqueo:', bloqueo);
-        console.log('?? [ACTUALIZAR BARRA] esSuperAdmin:', esSuperAdmin);
-        
-        const sessionStatusBar = document.getElementById('sessionStatusBar');
-        const modeBadge = document.getElementById('modeBadge');
-        const modeText = document.getElementById('modeText');
-        const sessionInfoText = document.getElementById('sessionInfoText');
-        const superAdminControls = document.getElementById('superAdminControls');
-
-        console.log('?? [ACTUALIZAR BARRA] Elementos encontrados:', {
-          sessionStatusBar: !!sessionStatusBar,
-          modeBadge: !!modeBadge,
-          modeText: !!modeText,
-          sessionInfoText: !!sessionInfoText,
-          superAdminControls: !!superAdminControls
-        });
-
-        if (!sessionStatusBar) return;
-
-        sessionStatusBar.style.display = 'block';
-
-        // CRï¿½TICO: Mostrar modo lectura si OTRO admin estï¿½ trabajando (incluso para super admin)
-        if (bloqueo.bloqueada && !bloqueo.esPropietario) {
-          // Modo Solo Lectura
-          modeBadge.style.background = 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)';
-          modeBadge.style.color = '#991B1B';
-          modeBadge.style.border = '2px solid #DC2626';
-          modeBadge.querySelector('i').className = 'bi bi-eye';
-          modeText.textContent = 'Solo Lectura';
-          sessionInfoText.innerHTML = `<strong>${bloqueo.nombreAdmin}</strong> estï¿½ trabajando en esta orden`;
-        } else {
-          // Modo Operador
-          modeBadge.style.background = 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)';
-          modeBadge.style.color = '#065F46';
-          modeBadge.style.border = '2px solid #10B981';
-          modeBadge.querySelector('i').className = 'bi bi-pencil-square';
-          modeText.textContent = 'Modo Operador';
-          sessionInfoText.innerHTML = 'Estï¿½s trabajando en esta orden';
-        }
-
-        // Mostrar controles de super admin si hay sesiï¿½n bloqueada (incluso si es propietario)
-        if (superAdminControls) {
-          // Convertir explï¿½citamente a booleanos para evitar problemas
-          const bloqueada = Boolean(bloqueo.bloqueada);
-          
-          console.log('?? [SUPER ADMIN CHECK]', {
-            esSuperAdmin,
-            bloqueada,
-            condicion: esSuperAdmin && bloqueada
-          });
-          
-          // Super admin puede reasignar cualquier sesiï¿½n, incluso la propia
-          if (esSuperAdmin && bloqueada) {
-            superAdminControls.style.display = 'flex';
-            console.log('? [SUPER ADMIN] Mostrando controles de reasignaciï¿½n');
-          } else {
-            superAdminControls.style.display = 'none';
-            console.log('? [SUPER ADMIN] Ocultando controles');
-          }
-        } else {
-          console.error('?? [SUPER ADMIN] Elemento superAdminControls no encontrado en el DOM');
-        }
-      };
-
-      const aplicarModoSoloLectura = () => {
-        // Deshabilitar todos los inputs y botones de ediciï¿½n
-        const inputs = document.querySelectorAll('.cantidad-hoy, input[type="number"]');
-        inputs.forEach(input => input.disabled = true);
-
-        const botonesAgregar = document.querySelectorAll('.btn-agregar-sesion, .btn-agregar-a-orden');
-        botonesAgregar.forEach(btn => btn.disabled = true);
-
-        if (btnFinalizarRecepcion) btnFinalizarRecepcion.disabled = true;
-        if (btnConfirmarGenerarCxp) btnConfirmarGenerarCxp.disabled = true;
-      };
-
-      const loadRecepcion = async (ordenCompraId) => {
-        setLoading(true);
-        recepcionEmpty.style.display = "none";
-        recepcionSplit.style.display = "none";
-
-        // Eliminar banner de solo lectura previo si existe
-        const bannerPrevio = document.getElementById('bannerSoloLectura');
-        if (bannerPrevio) bannerPrevio.remove();
-
-        // NO limpiar sesiï¿½n aquï¿½ - se restaurarï¿½ desde localStorage mï¿½s adelante
-
-        try {
-          // Verificar bloqueo de sesiï¿½n
-          const bloqueo = await verificarBloqueoSesion(ordenCompraId);
-
-          if (bloqueo.bloqueada && !bloqueo.esPropietario) {
-            // Sesiï¿½n bloqueada por otro admin - modo solo lectura
-            console.log(`?? Sesiï¿½n bloqueada por ${bloqueo.nombreAdmin}`);
-          } else if (!bloqueo.bloqueada) {
-            // Sesiï¿½n libre - intentar bloquear
-            await bloquearSesion(ordenCompraId);
-          }
-          // Si esPropietario, ya estï¿½ bloqueada por nosotros, continuar normalmente
-
-          const resp = await apiCall(
-            `/admin/ordenes-compra/${encodeURIComponent(ordenCompraId)}/recepcion`,
-            { method: "GET" }
-          );
-
-          if (!resp.ok) {
-            throw new Error(resp.data?.message || "No se pudo cargar recepciï¿½n");
-          }
-
-          state.orden = resp.data?.data?.orden || null;
-          state.items = Array.isArray(resp.data?.data?.items) ? resp.data.data.items : [];
-
-          if (!state.orden) {
-            setEmpty("No se encontrï¿½ informaciï¿½n de la orden");
-            return;
-          }
-
-          // Restaurar sesiï¿½n automï¿½ticamente desde localStorage
-          const ocKey = getRecepcionStorageKey(state.orden.ordenCompraId);
-          if (ocKey && !ocRestorePrompted.has(ocKey)) {
-            ocRestorePrompted.add(ocKey);
-            const stored = readSesionRecepcionFromStorage(state.orden.ordenCompraId);
-            if (Array.isArray(stored) && stored.length > 0) {
-              sesionRecepcion = normalizeRestoredSesion(stored);
-              persistSesionRecepcion();
-            } else {
-              sesionRecepcion = [];
-            }
-          } else if (!sesionRecepcion || sesionRecepcion.length === 0) {
-            // Si no hay sesiï¿½n previa, inicializar vacï¿½a
+            clearSesionRecepcionStorage(state.orden.ordenCompraId);
             sesionRecepcion = [];
+            showToastSuccess("¡Éxito!");
+            await loadRecepcion(state.orden.ordenCompraId);
           }
-
-          if (ocProveedor) {
-            ocProveedor.textContent = safeText(state.orden.proveedorNombre || "ï¿½");
-          }
-          if (ocMeta) {
-            ocMeta.textContent = `Estatus: ${safeText(state.orden.estatus)}`;
-          }
-          if (ocBadge) {
-            ocBadge.textContent = `OC #${safeText(state.orden.ordenCompraId)} ï¿½ ${safeText(
-              state.orden.estatus
-            )}`;
-          }
-
-          // CRUCIAL: Asegurar que las tablas estï¿½n visibles antes de renderizar
-          if (recepcionSplit) {
-            const paneles = recepcionSplit.querySelectorAll('.recepcion-panel');
-            paneles.forEach(panel => {
-              // Restaurar display inline
-              panel.style.display = '';
-              // Eliminar clase d-none de Bootstrap si existe
-              panel.classList.remove('d-none');
-            });
-            recepcionSplit.style.display = "block";
-          }
-          renderSplit();
-          renderizarTablaSesion();
-          
-          // Initialize filters and export buttons
-          if (typeof inicializarFiltros === 'function') {
-            inicializarFiltros();
-          }
-          
-          // Mostrar botones de gestiï¿½n si estï¿½n disponibles
-          if (typeof actualizarBotonesGestion === 'function') {
-            actualizarBotonesGestion();
-          }
-
-          // Actualizar barra de estado y aplicar modo solo lectura si es necesario
-          actualizarBarraEstado(bloqueo);
-          
-          if (sesionBloqueada) {
-            aplicarModoSoloLectura();
-          }
-        } catch (error) {
-          console.error(error);
-          setEmpty(error.message || "Error al cargar recepciï¿½n");
-        } finally {
-          setLoading(false);
-        }
+        } catch (e) { showToastError("Error al procesar"); }
       };
 
-      // Event listeners para controles de super admin
-      const btnLiberarSesion = document.getElementById('btnLiberarSesion');
-
-      if (btnLiberarSesion) {
-        btnLiberarSesion.addEventListener('click', () => {
-          if (state.orden?.ordenCompraId) {
-            forzarLiberacion(state.orden.ordenCompraId);
-          }
-        });
-      }
-
-      // Desbloquear sesiï¿½n al salir de la pï¿½gina
-      window.addEventListener('beforeunload', () => {
-        if (state.orden?.ordenCompraId && !sesionBloqueada) {
-          // Usar sendBeacon para garantizar que se envï¿½e incluso al cerrar
-          const token = localStorage.getItem('razoconnect_admin_token');
-          const url = `/api/admin/ordenes-compra/${state.orden.ordenCompraId}/desbloquear-sesion`;
-          const data = new Blob([JSON.stringify({})], { type: 'application/json' });
+      const loadRecepcion = async (id) => {
+        setLoading(true);
+        try {
+          const resp = await apiCall(`/admin/ordenes-compra/${id}/recepcion`, { method: "GET" });
+          state.orden = resp.data?.data?.orden;
+          state.items = resp.data?.data?.items || [];
           
-          navigator.sendBeacon(url, data);
-        }
-      });
-
-      if (btnFinalizarRecepcion) {
-        btnFinalizarRecepcion.addEventListener("click", finalizarRecepcion);
-      }
-
-      if (btnConfirmarGenerarCxp) {
-        btnConfirmarGenerarCxp.addEventListener("click", finalizarRecepcion);
-      }
-
-      if (tbodyPendiente) {
-        tbodyPendiente.addEventListener("click", async (e) => {
-          const btn = e.target?.closest?.(".btn-agregar-sesion");
-          if (!btn) return;
-
-          const detalleId = btn.dataset?.detalleId;
-          const row = btn.closest("tr");
-          const input =
-            row?.querySelector?.("input.cantidad-hoy") ||
-            (tbodyPendiente ? tbodyPendiente.querySelector(`input.cantidad-hoy[data-detalle-id="${safeText(detalleId)}"]`) : null);
-
-          await agregarItemASesion(detalleId, input);
-        });
-      }
-
-      ocSearch.addEventListener("input", () => {
-        renderOrdenes(ocSearch.value);
-      });
-
-      ocSelect.addEventListener("change", async () => {
-        const id = ocSelect.value;
-        const selected = ocSelect.options[ocSelect.selectedIndex];
-
-        // Desbloquear sesiï¿½n anterior si existe
-        if (state.orden?.ordenCompraId && !sesionBloqueada) {
-          await desbloquearSesion(state.orden.ordenCompraId);
-        }
-
-        if (!id) {
-          state.orden = null;
-          state.items = [];
-          if (ocProveedor) ocProveedor.textContent = "ï¿½";
-          if (ocMeta) ocMeta.textContent = "ï¿½";
-          if (ocBadge) ocBadge.textContent = "ï¿½";
-          setEmpty("Selecciona una orden de compra para empezar.");
-          return;
-        }
-
-        // Detectar si es un grupo
-        const esGrupo = selected?.dataset?.esGrupo === "true";
-        
-        if (esGrupo) {
-          // Es un grupo - cargar TODAS las ï¿½rdenes simultï¿½neamente
-          const grupoId = selected?.dataset?.grupoId;
-          console.log('[GRUPOS] Cargando grupo completo:', grupoId);
+          const stored = readSesionRecepcionFromStorage(id);
+          sesionRecepcion = stored.length ? normalizeRestoredSesion(stored) : [];
           
-          // Limpiar cualquier recepciï¿½n previa
-          const recepcionSplit = document.getElementById('recepcionSplit');
-          if (recepcionSplit) {
-            recepcionSplit.innerHTML = '';
-            recepcionSplit.style.display = 'none';
-          }
+          if (ocProveedor) ocProveedor.textContent = state.orden.proveedorNombre;
+          if (ocBadge) ocBadge.textContent = `OC #${id} ? ${state.orden.estatus}`;
           
-          if (typeof cargarGrupoCompleto === 'function') {
-            await cargarGrupoCompleto(grupoId);
-          } else {
-            console.error('[GRUPOS] Funciï¿½n cargarGrupoCompleto no disponible');
-            setEmpty('Error: Mï¿½dulo de grupos no cargado');
-          }
-        } else {
-          // Es una orden individual - LIMPIAR ESTADO DE GRUPO
-          console.log('[GRUPOS] Cambiando a orden individual - limpiando estado de grupo');
-          
-          // Llamar a la funciï¿½n de limpieza del mï¿½dulo de grupos
-          if (typeof limpiarEstadoGrupo === 'function') {
-            limpiarEstadoGrupo();
-          } else {
-            // Fallback manual si la funciï¿½n no estï¿½ disponible
-            const botonesGrupo = document.getElementById('botonesExportacionGrupo');
-            if (botonesGrupo) {
-              botonesGrupo.remove();
-            }
-            const tipoBadge = document.getElementById('tipoBadge');
-            if (tipoBadge) {
-              tipoBadge.style.display = 'none';
-            }
-          }
-          
-          // Es una orden individual
-          if (ocProveedor) {
-            ocProveedor.textContent = safeText(selected?.dataset?.proveedorNombre || "ï¿½");
-          }
-          if (ocMeta) {
-            ocMeta.textContent = "ï¿½";
-          }
-          if (ocBadge) {
-            ocBadge.textContent = `OC #${safeText(id)} ï¿½ Cargandoï¿½`;
-          }
-          
-          // loadRecepcion se encargarï¿½ de limpiar y renderizar el contenedor
-          await loadRecepcion(id);
-        }
-      });
+          recepcionSplit.style.display = "block";
+          renderSplit();
+          renderizarTablaSesion();
+          actualizarBotonesGestion();
+        } catch (e) { setEmpty("Error al cargar"); }
+        setLoading(false);
+      };
 
-      loadOrdenes();
-
-      // ============================================
-      // GESTIï¿½N DE PRODUCTOS EN LA ORDEN
-      // ============================================
+      if (ocSelect) ocSelect.addEventListener("change", () => loadRecepcion(ocSelect.value));
+      if (btnConfirmarGenerarCxp) btnConfirmarGenerarCxp.addEventListener("click", finalizarRecepcion);
       
-      const btnAgregarProducto = document.getElementById("btnAgregarProducto");
-      const btnQuitarProducto = document.getElementById("btnQuitarProducto");
-      const botonesGestion = document.getElementById("botonesGestion");
-      const modalAgregarProducto = document.getElementById("modalAgregarProducto");
-      const modalQuitarProducto = document.getElementById("modalQuitarProducto");
-      const tbodyProductosProveedor = document.getElementById("tbodyProductosProveedor");
-      const tbodyProductosOrden = document.getElementById("tbodyProductosOrden");
-      const buscarProductoAgregar = document.getElementById("buscarProductoAgregar");
-
-      let productosProveedorCache = [];
-
-      // Mostrar/Ocultar botones segï¿½n el estado de la orden
-      const actualizarBotonesGestion = () => {
-        const ordenCargada = state.orden && state.orden.ordenCompraId;
-        const estatusPermitido = ordenCargada && ['Pendiente', 'Parcial'].includes(state.orden.estatus);
-        
-        if (botonesGestion) {
-          botonesGestion.style.display = estatusPermitido ? 'block' : 'none';
-        }
-      };
-
-      // Abrir modal de agregar producto
-      const abrirModalAgregarProducto = async () => {
-        const currentState = window.recepcionState || state;
-        console.log('?? [DEBUG] currentState.orden:', currentState.orden);
-        
-        if (!currentState.orden) {
-          showToastError("No hay orden de compra seleccionada");
-          return;
-        }
-
-        // Intentar obtener proveedorId de mï¿½ltiples formas
-        const proveedorId = currentState.orden.proveedorId || currentState.orden.proveedorid || currentState.orden.ProveedorID;
-        
-        if (!proveedorId) {
-          showToastError("No se pudo obtener el proveedor de la orden");
-          console.error('? [ERROR] No se encontrï¿½ proveedorId en:', currentState.orden);
-          return;
-        }
-
-        console.log('? [DEBUG] proveedorId:', proveedorId);
-
-        modalAgregarProducto.style.display = 'flex';
-        tbodyProductosProveedor.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #6b7280;">Cargando productos del proveedor...</td></tr>';
-
-        try {
-          const resp = await apiCall(`/admin/productos/variantes-proveedor/${proveedorId}`, { method: 'GET' });
-          
-          if (!resp.ok) {
-            throw new Error(resp.data?.message || 'No se pudieron cargar los productos');
-          }
-
-          productosProveedorCache = Array.isArray(resp.data?.data?.variantes) ? resp.data.data.variantes : [];
-          renderizarProductosProveedor(productosProveedorCache);
-        } catch (error) {
-          console.error(error);
-          tbodyProductosProveedor.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #dc3545;">${error.message || 'Error al cargar productos'}</td></tr>`;
-        }
-      };
-
-      // Renderizar productos del proveedor
-      const renderizarProductosProveedor = (variantes) => {
-        if (!Array.isArray(variantes) || variantes.length === 0) {
-          tbodyProductosProveedor.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">No hay productos disponibles de este proveedor</td></tr>';
-          return;
-        }
-
-        tbodyProductosProveedor.innerHTML = '';
-        
-        for (const variante of variantes) {
-          const tr = document.createElement('tr');
-          
-          // Construir descripciï¿½n de la variante
-          const detalles = [];
-          if (variante.dimensiones) detalles.push(variante.dimensiones);
-          if (variante.nombremedida) detalles.push(variante.nombremedida);
-          if (variante.color_nombre) detalles.push(variante.color_nombre);
-          const descripcionVariante = detalles.length > 0 ? detalles.join(' ï¿½ ') : 'N/A';
-          
-          // Obtener piezas por paquete y cantidad de empaque
-          const piezasPorPaquete = Number.parseInt(variante.piezasporpaquete, 10) || 1;
-          const cantidadEmpaque = Number.parseInt(variante.cantidadempaque, 10) || 1;
-          
-          tr.innerHTML = `
-            <td style="width: 60px;">
-              <img src="${variante.imagen || '/icon/Logo_Razo.png'}" alt="${safeText(variante.nombreproducto)}" class="img-mini-tabla" onerror="this.src='/icon/Logo_Razo.png';" style="width: 50px; height: 50px; object-fit: cover; border-radius: 0.375rem;">
-            </td>
-            <td>
-              <strong>${safeText(variante.nombreproducto)}</strong>
-              <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">${safeText(descripcionVariante)}</div>
-            </td>
-            <td style="width: 120px;">
-              <code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; display: inline-block;">${safeText(variante.sku)}</code>
-            </td>
-            <td style="width: 120px;">${safeText(variante.categoria || 'N/A')}</td>
-            <td style="width: 80px; text-align: center;">${Number.parseInt(variante.stock, 10) || 0}</td>
-            <td style="width: 120px;">
-              <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
-                <input 
-                  type="number" 
-                  class="form-input input-mini-tabla" 
-                  min="${cantidadEmpaque}" 
-                  step="${cantidadEmpaque}" 
-                  value="${cantidadEmpaque}"
-                  placeholder="1"
-                  data-variante-id="${variante.varianteid}" 
-                  data-piezas="${piezasPorPaquete}"
-                  data-empaque="${cantidadEmpaque}"
-                  style="width: 80px;">
-                <small style="font-size: 0.7rem; color: #6b7280;">${piezasPorPaquete} pza${piezasPorPaquete !== 1 ? 's' : ''}/paq</small>
-                ${cantidadEmpaque > 1 ? `<small style="font-size: 0.65rem; color: #f59e0b; font-weight: 600;">Mï¿½n: ${cantidadEmpaque} paq</small>` : ''}
-              </div>
-            </td>
-            <td style="width: 100px; text-align: center;">
-              <button type="button" class="btn btn-sm btn-primary btn-agregar-a-orden" data-variante-id="${variante.varianteid}">
-                <i class="bi bi-plus"></i> Agregar
-              </button>
-            </td>
-          `;
-          
-          tbodyProductosProveedor.appendChild(tr);
-        }
-      };
-
-      // Buscar productos del proveedor
-      if (buscarProductoAgregar) {
-        buscarProductoAgregar.addEventListener('input', (e) => {
-          const texto = e.target.value.toLowerCase().trim();
-          
-          if (!texto) {
-            renderizarProductosProveedor(productosProveedorCache);
-            return;
-          }
-          
-          const filtrados = productosProveedorCache.filter(variante => {
-            const nombre = (variante.nombreproducto || '').toLowerCase();
-            const sku = (variante.sku || '').toLowerCase();
-            const dimensiones = (variante.dimensiones || '').toLowerCase();
-            const color = (variante.color_nombre || '').toLowerCase();
-            const categoria = (variante.categoria || '').toLowerCase();
-            
-            return nombre.includes(texto) || 
-                   sku.includes(texto) || 
-                   dimensiones.includes(texto) || 
-                   color.includes(texto) ||
-                   categoria.includes(texto);
-          });
-          
-          renderizarProductosProveedor(filtrados);
-        });
-      }
-
-      // Agregar producto a la orden
-      if (tbodyProductosProveedor) {
-        tbodyProductosProveedor.addEventListener('click', async (e) => {
-          const btn = e.target.closest('.btn-agregar-a-orden');
-          if (!btn) return;
-
-          const currentState = window.recepcionState || state;
-          const varianteId = btn.dataset.varianteId;
-          const row = btn.closest('tr');
-          const input = row.querySelector('input[type="number"]');
-          const cantidad = Number.parseInt(input?.value, 10) || 1;
-          const cantidadEmpaque = Number.parseInt(input?.dataset?.empaque, 10) || 1;
-
-          if (cantidad <= 0) {
-            showToastError('La cantidad debe ser mayor a 0');
-            return;
-          }
-
-          // Validar que sea mï¿½ltiplo de la cantidad de empaque
-          if (cantidad % cantidadEmpaque !== 0) {
-            showToastError(`La cantidad debe ser mï¿½ltiplo de ${cantidadEmpaque} (regla de empaque del proveedor)`);
-            return;
-          }
-
-          try {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Agregando...';
-
-            const resp = await apiCall(`/admin/ordenes-compra/${currentState.orden.ordenCompraId}/agregar-producto`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                varianteId: Number.parseInt(varianteId, 10),
-                cantidad
-              })
-            });
-
-            if (!resp.ok) {
-              throw new Error(resp.data?.message || 'No se pudo agregar el producto');
-            }
-
-            showToastSuccess('Producto agregado a la orden');
-            modalAgregarProducto.style.display = 'none';
-            await loadRecepcion(currentState.orden.ordenCompraId);
-          } catch (error) {
-            console.error(error);
-            showToastError(error.message || 'Error al agregar producto');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-plus"></i> Agregar';
-          }
-        });
-      }
-
-      // Abrir modal de quitar producto
-      const abrirModalQuitarProducto = () => {
-        const currentState = window.recepcionState || state;
-        console.log('?? [DEBUG] abrirModalQuitarProducto - currentState:', currentState);
-        
-        if (!currentState.orden || !currentState.items || currentState.items.length === 0) {
-          showToastError("No hay productos en la orden");
-          return;
-        }
-
-        modalQuitarProducto.style.display = 'flex';
-        renderizarProductosOrden();
-      };
-
-      // Renderizar productos de la orden
-      const renderizarProductosOrden = () => {
-        const currentState = window.recepcionState || state;
-        const items = Array.isArray(currentState.items) ? currentState.items : [];
-        
-        if (items.length === 0) {
-          tbodyProductosOrden.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: #6b7280;">No hay productos en la orden</td></tr>';
-          return;
-        }
-
-        tbodyProductosOrden.innerHTML = '';
-        
-        for (const item of items) {
-          const solicitado = solicitadoPzasValue(item);
-          const recibido = recibidoPzasValue(item);
-          const puedeQuitar = recibido === 0;
-
-          const tr = document.createElement('tr');
-          
-          tr.innerHTML = `
-            <td>
-              <img src="${item.imagen || '/icon/Logo_Razo.png'}" alt="${safeText(item.nombreProducto)}" class="img-mini-tabla" onerror="this.src='/icon/Logo_Razo.png';">
-            </td>
-            <td><strong>${safeText(item.nombreProducto)}</strong></td>
-            <td><code style="background:#f3f4f6; padding: 0.25rem 0.5rem; border-radius: 0.375rem;">${safeText(item.sku)}</code></td>
-            <td>${item.dimensiones || 'ï¿½'}</td>
-            <td>
-              ${item.colorNombre 
-                ? `<div style="display: flex; align-items: center; gap: 0.5rem;">
-                     <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: ${item.colorHex || '#ccc'}; border: 1px solid #ddd;"></span>
-                     <span>${safeText(item.colorNombre)}</span>
-                   </div>`
-                : 'ï¿½'
-              }
-            </td>
-            <td style="text-align: center;">${solicitado} pzas</td>
-            <td style="text-align: center; color: ${recibido > 0 ? '#10b981' : '#6b7280'}; font-weight: 700;">${recibido} pzas</td>
-            <td style="text-align: center;">
-              ${puedeQuitar 
-                ? `<button type="button" class="btn btn-sm btn-danger btn-quitar-de-orden" data-detalle-id="${item.detalleId}">
-                     <i class="bi bi-trash"></i> Quitar
-                   </button>`
-                : `<span style="color: #6b7280; font-size: 0.75rem;">Ya recibido</span>`
-              }
-            </td>
-          `;
-          
-          tbodyProductosOrden.appendChild(tr);
-        }
-      };
-
-      // Quitar producto de la orden
-      if (tbodyProductosOrden) {
-        tbodyProductosOrden.addEventListener('click', async (e) => {
-          const btn = e.target.closest('.btn-quitar-de-orden');
-          if (!btn) return;
-
-          const currentState = window.recepcionState || state;
-          const detalleId = btn.dataset.detalleId;
-          const item = currentState.items.find(i => String(i.detalleId) === String(detalleId));
-
-          if (!item) {
-            showToastError('No se encontrï¿½ el producto');
-            return;
-          }
-
-          const confirmacion = await Swal.fire({
-            icon: 'warning',
-            title: 'ï¿½Quitar producto de la orden?',
-            html: `
-              <p>Estï¿½s a punto de quitar el siguiente producto:</p>
-              <p style="margin-top: 1rem;"><strong>${safeText(item.nombreProducto)}</strong></p>
-              <p style="color: #6b7280;">SKU: ${safeText(item.sku)}</p>
-              <p style="margin-top: 1rem; color: #dc3545; font-weight: 600;">Esta acciï¿½n no se puede deshacer.</p>
-            `,
-            showCancelButton: true,
-            confirmButtonText: 'Sï¿½, quitar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#dc3545',
-            focusCancel: true
-          });
-
-          if (!confirmacion.isConfirmed) {
-            return;
-          }
-
-          try {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Quitando...';
-
-            const resp = await apiCall(`/admin/ordenes-compra/${currentState.orden.ordenCompraId}/quitar-producto/${detalleId}`, {
-              method: 'DELETE'
-            });
-
-            if (!resp.ok) {
-              throw new Error(resp.data?.message || 'No se pudo quitar el producto');
-            }
-
-            showToastSuccess('Producto quitado de la orden');
-            modalQuitarProducto.style.display = 'none';
-            await loadRecepcion(currentState.orden.ordenCompraId);
-          } catch (error) {
-            console.error(error);
-            showToastError(error.message || 'Error al quitar producto');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-trash"></i> Quitar';
-          }
-        });
-      }
-
-      // Event listeners para abrir modales
-      if (btnAgregarProducto) {
-        btnAgregarProducto.addEventListener('click', abrirModalAgregarProducto);
-      }
-
-      if (btnQuitarProducto) {
-        btnQuitarProducto.addEventListener('click', abrirModalQuitarProducto);
-      }
-
-      // Event listeners para cerrar modales
-      document.querySelectorAll('.modal-close').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const modal = e.target.closest('.modal');
-          if (modal) {
-            modal.style.display = 'none';
-          }
-        });
-      });
-
-      // Cerrar modal al hacer clic fuera
-      [modalAgregarProducto, modalQuitarProducto].forEach(modal => {
-        if (modal) {
-          modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-              modal.style.display = 'none';
-            }
-          });
-        }
-      });
-
-      // ============================================
-      // CERRAR SESIï¿½N DE RECEPCIï¿½N
-      // ============================================
-      const btnCerrarSesion = document.getElementById('btnCerrarSesion');
-
-      const cerrarSesionRecepcion = async () => {
-        const currentState = window.recepcionState || state;
-        
-        if (!currentState.orden || !currentState.orden.ordenCompraId) {
-          showToastError('No hay una orden seleccionada');
-          return;
-        }
-
-        // Calcular cuï¿½ntos productos pendientes hay
-        const items = Array.isArray(state.items) ? state.items : [];
-        const pendientes = items.filter((i) => {
-          const sol = solicitadoPzasValue(i);
-          const rec = recibidoPzasValue(i);
-          const ses = sesionRecepcion
-            .filter((x) => String(x.detalleId) === String(i.detalleId))
-            .reduce((acc, x) => acc + (Number.parseInt(x.cantidad, 10) || 0), 0);
-          const pen = Math.max(sol - rec - ses, 0);
-          return pen > 0;
-        });
-
-        // Confirmar con el usuario
-        const confirmacion = await Swal.fire({
-          title: '<span style="color: #DC2626; font-weight: 800;">?? Cerrar Sesiï¿½n de Recepciï¿½n</span>',
-          html: `
-            <div style="text-align: left; padding: 0.5rem;">
-              <!-- Alerta principal -->
-              <div style="padding: 1rem; background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%); border-left: 4px solid #DC2626; border-radius: 0.75rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15);">
-                <div style="display: flex; align-items: start; gap: 0.75rem;">
-                  <div style="font-size: 1.5rem;">??</div>
-                  <div>
-                    <p style="margin: 0 0 0.5rem 0; color: #991B1B; font-weight: 700; font-size: 0.95rem;">
-                      Esta acciï¿½n marcarï¿½ <strong>${pendientes.length} producto(s) pendiente(s)</strong> como <strong>NO RECIBIDOS</strong>
-                    </p>
-                    <p style="margin: 0; color: #7F1D1D; font-size: 0.875rem;">
-                      Los productos se cerrarï¿½n por merma y no podrï¿½n ser recibidos posteriormente en esta orden.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Info positiva -->
-              <div style="padding: 0.875rem; background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%); border-left: 4px solid #10B981; border-radius: 0.75rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);">
-                <div style="display: flex; align-items: start; gap: 0.75rem;">
-                  <div style="font-size: 1.25rem;">?</div>
-                  <div>
-                    <p style="margin: 0; color: #065F46; font-weight: 600; font-size: 0.875rem;">
-                      Los productos que ya registraste en la sesiï¿½n <strong>NO se verï¿½n afectados</strong> y se procesarï¿½n normalmente.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Campo de motivo -->
-              <div style="margin-bottom: 1rem;">
-                <label for="swal-motivo" style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: #111827; font-size: 0.95rem;">
-                  ?? Motivo del cierre (opcional):
-                </label>
-                <textarea 
-                  id="swal-motivo" 
-                  class="swal2-textarea" 
-                  placeholder="Ej: Proveedor no entregï¿½ productos faltantes, mercancï¿½a daï¿½ada en trï¿½nsito, cancelaciï¿½n de pedido..." 
-                  style="width: 100%; min-height: 90px; border: 2px solid #E5E7EB; border-radius: 0.5rem; padding: 0.75rem; font-size: 0.875rem; font-family: inherit; resize: vertical;"
-                ></textarea>
-              </div>
-
-              <!-- Advertencia final -->
-              <div style="padding: 0.75rem; background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 0.5rem; margin-top: 1rem;">
-                <p style="margin: 0; color: #92400E; font-size: 0.8rem; font-weight: 600;">
-                  ?? Esta acciï¿½n es <strong>irreversible</strong>. Los productos cerrados quedarï¿½n registrados como merma en el sistema.
-                </p>
-              </div>
-            </div>
-          `,
-          width: '650px',
-          showCancelButton: true,
-          confirmButtonText: '<i class="bi bi-check-circle-fill"></i> Sï¿½, cerrar sesiï¿½n',
-          cancelButtonText: '<i class="bi bi-x-circle"></i> Cancelar',
-          confirmButtonColor: '#DC2626',
-          cancelButtonColor: '#6B7280',
-          focusCancel: true,
-          customClass: {
-            confirmButton: 'swal-btn-confirm-danger',
-            cancelButton: 'swal-btn-cancel',
-            popup: 'swal-popup-modern'
-          },
-          buttonsStyling: false,
-          preConfirm: () => {
-            const motivo = document.getElementById('swal-motivo')?.value?.trim() || 'Sesiï¿½n cerrada manualmente';
-            return { motivo };
-          }
-        });
-
-        if (!confirmacion.isConfirmed) return;
-
-        try {
-          console.log('?? [CERRAR SESIï¿½N] Iniciando cierre de sesiï¿½n para OC:', currentState.orden.ordenCompraId);
-          
-          Swal.fire({
-            title: 'Cerrando sesiï¿½n...',
-            text: 'Por favor espera',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-          });
-
-          const resp = await apiCall(
-            `/admin/ordenes-compra/${currentState.orden.ordenCompraId}/cerrar-sesion`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ motivo: confirmacion.value.motivo })
-            }
-          );
-
-          console.log('?? [CERRAR SESIï¿½N] Respuesta del servidor:', resp);
-
-          if (!resp.ok) {
-            throw new Error(resp.data?.message || 'No se pudo cerrar la sesiï¿½n');
-          }
-
-          console.log('?? [CERRAR SESIï¿½N] Limpiando sesiï¿½n local...');
-          // Limpiar sesiï¿½n local
-          clearSesionRecepcionStorage(currentState.orden.ordenCompraId);
-          sesionRecepcion = [];
-          hasSessionData = false;
-
-          console.log('?? [CERRAR SESIï¿½N] Desbloqueando sesiï¿½n...');
-          // Desbloquear la sesiï¿½n para que otros puedan trabajar
-          try {
-            await desbloquearSesion(currentState.orden.ordenCompraId);
-          } catch (desbloqueoError) {
-            console.warn('?? Error al desbloquear sesiï¿½n (no crï¿½tico):', desbloqueoError);
-          }
-
-          console.log('?? [CERRAR SESIï¿½N] Mostrando mensaje de ï¿½xito...');
-          await Swal.fire({
-            icon: 'success',
-            title: 'Sesiï¿½n Cerrada',
-            text: resp.data?.message || 'La sesiï¿½n se cerrï¿½ exitosamente',
-            confirmButtonColor: '#F97316'
-          });
-
-          console.log('?? [CERRAR SESIï¿½N] Limpiando estado y UI...');
-          // Limpiar completamente el estado y volver al inicio
-          state.orden = null;
-          state.items = [];
-          sesionBloqueada = false;
-          
-          // Resetear el selector de ï¿½rdenes
-          if (ocSelect) {
-            ocSelect.value = '';
-            console.log('?? [CERRAR SESIï¿½N] Selector de OC reseteado');
-          }
-          
-          // Limpiar UI
-          if (ocProveedor) ocProveedor.textContent = "ï¿½";
-          if (ocMeta) ocMeta.textContent = "ï¿½";
-          if (ocBadge) ocBadge.textContent = "Selecciona una OC";
-          
-          // Ocultar secciones
-          if (recepcionSplit) {
-            recepcionSplit.style.display = "none";
-            console.log('?? [CERRAR SESIï¿½N] Secciï¿½n de recepciï¿½n ocultada');
-          }
-          if (botonesGestion) {
-            botonesGestion.style.display = "none";
-            console.log('?? [CERRAR SESIï¿½N] Botones de gestiï¿½n ocultados');
-          }
-          
-          // Limpiar tablas
-          if (tbodyPendiente) tbodyPendiente.innerHTML = '';
-          if (tbodySesion) tbodySesion.innerHTML = '';
-          
-          console.log('?? [CERRAR SESIï¿½N] Renderizando tablas vacï¿½as...');
-          // Renderizar tablas vacï¿½as
-          renderSplit();
-          renderizarTablaSesion();
-          
-          console.log('?? [CERRAR SESIï¿½N] Recargando lista de ï¿½rdenes...');
-          // Recargar lista de ï¿½rdenes para actualizar estados
-          await loadOrdenes();
-          
-          console.log('? [CERRAR SESIï¿½N] Proceso completado exitosamente');
-        } catch (error) {
-          console.error(error);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.message || 'No se pudo cerrar la sesiï¿½n',
-            confirmButtonColor: '#F97316'
-          });
-        }
-      };
-
-      if (btnCerrarSesion) {
-        btnCerrarSesion.addEventListener('click', cerrarSesionRecepcion);
-      }
-
-      // ============================================
-      // REASIGNACIï¿½N DE SESIï¿½N
-      // ============================================
-      const btnReasignarSesion = document.getElementById('btnReasignarSesion');
-
-      // Funciï¿½n para mostrar modal de reasignaciï¿½n de sesiï¿½n
-      async function mostrarModalReasignarSesion() {
-        const currentState = window.recepcionState || state;
-        
-        if (!currentState.orden || !currentState.orden.ordenCompraId) {
-          showToastError('No hay una orden seleccionada');
-          return;
-        }
-
-        try {
-          const resp = await apiCall('/admin/administradores');
-          
-          if (!resp.ok || !resp.data?.data?.administradores) {
-            throw new Error('No se pudo cargar la lista de administradores');
-          }
-
-          const administradores = resp.data.data.administradores;
-          
-          const escapeHtml = (text) => {
-            const div = document.createElement('div');
-            div.textContent = text || '';
-            return div.innerHTML;
-          };
-
-          const adminsHTML = administradores.map(admin => {
-            const iniciales = (admin.nombre.charAt(0) + (admin.apellido?.charAt(0) || '')).toUpperCase();
-            return `
-              <div class="admin-selectable" data-admin-id="${admin.adminid}" style="
-                padding: 1rem;
-                border: 2px solid #e5e7eb;
-                border-radius: 0.75rem;
-                cursor: pointer;
-                transition: all 0.2s;
-                margin-bottom: 0.75rem;
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-              ">
-                <div style="
-                  width: 48px;
-                  height: 48px;
-                  border-radius: 50%;
-                  background: #F97316;
-                  color: white;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  font-weight: 700;
-                  font-size: 1.125rem;
-                  flex-shrink: 0;
-                ">${iniciales}</div>
-                <div style="flex: 1;">
-                  <div style="font-weight: 600; color: #1f2937; font-size: 1rem;">${escapeHtml(admin.nombre)} ${escapeHtml(admin.apellido || '')}</div>
-                  <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">${escapeHtml(admin.email || 'Sin email')}</div>
-                  <div style="font-size: 0.8rem; color: #9ca3af; margin-top: 0.125rem;">Rol: ${escapeHtml(admin.rol || 'N/A')}</div>
-                </div>
-                <i class="bi bi-check-circle" style="font-size: 1.5rem; color: #10b981; display: none;"></i>
-              </div>
-            `;
-          }).join('');
-
-          const result = await Swal.fire({
-            title: '<strong style="color: #1f2937;">Reasignar Sesiï¿½n de Recepciï¿½n</strong>',
-            html: `
-              <div style="text-align: left; margin-bottom: 1rem;">
-                <p style="color: #6b7280; font-size: 0.95rem; margin: 0;">Selecciona el administrador responsable de esta sesiï¿½n de recepciï¿½n. El administrador recibirï¿½ una notificaciï¿½n y podrï¿½ continuar trabajando en esta orden de compra.</p>
-              </div>
-              <div id="adminsContainer" style="max-height: 400px; overflow-y: auto; text-align: left;">
-                ${adminsHTML}
-              </div>
-            `,
-            showCancelButton: true,
-            confirmButtonText: 'Reasignar Sesiï¿½n',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#F97316',
-            cancelButtonColor: '#6b7280',
-            width: '600px',
-            didOpen: () => {
-              let selectedAdminId = null;
-              
-              const adminDivs = document.querySelectorAll('.admin-selectable');
-              adminDivs.forEach(div => {
-                div.addEventListener('click', function() {
-                  adminDivs.forEach(d => {
-                    d.style.borderColor = '#e5e7eb';
-                    d.style.background = 'white';
-                    d.querySelector('i').style.display = 'none';
-                  });
-                  
-                  this.style.borderColor = '#F97316';
-                  this.style.background = 'linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)';
-                  this.querySelector('i').style.display = 'block';
-                  
-                  selectedAdminId = parseInt(this.getAttribute('data-admin-id'));
-                });
-                
-                div.addEventListener('mouseenter', function() {
-                  if (this.style.borderColor !== 'rgb(249, 115, 22)') {
-                    this.style.borderColor = '#F97316';
-                    this.style.background = '#fff7ed';
-                  }
-                });
-                
-                div.addEventListener('mouseleave', function() {
-                  if (this.style.borderColor !== 'rgb(249, 115, 22)') {
-                    this.style.borderColor = '#e5e7eb';
-                    this.style.background = 'white';
-                  }
-                });
-              });
-              
-              const confirmButton = Swal.getConfirmButton();
-              confirmButton.onclick = async () => {
-                if (!selectedAdminId) {
-                  Swal.showValidationMessage('Por favor selecciona un administrador');
-                  return false;
-                }
-                
-                Swal.close();
-                await reasignarSesionAAdmin(selectedAdminId);
-              };
-            },
-            preConfirm: () => {
-              return true;
-            }
-          });
-
-        } catch (error) {
-          console.error(error);
-          await Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: error.message || "No se pudo cargar la lista de administradores",
-            confirmButtonColor: "#F97316"
-          });
-        }
-      }
-
-      // Funciï¿½n para reasignar sesiï¿½n a un admin
-      async function reasignarSesionAAdmin(adminId) {
-        const currentState = window.recepcionState || state;
-        
-        try {
-          const resp = await apiCall(
-            `/admin/ordenes-compra/${currentState.orden.ordenCompraId}/reasignar-sesion`,
-            {
-              method: 'POST',
-              body: JSON.stringify({ nuevoAdminId: adminId })
-            }
-          );
-
-          if (resp.ok) {
-            showToastSuccess('Sesiï¿½n reasignada exitosamente');
-            await loadRecepcion(currentState.orden.ordenCompraId);
-          } else {
-            showToastError(resp.data?.message || 'Error al reasignar sesiï¿½n');
-          }
-        } catch (error) {
-          console.error('Error reasignando sesiï¿½n:', error);
-          showToastError('Error al reasignar sesiï¿½n');
-        }
-      }
-
-      // Event listener para botï¿½n de reasignar
-      if (btnReasignarSesion) {
-        btnReasignarSesion.addEventListener('click', mostrarModalReasignarSesion);
-      }
-
-      // Exponer funciones globalmente para evitar errores de scope
-      window.loadOrdenes = loadOrdenes;
-      window.finalizarRecepcion = finalizarRecepcion;
-      window.agregarItemASesion = agregarItemASesion;
-      window.actualizarBotonesGestion = actualizarBotonesGestion;
-      window.abrirModalAgregarProducto = abrirModalAgregarProducto;
-      window.abrirModalQuitarProducto = abrirModalQuitarProducto;
+      loadOrdenes();
     </script>
-
-    <style>
-      /* Modal styles */
-      .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.6);
-        -webkit-backdrop-filter: blur(4px);
-        backdrop-filter: blur(4px);
-        justify-content: center;
-        align-items: center;
-        padding: 1rem;
-        overflow-y: auto;
-      }
-
-      .modal-content {
-        animation: modalSlideIn 0.3s ease-out;
-        max-height: 90vh;
-        overflow-y: auto;
-        position: relative;
-      }
-
-      .modal-close:hover {
-        background-color: var(--razo-gray-light);
-        color: var(--razo-orange);
-      }
-
-      @keyframes modalSlideIn {
-        from {
-          transform: translateY(-50px);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
-      }
-
-      .text-success {
-        color: #10b981;
-        font-weight: 600;
-      }
-
-      .text-warning {
-        color: #f59e0b;
-        font-weight: 600;
-      }
-
-      @media (max-width: 768px) {
-        .modal-content {
-          max-width: 98% !important;
-          width: 98% !important;
-          padding: 1rem !important;
-        }
-      }
-
-      .recepcion-panel {
-        border: 1px solid rgba(0, 0, 0, 0.06);
-        border-radius: 0.75rem;
-        padding: 0.75rem;
-        background: #fff;
-      }
-
-      #btnFinalizarRecepcion {
-        position: fixed;
-        right: 18px;
-        bottom: 18px;
-        z-index: 1200;
-        border-radius: 999px;
-        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.14);
-        padding: 0.85rem 1.1rem;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      @media (max-width: 768px) {
-        #btnFinalizarRecepcion {
-          right: 12px;
-          left: 12px;
-          bottom: 12px;
-          width: calc(100% - 24px);
-          justify-content: center;
-        }
-      }
-
-      #sesionFloatingCounter {
-        position: fixed;
-        right: 18px;
-        bottom: 76px;
-        z-index: 1200;
-        background: rgba(255, 255, 255, 0.98);
-        border: 1px solid rgba(0, 0, 0, 0.08);
-        border-radius: 999px;
-        padding: 0.5rem 0.75rem;
-        font-weight: 700;
-        color: #111827;
-        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
-      }
-
-      @media (max-width: 768px) {
-        #sesionFloatingCounter {
-          right: 12px;
-          left: 12px;
-          bottom: 78px;
-          width: calc(100% - 24px);
-          text-align: center;
-        }
-      }
-
-      /* Imï¿½genes de producto miniatura en tablas */
-      .img-mini-tabla {
-        width: 40px;
-        height: 40px;
-        object-fit: cover;
-        border-radius: 4px;
-      }
-
-      /* Truncar texto largo con "..." */
-      .td-truncado {
-        max-width: 150px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      /* Inputs de cantidad mï¿½s compactos */
-      .input-mini-tabla {
-        max-width: 80px;
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-      }
-
-      /* Encabezados sticky */
-      .thead-sticky th {
-        position: sticky;
-        top: 0;
-        background-color: #f8f9fa;
-        z-index: 2;
-      }
-
-      .thead-pendiente th {
-        background: #f8fafc;
-      }
-
-      .thead-recibido th {
-        background: #ecfdf5;
-      }
-
-      /* Tablas ahora ocupan 100% del ancho - sin grid de 2 columnas */
-      #recepcionSplit {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-      }
-
-      /* Optimizar celdas con mï¿½s espacio horizontal */
-      #tablaPendiente th,
-      #tablaPendiente td,
-      #tablaRecibido th,
-      #tablaRecibido td {
-        padding: 0.75rem 0.75rem;
-        font-size: 0.875rem;
-        vertical-align: middle;
-      }
-
-      .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      /* Mejorar legibilidad de las tablas */
-      .admin-table {
-        min-width: 900px;
-      }
-
-      .recepcion-progress-outer {
-        height: 10px;
-        background: #e5e7eb;
-        border-radius: 999px;
-        overflow: hidden;
-      }
-
-      .recepcion-progress-inner {
-        height: 10px;
-        width: 0;
-        border-radius: 999px;
-      }
-
-      /* Modal overlay styles */
-      .modal-overlay {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.6);
-        -webkit-backdrop-filter: blur(4px);
-        backdrop-filter: blur(4px);
-        justify-content: center;
-        align-items: center;
-        padding: 1rem;
-        overflow-y: auto;
-      }
-
-      .btn-close-modal:hover {
-        background-color: #F3F4F6;
-        color: #F97316;
-        border-radius: 0.375rem;
-      }
-
-      /* Estilos personalizados para botones de SweetAlert */
-      .swal-btn-confirm-danger {
-        background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%) !important;
-        color: white !important;
-        padding: 0.75rem 2rem !important;
-        border-radius: 0.5rem !important;
-        font-weight: 600 !important;
-        border: none !important;
-        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
-        transition: all 0.3s ease !important;
-        font-size: 0.95rem !important;
-      }
-
-      .swal-btn-confirm-danger:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4) !important;
-      }
-
-      .swal-btn-cancel {
-        background: #F3F4F6 !important;
-        color: #374151 !important;
-        padding: 0.75rem 2rem !important;
-        border-radius: 0.5rem !important;
-        font-weight: 600 !important;
-        border: 2px solid #E5E7EB !important;
-        transition: all 0.3s ease !important;
-        font-size: 0.95rem !important;
-      }
-
-      .swal-btn-cancel:hover {
-        background: #E5E7EB !important;
-        border-color: #D1D5DB !important;
-      }
-
-      .swal-popup-modern {
-        border-radius: 1rem !important;
-        padding: 1.5rem !important;
-      }
-
-    </style>
-
-    <script src="js/instructional-banner.js"></script>
   </body>
 </html>
