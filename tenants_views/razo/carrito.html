@@ -1148,7 +1148,7 @@
                       <input
                         type="file"
                         id="input-comprobante"
-                        accept="image/*"
+                        accept="image/*,image/heic,image/heif,.heic,.heif,application/pdf"
                         class="form-control"
                       />
                       <div class="upload-chip" id="transferFileChip">
@@ -1158,7 +1158,7 @@
                           ×
                         </button>
                       </div>
-                      <small>Sube una foto clara de tu comprobante para validar el pedido.</small>
+                      <small><strong>Tamaño máximo: 10MB por archivo.</strong> Formatos: JPG, PNG, PDF, HEIC. Sube una foto clara de tu comprobante para validar el pedido.</small>
                     </div>
                   </div>
                 </section>
@@ -1978,12 +1978,28 @@
         });
       }
 
-      function handleTransferFileChange(event) {
-        if (!transferFileChip || !transferFileName) return;
-        const file =
-          event?.target?.files?.[0] ||
-          (inputComprobante?.files ? inputComprobante.files[0] : null) ||
-          null;
+      function handleTransferFileChange(e) {
+        const file = e.target.files[0];
+        
+        // Validar archivo con FileValidator
+        if (file && window.FileValidator) {
+          const validation = window.FileValidator.validateFile(file, 'PAYMENT_RECEIPTS');
+          
+          if (!validation.valid) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Archivo no válido',
+              html: validation.error.replace(/\n/g, '<br>'),
+              confirmButtonColor: '#F97316'
+            });
+            e.target.value = '';
+            transferReceiptFile = null;
+            transferFileName.textContent = "";
+            transferFileChip.style.display = "none";
+            return;
+          }
+        }
+        
         transferReceiptFile = file;
         if (file) {
           transferFileName.textContent = file.name;
@@ -3460,6 +3476,7 @@
     <script src="js/shared/network-status.js"></script>
     <script src="js/shared/api-client.js"></script>
     <script src="js/shared/ui-helpers.js"></script>
+    <script src="js/shared/file-validator.js"></script>
     
     <script src="js/components/header-loader.js"></script>
     <script src="/js/theme-manager.js"></script>
