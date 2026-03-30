@@ -205,15 +205,19 @@
 
           <div class="form-group" style="margin-bottom: 1.5rem">
             <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem; display: block">
-              Seleccionar archivo (JPG, PNG, PDF):
+              Seleccionar archivo:
             </label>
             <input 
               type="file" 
               id="evidenciaFile" 
-              accept="image/jpeg,image/jpg,image/png,application/pdf"
+              accept="image/jpeg,image/jpg,image/png,image/heic,image/heif,.heic,.heif,application/pdf"
               class="form-input"
               style="width: 100%; padding: 0.75rem; font-size: 1rem"
             />
+            <div style="font-size: 0.85rem; color: #6b7280; margin-top: 0.5rem; display: flex; align-items: start; gap: 0.5rem;">
+              <i class="bi bi-info-circle" style="color: #3b82f6; font-size: 1rem; margin-top: 0.1rem;"></i>
+              <span><strong>Tamaño máximo: 10MB por archivo.</strong> Formatos: JPG, PNG, PDF, HEIC.</span>
+            </div>
           </div>
 
           <div style="background: var(--razo-cream); padding: 1rem; border-radius: 0.5rem; border-left: 4px solid var(--razo-orange); margin-bottom: 1.5rem;">
@@ -468,6 +472,7 @@
     <script src="js/shared/network-status.js"></script>
     <script src="js/shared/api-client.js"></script>
     <script src="js/shared/ui-helpers.js"></script>
+    <script src="js/shared/file-validator.js"></script>
     
     <script src="js/token-validator.js"></script>
     <script src="js/layout.js" defer></script>
@@ -499,8 +504,34 @@
           // Auth verified, safe to load
           return;
         } else if (window.adminAuthVerifying) {
-          // Still verifying, wait a bit
-          setTimeout(waitForAuthThenLoad, 100);
+          // Initialize on page load
+          document.addEventListener("DOMContentLoaded", () => {
+            loadOrders();
+            
+            // Validación de archivo de evidencia
+            const evidenciaFileInput = document.getElementById('evidenciaFile');
+            if (evidenciaFileInput) {
+              evidenciaFileInput.addEventListener('change', function(e) {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                
+                // Usar FileValidator para validar el archivo
+                if (window.FileValidator) {
+                  const validation = window.FileValidator.validateFile(file, 'DELIVERY_EVIDENCE');
+                  
+                  if (!validation.valid) {
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Archivo no válido',
+                      html: validation.error.replace(/\n/g, '<br>'),
+                      confirmButtonColor: '#F97316'
+                    });
+                    e.target.value = '';
+                  }
+                }
+              });
+            }
+          });
         } else {
           // Auth guard hasn't started yet, wait
           setTimeout(waitForAuthThenLoad, 100);
