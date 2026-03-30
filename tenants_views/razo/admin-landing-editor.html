@@ -611,9 +611,13 @@
             <div class="mb-3">
               <label class="form-label">Imagen de Fondo</label>
               <div class="image-upload-area" id="uploadArea1" data-slide="1">
-                <input type="file" id="imageInput1" accept="image/*" style="display: none;" />
+                <input type="file" id="imageInput1" accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif" style="display: none;" />
                 <i class="bi bi-cloud-upload upload-icon"></i>
                 <p class="upload-text mb-0">Click para subir imagen<br><small>1600x900px recomendado</small></p>
+              </div>
+              <div style="font-size: 0.85rem; color: #6b7280; margin-top: 0.5rem; display: flex; align-items: start; gap: 0.5rem;">
+                <i class="bi bi-info-circle" style="color: #3b82f6; font-size: 1rem; margin-top: 0.1rem;"></i>
+                <span>Tamaño máximo: 5MB por imagen. Formatos: JPG, PNG, WEBP, HEIC</span>
               </div>
               <input type="hidden" id="hero_slide_1_image" />
             </div>
@@ -656,9 +660,13 @@
             <div class="mb-3">
               <label class="form-label">Imagen de Fondo</label>
               <div class="image-upload-area" id="uploadArea2" data-slide="2">
-                <input type="file" id="imageInput2" accept="image/*" style="display: none;" />
+                <input type="file" id="imageInput2" accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif" style="display: none;" />
                 <i class="bi bi-cloud-upload upload-icon"></i>
                 <p class="upload-text mb-0">Click para subir imagen<br><small>1600x900px recomendado</small></p>
+              </div>
+              <div style="font-size: 0.85rem; color: #6b7280; margin-top: 0.5rem; display: flex; align-items: start; gap: 0.5rem;">
+                <i class="bi bi-info-circle" style="color: #3b82f6; font-size: 1rem; margin-top: 0.1rem;"></i>
+                <span>Tamaño máximo: 5MB por imagen. Formatos: JPG, PNG, WEBP, HEIC</span>
               </div>
               <input type="hidden" id="hero_slide_2_image" />
             </div>
@@ -701,9 +709,13 @@
             <div class="mb-3">
               <label class="form-label">Imagen de Fondo</label>
               <div class="image-upload-area" id="uploadArea3" data-slide="3">
-                <input type="file" id="imageInput3" accept="image/*" style="display: none;" />
+                <input type="file" id="imageInput3" accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif" style="display: none;" />
                 <i class="bi bi-cloud-upload upload-icon"></i>
                 <p class="upload-text mb-0">Click para subir imagen<br><small>1600x900px recomendado</small></p>
+              </div>
+              <div style="font-size: 0.85rem; color: #6b7280; margin-top: 0.5rem; display: flex; align-items: start; gap: 0.5rem;">
+                <i class="bi bi-info-circle" style="color: #3b82f6; font-size: 1rem; margin-top: 0.1rem;"></i>
+                <span>Tamaño máximo: 5MB por imagen. Formatos: JPG, PNG, WEBP, HEIC</span>
               </div>
               <input type="hidden" id="hero_slide_3_image" />
             </div>
@@ -862,10 +874,14 @@
           
           <!-- Botón para seleccionar imagen -->
           <div class="mb-3 text-center">
-            <input type="file" id="modalImageReplace" accept="image/*" style="display: none;" />
+            <input type="file" id="modalImageReplace" accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif" style="display: none;" />
             <button type="button" class="btn btn-primary" id="btnSelectImage" style="background: var(--razo-orange); border: none;">
               <i class="bi bi-upload"></i> Seleccionar Imagen
             </button>
+            <div style="font-size: 0.85rem; color: #6b7280; margin-top: 0.75rem; display: flex; align-items: start; gap: 0.5rem; justify-content: center;">
+              <i class="bi bi-info-circle" style="color: #3b82f6; font-size: 1rem; margin-top: 0.1rem;"></i>
+              <span>Tamaño máximo: 5MB por imagen. Formatos: JPG, PNG, WEBP, HEIC</span>
+            </div>
             <p class="text-muted mt-2 mb-0" style="font-size: 0.875rem;">
               Formato recomendado: 1600x900px (16:9) para Hero Slider
             </p>
@@ -905,6 +921,7 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/shared/file-validator.js"></script>
   
   <!-- Cropper.js Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>

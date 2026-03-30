@@ -420,13 +420,20 @@
         const file = e.target.files[0];
         if (!file) return;
 
-        if (!file.type.startsWith('image/')) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Archivo inválido',
-            text: 'Por favor selecciona una imagen válida'
-          });
-          return;
+        // Validar con FileValidator
+        if (window.FileValidator) {
+          const validation = window.FileValidator.validateFile(file, 'LANDING_IMAGES');
+          
+          if (!validation.valid) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Archivo no válido',
+              html: validation.error.replace(/\n/g, '<br>'),
+              confirmButtonColor: '#F97316'
+            });
+            e.target.value = '';
+            return;
+          }
         }
 
         await uploadImage(file, i);
@@ -1037,7 +1044,26 @@
 
   function handleImageSelection(e) {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      console.warn('No file selected');
+      return;
+    }
+
+    // Validar con FileValidator
+    if (window.FileValidator) {
+      const validation = window.FileValidator.validateFile(file, 'LANDING_IMAGES');
+      
+      if (!validation.valid) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Archivo no válido',
+          html: validation.error.replace(/\n/g, '<br>'),
+          confirmButtonColor: '#F97316'
+        });
+        e.target.value = '';
+        return;
+      }
+    }
 
     // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {

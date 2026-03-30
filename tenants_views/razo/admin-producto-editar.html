@@ -855,26 +855,6 @@
                             >Imágenes de la variante</strong
                           >
                           <span
-                            id="variantImagesStatus"
-                            style="font-size: 0.85rem; color: var(--text-secondary);"
-                          ></span>
-                        </div>
-
-                        <input
-                          type="file"
-                          id="productImagesInput"
-                          class="form-input"
-                          accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif"
-                          multiple
-                        />
-
-                        <div
-                          style="display:flex; justify-content:flex-end; gap: 0.75rem; flex-wrap: wrap;"
-                        >
-                          <button
-                            type="button"
-                            class="btn btn-secondary"
-                            id="clearImagesSelectionBtn"
                           >
                             Limpiar selección
                           </button>
@@ -1154,6 +1134,7 @@
     <script src="js/shared/network-status.js"></script>
     <script src="js/shared/api-client.js"></script>
     <script src="js/shared/ui-helpers.js"></script>
+    <script src="js/shared/file-validator.js"></script>
     
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/admin-sidebar-loader.js"></script>
@@ -1992,6 +1973,30 @@
         marginMetrics.style.display = "grid";
         marginMessage.textContent = ganancia >= 0 ? "Excelente, estás generando ganancia." : "Atención: el costo supera al precio.";
         profitPerUnit.style.color = marginPercentage.style.color = ganancia >= 0 ? "var(--success-color)" : "var(--danger-color)";
+      }
+
+      // Validar imágenes del producto al seleccionar
+      if (productImagesInput) {
+        productImagesInput.addEventListener('change', function(e) {
+          const files = e.target.files;
+          if (!files || files.length === 0) return;
+
+          if (window.FileValidator) {
+            const validation = window.FileValidator.validateFiles(files, 'PRODUCT_IMAGES');
+            
+            if (!validation.valid) {
+              const errorMessage = validation.errors.join('<br><br>');
+              Swal.fire({
+                icon: 'error',
+                title: 'Archivos no válidos',
+                html: errorMessage,
+                confirmButtonColor: '#F97316'
+              });
+              e.target.value = '';
+              return;
+            }
+          }
+        });
       }
 
       async function init() {
