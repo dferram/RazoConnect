@@ -53,25 +53,20 @@
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validar tamaño (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Archivo muy grande',
-        text: 'La imagen no debe superar 5MB',
-      });
-      return;
-    }
-
-    // Validar tipo
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      Swal.fire({
-        icon: 'error',
-        title: 'Formato inválido',
-        text: 'Solo se permiten imágenes JPG, PNG o WEBP',
-      });
-      return;
+    // Validar con FileValidator
+    if (window.FileValidator) {
+      const validation = window.FileValidator.validateFile(file, 'CATEGORY_IMAGES');
+      
+      if (!validation.valid) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Archivo no válido',
+          html: validation.error.replace(/\n/g, '<br>'),
+          confirmButtonColor: '#F97316'
+        });
+        e.target.value = '';
+        return;
+      }
     }
 
     imagenSeleccionada = file;
