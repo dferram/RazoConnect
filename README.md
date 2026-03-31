@@ -24,6 +24,12 @@ The system is deployed on Azure App Service and serves production traffic for mu
 
 **Finance-Warehouse Confirmation Workflow**: Implemented a new approval flow where warehouse staff prepare orders and Finance department confirms before stock deduction and CxC generation. See [`docs/FLUJO_FINANZAS_ALMACEN.md`](docs/FLUJO_FINANZAS_ALMACEN.md) for complete documentation.
 
+**CI/CD Optimization**: 
+- Automated daily cleanup of GitHub Actions artifacts (2 AM UTC)
+- Fixed artifact storage quota issues by excluding node_modules
+- Improved test suite stability and reduced build times
+- Enhanced gitignore rules for better repository hygiene
+
 ---
 
 ## Architecture

@@ -12,7 +12,12 @@
     "cleanup:workflows": "node scripts/cleanup-workflows.js",
     "cleanup:workflows:simple": "bash scripts/cleanup-workflows-simple.sh",
     "cleanup:workflows:advanced": "bash scripts/cleanup-github-workflows.sh",
-    "cleanup:artifacts": "node scripts/cleanup-artifacts.js"
+    "cleanup:artifacts": "node scripts/cleanup-artifacts.js",
+    "cleanup:local": "bash scripts/cleanup-local.sh",
+    "maintenance:clean": "npm run cleanup:local && npm run cleanup:artifacts",
+    "security:audit": "npm audit",
+    "security:audit:fix": "npm audit fix",
+    "dev:logs": "tail -f logs/*.log"
   },
   "keywords": [
     "ecommerce",
