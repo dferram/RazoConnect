@@ -14,6 +14,35 @@
 
 const { createMockDb } = require('../helpers/mockDb');
 
+/**
+ * Función de cálculo de comisión extraída de la lógica de negocio
+ * Replica pedidosController.js y comisionesAdminController.js
+ */
+function calcularComision(montoTotal, porcentajeComision = 5.00, costoEnvio = 0) {
+  if (typeof montoTotal !== 'number' || typeof porcentajeComision !== 'number') {
+    throw new Error('montoTotal y porcentajeComision deben ser números');
+  }
+
+  if (montoTotal < 0) {
+    throw new Error('El monto total no puede ser negativo');
+  }
+
+  if (porcentajeComision < 0 || porcentajeComision > 100) {
+    throw new Error('El porcentaje de comisión debe estar entre 0 y 100');
+  }
+
+  const baseComision = montoTotal - costoEnvio;
+  
+  if (baseComision < 0) {
+    throw new Error('La base de comisión (total - envío) no puede ser negativa');
+  }
+
+  const montoComision = baseComision * (porcentajeComision / 100);
+  
+  // Redondeo financiero a 2 decimales (CRITICAL para evitar errores de centavos)
+  return Math.round(montoComision * 100) / 100;
+}
+
 describe('Módulo de Comisiones - Cálculos Exactos', () => {
   let mockDb;
 
@@ -21,35 +50,6 @@ describe('Módulo de Comisiones - Cálculos Exactos', () => {
     mockDb = createMockDb();
     jest.clearAllMocks();
   });
-
-  /**
-   * Función de cálculo de comisión extraída de la lógica de negocio
-   * Replica pedidosController.js y comisionesAdminController.js
-   */
-  function calcularComision(montoTotal, porcentajeComision = 5.00, costoEnvio = 0) {
-    if (typeof montoTotal !== 'number' || typeof porcentajeComision !== 'number') {
-      throw new Error('montoTotal y porcentajeComision deben ser números');
-    }
-
-    if (montoTotal < 0) {
-      throw new Error('El monto total no puede ser negativo');
-    }
-
-    if (porcentajeComision < 0 || porcentajeComision > 100) {
-      throw new Error('El porcentaje de comisión debe estar entre 0 y 100');
-    }
-
-    const baseComision = montoTotal - costoEnvio;
-    
-    if (baseComision < 0) {
-      throw new Error('La base de comisión (total - envío) no puede ser negativa');
-    }
-
-    const montoComision = baseComision * (porcentajeComision / 100);
-    
-    // Redondeo financiero a 2 decimales (CRITICAL para evitar errores de centavos)
-    return Math.round(montoComision * 100) / 100;
-  }
 
   describe('Cálculo básico de comisiones', () => {
     test('debe calcular comisión con porcentaje por defecto (5%)', () => {
@@ -268,7 +268,7 @@ describe('Módulo de Comisiones - Cálculos Exactos', () => {
       const resultado = calcularComision(montoMaximo, 1);
       
       expect(resultado).toBeLessThanOrEqual(99999999.99);
-      expect(resultado).toBe(999999.99);
+      expect(resultado).toBe(1000000); // 99,999,999.99 * 0.01 = 1,000,000 (redondeado)
     });
   });
 

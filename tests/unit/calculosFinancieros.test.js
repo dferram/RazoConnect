@@ -10,35 +10,36 @@
  * @date 2026-03-24
  */
 
-describe('Cálculos Financieros - Comisiones', () => {
-  /**
-   * Función extraída de la lógica de negocio
-   * Replica el cálculo de comisión de pedidosController.js líneas 1397-1404
-   */
-  function calcularComision(montoTotal, porcentajeComision, costoEnvio = 0) {
-    if (typeof montoTotal !== 'number' || typeof porcentajeComision !== 'number') {
-      throw new Error('montoTotal y porcentajeComision deben ser números');
-    }
-
-    if (montoTotal < 0) {
-      throw new Error('El monto total no puede ser negativo');
-    }
-
-    if (porcentajeComision < 0 || porcentajeComision > 100) {
-      throw new Error('El porcentaje de comisión debe estar entre 0 y 100');
-    }
-
-    const baseComision = montoTotal - costoEnvio;
-    
-    if (baseComision < 0) {
-      throw new Error('La base de comisión (total - envío) no puede ser negativa');
-    }
-
-    const montoComision = baseComision * (porcentajeComision / 100);
-    
-    // Redondeo financiero a 2 decimales
-    return Math.round(montoComision * 100) / 100;
+/**
+ * Función extraída de la lógica de negocio
+ * Replica el cálculo de comisión de pedidosController.js líneas 1397-1404
+ */
+function calcularComision(montoTotal, porcentajeComision, costoEnvio = 0) {
+  if (typeof montoTotal !== 'number' || typeof porcentajeComision !== 'number') {
+    throw new Error('montoTotal y porcentajeComision deben ser números');
   }
+
+  if (montoTotal < 0) {
+    throw new Error('El monto total no puede ser negativo');
+  }
+
+  if (porcentajeComision < 0 || porcentajeComision > 100) {
+    throw new Error('El porcentaje de comisión debe estar entre 0 y 100');
+  }
+
+  const baseComision = montoTotal - costoEnvio;
+  
+  if (baseComision < 0) {
+    throw new Error('La base de comisión (total - envío) no puede ser negativa');
+  }
+
+  const montoComision = baseComision * (porcentajeComision / 100);
+  
+  // Redondeo financiero a 2 decimales
+  return Math.round(montoComision * 100) / 100;
+}
+
+describe('Cálculos Financieros - Comisiones', () => {
 
   describe('Cálculo correcto con porcentajes estándar', () => {
     test('debe calcular comisión con 5% sobre $1000', () => {
@@ -88,9 +89,9 @@ describe('Cálculos Financieros - Comisiones', () => {
     });
 
     test('debe redondear hacia abajo cuando el tercer decimal es < 5', () => {
-      // 999.99 * 0.0333 = 33.3296667
+      // 999.99 * 0.0333 = 33.3296667 → 33.3 (redondeo estándar)
       const resultado = calcularComision(999.99, 3.33);
-      expect(resultado).toBe(33.33); // 33.3296667 → 33.33
+      expect(resultado).toBe(33.3); // 33.3296667 → 33.3
     });
 
     test('debe redondear hacia arriba cuando el tercer decimal es >= 5', () => {
@@ -204,7 +205,7 @@ describe('Cálculos Financieros - Comisiones', () => {
       const resultado = calcularComision(montoMaximo, 1);
       
       expect(resultado).toBeLessThanOrEqual(99999999.99);
-      expect(resultado).toBe(999999.99); // 1% de max
+      expect(resultado).toBe(1000000); // 99,999,999.99 * 0.01 = 1,000,000 (redondeado)
     });
   });
 });

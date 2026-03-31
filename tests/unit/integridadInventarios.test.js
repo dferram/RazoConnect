@@ -11,85 +11,140 @@
  * @date 2026-03-24
  */
 
-describe('Integridad de Inventarios - Reducción de Stock', () => {
-  /**
-   * Función simulada de reducción de stock
-   * Replica la lógica de inventoryService.registrarMovimiento
-   * para validación de stock antes de confirmar surtido
-   */
-  class InventarioMock {
-    constructor() {
-      this.stock = {};
-    }
-
-    inicializarStock(varianteId, cantidad) {
-      this.stock[varianteId] = cantidad;
-    }
-
-    obtenerStock(varianteId) {
-      return this.stock[varianteId] || 0;
-    }
-
-    /**
-     * Reducir stock con validación de integridad
-     * @param {number} varianteId - ID de la variante
-     * @param {number} cantidad - Cantidad a reducir (positivo)
-     * @returns {Object} - Resultado con stockAnterior y stockNuevo
-     * @throws {Error} - Si hay stock insuficiente
-     */
-    reducirStock(varianteId, cantidad) {
-      if (typeof varianteId !== 'number' || !Number.isInteger(varianteId)) {
-        throw new Error('varianteId debe ser un entero');
-      }
-
-      if (typeof cantidad !== 'number' || cantidad < 0) {
-        throw new Error('cantidad debe ser un número positivo');
-      }
-
-      const stockActual = this.obtenerStock(varianteId);
-      
-      // CRITICAL: No permitir stock negativo
-      if (stockActual < cantidad) {
-        const error = new Error(`Stock insuficiente. Disponible: ${stockActual}, Requerido: ${cantidad}`);
-        error.code = 'STOCK_INSUFICIENTE';
-        error.stockDisponible = stockActual;
-        error.stockRequerido = cantidad;
-        throw error;
-      }
-
-      const stockNuevo = stockActual - cantidad;
-      this.stock[varianteId] = stockNuevo;
-
-      return {
-        stockAnterior: stockActual,
-        stockNuevo: stockNuevo,
-        cantidadReducida: cantidad
-      };
-    }
-
-    /**
-     * Aumentar stock (restock, devolución, etc.)
-     */
-    aumentarStock(varianteId, cantidad) {
-      if (typeof varianteId !== 'number' || !Number.isInteger(varianteId)) {
-        throw new Error('varianteId debe ser un entero');
-      }
-
-      if (typeof cantidad !== 'number' || cantidad < 0) {
-        throw new Error('cantidad debe ser un número positivo');
-      }
-
-      const stockActual = this.obtenerStock(varianteId);
-      const stockNuevo = stockActual + cantidad;
-      this.stock[varianteId] = stockNuevo;
-
-      return {
-        stockAnterior: stockActual,
-        stockNuevo: stockNuevo,
-        cantidadAumentada: cantidad
-      };
-    }
+/**
+ * Función simulada de reducción de stock
+ * Replica la lógica de inventoryService.registrarMovimiento
+ * para validación de stock antes de confirmar surtido
+ */
+class InventarioMock {
+  constructor() {
+    this.stock = {};
   }
+
+  inicializarStock(varianteId, cantidad) {
+    this.stock[varianteId] = cantidad;
+  }
+
+  obtenerStock(varianteId) {
+    return this.stock[varianteId] || 0;
+  }
+
+  /**
+   * Reducir stock con validación de integridad
+   * @param {number} varianteId - ID de la variante
+   * @param {number} cantidad - Cantidad a reducir (positivo)
+   * @returns {Object} - Resultado con stockAnterior y stockNuevo
+   * @throws {Error} - Si hay stock insuficiente
+   */
+  reducirStock(varianteId, cantidad) {
+    if (typeof varianteId !== 'number' || !Number.isInteger(varianteId)) {
+      throw new Error('varianteId debe ser un entero');
+    }
+
+    if (typeof cantidad !== 'number' || cantidad < 0) {
+      throw new Error('cantidad debe ser un número positivo');
+    }
+
+    const stockActual = this.obtenerStock(varianteId);
+    
+    // CRITICAL: No permitir stock negativo
+    if (stockActual < cantidad) {
+      const error = new Error(`Stock insuficiente. Disponible: ${stockActual}, Requerido: ${cantidad}`);
+      error.code = 'STOCK_INSUFICIENTE';
+      error.stockDisponible = stockActual;
+      error.stockRequerido = cantidad;
+      throw error;
+    }
+
+    const stockNuevo = stockActual - cantidad;
+    this.stock[varianteId] = stockNuevo;
+
+    return {
+      stockAnterior: stockActual,
+      stockNuevo: stockNuevo,
+      varianteId,
+      cantidadReducida: cantidad
+    };
+  }
+
+  /**
+   * Aumentar stock (recepción de inventario)
+   * @param {number} varianteId - ID de la variante
+   * @param {number} cantidad - Cantidad a aumentar (positivo)
+   * @returns {Object} - Resultado con stockAnterior y stockNuevo
+   */
+  aumentarStock(varianteId, cantidad) {
+    if (typeof varianteId !== 'number' || !Number.isInteger(varianteId)) {
+      throw new Error('varianteId debe ser un entero');
+    }
+
+    if (typeof cantidad !== 'number' || cantidad < 0) {
+      throw new Error('cantidad debe ser un número positivo');
+    }
+
+    const stockActual = this.obtenerStock(varianteId);
+    const stockNuevo = stockActual + cantidad;
+    this.stock[varianteId] = stockNuevo;
+
+    return {
+      stockAnterior: stockActual,
+      stockNuevo: stockNuevo,
+      varianteId,
+      cantidadAumentada: cantidad
+    };
+  }
+
+  /**
+   * Transferir stock entre variantes (ajuste de inventario)
+   * @param {number} origenId - Variante origen
+   * @param {number} destinoId - Variante destino
+   * @param {number} cantidad - Cantidad a transferir
+   * @returns {Object} - Resultado de la transferencia
+   */
+  transferirStock(origenId, destinoId, cantidad) {
+    const resultadoOrigen = this.reducirStock(origenId, cantidad);
+    const resultadoDestino = this.aumentarStock(destinoId, cantidad);
+
+    return {
+      origen: resultadoOrigen,
+      destino: resultadoDestino,
+      cantidadTransferida: cantidad
+    };
+  }
+
+  /**
+   * Validar integridad del stock
+   * @param {number} varianteId - ID de la variante
+   * @param {number} cantidadEsperada - Cantidad esperada
+   * @returns {boolean} - True si el stock es correcto
+   */
+  validarStock(varianteId, cantidadEsperada) {
+    const stockActual = this.obtenerStock(varianteId);
+    return stockActual === cantidadEsperada;
+  }
+
+  /**
+   * Obtener todo el stock para debugging
+   * @returns {Object} - Copia del stock actual
+   */
+  obtenerTodoStock() {
+    return { ...this.stock };
+  }
+
+  /**
+   * Resetear inventario (para tests)
+   */
+  reset() {
+    this.stock = {};
+  }
+}
+
+describe('Integridad de Inventarios - Reducción de Stock', () => {
+  let inventario;
+
+  beforeEach(() => {
+    inventario = new InventarioMock();
+  });
 
   describe('Validación de stock disponible', () => {
     let inventario;

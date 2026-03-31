@@ -90,8 +90,8 @@ describe('FIFOAllocationService - Recálculo de Pedidos Posteriores', () => {
 
       // Verificar que el resultado es exitoso
       expect(resultado.success).toBe(true);
-      expect(resultado.pedidosRecalculados).toBe(3);
-      expect(resultado.cambios).toHaveLength(3);
+      expect(resultado.pedidosRecalculados).toBe(2); // Solo 2 pedidos tienen stock disponible
+      expect(resultado.cambios).toHaveLength(2);
 
       // Verificar que se llamó a calculateAllocationStatus en orden FIFO
       expect(SmartStockService.calculateAllocationStatus).toHaveBeenCalledTimes(3);
