@@ -121,7 +121,7 @@ async function validarIntegridadPedido(pedidoId, client = null) {
     if (!esValido) {
       console.error(`
 ╔════════════════════════════════════════════════════════════════╗
-║  ⚠️  ALERTA: DISCREPANCIA FINANCIERA DETECTADA                ║
+║  ALERTA: DISCREPANCIA FINANCIERA DETECTADA                ║
 ╠════════════════════════════════════════════════════════════════╣
 ║  Pedido ID:          ${pedidoId.toString().padEnd(42)}║
 ║  Monto Registrado:   $${montoTotalRegistrado.toFixed(2).padEnd(41)}║
@@ -196,7 +196,7 @@ async function validarLotePedidos(pedidoIds) {
   
   if (invalidos.length > 0) {
     console.warn(`
-⚠️  RESUMEN DE VALIDACIÓN EN LOTE
+RESUMEN DE VALIDACIÓN EN LOTE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Total pedidos validados:  ${resultados.length}
 Pedidos válidos:          ${resultados.length - invalidos.length}

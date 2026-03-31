@@ -328,7 +328,7 @@ async function mostrarModalVerificacion() {
   
   let htmlContent = `
     <div style="text-align: left;">
-      <h3 style="margin-top: 0; color: #16A34A;">✓ Productos Separados: ${productosSeparados.length}</h3>
+      <h3 style="margin-top: 0; color: #16A34A;">Productos Separados: ${productosSeparados.length}</h3>
       <ul style="max-height: 200px; overflow-y: auto; margin-bottom: 1.5rem;">
         ${productosSeparados.map(p => `
           <li><strong>${p.nombreProducto}</strong> - ${p.cantidadPaquetes} paquetes</li>
@@ -338,14 +338,14 @@ async function mostrarModalVerificacion() {
 
   if (productosBackorder.length > 0) {
     htmlContent += `
-      <h3 style="color: #DC2626;">📦 Productos en Backorder: ${productosBackorder.length}</h3>
+      <h3 style="color: #DC2626;">Productos en Backorder: ${productosBackorder.length}</h3>
       <ul style="max-height: 200px; overflow-y: auto; margin-bottom: 1.5rem;">
         ${productosBackorder.map(p => `
           <li><strong>${p.nombreProducto}</strong> - ${p.cantidadPaquetes} paquetes</li>
         `).join('')}
       </ul>
       <p style="background: #FEE2E2; padding: 1rem; border-radius: 8px; color: #991B1B;">
-        <strong>⚠️ Nota:</strong> Los productos en backorder NO se enviarán a finanzas en este momento.
+        <strong>Nota:</strong> Los productos en backorder NO se enviarán a finanzas en este momento.
       </p>
     `;
   }
@@ -364,7 +364,7 @@ async function mostrarModalVerificacion() {
     showCancelButton: true,
     confirmButtonColor: '#16A34A',
     cancelButtonColor: '#6B7280',
-    confirmButtonText: '✅ Confirmar y Enviar a Finanzas',
+    confirmButtonText: 'Confirmar y Enviar a Finanzas',
     cancelButtonText: 'Cancelar',
     width: '600px'
   });

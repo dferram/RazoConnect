@@ -449,7 +449,7 @@ function aplicarOrdenamiento(field) {
     renderizarTablaCoincidencias(filteredCoincidencias);
     renderizarTablaDiscrepancias(filteredDiscrepancias);
     
-    console.log(`✅ Ordenado por ${field} (${currentSortOrder})`);
+    console.log(`Ordenado por ${field} (${currentSortOrder})`);
 }
 
 async function descargarPDF() {
@@ -692,7 +692,7 @@ async function descargarPDF() {
 
         if (filteredDiscrepancias.length > 0) {
             yPosition = crearTabla(
-                `⚠ Discrepancias (${filteredDiscrepancias.length} productos)`,
+                `Discrepancias (${filteredDiscrepancias.length} productos)`,
                 filteredDiscrepancias,
                 [239, 68, 68],
                 [220, 38, 38],

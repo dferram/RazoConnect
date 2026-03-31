@@ -77,7 +77,7 @@
       console.error("Error cargando marcas:", error);
       brandsGrid.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #e53e3e;">
-          <p>⚠️ Error al cargar las marcas.</p>
+          <p>Error al cargar las marcas.</p>
         </div>
       `;
     }
@@ -119,7 +119,7 @@
       console.error("Error cargando novedades:", error);
       novedadesGrid.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #e53e3e;">
-          <p>⚠️ Error al cargar los productos.</p>
+          <p>Error al cargar los productos.</p>
         </div>
       `;
     }
@@ -152,8 +152,8 @@
     const stockDisponible = producto.variantesConStock || 0;
     const badge =
       index === 0
-        ? `<div class="product-badge">✨ Más Reciente</div>`
-        : `<div class="product-badge">🆕 Nuevo</div>`;
+        ? `<div class="product-badge">Más Reciente</div>`
+        : `<div class="product-badge">Nuevo</div>`;
 
     // Usar imagenUrl del backend
     const imagenUrl =

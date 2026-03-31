@@ -369,11 +369,11 @@ function renderizarTablaReconciliacion(conteos) {
     tbody.innerHTML = conteos.map(conteo => {
         let badgeSemaforo = '';
         if (conteo.semaforo === 'verde') {
-            badgeSemaforo = '<span class="badge bg-success badge-semaforo">✓ OK</span>';
+            badgeSemaforo = '<span class="badge bg-success badge-semaforo">OK</span>';
         } else if (conteo.semaforo === 'amarillo') {
-            badgeSemaforo = '<span class="badge bg-warning badge-semaforo">⚠ Mínima</span>';
+            badgeSemaforo = '<span class="badge bg-warning badge-semaforo">Mínima</span>';
         } else {
-            badgeSemaforo = '<span class="badge bg-danger badge-semaforo">✗ Alta</span>';
+            badgeSemaforo = '<span class="badge bg-danger badge-semaforo">Alta</span>';
         }
 
         const impactoClass = conteo.impactoEconomico > 0 ? 'impact-positive' : 

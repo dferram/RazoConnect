@@ -3,7 +3,7 @@
 
   // Validación crítica: Verificar que API esté disponible
   if (typeof API === 'undefined') {
-    console.error('❌ [AGENTE-COMISIONES] Error crítico: api.js no se cargó correctamente');
+    console.error('[AGENTE-COMISIONES] Error crítico: api.js no se cargó correctamente');
     return;
   }
 

@@ -40,7 +40,7 @@ async function checkStockBajo(varianteId) {
 
     const sku = variante.sku || variante.varianteid;
     const nombreProducto = variante.nombreproducto || "Producto";
-    const asunto = `⚠️ Alerta de Stock Bajo: ${sku}`;
+    const asunto = `Alerta de Stock Bajo: ${sku}`;
     const cuerpoHtml = `
       <div style="font-family: Arial, sans-serif; color: #1f2937;">
         <h2 style="color:#dc2626;">Stock bajo detectado</h2>

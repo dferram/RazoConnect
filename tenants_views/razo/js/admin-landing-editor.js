@@ -18,7 +18,7 @@
   let currentEditingSlide = null;
   let imageEditModal = null;
   let cropperInstance = null;
-  let cropperReady = false; // ✅ Bandera de control de inicialización
+  let cropperReady = false; // Bandera de control de inicialización
   let currentImageFile = null;
   let availableCategories = [];
   let availableBrands = [];
@@ -35,7 +35,7 @@
     showLoading(true);
     
     try {
-      // ✅ SOLUCIÓN DEFINITIVA: Sobrescribir el método _enforceFocus de Bootstrap
+      // SOLUCIÓN DEFINITIVA: Sobrescribir el método _enforceFocus de Bootstrap
       // Este método es el que causa el error de aria-hidden
       const originalEnforceFocus = bootstrap.Modal.prototype._enforceFocus;
       bootstrap.Modal.prototype._enforceFocus = function() {
@@ -43,12 +43,12 @@
         console.log('Focus trap disabled to prevent aria-hidden errors');
       };
       
-      // ✅ Inicializar modal con configuración para evitar errores de aria-hidden
+      // Inicializar modal con configuración para evitar errores de aria-hidden
       const modalElement = document.getElementById('imageEditModal');
       imageEditModal = new bootstrap.Modal(modalElement, {
         backdrop: true,
         keyboard: true,
-        focus: false  // ✅ CRÍTICO: Deshabilitar auto-focus para evitar error aria-hidden
+        focus: false  // CRÍTICO: Deshabilitar auto-focus para evitar error aria-hidden
       });
       
       await Promise.all([
@@ -205,7 +205,7 @@
     let optionsHTML = '';
 
     // Grupo 1: Páginas Generales
-    optionsHTML += '<optgroup label="📄 Páginas Generales">';
+    optionsHTML += '<optgroup label="Páginas Generales">';
     optionsHTML += '<option value="/">Inicio</option>';
     optionsHTML += '<option value="/catalogo.html">Catálogo Completo</option>';
     optionsHTML += '<option value="/contacto.html">Contacto</option>';
@@ -214,7 +214,7 @@
 
     // Grupo 2: Categorías Dinámicas
     if (availableCategories.length > 0) {
-      optionsHTML += '<optgroup label="🏷️ Categorías">';
+      optionsHTML += '<optgroup label="Categorías">';
       availableCategories.forEach(categoria => {
         const url = `/catalogo.html?categoria=${categoria.id}`;
         const label = `Colección: ${categoria.nombre}`;
@@ -224,7 +224,7 @@
     }
 
     // Grupo 3: Filtros Especiales
-    optionsHTML += '<optgroup label="⭐ Filtros Especiales">';
+    optionsHTML += '<optgroup label="Filtros Especiales">';
     optionsHTML += '<option value="/catalogo.html?oferta=true">Ofertas</option>';
     optionsHTML += '<option value="/catalogo.html?sort=newest">Lo Nuevo</option>';
     optionsHTML += '<option value="/catalogo.html?destacado=true">Destacados</option>';
@@ -299,7 +299,7 @@
   const sendPreviewUpdate = debouncePreview(function() {
     const previewIframe = document.getElementById('previewIframe');
     if (!previewIframe || !previewIframe.contentWindow) {
-      console.warn('⚠️ Preview iframe not accessible');
+      console.warn('Preview iframe not accessible');
       return;
     }
 
@@ -312,14 +312,14 @@
       timestamp: Date.now()
     }, '*');
 
-    console.log('📤 Preview update sent via postMessage:', data);
+    console.log('Preview update sent via postMessage:', data);
   }, 100); // 100ms debounce for smooth real-time updates
 
   // Sync image to preview (immediate, no debounce)
   function syncImageToPreview(slideNumber, imageUrl) {
     const previewIframe = document.getElementById('previewIframe');
     if (!previewIframe || !previewIframe.contentWindow) {
-      console.warn('⚠️ Preview iframe not accessible for image sync');
+      console.warn('Preview iframe not accessible for image sync');
       return;
     }
 
@@ -330,7 +330,7 @@
       timestamp: Date.now()
     }, '*');
 
-    console.log(`📤 Image update sent for slide ${slideNumber}:`, imageUrl);
+    console.log(`Image update sent for slide ${slideNumber}:`, imageUrl);
   }
 
   // Setup live preview synchronization
@@ -338,15 +338,15 @@
     const previewIframe = document.getElementById('previewIframe');
     
     if (!previewIframe) {
-      console.error('❌ Preview iframe not found in DOM');
+      console.error('Preview iframe not found in DOM');
       return;
     }
 
-    console.log('🔧 Setting up postMessage-based live preview...');
+    console.log('Setting up postMessage-based live preview...');
 
     // Wait for iframe to load, then send initial data
     previewIframe.addEventListener('load', function() {
-      console.log('🎬 Preview iframe loaded, sending initial data...');
+      console.log('Preview iframe loaded, sending initial data...');
       
       setTimeout(() => {
         sendPreviewUpdate();
@@ -355,7 +355,7 @@
 
     // If iframe is already loaded, send data immediately
     if (previewIframe.contentDocument && previewIframe.contentDocument.readyState === 'complete') {
-      console.log('🎬 Preview iframe already loaded, sending data...');
+      console.log('Preview iframe already loaded, sending data...');
       setTimeout(() => {
         sendPreviewUpdate();
       }, 300);
@@ -374,7 +374,7 @@
       });
     });
 
-    console.log(`✅ Live preview enabled on ${formElements.length} form elements`);
+    console.log(`Live preview enabled on ${formElements.length} form elements`);
   }
 
   // ============================================
@@ -481,7 +481,7 @@
 
       showImagePreview(slideNumber, imageUrl);
       
-      // ✅ Sincronizar imagen al preview en tiempo real
+      // Sincronizar imagen al preview en tiempo real
       syncImageToPreview(slideNumber, imageUrl);
       
       triggerAutoSave();
@@ -594,7 +594,7 @@
         body: JSON.stringify({ updates })
       });
 
-      // ✅ MISIÓN 4: Validar conexión con servidor
+      // MISIÓN 4: Validar conexión con servidor
       if (!response.ok) {
         if (response.status === 0 || !navigator.onLine) {
           throw new Error('NETWORK_ERROR: No hay conexión con el servidor. Verifica tu conexión a internet.');
@@ -611,13 +611,13 @@
         throw new Error(data.message || 'Error al guardar borrador');
       }
 
-      console.log('✅ Borrador guardado exitosamente:', updates.length, 'campos');
+      console.log('Borrador guardado exitosamente:', updates.length, 'campos');
       showAutoSaveIndicator('saved');
       reloadPreview();
     } catch (error) {
-      console.error('❌ Error saving draft:', error);
+      console.error('Error saving draft:', error);
       
-      // ✅ Mostrar alerta específica según el tipo de error
+      // Mostrar alerta específica según el tipo de error
       if (error.message.includes('NETWORK_ERROR')) {
         Swal.fire({
           icon: 'error',
@@ -655,9 +655,9 @@
         if (element) {
           const value = element.value || null;
           
-          // ✅ MISIÓN 1: Log detallado para debugging de enlaces de botones
+          // MISIÓN 1: Log detallado para debugging de enlaces de botones
           if (field === 'cta_link') {
-            console.log(`🔗 [SLIDE ${i}] Enlace del botón:`, {
+            console.log(`[SLIDE ${i}] Enlace del botón:`, {
               elementId: element.id,
               value: value,
               sectionKey: `${pagePrefix}hero_slide_${i}_${field}`,
@@ -670,7 +670,7 @@
             value: value
           });
         } else {
-          console.warn(`⚠️ Elemento no encontrado: hero_slide_${i}_${field}`);
+          console.warn(`Elemento no encontrado: hero_slide_${i}_${field}`);
         }
       });
     }
@@ -773,7 +773,7 @@
         }
       });
 
-      // ✅ MISIÓN 4: Validar conexión con servidor
+      // MISIÓN 4: Validar conexión con servidor
       if (!response.ok) {
         if (response.status === 0 || !navigator.onLine) {
           throw new Error('NETWORK_ERROR: No hay conexión con el servidor');
@@ -802,18 +802,18 @@
 
       await loadConfig();
     } catch (error) {
-      console.error('❌ Error publishing changes:', error);
+      console.error('Error publishing changes:', error);
       showLoading(false);
       
-      // ✅ Mensaje específico según el tipo de error
+      // Mensaje específico según el tipo de error
       let errorTitle = 'Error al publicar';
       let errorText = error.message || 'No se pudieron publicar los cambios';
       
       if (error.message.includes('NETWORK_ERROR')) {
-        errorTitle = '❌ Sin conexión al servidor';
+        errorTitle = 'Sin conexión al servidor';
         errorText = 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
       } else if (error.message.includes('SERVER_ERROR') || error.message.includes('VNETFailure')) {
-        errorTitle = '❌ Error de Base de Datos';
+        errorTitle = 'Error de Base de Datos';
         errorText = 'El servidor no pudo conectarse a la base de datos. Los cambios NO se publicaron. Contacta al administrador del sistema.';
       }
       
@@ -1003,7 +1003,7 @@
     if (modal) {
       modal.addEventListener('hidden.bs.modal', destroyCropper);
       
-      // ✅ SOLUCIÓN AGRESIVA: Prevenir completamente el focus trap de Bootstrap
+      // SOLUCIÓN AGRESIVA: Prevenir completamente el focus trap de Bootstrap
       modal.addEventListener('show.bs.modal', function(e) {
         // Deshabilitar el enfoque automático de Bootstrap
         setTimeout(() => {
@@ -1028,7 +1028,7 @@
         }, 0);
       });
       
-      // ✅ Limpiar completamente al cerrar
+      // Limpiar completamente al cerrar
       modal.addEventListener('hidden.bs.modal', function(e) {
         document.body.style.overflow = '';
         document.body.classList.remove('modal-open');
@@ -1100,7 +1100,7 @@
       // Mostrar contenedor del cropper
       cropperContainer.style.display = 'block';
       
-      // ✅ CRÍTICO: Deshabilitar botón de guardar hasta que cropper esté listo
+      // CRÍTICO: Deshabilitar botón de guardar hasta que cropper esté listo
       if (modalSaveBtn) {
         modalSaveBtn.disabled = true;
       }
@@ -1227,7 +1227,7 @@
   // ============================================
   
   function initializeCropper(imageElement, imageSrc) {
-    // ✅ PASO 1: Destruir instancia anterior si existe
+    // PASO 1: Destruir instancia anterior si existe
     if (cropperInstance) {
       console.log('Destroying previous cropper instance...');
       cropperInstance.destroy();
@@ -1235,17 +1235,17 @@
       cropperReady = false;
     }
 
-    // ✅ PASO 2: Limpiar handlers previos
+    // PASO 2: Limpiar handlers previos
     imageElement.onload = null;
     imageElement.onerror = null;
 
-    // ✅ PASO 3: Configurar crossOrigin (para archivos locales no es necesario, pero no hace daño)
+    // PASO 3: Configurar crossOrigin (para archivos locales no es necesario, pero no hace daño)
     imageElement.crossOrigin = 'anonymous';
 
-    // ✅ PASO 4: Asignar nueva imagen
+    // PASO 4: Asignar nueva imagen
     imageElement.src = imageSrc;
 
-    // ✅ PASO 5: Esperar a que la imagen cargue completamente
+    // PASO 5: Esperar a que la imagen cargue completamente
     imageElement.onload = function() {
       try {
         console.log('Image loaded, initializing Cropper.js...');
@@ -1267,9 +1267,9 @@
           checkOrientation: true,
           checkCrossOrigin: false,
           
-          // ✅ CRÍTICO: Solo habilitar botón cuando cropper esté 100% listo
+          // CRÍTICO: Solo habilitar botón cuando cropper esté 100% listo
           ready: function() {
-            console.log('✅ Cropper is ready!');
+            console.log('Cropper is ready!');
             cropperReady = true;
             
             const modalSaveBtn = document.getElementById('modalSaveImage');
@@ -1278,11 +1278,11 @@
               console.log('Save button enabled');
             }
 
-            // ✅ Actualizar preview inicial
+            // Actualizar preview inicial
             updateLivePreview();
           },
 
-          // ✅ LIVE PREVIEW: Evento crop para sincronización en tiempo real
+          // LIVE PREVIEW: Evento crop para sincronización en tiempo real
           crop: function(event) {
             // Este evento se dispara cada vez que se mueve o redimensiona el crop box
             updateLivePreview();
@@ -1319,13 +1319,13 @@
 
 
   function destroyCropper() {
-    // ✅ Destruir instancia de cropper
+    // Destruir instancia de cropper
     if (cropperInstance) {
       cropperInstance.destroy();
       cropperInstance = null;
     }
 
-    // ✅ Resetear bandera de estado
+    // Resetear bandera de estado
     cropperReady = false;
 
     const cropperContainer = document.getElementById('cropperContainer');
@@ -1356,7 +1356,7 @@
   }
 
   async function saveCroppedImage() {
-    // ✅ VALIDACIÓN 1: Verificar que exista instancia de cropper
+    // VALIDACIÓN 1: Verificar que exista instancia de cropper
     if (!cropperInstance) {
       Swal.fire({
         icon: 'warning',
@@ -1366,7 +1366,7 @@
       return;
     }
 
-    // ✅ VALIDACIÓN 2: Verificar que el cropper esté completamente listo
+    // VALIDACIÓN 2: Verificar que el cropper esté completamente listo
     if (!cropperReady) {
       Swal.fire({
         icon: 'warning',
@@ -1377,7 +1377,7 @@
       return;
     }
 
-    // ✅ VALIDACIÓN 3: Verificar que haya un slide seleccionado
+    // VALIDACIÓN 3: Verificar que haya un slide seleccionado
     if (!currentEditingSlide) {
       Swal.fire({
         icon: 'error',
@@ -1428,11 +1428,11 @@
           throw new Error('No se pudo generar la imagen recortada');
         }
 
-        // ✅ PREVIEW LOCAL INMEDIATO: Crear URL temporal del blob
+        // PREVIEW LOCAL INMEDIATO: Crear URL temporal del blob
         const localBlobUrl = URL.createObjectURL(blob);
         console.log('Local blob URL created for instant preview:', localBlobUrl);
         
-        // ✅ Actualizar preview ANTES de subir al servidor
+        // Actualizar preview ANTES de subir al servidor
         syncImageToPreview(currentEditingSlide, localBlobUrl);
 
         // Subir imagen recortada a Cloudinary
@@ -1527,12 +1527,12 @@
       // Show cropper container
       cropperContainer.style.display = 'block';
       
-      // ✅ Deshabilitar botón hasta que cropper esté listo
+      // Deshabilitar botón hasta que cropper esté listo
       if (modalSaveBtn) {
         modalSaveBtn.disabled = true;
       }
       
-      // ✅ Usar función robusta de inicialización
+      // Usar función robusta de inicialización
       initializeCropper(cropperImage, currentImageUrl);
     } else {
       // No image yet - show placeholder state
@@ -1549,7 +1549,7 @@
   }
 
   // ============================================
-  // ✅ NUEVO: SMART SELECTOR DATA LOADING
+  // NUEVO: SMART SELECTOR DATA LOADING
   // ============================================
 
   async function loadSmartSelectorData() {
@@ -1568,7 +1568,7 @@
       availableCategories = data.data.categories || [];
       availableBrands = data.data.brands || [];
 
-      console.log('✅ Smart selector data loaded:', {
+      console.log('Smart selector data loaded:', {
         categories: availableCategories.length,
         brands: availableBrands.length
       });
@@ -1583,7 +1583,7 @@
   }
 
   // ============================================
-  // ✅ NUEVO: DYNAMIC ITEM MANAGERS
+  // NUEVO: DYNAMIC ITEM MANAGERS
   // ============================================
 
   function initializeDynamicItemManagers() {
@@ -1687,7 +1687,7 @@
       href: ''
     };
 
-    console.log('🏗️ Building category card with ID:', itemId, 'Data:', itemData);
+    console.log('Building category card with ID:', itemId, 'Data:', itemData);
 
     const itemHTML = `
       <div class="dynamic-item-card" data-item-id="${itemId}" data-type="category">
@@ -1776,7 +1776,7 @@
       href: ''
     };
 
-    console.log('🏗️ Building brand card with ID:', itemId, 'Data:', itemData);
+    console.log('Building brand card with ID:', itemId, 'Data:', itemData);
 
     const itemHTML = `
       <div class="dynamic-item-card" data-item-id="${itemId}" data-type="brand">
@@ -1997,10 +1997,10 @@
           dynamicCategoryItems[itemIndex].id = data.data.id;
         }
         
-        console.log(`✅ Updated category ID from ${itemId} to ${data.data.id}`);
+        console.log(`Updated category ID from ${itemId} to ${data.data.id}`);
       }
 
-      console.log('✅ Category item saved:', data.data);
+      console.log('Category item saved:', data.data);
     } catch (error) {
       console.error('Error saving category item:', error);
     }
@@ -2082,20 +2082,20 @@
           dynamicBrandItems[itemIndex].id = data.data.id;
         }
         
-        console.log(`✅ Updated brand ID from ${itemId} to ${data.data.id}`);
+        console.log(`Updated brand ID from ${itemId} to ${data.data.id}`);
       }
 
-      console.log('✅ Brand item saved:', data.data);
+      console.log('Brand item saved:', data.data);
     } catch (error) {
       console.error('Error saving brand item:', error);
     }
   }
 
   async function deleteCategoryItem(itemId) {
-    console.log('🗑️ Attempting to delete category with ID:', itemId, 'Type:', typeof itemId);
+    console.log('Attempting to delete category with ID:', itemId, 'Type:', typeof itemId);
 
     if (!itemId || itemId === 'undefined') {
-      console.error('❌ Invalid itemId:', itemId);
+      console.error('Invalid itemId:', itemId);
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -2164,10 +2164,10 @@
   }
 
   async function deleteBrandItem(itemId) {
-    console.log('🗑️ Attempting to delete brand with ID:', itemId, 'Type:', typeof itemId);
+    console.log('Attempting to delete brand with ID:', itemId, 'Type:', typeof itemId);
 
     if (!itemId || itemId === 'undefined') {
-      console.error('❌ Invalid itemId:', itemId);
+      console.error('Invalid itemId:', itemId);
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -2340,7 +2340,7 @@
 
     const previousCard = card.previousElementSibling;
     if (!previousCard) {
-      console.log('⚠️ Item already at the top');
+      console.log('Item already at the top');
       return;
     }
 
@@ -2357,7 +2357,7 @@
       array[currentIndex - 1] = temp;
     }
 
-    console.log(`⬆️ Moved ${type} item up:`, itemId);
+    console.log(`Moved ${type} item up:`, itemId);
     
     // Marcar como modificado para guardar el nuevo orden
     isDirty = true;
@@ -2375,7 +2375,7 @@
 
     const nextCard = card.nextElementSibling;
     if (!nextCard) {
-      console.log('⚠️ Item already at the bottom');
+      console.log('Item already at the bottom');
       return;
     }
 
@@ -2392,14 +2392,14 @@
       array[currentIndex + 1] = temp;
     }
 
-    console.log(`⬇️ Moved ${type} item down:`, itemId);
+    console.log(`Moved ${type} item down:`, itemId);
     
     // Marcar como modificado para guardar el nuevo orden
     isDirty = true;
   }
 
   // ============================================
-  // ✅ LEGACY: OLD CATEGORIES & BRANDS MANAGEMENT (DEPRECATED)
+  // LEGACY: OLD CATEGORIES & BRANDS MANAGEMENT (DEPRECATED)
   // ============================================
 
   async function loadCategoriesManager() {
@@ -2420,13 +2420,13 @@
         const catId = cat.categoriaid || cat.categoriaId;
         const catName = cat.nombre || cat.Nombre;
         const currentImage = cat.imagen_landing || cat.imagenUrl || '';
-        // ✅ MISIÓN 3: Linked List Logic - auto-generar URL basada en categoría ID
+        // MISIÓN 3: Linked List Logic - auto-generar URL basada en categoría ID
         const autoGeneratedLink = `/catalogo.html?categoria=${catId}`;
         const currentLink = cat.link_landing || autoGeneratedLink;
 
         return `
           <div class="slide-group" data-category-id="${catId}">
-            <div class="slide-group-header">🏷️ ${catName}</div>
+            <div class="slide-group-header">${catName}</div>
             
             <div class="mb-3">
               <label class="form-label">Nombre Visual</label>
@@ -2464,7 +2464,7 @@
                      value="${autoGeneratedLink}"
                      readonly
                      style="background: #f3f4f6; cursor: not-allowed;" />
-              <small class="text-muted">✅ Generado automáticamente - Al hacer clic, mostrará solo productos de "${catName}"</small>
+              <small class="text-muted">Generado automáticamente - Al hacer clic, mostrará solo productos de "${catName}"</small>
             </div>
           </div>
         `;
@@ -2521,13 +2521,13 @@
         const brandId = brand.proveedorid || brand.proveedorId;
         const brandName = brand.nombre || brand.Nombre;
         const currentImage = brand.imagen_landing || brand.imagenUrl || '';
-        // ✅ MISIÓN 3: Linked List Logic - auto-generar URL basada en marca ID
+        // MISIÓN 3: Linked List Logic - auto-generar URL basada en marca ID
         const autoGeneratedLink = `/proveedor-tienda.html?id=${brandId}`;
         const currentLink = brand.link_landing || autoGeneratedLink;
 
         return `
           <div class="slide-group" data-brand-id="${brandId}">
-            <div class="slide-group-header">🏪 ${brandName}</div>
+            <div class="slide-group-header">${brandName}</div>
             
             <div class="mb-3">
               <label class="form-label">Nombre Visual</label>
@@ -2565,7 +2565,7 @@
                      value="${autoGeneratedLink}"
                      readonly
                      style="background: #f3f4f6; cursor: not-allowed;" />
-              <small class="text-muted">✅ Generado automáticamente - Al hacer clic, mostrará productos de "${brandName}"</small>
+              <small class="text-muted">Generado automáticamente - Al hacer clic, mostrará productos de "${brandName}"</small>
             </div>
           </div>
         `;
@@ -2779,7 +2779,7 @@
     const linkInput = document.getElementById(`category_link_${categoryId}`);
     const displayNameInput = document.getElementById(`category_display_name_${categoryId}`);
     
-    // ✅ MISIÓN 3: Usar link auto-generado y nombre visual
+    // MISIÓN 3: Usar link auto-generado y nombre visual
     const linkUrl = linkInput ? linkInput.value : `/catalogo.html?categoria=${categoryId}`;
     const displayName = displayNameInput ? displayNameInput.value : '';
 
@@ -2807,7 +2807,7 @@
     const linkInput = document.getElementById(`brand_link_${brandId}`);
     const displayNameInput = document.getElementById(`brand_display_name_${brandId}`);
     
-    // ✅ MISIÓN 3: Usar link auto-generado y nombre visual
+    // MISIÓN 3: Usar link auto-generado y nombre visual
     const linkUrl = linkInput ? linkInput.value : `/proveedor-tienda.html?id=${brandId}`;
     const displayName = displayNameInput ? displayNameInput.value : '';
 

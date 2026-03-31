@@ -21,14 +21,14 @@ async function eliminarImagenCloudinary(publicId) {
     if (result.result === "ok") {
       return { success: true, publicId, result: result.result };
     } else if (result.result === "not found") {
-      console.warn(`⚠️ Imagen no encontrada en Cloudinary: ${publicId}`);
+      console.warn(`Imagen no encontrada en Cloudinary: ${publicId}`);
       return { success: false, publicId, result: result.result, message: "Imagen no encontrada" };
     } else {
-      console.error(`❌ Error eliminando imagen de Cloudinary: ${publicId}`, result);
+      console.error(`Error eliminando imagen de Cloudinary: ${publicId}`, result);
       return { success: false, publicId, result: result.result };
     }
   } catch (error) {
-    console.error(`❌ Excepción eliminando imagen de Cloudinary: ${publicId}`, error);
+    console.error(`Excepción eliminando imagen de Cloudinary: ${publicId}`, error);
     throw error;
   }
 }

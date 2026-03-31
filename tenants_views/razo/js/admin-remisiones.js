@@ -47,7 +47,7 @@ async function cargarRemisiones() {
         const token = localStorage.getItem('razoconnect_admin_token');
         
         if (!token) {
-            console.warn('⚠️ No admin token found in localStorage');
+            console.warn('No admin token found in localStorage');
             console.warn('Available localStorage keys:', Object.keys(localStorage));
             window.location.href = '/login.html?error=session_expired';
             return;
@@ -75,7 +75,7 @@ async function cargarRemisiones() {
         });
 
         if (response.status === 401) {
-            console.error('❌ 401 Unauthorized - Token inválido o expirado');
+            console.error('401 Unauthorized - Token inválido o expirado');
             localStorage.removeItem('razoconnect_admin_token');
             localStorage.removeItem('razoconnect_admin');
             
@@ -243,7 +243,7 @@ async function verDetalleRemision(remisionId) {
         const token = localStorage.getItem('razoconnect_admin_token');
         
         if (!token) {
-            console.warn('⚠️ No admin token found in localStorage');
+            console.warn('No admin token found in localStorage');
             window.location.href = '/login.html?error=session_expired';
             return;
         }
@@ -258,7 +258,7 @@ async function verDetalleRemision(remisionId) {
         });
 
         if (response.status === 401) {
-            console.error('❌ 401 Unauthorized - Token inválido o expirado');
+            console.error('401 Unauthorized - Token inválido o expirado');
             localStorage.removeItem('razoconnect_admin_token');
             localStorage.removeItem('razoconnect_admin');
             modal.hide();
@@ -441,7 +441,7 @@ async function cancelarRemision() {
         const token = localStorage.getItem('razoconnect_admin_token');
         
         if (!token) {
-            console.warn('⚠️ No admin token found in localStorage');
+            console.warn('No admin token found in localStorage');
             window.location.href = '/login.html?error=session_expired';
             return;
         }
@@ -457,7 +457,7 @@ async function cancelarRemision() {
         });
 
         if (response.status === 401) {
-            console.error('❌ 401 Unauthorized - Token inválido o expirado');
+            console.error('401 Unauthorized - Token inválido o expirado');
             localStorage.removeItem('razoconnect_admin_token');
             localStorage.removeItem('razoconnect_admin');
             
@@ -509,7 +509,7 @@ async function exportarExcel() {
         const token = localStorage.getItem('razoconnect_admin_token');
         
         if (!token) {
-            console.warn('⚠️ No admin token found in localStorage');
+            console.warn('No admin token found in localStorage');
             window.location.href = '/login.html?error=session_expired';
             return;
         }
@@ -535,7 +535,7 @@ async function exportarExcel() {
         });
 
         if (response.status === 401) {
-            console.error('❌ 401 Unauthorized - Token inválido o expirado');
+            console.error('401 Unauthorized - Token inválido o expirado');
             localStorage.removeItem('razoconnect_admin_token');
             localStorage.removeItem('razoconnect_admin');
             

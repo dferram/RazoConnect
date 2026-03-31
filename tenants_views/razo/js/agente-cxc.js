@@ -64,7 +64,7 @@
       if (!response.ok) {
         if (response.status === 401) {
           // CRÍTICO: NO limpiar tokens ni redirigir - api.js maneja esto con protección de agente
-          console.warn("⚠️ Error 401 detectado - manteniendo sesión de agente");
+          console.warn("Error 401 detectado - manteniendo sesión de agente");
           throw new Error("Error de autenticación - intenta recargar la página");
         }
         

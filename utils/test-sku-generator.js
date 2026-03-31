@@ -1,7 +1,7 @@
 const { generarSkuUnico, skuExiste, generarPrefijo } = require('./skuGenerator');
 
 async function testSkuGenerator() {
-  console.log('\n🧪 Iniciando pruebas del generador de SKU...\n');
+  console.log('\nIniciando pruebas del generador de SKU...\n');
   
   try {
     console.log('--- Test 1: Generar SKU para "Torre Love" ---');
@@ -24,10 +24,10 @@ async function testSkuGenerator() {
     const prefijo = generarPrefijo('Corazón Mágico');
     console.log(`Prefijo de "Corazón Mágico": ${prefijo}\n`);
     
-    console.log('✅ Todas las pruebas completadas exitosamente');
+    console.log('Todas las pruebas completadas exitosamente');
     
   } catch (error) {
-    console.error('❌ Error en las pruebas:', error.message);
+    console.error('Error en las pruebas:', error.message);
   }
   
   process.exit(0);

@@ -142,7 +142,7 @@ function calcularTotalPedido({
 
       // Validación de consistencia
       if (item.subtotalConDescuento < 0) {
-        console.error(`⚠️ [CALCULADORA] Subtotal negativo detectado en item ${item.varianteId || item.sku}`);
+        console.error(`[CALCULADORA] Subtotal negativo detectado en item ${item.varianteId || item.sku}`);
         item.subtotalConDescuento = 0;
       }
     });
@@ -163,7 +163,7 @@ function calcularTotalPedido({
   const diferencia = Math.abs(sumSubtotalesConDescuento - totalFinal);
   
   if (diferencia > 0.02) {
-    console.warn(`⚠️ [CALCULADORA] Discrepancia de redondeo: ${diferencia.toFixed(2)}`);
+    console.warn(`[CALCULADORA] Discrepancia de redondeo: ${diferencia.toFixed(2)}`);
     console.warn(`   SUM(subtotales con descuento): ${sumSubtotalesConDescuento.toFixed(2)}`);
     console.warn(`   Total final esperado: ${totalFinal.toFixed(2)}`);
   }

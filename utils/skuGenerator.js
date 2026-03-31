@@ -75,12 +75,12 @@ async function generarSkuUnico(nombreProducto) {
     const consecutivoFormateado = nuevoConsecutivo.toString().padStart(3, '0');
     const skuGenerado = `${prefijo}-${consecutivoFormateado}`;
     
-    console.log(`✅ SKU generado: ${skuGenerado} para producto "${nombreProducto}"`);
+    console.log(`SKU generado: ${skuGenerado} para producto "${nombreProducto}"`);
     
     return skuGenerado;
     
   } catch (error) {
-    console.error('❌ Error al generar SKU único:', error.message);
+    console.error('Error al generar SKU único:', error.message);
     throw new Error(`Error al generar SKU: ${error.message}`);
   }
 }
@@ -96,7 +96,7 @@ async function skuExiste(sku) {
     const result = await db.query(query, [sku]);
     return parseInt(result.rows[0].count, 10) > 0;
   } catch (error) {
-    console.error('❌ Error al verificar existencia de SKU:', error.message);
+    console.error('Error al verificar existencia de SKU:', error.message);
     throw error;
   }
 }

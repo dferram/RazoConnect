@@ -64,7 +64,7 @@
 
   // Token ya validado localmente - no necesitamos verificar con el servidor
   // Esto evita errores 401/403 innecesarios y mejora la experiencia offline
-  console.log("✅ Token de agente validado localmente");
+  console.log("Token de agente validado localmente");
 })();
 
 // Helper function to clear auth

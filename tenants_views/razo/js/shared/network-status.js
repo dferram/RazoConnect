@@ -29,7 +29,7 @@
       font-weight: 500;
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     `;
-    banner.textContent = '⚠️ Sin conexión a internet. Algunas funciones no estarán disponibles.';
+    banner.textContent = 'Sin conexión a internet. Algunas funciones no estarán disponibles.';
     document.body.prepend(banner);
   };
 
@@ -42,11 +42,11 @@
     const banner = document.getElementById(BANNER_ID);
     if (banner) {
       banner.style.background = '#22c55e';
-      banner.textContent = '✅ Conexión restaurada.';
+      banner.textContent = 'Conexión restaurada.';
       setTimeout(() => {
         banner.style.display = 'none';
         banner.style.background = '#ef4444';
-        banner.textContent = '⚠️ Sin conexión a internet. Algunas funciones no estarán disponibles.';
+        banner.textContent = 'Sin conexión a internet. Algunas funciones no estarán disponibles.';
       }, 2500);
     }
   };

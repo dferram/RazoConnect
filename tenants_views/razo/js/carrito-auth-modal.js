@@ -248,6 +248,6 @@
       });
     }
 
-    console.log('✅ Carrito auth modal initialized');
+    console.log('Carrito auth modal initialized');
   }
 })();

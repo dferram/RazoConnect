@@ -440,7 +440,7 @@ async function exportarExcelEntrada() {
 
         Swal.fire({
             icon: 'success',
-            title: '✅ Excel Generado',
+            title: 'Excel Generado',
             text: `El comprobante de entrada ${folio} ha sido descargado exitosamente.`,
             confirmButtonColor: '#F97316'
         });

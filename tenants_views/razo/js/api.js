@@ -28,7 +28,7 @@ if (!useAuthManager && typeof window !== 'undefined') {
     document.addEventListener('DOMContentLoaded', () => {
       checkAuthManagerAvailability();
       if (useAuthManager) {
-        console.log('✅ [API] AuthManager cargado correctamente');
+        console.log('[API] AuthManager cargado correctamente');
       }
     });
   } else {
@@ -36,7 +36,7 @@ if (!useAuthManager && typeof window !== 'undefined') {
     setTimeout(() => {
       checkAuthManagerAvailability();
       if (useAuthManager) {
-        console.log('✅ [API] AuthManager cargado correctamente');
+        console.log('[API] AuthManager cargado correctamente');
       }
     }, 0);
   }
@@ -186,7 +186,7 @@ window.safeClearTokens = () => {
       // Contexto de agente - limpiar solo tokens de agente
       localStorage.removeItem(AGENT_TOKEN_KEY);
       localStorage.removeItem(AGENT_DATA_KEY);
-      console.log("🔐 Tokens de agente limpiados");
+      console.log("Tokens de agente limpiados");
       return true;
     } else if (path.startsWith('/admin')) {
       // Contexto de admin - limpiar solo tokens de admin
@@ -198,7 +198,7 @@ window.safeClearTokens = () => {
       // Contexto de cliente
       localStorage.removeItem("razoconnect_token");
       localStorage.removeItem("razoconnect_user");
-      console.log("🔐 Tokens de cliente limpiados");
+      console.log("Tokens de cliente limpiados");
       return true;
     }
   } catch (error) {
@@ -242,7 +242,7 @@ const validateTokenStructure = () => {
     // Decode JWT payload (without verification - just structure check)
     const parts = token.split('.');
     if (parts.length !== 3) {
-      console.warn('⚠️ Token malformado detectado (partes incorrectas). Limpiando...');
+      console.warn('Token malformado detectado (partes incorrectas). Limpiando...');
       clearAuthData();
       return false;
     }
@@ -251,21 +251,21 @@ const validateTokenStructure = () => {
     
     // Check for required fields based on role
     if (payload.rol === 'cliente' && !payload.tenant_id) {
-      console.warn('⚠️ Token de cliente sin tenant_id detectado. Limpiando...');
+      console.warn('Token de cliente sin tenant_id detectado. Limpiando...');
       clearAuthData();
       return false;
     }
     
     // Check token expiration
     if (payload.exp && payload.exp * 1000 < Date.now()) {
-      console.warn('⚠️ Token expirado detectado. Limpiando...');
+      console.warn('Token expirado detectado. Limpiando...');
       clearAuthData();
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error('❌ Error validando estructura del token:', error);
+    console.error('Error validando estructura del token:', error);
     clearAuthData();
     return false;
   }
@@ -311,10 +311,10 @@ const apiCall = async (endpoint, options = {}) => {
     
     // DEBUGGING: Confirm header was set for agent endpoints
     if (endpoint.includes('/agente/')) {
-      console.log('✅ [apiCall] Header Authorization configurado correctamente');
+      console.log('[apiCall] Header Authorization configurado correctamente');
     }
   } else if (endpoint.includes('/agente/')) {
-    console.error('❌ [apiCall] NO SE PUDO OBTENER TOKEN para endpoint de agente!');
+    console.error('[apiCall] NO SE PUDO OBTENER TOKEN para endpoint de agente!');
   }
 
   try {
@@ -355,7 +355,7 @@ const apiCall = async (endpoint, options = {}) => {
 
     // Manejo de 429 Too Many Requests - redirigir a página de rate limit
     if (response.status === 429) {
-      console.warn('⚠️ Rate limit alcanzado - Redirigiendo a página 429');
+      console.warn('Rate limit alcanzado - Redirigiendo a página 429');
       setTimeout(() => {
         window.location.href = '/429.html';
       }, 100);
@@ -393,7 +393,7 @@ const apiCall = async (endpoint, options = {}) => {
       
       // CRÍTICO: En contexto de agente, NO limpiar tokens ni redirigir
       if (path.includes('/agente')) {
-        console.warn('⚠️ Error 401 en contexto de agente - Bloqueando limpieza de sesión');
+        console.warn('Error 401 en contexto de agente - Bloqueando limpieza de sesión');
         console.warn('El agente puede seguir trabajando. Auth guard manejará validación real.');
         
         // Retornar error sin limpiar sesión ni redirigir
@@ -615,7 +615,7 @@ const API = {
         if (!isAgent) {
           clearAuthData();
         } else {
-          console.warn("🛡️ Error 401 para agente - NO se limpiará sesión (dejar que auth guard lo maneje)");
+          console.warn("Error 401 para agente - NO se limpiará sesión (dejar que auth guard lo maneje)");
         }
         
         if (!sessionExpiredHandled) {
@@ -800,7 +800,7 @@ const fetchWithAuth = async (url, options = {}) => {
 
     // Handle 403 Forbidden (permission denied) - show alert but don't logout
     if (response.status === 403) {
-      console.error("❌ [FETCH] Acceso denegado (403):", url);
+      console.error('[FETCH] Acceso denegado (403):', url);
       
       if (typeof Swal !== "undefined" && Swal && typeof Swal.fire === "function") {
         Swal.fire({
@@ -824,7 +824,7 @@ const fetchWithAuth = async (url, options = {}) => {
       if (!isAgent) {
         clearAuthData();
       } else {
-        console.warn("🛡️ Error 401 para agente - NO se limpiará sesión (dejar que auth guard lo maneje)");
+        console.warn("Error 401 para agente - NO se limpiará sesión (dejar que auth guard lo maneje)");
       }
       
       if (!sessionExpiredHandled) {

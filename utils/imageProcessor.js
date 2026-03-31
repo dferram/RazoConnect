@@ -30,7 +30,7 @@ async function processImageBuffer(buffer, options = {}) {
 
     // Get metadata to check original dimensions
     const metadata = await image.metadata();
-    console.log(`📸 Processing image: ${metadata.format} ${metadata.width}x${metadata.height}`);
+    console.log(`Processing image: ${metadata.format} ${metadata.width}x${metadata.height}`);
 
     // Resize if image exceeds max dimensions (maintains aspect ratio)
     if (metadata.width > maxWidth || metadata.height > maxHeight) {
@@ -38,7 +38,7 @@ async function processImageBuffer(buffer, options = {}) {
         fit: "inside", // Maintains aspect ratio, fits within bounds
         withoutEnlargement: true, // Don't upscale smaller images
       });
-      console.log(`🔄 Resizing to max ${maxWidth}x${maxHeight} (aspect ratio preserved)`);
+      console.log(`Resizing to max ${maxWidth}x${maxHeight} (aspect ratio preserved)`);
     }
 
     // Convert to target format with compression
@@ -56,11 +56,11 @@ async function processImageBuffer(buffer, options = {}) {
     const processedSizeKB = Math.round(processedBuffer.length / 1024);
     const reduction = Math.round(((buffer.length - processedBuffer.length) / buffer.length) * 100);
     
-    console.log(`✅ Image processed: ${originalSizeKB}KB → ${processedSizeKB}KB (${reduction}% reduction)`);
+    console.log(`Image processed: ${originalSizeKB}KB → ${processedSizeKB}KB (${reduction}% reduction)`);
 
     return processedBuffer;
   } catch (error) {
-    console.error("❌ Error processing image:", error);
+    console.error("Error processing image:", error);
     throw new Error(`Image processing failed: ${error.message}`);
   }
 }
@@ -91,7 +91,7 @@ async function processImageStream(stream, options = {}) {
       stream: processedStream,
     };
   } catch (error) {
-    console.error("❌ Error processing image stream:", error);
+    console.error("Error processing image stream:", error);
     throw error;
   }
 }
@@ -119,7 +119,7 @@ async function getImageMetadata(buffer) {
   try {
     return await sharp(buffer).metadata();
   } catch (error) {
-    console.error("❌ Error getting image metadata:", error);
+    console.error("Error getting image metadata:", error);
     throw error;
   }
 }

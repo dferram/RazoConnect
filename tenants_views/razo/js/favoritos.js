@@ -36,10 +36,10 @@ const FavoritosManager = {
         const data = await response.json();
         this.favoritos = new Set(data.favoritos.map(f => f.varianteId));
         this.initialized = true;
-        console.log('✅ [FAVORITOS] Inicializado con', this.favoritos.size, 'favoritos');
+        console.log('[FAVORITOS] Inicializado con', this.favoritos.size, 'favoritos');
       }
     } catch (error) {
-      console.error('❌ [FAVORITOS] Error al inicializar:', error);
+      console.error('[FAVORITOS] Error al inicializar:', error);
     }
   },
 
@@ -145,7 +145,7 @@ const FavoritosManager = {
       return { success: true, action: data.action, esFavorito: data.esFavorito };
 
     } catch (error) {
-      console.error('❌ [FAVORITOS] Error al toggle:', error);
+      console.error('[FAVORITOS] Error al toggle:', error);
       Swal.fire({
         icon: 'error',
         title: 'Error',
@@ -237,7 +237,7 @@ const FavoritosManager = {
         }
       }
     } catch (error) {
-      console.error('❌ [FAVORITOS] Error al actualizar badge:', error);
+      console.error('[FAVORITOS] Error al actualizar badge:', error);
     }
   }
 };

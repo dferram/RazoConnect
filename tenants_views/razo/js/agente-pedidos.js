@@ -3,7 +3,7 @@
 
   // Validación crítica: Verificar que API esté disponible
   if (typeof API === 'undefined') {
-    console.error('❌ [AGENTE-PEDIDOS] Error crítico: api.js no se cargó correctamente');
+    console.error('[AGENTE-PEDIDOS] Error crítico: api.js no se cargó correctamente');
     return;
   }
 
@@ -431,7 +431,7 @@
             icon: "warning",
             title: "¿Solicitar cancelación?",
             text:
-              "⚠️ Se enviará una solicitud al administrador. Si se aprueba, se devolverán los productos al inventario y se notificará al cliente.",
+              "Se enviará una solicitud al administrador. Si se aprueba, se devolverán los productos al inventario y se notificará al cliente.",
             showCancelButton: true,
             confirmButtonText: "Sí, solicitar cancelación",
             cancelButtonText: "No, mantener pedido",
@@ -444,7 +444,7 @@
             icon: "question",
             title: "¿Solicitar actualización?",
             text:
-              "⚠️ Se enviará una solicitud al administrador para actualizar el estatus y notificar al cliente.",
+              "Se enviará una solicitud al administrador para actualizar el estatus y notificar al cliente.",
             showCancelButton: true,
             confirmButtonText: "Sí, enviar solicitud",
             cancelButtonText: "Cancelar",
@@ -545,7 +545,7 @@
           title: 'Información sobre la Factura',
           html: `
             <div style="text-align: left;">
-              <p><strong>⚠️ Importante:</strong></p>
+              <p><strong>Importante:</strong></p>
               <ul style="margin-left: 1rem;">
                 <li>Esta factura incluye el <strong>IVA (16%)</strong> aplicable.</li>
                 <li>Es un documento interno para control administrativo.</li>

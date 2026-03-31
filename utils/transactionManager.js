@@ -51,7 +51,7 @@ class TransactionLogger {
 
   logSuccess() {
     const duration = Date.now() - this.startTime;
-    console.log(`✅ [TXN:${this.transactionId}] COMMIT exitoso (${duration}ms)`);
+    console.log(`[TXN:${this.transactionId}] COMMIT exitoso (${duration}ms)`);
     console.log(`   Operaciones: ${this.operations.length}`);
     if (this.context.userId) {
       console.log(`   Usuario: ${this.context.userId}`);
@@ -63,13 +63,13 @@ class TransactionLogger {
 
   logRollback(error) {
     const duration = Date.now() - this.startTime;
-    console.error(`🔴 [TXN:${this.transactionId}] ROLLBACK ejecutado (${duration}ms)`);
+    console.error(`[TXN:${this.transactionId}] ROLLBACK ejecutado (${duration}ms)`);
     console.error(`   Error: ${error.message}`);
     console.error(`   Operaciones antes del fallo: ${this.operations.length}`);
     
     // Log detallado de operaciones para debugging
     if (this.operations.length > 0) {
-      console.error(`   📋 Historial de operaciones:`);
+      console.error(`   Historial de operaciones:`);
       this.operations.forEach((op, idx) => {
         console.error(`      ${idx + 1}. ${op.operation} (${op.timestamp - this.startTime}ms)`);
       });
@@ -87,7 +87,7 @@ class TransactionLogger {
   }
 
   logWarning(message, details = {}) {
-    console.warn(`⚠️ [TXN:${this.transactionId}] ${message}`, details);
+    console.warn(`[TXN:${this.transactionId}] ${message}`, details);
   }
 }
 
@@ -162,7 +162,7 @@ async function executeTransaction(callback, options = {}) {
         await client.query('ROLLBACK');
         logger.logRollback(error);
       } catch (rollbackError) {
-        console.error(`❌ [TXN:${transactionId}] ERROR CRÍTICO: Fallo al ejecutar ROLLBACK`, rollbackError);
+        console.error(`[TXN:${transactionId}] ERROR CRÍTICO: Fallo al ejecutar ROLLBACK`, rollbackError);
       }
     }
 

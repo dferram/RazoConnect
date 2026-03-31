@@ -183,7 +183,7 @@
       if (result.ok && result.data.success) {
         // Backend retorna: { success: true, data: { categorias: [...] } }
         categorias = result.data.data?.categorias || [];
-        console.log(`✅ [admin-categorias] Cargadas ${categorias.length} categorías`);
+        console.log(`[admin-categorias] Cargadas ${categorias.length} categorías`);
         renderCategorias();
       } else {
         throw new Error(result.data.message || 'Error al cargar categorías');

@@ -25,7 +25,7 @@ function enableTenantVerification() {
       const hasTenantFilter = /tenant_id\s*=/i.test(query) || /\.tenant_id\s*=/i.test(query);
       
       if (!hasTenantFilter) {
-        console.warn('⚠️  QUERY SIN FILTRO DE TENANT DETECTADA:');
+        console.warn('QUERY SIN FILTRO DE TENANT DETECTADA:');
         console.warn('   Query:', query.substring(0, 200));
         console.warn('   Params:', params);
         console.warn('   Stack:', new Error().stack.split('\n').slice(2, 5).join('\n'));
