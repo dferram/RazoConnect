@@ -1783,6 +1783,41 @@ footer::after {
   background: rgba(249, 115, 22, 0.12);
 }
 
+.rz-footer-developer {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.rz-footer-developer-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  transition: opacity 0.3s ease;
+  opacity: 0.7;
+}
+
+.rz-footer-developer-link:hover {
+  opacity: 1;
+}
+
+.rz-footer-developer-text {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.rz-footer-developer-brand {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.1em;
+}
+
 .footer-content {
   display: grid;
   grid-template-columns: 2.2fr 1fr 1fr 1fr;
