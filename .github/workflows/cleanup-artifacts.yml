@@ -1,0 +1,53 @@
+name: Cleanup Old Artifacts
+
+on:
+  schedule:
+    # Ejecutar todos los días a las 2 AM UTC (8 PM México)
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # Permitir ejecución manual
+    inputs:
+      reason:
+        description: 'Razón de la limpieza manual'
+        required: false
+        default: 'Limpieza manual de artifacts'
+
+jobs:
+  cleanup:
+    name: Cleanup Old Artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read  # Para listar artifacts
+      contents: read  # Para acceder al repo
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          
+      - name: Cleanup artifacts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🧹 Iniciando limpieza de artifacts..."
+          echo "⏰ Ejecutando: $(date)"
+          
+          # Instalar dependencia solo si no existe
+          if [ ! -d "node_modules/@octokit" ]; then
+            npm install @octokit/rest
+          fi
+          
+          # Ejecutar script de limpieza
+          node scripts/cleanup-artifacts.js --yes
+          
+          echo "✅ Limpieza completada: $(date)"
+          
+      - name: Summary
+        run: |
+          echo "## 📊 Resumen de Limpieza"
+          echo "- ✅ Artifacts antiguos eliminados"
+          echo "- 🔄 Ejecución automática: diaria"
+          echo "- 💾 Storage liberado"

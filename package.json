@@ -8,7 +8,11 @@
     "build": "npm install --production",
     "test": "cross-env NODE_ENV=test jest --testEnvironment=node --detectOpenHandles",
     "test:watch": "cross-env NODE_ENV=test jest --watch",
-    "test:coverage": "cross-env NODE_ENV=test jest --coverage"
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage",
+    "cleanup:workflows": "node scripts/cleanup-workflows.js",
+    "cleanup:workflows:simple": "bash scripts/cleanup-workflows-simple.sh",
+    "cleanup:workflows:advanced": "bash scripts/cleanup-github-workflows.sh",
+    "cleanup:artifacts": "node scripts/cleanup-artifacts.js"
   },
   "keywords": [
     "ecommerce",
@@ -34,6 +38,7 @@
     ]
   },
   "dependencies": {
+    "@octokit/rest": "^22.0.1",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^1.41.3",
     "connect-pg-simple": "^10.0.0",
