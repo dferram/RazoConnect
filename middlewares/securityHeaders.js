@@ -46,7 +46,7 @@ const securityHeaders = (req, res, next) => {
   // Estilos inline permitidos solo donde necesario
   const cspDirectives = [
     "default-src 'self'",
-    "script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com https://accounts.google.com https://apis.google.com",
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com https://www.google-analytics.com https://accounts.google.com https://apis.google.com https://sdk.mercadopago.com https://www.mercadopago.com",
     "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com",
     "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com data:",
     "img-src 'self' data: blob: https://www.gstatic.com https://res.cloudinary.com https://*.cloudinary.com",

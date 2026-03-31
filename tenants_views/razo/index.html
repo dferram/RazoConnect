@@ -416,14 +416,28 @@
       });
 
       // Inicializar contenido cuando el tema esté listo
-      setTimeout(() => {
+      const initializeHeroContent = () => {
         if (window.RazoThemeManager) {
           const currentTheme = window.RazoThemeManager.getCurrentTheme();
           if (currentTheme) {
             updateHeroContent(currentTheme.name);
+          } else {
+            // Fallback: usar tema por defecto si no hay tema actual
+            updateHeroContent('todaOcasion');
           }
+        } else {
+          // Fallback: usar tema por defecto si ThemeManager no está disponible
+          updateHeroContent('todaOcasion');
         }
-      }, 100);
+      };
+
+      // Intentar inicializar inmediatamente
+      initializeHeroContent();
+
+      // Si no funciona, intentar de nuevo después de un tiempo
+      setTimeout(initializeHeroContent, 100);
+      setTimeout(initializeHeroContent, 500);
+      setTimeout(initializeHeroContent, 1000);
 
       // Newsletter form (con validación segura)
       const newsletterForm = document.querySelector(".footer-newsletter form");

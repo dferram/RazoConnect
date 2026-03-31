@@ -253,6 +253,9 @@
       </div>
     </div>
 
+    <!-- Footer -->
+    <div id="footer-container"></div>
+
     <script src="js/layout.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://sdk.mercadopago.com/js/v2"></script>
@@ -957,7 +960,18 @@
 
       let sidebarInicializado = false;
 
+      // Fallback: cargar productos directamente si el sidebar no inicializa en 5 segundos
+      setTimeout(() => {
+        if (!sidebarInicializado) {
+          console.log('⚠️ Sidebar no inicializado, cargando productos directamente...');
+          tipoSeleccionado = obtenerTipoDesdeUrl();
+          actualizarTituloPorTipo();
+          loadProductos();
+        }
+      }, 5000);
+
       document.addEventListener("filtroCambiado", (event) => {
+        console.log('🔍 Evento filtroCambiado recibido:', event.detail);
         const detail = event?.detail || {};
         if (searchBar && typeof detail.search === "string") {
           searchBar.value = detail.search;
@@ -977,6 +991,7 @@
 
         // ✅ Marcar sidebar como inicializado cuando recibimos el evento "init"
         if (detail.origen === "init") {
+          console.log('✅ Sidebar inicializado correctamente');
           sidebarInicializado = true;
         }
 
@@ -986,6 +1001,7 @@
 
       // ✅ MISIÓN 1: Mostrar productos (ya filtrados por el backend)
       function mostrarProductos() {
+        console.log('📋 mostrarProductos llamado con', todosLosProductos.length, 'productos');
         let productosFiltrados = todosLosProductos;
 
         // El filtrado por categoría ahora lo hace el backend
@@ -1225,6 +1241,7 @@
 
       // Load products
       async function loadProductos(queryString = "") {
+        console.log('🚀 Iniciando loadProductos con query:', queryString);
         try {
           loadingState.style.display = "flex";
           productGrid.style.display = "none";
@@ -1243,10 +1260,13 @@
             finalQuery += separator + `page=${currentPage}&limit=50`;
           }
 
+          console.log('📡 Haciendo llamada a API con query:', finalQuery);
           const response = await API.getProductos(finalQuery);
+          console.log('📥 Respuesta de API recibida:', response);
 
           if (response.ok && response.data.success) {
             todosLosProductos = response.data.data.productos;
+            console.log('✅ Productos cargados:', todosLosProductos.length, 'productos');
             loadingState.style.display = "none";
             
             // Update pagination if present
@@ -1256,6 +1276,7 @@
               actualizarPaginacion(null);
             }
             
+            console.log('📋 Llamando a mostrarProductos...');
             mostrarProductos();
           } else {
             throw new Error(
@@ -1694,6 +1715,7 @@
     
     <script src="js/components/header-loader.js"></script>
     <script src="/js/components/sidebar-filtros-loader.js"></script>
+    <script src="/js/components/footer-loader.js"></script>
     <script src="/js/theme-manager.js"></script>
     <script src="js/instructional-banner.js"></script>
   </body>
