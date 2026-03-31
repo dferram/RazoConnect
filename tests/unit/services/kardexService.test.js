@@ -1,4 +1,4 @@
-const KardexService = require('../../../services/KardexService');
+const KardexService = require('../../../services/kardexService');
 const db = require('../../../db');
 
 const mockClient = {
