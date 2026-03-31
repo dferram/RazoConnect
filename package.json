@@ -17,6 +17,8 @@
     "maintenance:clean": "npm run cleanup:local && npm run cleanup:artifacts",
     "security:audit": "npm audit",
     "security:audit:fix": "npm audit fix",
+    "security:generate-secrets": "node scripts/generate-secrets.js",
+    "dev:setup": "bash scripts/dev-setup.sh",
     "dev:logs": "tail -f logs/*.log"
   },
   "keywords": [

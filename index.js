@@ -45,6 +45,7 @@ const agenteRoutes = require("./routes/agente");
 const inventarioRoutes = require("./routes/inventario");
 const devolucionesRoutes = require("./routes/devoluciones");
 const favoritosRoutes = require("./routes/favoritos");
+const healthRoutes = require("./routes/health");
 
 // Importar middlewares de seguridad
 const tenantGuard = require("./middlewares/tenantGuard");
@@ -191,6 +192,10 @@ app.use((req, res, next) => {
 // Rutas de Developer (sin tenantGuard - acceso administrativo siempre disponible)
 app.use("/developer", developerRoutes);
 app.use("/api/developer", developerRoutes);
+
+// Health Check endpoints (sin autenticación para monitoreo)
+app.use("/health", healthRoutes);
+app.use("/api/health", healthRoutes);
 
 // Ruta de servicio suspendido (sin tenantGuard - CRÍTICO para evitar bucle infinito)
 app.get("/suspended", (req, res) => {
