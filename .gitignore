@@ -84,14 +84,19 @@ coverage/
 # ARCHIVOS TEMPORALES
 # ============================================
 tmp/
-temp/
+*.bak
 *.tmp
 *.temp
+*.orig
+*.rej
+*.swp
+*.swo
 *.cache
 
 # ============================================
 # BACKUPS DE BASE DE DATOS
 # ============================================
+backup/
 backup/*.sql
 backup/*.dump
 backup/*.backup
@@ -100,12 +105,8 @@ backup/*.backup
 *.sql.bak
 *.dump.bak
 
-# IMPORTANTE: Mantener backup.sql en el repo como schema de referencia
-!backup/backup.sql
-
-# Excluir backups con timestamps o versiones
-backup/backup[0-9]*.sql
-backup/backup_*.sql
+# IMPORTANTE: NO guardar backups en el repo
+# Los backups deben estar en almacenamiento externo, no en Git
 
 # ============================================
 # UPLOADS Y ARCHIVOS DE USUARIO
