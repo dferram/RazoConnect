@@ -8,6 +8,6 @@ module.exports = {
     'controllers/**/*.js',
     '!**/node_modules/**'
   ],
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js', '<rootDir>/tests/setup.js'],
   testTimeout: 10000
 };
