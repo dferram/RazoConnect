@@ -30,6 +30,13 @@ The system is deployed on Azure App Service and serves production traffic for mu
 - Improved test suite stability and reduced build times
 - Enhanced gitignore rules for better repository hygiene
 
+**Health Monitoring**: 
+- Added comprehensive health check endpoints for monitoring
+- `/health` - Full system health with database connectivity
+- `/health/simple` - Basic status check
+- `/health/ready` - Kubernetes readiness probe
+- `/health/live` - Kubernetes liveness probe
+
 ---
 
 ## Architecture
