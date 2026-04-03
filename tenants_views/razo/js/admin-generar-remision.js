@@ -81,6 +81,9 @@ function mostrarModalRemision() {
                     </div>
                 </td>
                 <td class="text-center">
+                    <span class="badge bg-info">${Math.min(item.cantidad_pendiente, disponible)} paquetes</span>
+                </td>
+                <td class="text-center">
                     <span class="badge bg-secondary">${item.tamanopaquete || 1} pzs</span>
                 </td>
                 <td class="text-center">
@@ -139,10 +142,10 @@ function mostrarModalRemision() {
                                         </label>
                                     </div>
                                 </th>
+                                <th class="text-center">Cantidad a Surtir</th>
                                 <th class="text-center">Tamaño</th>
                                 <th class="text-center">Pendiente</th>
                                 <th class="text-center">Disponible</th>
-                                <th>Cantidad a Surtir</th>
                                 ${!isInventarios ? '<th class="text-end">Precio Unit.</th>' : ''}
                             </tr>
                         </thead>
