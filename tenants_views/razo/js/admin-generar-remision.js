@@ -88,7 +88,8 @@ function mostrarModalRemision() {
                            max="${disponible}"
                            value="${Math.min(item.cantidad_pendiente, disponible)}"
                            ${disponible > 0 ? '' : 'disabled'}
-                           data-detalle-id="${item.detalleid}">
+                           data-detalle-id="${item.detalleid}"
+                           style="width: 80px; margin: 0 auto;">
                 </td>
                 <td class="text-center">
                     <span class="badge bg-secondary">${item.tamanopaquete || 1} pzs</span>
