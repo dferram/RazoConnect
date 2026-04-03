@@ -6,6 +6,9 @@
     if (!container) return;
 
     try {
+      // Esperar a que AuthManager esté disponible
+      await waitForAuthManager();
+      
       const tokenCliente = getTokenCliente();
       const hasCreditAccess = await verificarCreditoCliente(tokenCliente);
 
@@ -30,6 +33,14 @@
         isAuthenticated: Boolean(tokenCliente),
       });
 
+      // Si hay token pero no hay datos de usuario, intentar obtenerlos desde el backend
+      if (tokenCliente && !getUsuarioLocal()) {
+        const userData = await obtenerDatosUsuarioDesdeBackend(tokenCliente);
+        if (userData) {
+          console.log('✅ [Header Loader] Datos obtenidos exitosamente, re-inicializando usuario');
+        }
+      }
+
       inicializarUsuario();
       cargarTiposMenu();
       cargarMarcasMenu();
@@ -39,6 +50,38 @@
     } catch (error) {
       console.error("Error cargando header cliente:", error);
     }
+  }
+
+  async function obtenerDatosUsuarioDesdeBackend(token) {
+    try {
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          // Guardar los datos del usuario en localStorage usando AuthManager si está disponible
+          if (typeof window.AuthManager !== 'undefined' && AuthManager.saveTokens) {
+            // AuthManager ya debería tener los tokens, solo guardamos los datos del usuario
+            localStorage.setItem('razoconnect_user', JSON.stringify(data.data));
+          } else {
+            // Fallback: guardar directamente
+            localStorage.setItem('razoconnect_user', JSON.stringify(data.data));
+          }
+          console.log('[Header Loader] Datos de usuario actualizados desde backend:', data.data);
+          return data.data;
+        }
+      } else {
+        console.error('[Header Loader] Error en respuesta del backend:', response.status);
+      }
+    } catch (error) {
+      console.error('[Header Loader] Error obteniendo datos del usuario desde backend:', error);
+    }
+    return null;
   }
 
   async function cargarTiposMenu() {
@@ -131,6 +174,15 @@
   }
 
   function getUsuarioLocal() {
+    // Esperar a que AuthManager esté disponible si aún no lo está
+    if (typeof window.AuthManager !== 'undefined' && AuthManager.getUserData) {
+      const authUserData = AuthManager.getUserData('cliente');
+      if (authUserData) {
+        return authUserData;
+      }
+    }
+    
+    // Fallback al método anterior para compatibilidad
     const tryParse = (key) => {
       try {
         return JSON.parse(localStorage.getItem(key) || "null");
@@ -140,11 +192,48 @@
     };
 
     // Compatibilidad: instrucción = 'usuario', sistema actual = 'razoconnect_user'
-    return tryParse("usuario") || tryParse("razoconnect_user");
+    // También intentar con las nuevas claves del AuthManager
+    return tryParse("razoconnect_user") || 
+           tryParse("usuario") || 
+           tryParse("razoconnect_admin") || 
+           tryParse("razoconnect_agent");
   }
 
   function getTokenCliente() {
-    return localStorage.getItem("razoconnect_token");
+    // Esperar a que AuthManager esté disponible si aún no lo está
+    if (typeof window.AuthManager !== 'undefined' && AuthManager.getAccessToken) {
+      const token = AuthManager.getAccessToken('cliente');
+      if (token) {
+        return token;
+      }
+    }
+    
+    // Fallback a los métodos legacy
+    return localStorage.getItem("razoconnect_token") || 
+           localStorage.getItem("razoconnect_access_token");
+  }
+
+  // Función para esperar a que AuthManager esté disponible
+  function waitForAuthManager() {
+    return new Promise((resolve) => {
+      if (typeof window.AuthManager !== 'undefined') {
+        resolve();
+        return;
+      }
+      
+      const checkInterval = setInterval(() => {
+        if (typeof window.AuthManager !== 'undefined') {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 50);
+      
+      // Timeout después de 2 segundos
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        resolve();
+      }, 2000);
+    });
   }
 
   async function verificarCreditoCliente(token) {
@@ -212,12 +301,26 @@
     const loginLink = document.getElementById("loginLink");
 
     const usuario = getUsuarioLocal();
+    
+    // Logging para diagnóstico
+    console.log('🔍 [Header Loader] Datos del usuario:', usuario);
+    console.log('🔍 [Header Loader] Token disponible:', Boolean(getTokenCliente()));
+    console.log('🔍 [Header Loader] AuthManager disponible:', typeof window.AuthManager !== 'undefined');
 
     const nombreRaw =
-      usuario?.nombre || usuario?.Nombre || usuario?.nombres || usuario?.Nombres;
+      usuario?.nombre || usuario?.Nombre || usuario?.nombres || usuario?.Nombres || 
+      usuario?.name || usuario?.Name;
     const nombre = (nombreRaw || "").toString().trim();
+    
+    // Obtener rol del usuario
+    const rolRaw = usuario?.rol || usuario?.Rol || usuario?.role || usuario?.Role;
+    const rol = (rolRaw || "").toString().trim();
+    
+    console.log('🔍 [Header Loader] Nombre extraído:', nombre);
+    console.log('🔍 [Header Loader] Rol extraído:', rol);
 
     const hasSession = Boolean(usuario) || Boolean(getTokenCliente());
+    console.log('🔍 [Header Loader] ¿Tiene sesión?:', hasSession);
 
     // Update all data-auth elements visibility
     const loginElements = document.querySelectorAll('[data-auth="login"]');
@@ -231,7 +334,25 @@
       logoutElements.forEach(el => el.style.display = 'list-item');
       
       if (nombreEl) {
-        nombreEl.textContent = nombre ? `Hola, ${nombre.split(" ")[0]}` : "Mi cuenta";
+        if (nombre) {
+          // Mostrar nombre y rol si ambos están disponibles
+          if (rol && rol !== 'cliente') {
+            nombreEl.textContent = `${nombre.split(" ")[0]} (${rol})`;
+            console.log('✅ [Header Loader] Mostrando nombre y rol:', nombreEl.textContent);
+          } else {
+            nombreEl.textContent = `Hola, ${nombre.split(" ")[0]}`;
+            console.log('✅ [Header Loader] Mostrando nombre:', nombreEl.textContent);
+          }
+        } else {
+          // Si no hay nombre, mostrar el rol o un mensaje genérico
+          if (rol && rol !== 'cliente') {
+            nombreEl.textContent = rol.charAt(0).toUpperCase() + rol.slice(1);
+            console.log('⚠️ [Header Loader] Sin nombre, mostrando rol:', nombreEl.textContent);
+          } else {
+            nombreEl.textContent = "Mi Cuenta";
+            console.log('⚠️ [Header Loader] Sin nombre ni rol, mostrando "Mi Cuenta"');
+          }
+        }
       }
       if (cuentaLink) {
         cuentaLink.href = "/dashboard.html";
