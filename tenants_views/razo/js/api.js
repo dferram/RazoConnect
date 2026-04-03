@@ -508,7 +508,29 @@ const apiCall = async (endpoint, options = {}) => {
       if (shouldRetryOriginalRequest) {
         console.log('[TokenRefresh] 🔄 Interceptando 401 - Intentando renovar token...');
         
-        const newAccessToken = await attemptTokenRefresh();
+        let newAccessToken = null;
+        
+        // PRIMERA OPCIÓN: Usar AuthManager si está disponible (preferido)
+        if (typeof window.AuthManager !== 'undefined' && window.AuthManager) {
+          try {
+            console.log('[TokenRefresh] 📱 AuthManager disponible - Usando refreshAccessToken()');
+            const context = path.startsWith('/admin') ? 'admin' : 'cliente';
+            newAccessToken = await window.AuthManager.refreshAccessToken(context);
+            
+            if (newAccessToken) {
+              console.log('[TokenRefresh] ✅ AuthManager: Token renovado exitosamente');
+            }
+          } catch (authManagerError) {
+            console.warn('[TokenRefresh] ⚠️ AuthManager.refreshAccessToken falló:', authManagerError.message);
+            // Caer a fallback
+          }
+        }
+        
+        // FALLBACK: Si AuthManager falló o no está disponible, usar función auxiliar
+        if (!newAccessToken) {
+          console.log('[TokenRefresh] 🔁 Usando fallback attemptTokenRefresh()');
+          newAccessToken = await attemptTokenRefresh();
+        }
         
         if (newAccessToken) {
           console.log('[TokenRefresh] ✅ Token renovado exitosamente - Reintentando petición original');
