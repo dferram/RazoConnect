@@ -27,7 +27,7 @@ describe('calcularEstadoPedido', () => {
       { cantidad_pedida: 5, cantidad_surtida: 0 },
       { cantidad_pedida: 2, cantidad_surtida: 0 }
     ];
-    expect(calcularEstadoPedido(detalles)).toBe('Surtido Parcial');
+    expect(calcularEstadoPedido(detalles)).toBe('Parcialmente Surtido');
   });
 
   test('debe retornar "Surtido Parcial" cuando algún producto está parcialmente surtido', () => {
@@ -36,7 +36,7 @@ describe('calcularEstadoPedido', () => {
       { cantidad_pedida: 5, cantidad_surtida: 3 },
       { cantidad_pedida: 2, cantidad_surtida: 2 }
     ];
-    expect(calcularEstadoPedido(detalles)).toBe('Surtido Parcial');
+    expect(calcularEstadoPedido(detalles)).toBe('Parcialmente Surtido');
   });
 
   test('debe retornar "Surtido" cuando todos los productos están completamente surtidos', () => {
@@ -86,7 +86,7 @@ describe('calcularEstadoPedido', () => {
       { cantidad_pedida: 5, cantidad_surtida: 0 },
       { cantidad_pedida: 2, cantidad_surtida: 0 }
     ];
-    expect(calcularEstadoPedido(detalles)).toBe('Surtido Parcial');
+    expect(calcularEstadoPedido(detalles)).toBe('Parcialmente Surtido');
   });
 
   test('caso real: pedido de prueba con todos surtidos', () => {
