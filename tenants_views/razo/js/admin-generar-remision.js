@@ -81,7 +81,14 @@ function mostrarModalRemision() {
                     </div>
                 </td>
                 <td class="text-center">
-                    <span class="badge bg-info">${Math.min(item.cantidad_pendiente, disponible)} paquetes</span>
+                    <input type="number" 
+                           class="form-control form-control-sm cantidad-input" 
+                           id="cantidad-${item.detalleid}"
+                           min="1" 
+                           max="${disponible}"
+                           value="${Math.min(item.cantidad_pendiente, disponible)}"
+                           ${disponible > 0 ? '' : 'disabled'}
+                           data-detalle-id="${item.detalleid}">
                 </td>
                 <td class="text-center">
                     <span class="badge bg-secondary">${item.tamanopaquete || 1} pzs</span>
@@ -95,16 +102,6 @@ function mostrarModalRemision() {
                         ${disponible} paquetes
                     </span>
                     <small class="text-muted d-block">(${item.stock_piezas} pzs)</small>
-                </td>
-                <td>
-                    <input type="number" 
-                           class="form-control form-control-sm cantidad-input" 
-                           id="cantidad-${item.detalleid}"
-                           min="1" 
-                           max="${disponible}"
-                           value="${Math.min(item.cantidad_pendiente, disponible)}"
-                           ${disponible > 0 ? '' : 'disabled'}
-                           data-detalle-id="${item.detalleid}">
                 </td>
                 ${!isInventarios ? `
                 <td class="text-end">
