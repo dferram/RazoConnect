@@ -333,15 +333,11 @@ exports.generarRemision = async (req, res) => {
     // Determinar si está completamente surtido comparando MONTOS (con tolerancia de 1 centavo)
     const completamenteSurtido = Math.abs(nuevoMontoSurtido - montoTotalPedido) < 0.01;
 
-    // NUEVA LÓGICA: Para pedidos de contado (no crédito), cambiar estatus a 'Listo para Pago'
-    let nuevoEstatus;
-    if (pedido.es_credito) {
-      // Pedidos a crédito: mantener lógica original
-      nuevoEstatus = completamenteSurtido ? 'Completado' : 'Parcial';
-    } else {
-      // Pedidos de contado: cambiar a 'Listo para Pago' para habilitar checkout
-      nuevoEstatus = 'Listo para Pago';
-    }
+    // SOLUCIÓN: Cuando se genera una remisión, SIEMPRE cambiar a "Pendiente de Confirmación"
+    // Esto indica: "Surtido y esperando confirmación de finanzas"
+    // Sin importar si es contado o crédito, el pedido debe aparecer en tabla de "Pedidos Surtidos"
+    // Finanzas VE el pedido → Confirma → Estatus cambia a "Completado" → Stock se descuenta
+    const nuevoEstatus = 'Pendiente de Confirmación';
 
     // FIX 3: es_historico solo debe ser true cuando el pedido está 100% completado y remisionado
     // No marcar como histórico hasta que todo esté confirmado por finanzas
