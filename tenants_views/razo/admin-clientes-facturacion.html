@@ -554,6 +554,33 @@
       }
 
       // ════════════════════════════════════════════════════════════
+      // FUNCIÓN AUXILIAR: Normalizar estatus de pedidos
+      // ════════════════════════════════════════════════════════════
+      /**
+       * Normaliza un estatus de pedido removiendo variaciones de casing, espacios extras
+       * y mapeando variantes conocidas a un estado estándar
+       */
+      function normalizarEstatus(estatus) {
+        const base = (estatus || '')
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, ' '); // Remover espacios extras
+        
+        // Mapeo de variantes conocidas al estado estándar
+        const mapeoEstatus = {
+          'pendiente de confirmación': 'pendiente_confirmacion',
+          'pendiente de confirmacion': 'pendiente_confirmacion',
+          'pendiente confirmación': 'pendiente_confirmacion',
+          'pendiente confirmacion': 'pendiente_confirmacion',
+          'listo para surtir': 'listo_para_surtir',
+          'parcialmente surtido': 'parcialmente_surtido',
+          'parcialmente_surtido': 'parcialmente_surtido',
+        };
+        
+        return mapeoEstatus[base] || base;
+      }
+
+      // ════════════════════════════════════════════════════════════
       // PEDIDOS TAB
       // ════════════════════════════════════════════════════════════
 
@@ -580,19 +607,19 @@
             // Separar pedidos en 3 categorías:
             // 1. SURTIDOS: Enviados por inventarios, esperando confirmación de finanzas (PENDIENTE DE CONFIRMACIÓN)
             const pedidosSurtidos = allPedidos.filter(pedido => {
-              const estatus = (pedido.estatus || '').toLowerCase().trim();
-              return ['pendiente de confirmación', 'pendiente de confirmacion'].includes(estatus);
+              const estatus = normalizarEstatus(pedido.estatus);
+              return estatus === 'pendiente_confirmacion';
             });
             
             // 2. PENDIENTES: Pedidos confirmados/aprobados/pendientes (aún no procesados por inventarios o finanzas)
             const pedidosPendientes = allPedidos.filter(pedido => {
-              const estatus = (pedido.estatus || '').toLowerCase().trim();
-              return ['pendiente', 'aprobado', 'confirmado', 'listo para surtir', 'parcialmente surtido', 'parcialmente_surtido'].includes(estatus);
+              const estatus = normalizarEstatus(pedido.estatus);
+              return ['pendiente', 'aprobado', 'confirmado', 'listo_para_surtir', 'parcialmente_surtido'].includes(estatus);
             });
             
             // 3. HISTÓRICOS: Solo contar para mostrar el badge
             const pedidosHistoricos = allPedidos.filter(pedido => {
-              const estatus = (pedido.estatus || '').toLowerCase().trim();
+              const estatus = normalizarEstatus(pedido.estatus);
               return ['surtido', 'enviado', 'entregado'].includes(estatus);
             });
             
@@ -741,13 +768,13 @@
 
         // Separate into 3 categories
         let surtidos = filtered.filter(pedido => {
-          const estatus = (pedido.estatus || '').toLowerCase().trim();
-          return ['pendiente de confirmación', 'pendiente de confirmacion'].includes(estatus);
+          const estatus = normalizarEstatus(pedido.estatus);
+          return estatus === 'pendiente_confirmacion';
         });
         
         let pendientes = filtered.filter(pedido => {
-          const estatus = (pedido.estatus || '').toLowerCase().trim();
-          return ['pendiente', 'aprobado', 'confirmado', 'listo para surtir', 'parcialmente surtido', 'parcialmente_surtido'].includes(estatus);
+          const estatus = normalizarEstatus(pedido.estatus);
+          return ['pendiente', 'aprobado', 'confirmado', 'listo_para_surtir', 'parcialmente_surtido'].includes(estatus);
         });
 
         // Apply tipo filter
