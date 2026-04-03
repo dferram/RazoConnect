@@ -75,7 +75,8 @@ const updatePedidoEstatus = async (req, res) => {
       'Cancelado', 
       'Completado', 
       'Parcial', 
-      'Parcialmente Surtido'
+      'Parcialmente Surtido',
+      'Pendiente de Confirmación'
     ];
 
     if (!estatusValidos.includes(estatus)) {
