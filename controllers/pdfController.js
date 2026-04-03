@@ -301,35 +301,53 @@ async function generarPDFPedido(req, res) {
         // Render header on first page manually
         renderHeader(doc, pedido, logoPath, logoExists);
 
-        // ⚡ MODE-BASED FILTERING (DRY refactor)
-        // Categorize items by surtido status
-        let itemsEnExistencia = detalles.filter(item => {
+        // ⚡ THREE-TABLE CATEGORIZATION (NEW LOGIC)
+        // Categorize items by surtido and stock status
+        let itemsSurtidos = detalles.filter(item => {
             const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
             return cantidadSurtida > 0;
         });
+        
+        let itemsConStock = detalles.filter(item => {
+            const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
+            const stockActual = parseInt(item.stock_actual_variante) || 0;
+            const cantidadRequerida = parseInt(item.cantidad) || 0;
+            const tamanoCantidad = parseInt(item.tamano_cantidad || 1);
+            const piezasRequeridas = cantidadRequerida * tamanoCantidad;
+            return cantidadSurtida === 0 && stockActual >= piezasRequeridas;
+        });
+        
         let itemsBajoPedido = detalles.filter(item => {
             const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
-            return cantidadSurtida === 0;
+            const stockActual = parseInt(item.stock_actual_variante) || 0;
+            const cantidadRequerida = parseInt(item.cantidad) || 0;
+            const tamanoCantidad = parseInt(item.tamano_cantidad || 1);
+            const piezasRequeridas = cantidadRequerida * tamanoCantidad;
+            return cantidadSurtida === 0 && stockActual < piezasRequeridas;
         });
 
         // Apply mode filtering
         if (finalMode === 'surtido_only') {
             // Mode: surtido_only - Only show items with cantidadsurtida > 0
             // Used by Finanzas (only charge what's ready to ship)
-            const hiddenCount = itemsBajoPedido.length; // CRITICAL: Capture count BEFORE resetting
+            const hiddenCountConStock = itemsConStock.length;
+            const hiddenCountBajoPedido = itemsBajoPedido.length;
+            itemsConStock = []; // Hide con stock items
             itemsBajoPedido = []; // Hide backorder items
             logger.info('PDF: Applying surtido_only filter', {
-                itemsShown: itemsEnExistencia.length,
-                itemsHidden: hiddenCount, // Use captured count
+                itemsShown: itemsSurtidos.length,
+                itemsHiddenConStock: hiddenCountConStock,
+                itemsHiddenBajoPedido: hiddenCountBajoPedido,
                 pedidoId,
                 requestId: req.requestId
             });
         } else {
             // Mode: full - Show ALL items (default)
             // Used by Inventarios (need to see what's missing), Admin, Cliente
-            logger.info('PDF: Showing full remision', {
-                itemsSurtidos: itemsEnExistencia.length,
-                itemsPendientes: itemsBajoPedido.length,
+            logger.info('PDF: Showing full remision with three tables', {
+                itemsSurtidos: itemsSurtidos.length,
+                itemsConStock: itemsConStock.length,
+                itemsBajoPedido: itemsBajoPedido.length,
                 pedidoId,
                 requestId: req.requestId
             });
@@ -366,9 +384,10 @@ async function generarPDFPedido(req, res) {
 
     doc.fillColor('#FFFFFF')
        .text('CANT.', 55, headerY + 6)
-       .text('DESCRIPCIÓN', 110, headerY + 6)
-       .text('TAMAÑO', 290, headerY + 6)
-       .text('ESTADO', 350, headerY + 6);
+       .text('PAQUETES', 110, headerY + 6)
+       .text('DESCRIPCIÓN', 160, headerY + 6)
+       .text('TAMAÑO', 340, headerY + 6)
+       .text('ESTADO', 400, headerY + 6);
     
     // Only show price columns if mostrarPrecios is true
     if (mostrarPrecios) {
@@ -421,12 +440,13 @@ const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = 
            .fontSize(9)
            .font('Helvetica')
            .text(cantidadSegura, 55, currentY)
-           .text(descripcionLinea1, 110, currentY, { width: 170 })
-           .text(descripcionLinea2 + rondaTexto, 110, currentY + 10, { width: 170 })
-           .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unit.', 290, currentY)
+           .text(`${cantidadSegura} paquetes`, 110, currentY)
+           .text(descripcionLinea1, 160, currentY, { width: 170 })
+           .text(descripcionLinea2 + rondaTexto, 160, currentY + 10, { width: 170 })
+           .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unit.', 340, currentY)
            .font('Helvetica-Bold')
            .fontSize(8)
-           .text(estadoTexto, 350, currentY + 5, { width: 65 })
+           .text(estadoTexto, 400, currentY + 5, { width: 65 })
            .font('Helvetica')
            .fontSize(9);
         
@@ -445,15 +465,21 @@ const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = 
     return currentY;
 };
 
-// Render CONFIRMED items section (only products with cantidadsurtida > 0)
-if (itemsEnExistencia.length > 0) {
+// Render SURTIDO items section (products with cantidadsurtida > 0) - NARANJA
+if (itemsSurtidos.length > 0) {
     yPosition = renderTableHeader('PRODUCTOS SURTIDOS', yPosition, '#F97316');
-    yPosition = renderItems(itemsEnExistencia, yPosition, '#F9F9F9', pedido.estatus, mostrarPrecios);
+    yPosition = renderItems(itemsSurtidos, yPosition, '#FFF7ED', pedido.estatus, mostrarPrecios);
     yPosition += 10;
 }
 
-// Show backorder section - ALL items with cantidadsurtida = 0
-// Includes items waiting for stock AND items with stock but not yet fulfilled
+// Render CON STOCK items section (products with stock but not surtido yet) - VERDE  
+if (itemsConStock.length > 0) {
+    yPosition = renderTableHeader('PRODUCTOS CON STOCK', yPosition, '#10B981');
+    yPosition = renderItems(itemsConStock, yPosition, '#F0FDF4', pedido.estatus, mostrarPrecios);
+    yPosition += 10;
+}
+
+// Render BAJO PEDIDO items section (products without sufficient stock) - ROJO
 if (itemsBajoPedido.length > 0) {
     yPosition = renderTableHeader('PRODUCTOS BAJO PEDIDO', yPosition, '#DC2626');
     yPosition = renderItems(itemsBajoPedido, yPosition, '#FEF2F2', pedido.estatus, mostrarPrecios);
@@ -496,10 +522,10 @@ if (!mostrarPrecios) {
 let chosenItems;
 if (finalMode === 'surtido_only') {
     // Only calculate from items actually shown (surtido items)
-    chosenItems = itemsEnExistencia;
+    chosenItems = itemsSurtidos;
 } else {
-    // Full mode: combine both visible arrays
-    chosenItems = [...itemsEnExistencia, ...itemsBajoPedido];
+    // Full mode: combine all three visible arrays
+    chosenItems = [...itemsSurtidos, ...itemsConStock, ...itemsBajoPedido];
 }
 
 let totalEnStock = 0;

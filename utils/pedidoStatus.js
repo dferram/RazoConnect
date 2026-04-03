@@ -3,13 +3,15 @@
  * @module utils/pedidoStatus
  */
 
+const { normalizarEstado, ESTADOS_PEDIDO } = require('./pedidoEstados');
+
 /**
  * Calcula el estado de un pedido basado en sus detalles
  * @param {Array} detalles - Array de objetos con cantidad_pedida y cantidad_surtida
- * @returns {string} - Estado del pedido: 'Pendiente', 'Parcialmente Surtido', 'Surtido'
+ * @returns {string} - Estado normalizado del pedido usando ESTADOS_PEDIDO
  */
 function calcularEstadoPedido(detalles = []) {
-  if (!detalles || detalles.length === 0) return 'Pendiente';
+  if (!detalles || detalles.length === 0) return ESTADOS_PEDIDO.PENDIENTE;
   
   const allSurtido = detalles.every(d => {
     const surtida = Number(d.cantidad_surtida || d.cantidadsurtida || 0);
@@ -22,9 +24,9 @@ function calcularEstadoPedido(detalles = []) {
     return surtida > 0;
   });
   
-  if (allSurtido) return 'Surtido';
-  if (anySurtido) return 'Surtido Parcial';
-  return 'Pendiente';
+  if (allSurtido) return ESTADOS_PEDIDO.SURTIDO;
+  if (anySurtido) return ESTADOS_PEDIDO.PARCIALMENTE_SURTIDO;
+  return ESTADOS_PEDIDO.PENDIENTE;
 }
 
 /**

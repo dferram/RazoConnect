@@ -1025,6 +1025,11 @@ h3 {
   color: var(--razo-orange);
 }
 
+.pedido-estatus-badge.pendiente-confirmacion {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
 .pedido-estatus-badge.confirmado {
   background: #dcfce7;
   color: #16a34a;

@@ -126,8 +126,21 @@
       };
     }
 
+    // Construir nombre completo preferiendo nombre + apellido
+    let nombreCompleto = "Usuario";
+    if (adminData.nombre) {
+      const nombre = adminData.nombre.toString().trim();
+      const apellido = adminData.apellido ? adminData.apellido.toString().trim() : '';
+      
+      if (apellido) {
+        nombreCompleto = `${nombre} ${apellido}`;
+      } else {
+        nombreCompleto = nombre;
+      }
+    }
+    
     // Asegurar que nombre y rol sean strings válidos
-    const nombre = (adminData.nombre || "Usuario").toString().trim() || "Usuario";
+    const nombre = nombreCompleto || "Usuario";
     const rolSession = (adminData.rol || adminData.role || "admin").toString().trim() || "admin";
     const rolRaw = rolSession.toLowerCase();
     const isSuperAdmin = rolRaw === "super admin" || rolRaw === "superadmin" || rolRaw === "super-admin" || rolRaw === "super_admin" || rolRaw === "admin";
@@ -135,8 +148,14 @@
     // FASE 2 - TASK 1: Usar nombre de rol específico en lugar de genérico
     const rolTexto = getRoleDisplayName(rolSession);
     
-    // Log para debugging
-    console.log("📋 Datos del header:", { nombre, rol: rolSession, rolTexto });
+    // Logs para debugging
+    console.log("📋 Datos del header:", { 
+      nombreCompleto, 
+      rol: rolSession, 
+      rolTexto,
+      rawData: adminData 
+    });
+    console.log('🔍 ROL MAPEADO:', rolSession.toLowerCase(), '→', rolTexto);
     
     // Sin restricciones de rol - Admin y SuperAdmin tienen acceso a todas las páginas
 
@@ -145,7 +164,7 @@
     const headerUserRole = document.getElementById("headerUserRole");
     const headerUserAvatar = document.getElementById("headerUserAvatar");
 
-    if (headerUserName) headerUserName.textContent = nombre || "Admin";
+    if (headerUserName) headerUserName.textContent = nombre;
     if (headerUserRole) headerUserRole.textContent = rolTexto;
     if (headerUserAvatar) {
       headerUserAvatar.textContent = getIniciales(nombre);
@@ -162,10 +181,10 @@
     const legacyUserRole = document.getElementById("userRole");
     const legacyUserAvatar = document.getElementById("userAvatar");
     const legacyAdminName = document.getElementById("admin-name");
-    if (legacyUserName) legacyUserName.textContent = nombre || "Admin";
+    if (legacyUserName) legacyUserName.textContent = nombre;
     if (legacyUserRole) legacyUserRole.textContent = rolTexto;
     if (legacyUserAvatar) legacyUserAvatar.textContent = getIniciales(nombre);
-    if (legacyAdminName) legacyAdminName.textContent = nombre || "Admin";
+    if (legacyAdminName) legacyAdminName.textContent = nombre;
 
     // 2.1 Dropdown dinámico (evitar duplicados)
     const dropdownContainer = document.getElementById("user-dropdown-container");
@@ -176,7 +195,7 @@
       header.className = "dropdown-header";
       header.innerHTML = `
         <span class="d-block small text-muted">Conectado como</span>
-        <strong>${nombre || "Admin"}</strong>
+        <strong>${nombre}</strong>
       `;
 
       const divider1 = document.createElement("hr");
