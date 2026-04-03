@@ -7,6 +7,29 @@
 (function() {
   'use strict';
 
+  // Function to wait for AuthManager to be available
+  function waitForAuthManager() {
+    return new Promise((resolve) => {
+      if (typeof window.AuthManager !== 'undefined') {
+        resolve();
+        return;
+      }
+      
+      const checkInterval = setInterval(() => {
+        if (typeof window.AuthManager !== 'undefined') {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 50);
+      
+      // Timeout after 2 seconds
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        resolve();
+      }, 2000);
+    });
+  }
+
   // Utility function to show toast notifications
   function showToast(message, type = "info") {
     const toast = document.createElement("div");
@@ -218,9 +241,18 @@
               userRole = 'admin';
               loginSuccessful = true;
               
-              // Guardar tokens de admin
-              localStorage.setItem('razoconnect_admin_token', accessToken);
-              localStorage.setItem('razoconnect_admin', JSON.stringify(usuario));
+              // Guardar tokens usando AuthManager
+              await waitForAuthManager();
+              console.log('[Auth Modal] AuthManager disponible:', typeof window.AuthManager !== 'undefined');
+              if (typeof window.AuthManager !== 'undefined' && AuthManager.saveTokens) {
+                AuthManager.saveTokens(accessToken, refreshToken, usuario, 'admin');
+                console.log('[Auth Modal] Tokens guardados con AuthManager para admin');
+              } else {
+                // Fallback: guardar directamente en localStorage
+                localStorage.setItem('razoconnect_admin_token', accessToken);
+                localStorage.setItem('razoconnect_admin', JSON.stringify(usuario));
+                console.log('[Auth Modal] Tokens guardados con fallback para admin');
+              }
               
               console.log('✅ Login exitoso como admin/agente');
             }
@@ -238,21 +270,25 @@
           if (response.ok && response.data.success) {
             // Búsqueda del token en estructura nueva del backend
             let token = null;
+            let refreshToken = null;
             let usuario = null;
             
-            // Prioridad 1: Estructura nueva (data.data.accessToken)
+            // Prioridad 1: Estructura nueva (data.data.accessToken y data.data.refreshToken)
             if (response.data.data) {
               token = response.data.data.accessToken || response.data.data.token;
+              refreshToken = response.data.data.refreshToken;
               usuario = response.data.data.usuario || response.data.data.cliente;
             }
             
-            // Prioridad 2: Estructura legacy (data.token)
+            // Prioridad 2: Estructura legacy (data.token y data.refreshToken)
             if (!token) {
               token = response.data.token || response.data.access_token;
+              refreshToken = response.data.refreshToken;
               usuario = response.data.cliente || response.data.usuario;
             }
             
             console.log('🔍 Token encontrado:', token ? `Sí (${token.substring(0, 20)}...)` : 'NO');
+            console.log('🔍 Refresh Token encontrado:', refreshToken ? `Sí (${refreshToken.substring(0, 20)}...)` : 'NO');
             
             // MISIÓN 2: Validación final del token
             if (!token || typeof token !== 'string') {
@@ -295,8 +331,23 @@
             userRole = 'cliente';
             loginSuccessful = true;
 
-            localStorage.setItem('razoconnect_token', token);
-            localStorage.setItem('razoconnect_user', JSON.stringify(usuario));
+            // Guardar tokens usando AuthManager
+            await waitForAuthManager();
+            console.log('[Auth Modal] AuthManager disponible:', typeof window.AuthManager !== 'undefined');
+            console.log('[Auth Modal] Refresh token a guardar:', refreshToken ? 'SÍ' : 'NO');
+            if (typeof window.AuthManager !== 'undefined' && AuthManager.saveTokens) {
+              AuthManager.saveTokens(token, refreshToken, usuario, 'cliente');
+              console.log('[Auth Modal] Tokens guardados con AuthManager para cliente');
+            } else {
+              // Fallback: guardar directamente en localStorage
+              localStorage.setItem('razoconnect_token', token);
+              localStorage.setItem('razoconnect_user', JSON.stringify(usuario));
+              // Guardar refresh token si existe
+              if (refreshToken) {
+                localStorage.setItem('razoconnect_refresh_token', refreshToken);
+              }
+              console.log('[Auth Modal] Tokens guardados con fallback para cliente');
+            }
           }
         }
 
@@ -437,17 +488,23 @@
           if (loginResponse.ok && loginResponse.data.success) {
             // Buscar token en estructura nueva del backend
             let token = null;
+            let refreshToken = null;
             let usuario = null;
             
             if (loginResponse.data.data) {
               token = loginResponse.data.data.accessToken || loginResponse.data.data.token;
+              refreshToken = loginResponse.data.data.refreshToken;
               usuario = loginResponse.data.data.usuario || loginResponse.data.data.cliente;
             }
             
             if (!token) {
               token = loginResponse.data.token || loginResponse.data.access_token;
+              refreshToken = loginResponse.data.refreshToken;
               usuario = loginResponse.data.cliente || loginResponse.data.usuario;
             }
+            
+            console.log('🔍 Auto-Login - Token encontrado:', token ? `Sí (${token.substring(0, 20)}...)` : 'NO');
+            console.log('🔍 Auto-Login - Refresh Token encontrado:', refreshToken ? `Sí (${refreshToken.substring(0, 20)}...)` : 'NO');
             
             if (!token || typeof token !== 'string' || token.split('.').length !== 3) {
               console.error('❌ Token malformado en auto-login:', token);
@@ -459,8 +516,24 @@
             }
 
             console.log('✅ Auto-login exitoso con token válido');
-            localStorage.setItem('razoconnect_token', token);
-            localStorage.setItem('razoconnect_user', JSON.stringify(usuario));
+            
+            // Guardar tokens usando AuthManager
+            await waitForAuthManager();
+            console.log('[Auth Modal] AuthManager disponible en auto-login:', typeof window.AuthManager !== 'undefined');
+            console.log('[Auth Modal] Refresh token a guardar en auto-login:', refreshToken ? 'SÍ' : 'NO');
+            if (typeof window.AuthManager !== 'undefined' && AuthManager.saveTokens) {
+              AuthManager.saveTokens(token, refreshToken, usuario, 'cliente');
+              console.log('[Auth Modal] Tokens guardados con AuthManager en auto-login');
+            } else {
+              // Fallback: guardar directamente en localStorage
+              localStorage.setItem('razoconnect_token', token);
+              localStorage.setItem('razoconnect_user', JSON.stringify(usuario));
+              // Guardar refresh token si existe
+              if (refreshToken) {
+                localStorage.setItem('razoconnect_refresh_token', refreshToken);
+              }
+              console.log('[Auth Modal] Tokens guardados con fallback en auto-login');
+            }
             
             showToast('Bienvenido a RazoConnect', 'success');
             
