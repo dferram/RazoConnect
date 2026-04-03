@@ -14,6 +14,7 @@ const logger = require('../utils/logger');
 const inventoryService = require('../services/inventoryService');
 const { getPaginationParams, buildPaginationMeta } = require('../utils/pagination');
 const { calcularEstadoPedido, getDetallesPedido, updatePedidoStatus } = require('../utils/pedidoStatus');
+const { ESTADOS_PEDIDO, normalizarEstado } = require('../utils/pedidoEstados');
 
 /**
  * @swagger
@@ -909,10 +910,10 @@ const surtirPedido = async (req, res) => {
     const detalles = await getDetallesPedido(client, pedidoId, tenant_id);
     const estadoCalculado = calcularEstadoPedido(detalles);
     
-    // Determinar si está completamente surtido
-    const completamenteSurtido = estadoCalculado === 'Surtido';
+    // Determinar si está completamente surtido (usando estado normalizado)
+    const completamenteSurtido = estadoCalculado === ESTADOS_PEDIDO.SURTIDO;
     
-    // NUEVA LÓGICA DE TRANSICIÓN DE ESTADOS
+    // NUEVA LÓGICA DE TRANSICIÓN DE ESTADOS - USANDO ESTADOS NORMALIZADOS
     let nuevoEstatus;
     const totalItems = detalles.length;
     const itemsSurtidosCompletos = detalles.filter(d => {
@@ -922,14 +923,14 @@ const surtirPedido = async (req, res) => {
     }).length;
     
     if (itemsSurtidosCompletos === totalItems) {
-      // Todos los items están completamente surtidos
-      nuevoEstatus = 'Pendiente de Confirmación';
+      // Todos los items están completamente surtidos -> Enviar a finanzas para confirmación
+      nuevoEstatus = ESTADOS_PEDIDO.PENDIENTE_CONFIRMACION;
     } else if (itemsSurtidosCompletos > 0) {
       // Algunos items están surtidos (parcialmente)
-      nuevoEstatus = 'Surtido Parcial';
+      nuevoEstatus = ESTADOS_PEDIDO.PARCIALMENTE_SURTIDO;
     } else {
       // Ningún item está surtido
-      nuevoEstatus = 'Revisión de almacén';
+      nuevoEstatus = ESTADOS_PEDIDO.REVISION_ALMACEN;
     }
     
     const updateQuery = `
@@ -1136,8 +1137,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     const detalles = await getDetallesPedido(client, pedidoId, tenant_id);
     const nuevoEstatus = calcularEstadoPedido(detalles);
     
-    // Determinar flags basados en el estado calculado
-    const completamenteSurtido = nuevoEstatus === 'Surtido';
+    // Determinar flags basados en el estado calculado (usando estados normalizados)
+    const completamenteSurtido = nuevoEstatus === ESTADOS_PEDIDO.SURTIDO;
     
     // FIX 3: es_historico solo debe ser true cuando el pedido está 100% completado
     // No solo cuando inventarios marcó todo como surtido, sino cuando finanzas confirmó TODO

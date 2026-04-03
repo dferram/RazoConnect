@@ -580,19 +580,19 @@
             // Separar pedidos en 3 categorías:
             // 1. SURTIDOS: Enviados por inventarios, esperando confirmación de finanzas (PENDIENTE DE CONFIRMACIÓN)
             const pedidosSurtidos = allPedidos.filter(pedido => {
-              const estatus = (pedido.estatus || '').toLowerCase();
+              const estatus = (pedido.estatus || '').toLowerCase().trim();
               return ['pendiente de confirmación', 'pendiente de confirmacion'].includes(estatus);
             });
             
             // 2. PENDIENTES: Pedidos confirmados/aprobados/pendientes (aún no procesados por inventarios o finanzas)
             const pedidosPendientes = allPedidos.filter(pedido => {
-              const estatus = (pedido.estatus || '').toLowerCase();
+              const estatus = (pedido.estatus || '').toLowerCase().trim();
               return ['pendiente', 'aprobado', 'confirmado', 'listo para surtir', 'parcialmente surtido', 'parcialmente_surtido'].includes(estatus);
             });
             
             // 3. HISTÓRICOS: Solo contar para mostrar el badge
             const pedidosHistoricos = allPedidos.filter(pedido => {
-              const estatus = (pedido.estatus || '').toLowerCase();
+              const estatus = (pedido.estatus || '').toLowerCase().trim();
               return ['surtido', 'enviado', 'entregado'].includes(estatus);
             });
             

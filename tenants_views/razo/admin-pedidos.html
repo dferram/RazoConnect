@@ -109,7 +109,7 @@
                   <option value="Pendiente">Pendiente</option>
                   <option value="Confirmado">Confirmado</option>
                   <option value="Pendiente de Confirmación">🔵 Pendiente de Confirmación</option>
-                  <option value="Surtido Parcial">🟡 Surtido Parcial</option>
+                  <option value="Parcialmente Surtido">🟡 Parcialmente Surtido</option>
                   <option value="Enviado">Enviado</option>
                   <option value="Entregado">Entregado</option>
                   <option value="Cancelado">Cancelado</option>
@@ -574,7 +574,7 @@
         // Mapear variantes a valores canónicos
         if (value === "pendiente") return "pendiente";
         if (value === "confirmado" || value === "surtido") return "confirmado";
-        if (value === "parcialmente surtido" || value === "surtido parcial") return "surtido parcial";
+        if (value === "parcialmente surtido" || value === "surtido parcial" || value === "surtido parcial") return "parcialmente surtido";
         if (value === "enviado" || value === "en ruta" || value === "en-ruta") return "enviado";
         if (value === "entregado" || value === "completado") return "entregado";
         if (value === "cancelado") return "cancelado";
