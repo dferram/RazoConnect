@@ -278,6 +278,102 @@ if (typeof window !== 'undefined') {
   });
 }
 
+// ════════════════════════════════════════════════════════════
+// TOKEN REFRESH INTERCEPTOR (Manejo de 401 y renovación automática)
+// ════════════════════════════════════════════════════════════
+
+/**
+ * Obtener el refresh token basado en el contexto actual (admin, cliente, agente)
+ */
+function getRefreshTokenForContext() {
+  const path = (window.location?.pathname || '').toString().toLowerCase();
+  const sidebarType = (document.body?.dataset?.sidebar || '').toString().toLowerCase();
+
+  // Contexto de agente
+  if (path.includes('/agente') || sidebarType === 'agent') {
+    return localStorage.getItem('razoconnect_agent_refresh_token');
+  }
+
+  // Contexto de admin
+  if (path.startsWith('/admin') || sidebarType === 'admin') {
+    return localStorage.getItem('razoconnect_admin_refresh_token');
+  }
+
+  // Contexto de cliente (fallback)
+  return localStorage.getItem('razoconnect_refresh_token');
+}
+
+/**
+ * Guardar el nuevo access token en el lugar correcto según el contexto
+ */
+function saveAccessTokenForContext(newAccessToken) {
+  const path = (window.location?.pathname || '').toString().toLowerCase();
+  const sidebarType = (document.body?.dataset?.sidebar || '').toString().toLowerCase();
+
+  // Contexto de agente
+  if (path.includes('/agente') || sidebarType === 'agent') {
+    localStorage.setItem('razoconnect_agent_token', newAccessToken);
+    return 'agente';
+  }
+
+  // Contexto de admin
+  if (path.startsWith('/admin') || sidebarType === 'admin') {
+    localStorage.setItem('razoconnect_admin_token', newAccessToken);
+    return 'admin';
+  }
+
+  // Contexto de cliente (fallback)
+  localStorage.setItem('razoconnect_token', newAccessToken);
+  return 'cliente';
+}
+
+/**
+ * Intentar renovar el access token usando el refresh token
+ * Retorna el nuevo access token si es exitoso, null si falla
+ */
+async function attemptTokenRefresh() {
+  try {
+    const refreshToken = getRefreshTokenForContext();
+    
+    if (!refreshToken) {
+      console.warn('[TokenRefresh] No se encontró refresh token en localStorage');
+      return null;
+    }
+
+    console.log('[TokenRefresh] Intentando renovar token...');
+
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.warn('[TokenRefresh] Refresh falló:', errorData.message || response.statusText);
+      return null;
+    }
+
+    const data = await response.json();
+    
+    if (data.success && data.data?.accessToken) {
+      const newAccessToken = data.data.accessToken;
+      const rolContext = saveAccessTokenForContext(newAccessToken);
+      console.log(`[TokenRefresh] ✅ Token renovado exitosamente (contexto: ${rolContext})`);
+      return newAccessToken;
+    }
+
+    console.warn('[TokenRefresh] Respuesta del servidor inválida:', data);
+    return null;
+  } catch (error) {
+    console.error('[TokenRefresh] Error durante renovación:', error);
+    return null;
+  }
+}
+
 // API call wrapper con manejo automático de token y sesión expirada
 const apiCall = async (endpoint, options = {}) => {
   // Si AuthManager está disponible, usar su apiCall con silent refresh
@@ -387,14 +483,15 @@ const apiCall = async (endpoint, options = {}) => {
       };
     }
 
-    // Manejo centralizado de sesión expirada (401) - solo si no es endpoint público Y había un token
+    // ════════════════════════════════════════════════════════════
+    // MANEJO DE 401: Token Refresh Interceptor (renovación automática)
+    // ════════════════════════════════════════════════════════════
     if (response.status === 401 && !isPublicEndpoint && token) {
       const path = (window.location?.pathname || "").toLowerCase();
       
-      // CRÍTICO: En contexto de agente, NO limpiar tokens ni redirigir
+      // CRÍTICO: En contexto de agente, NO intentar refresh (mantener sesión interna)
       if (path.includes('/agente')) {
-        console.warn('Error 401 en contexto de agente - Bloqueando limpieza de sesión');
-        console.warn('El agente puede seguir trabajando. Auth guard manejará validación real.');
+        console.warn('🚫 [401] Error en contexto de agente - Bloqueando refresh y limpieza');
         
         // Retornar error sin limpiar sesión ni redirigir
         return {
@@ -404,8 +501,56 @@ const apiCall = async (endpoint, options = {}) => {
           error: 'Error de autenticación temporal'
         };
       }
+
+      // STEP 1: Intentar renovar el access token (max 1 reintento para evitar loops infinitos)
+      const shouldRetryOriginalRequest = !options._tokenRefreshAttempted;
       
-      // Para admin/cliente: comportamiento normal
+      if (shouldRetryOriginalRequest) {
+        console.log('[TokenRefresh] 🔄 Interceptando 401 - Intentando renovar token...');
+        
+        const newAccessToken = await attemptTokenRefresh();
+        
+        if (newAccessToken) {
+          console.log('[TokenRefresh] ✅ Token renovado exitosamente - Reintentando petición original');
+          
+          // Reintentar la petición original con el nuevo token
+          const retryConfig = {
+            ...config,
+            headers: {
+              ...config.headers,
+              Authorization: `Bearer ${newAccessToken}`,
+            },
+            _tokenRefreshAttempted: true, // Prevenir loops infinitos
+          };
+          
+          try {
+            const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, retryConfig);
+            
+            // Si es blob, retornar directamente
+            if (options.responseType === 'blob') {
+              return {
+                ok: retryResponse.ok,
+                status: retryResponse.status,
+                blob: () => retryResponse.blob(),
+                data: null
+              };
+            }
+            
+            const retryData = await retryResponse.json();
+            return {
+              ok: retryResponse.ok,
+              status: retryResponse.status,
+              data: retryData,
+            };
+          } catch (retryError) {
+            console.error('[TokenRefresh] Error al reintentar petición:', retryError);
+            // Si falla el reintento, continuar con limpieza de sesión
+          }
+        }
+      }
+
+      // STEP 2: Si el refresh falló (o fue segundo intento), limpiar sesión
+      console.log('[TokenRefresh] ❌ Refresh falló - Limpiando sesión e informando al usuario');
       clearAuthData();
 
       if (!sessionExpiredHandled) {
@@ -425,12 +570,12 @@ const apiCall = async (endpoint, options = {}) => {
           });
         } else {
           // Si SweetAlert2 no está disponible, redirigir silenciosamente
-          console.warn("Sesión expirada. Redirigiendo a login...");
+          console.warn("[SessionExpired] Sesión expirada. Redirigiendo a login...");
           window.location.href = "/login.html";
         }
       }
 
-      throw new Error("Sesión expirada. Por favor, inicia sesión nuevamente.");
+      throw new Error("Sesión expirada y no se pudo renovar. Por favor, inicia sesión nuevamente.");
     }
 
     // Si es 401 pero no había token (usuario invitado), simplemente retornar el error sin modal
