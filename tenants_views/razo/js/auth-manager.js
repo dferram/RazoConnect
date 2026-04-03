@@ -40,6 +40,11 @@ const AuthManager = (() => {
   // Flag para evitar múltiples refresh simultáneos
   let isRefreshing = false;
   let refreshSubscribers = [];
+  
+  // Contador para retry con exponential backoff
+  let refreshRetryCount = 0;
+  const MAX_REFRESH_RETRIES = 3;
+  const RETRY_DELAYS = [1000, 2000, 4000]; // 1s, 2s, 4s
 
   // ============================================================================
   // DETECCIÓN DE CONTEXTO
@@ -269,7 +274,7 @@ const AuthManager = (() => {
    * @param {string} context - Contexto (opcional)
    * @returns {Promise<string|null>} Nuevo access token o null si falla
    */
-  const refreshAccessToken = async (context = null) => {
+  const refreshAccessToken = async (context = null, retryCount = 0) => {
     const ctx = context || detectContext();
     const refreshToken = getRefreshToken(ctx);
 
@@ -280,6 +285,7 @@ const AuthManager = (() => {
 
     // Si ya hay un refresh en progreso, esperar a que termine
     if (isRefreshing) {
+      console.log('[AuthManager] Refresh en progreso, esperando...');
       return new Promise((resolve) => {
         subscribeTokenRefresh((newToken) => {
           resolve(newToken);
@@ -288,9 +294,12 @@ const AuthManager = (() => {
     }
 
     isRefreshing = true;
+    refreshRetryCount = retryCount;
 
     try {
-      console.log('🔄 [AuthManager] Renovando access token...');
+      console.log(`🔄 [AuthManager] Renovando access token... (intento ${retryCount + 1}/${MAX_REFRESH_RETRIES})`);
+      console.log(`[AuthManager] Refresh token presente: ${!!refreshToken}`);
+      console.log(`[AuthManager] Contexto actual: ${ctx}`);
 
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: 'POST',
@@ -301,6 +310,11 @@ const AuthManager = (() => {
       });
 
       const data = await response.json();
+      console.log(`[AuthManager] Respuesta del servidor:`, {
+        status: response.status,
+        success: data.success,
+        message: data.message
+      });
 
       if (response.ok && data.success && data.data.accessToken) {
         const newAccessToken = data.data.accessToken;
@@ -311,6 +325,10 @@ const AuthManager = (() => {
         localStorage.setItem(keys.legacyToken, newAccessToken); // Legacy
 
         console.log('✅ [AuthManager] Access token renovado exitosamente');
+        console.log(`[AuthManager] Nuevo token guardado para contexto: ${ctx}`);
+
+        // Resetear contador de retries
+        refreshRetryCount = 0;
 
         // Notificar a suscriptores
         onRefreshComplete(newAccessToken);
@@ -318,8 +336,22 @@ const AuthManager = (() => {
 
         return newAccessToken;
       } else {
-        // Refresh token inválido o expirado
-        console.error('[AuthManager] Refresh token inválido o expirado');
+        console.error(`[AuthManager] Refresh token inválido o expirado: ${data.message}`);
+        
+        // Si es un error de red o servidor y tenemos reintentos disponibles
+        if (!response.ok && retryCount < MAX_REFRESH_RETRIES - 1) {
+          const delay = RETRY_DELAYS[retryCount];
+          console.log(`[AuthManager] Reintentando en ${delay}ms... (${retryCount + 1}/${MAX_REFRESH_RETRIES})`);
+          
+          // Esperar con exponential backoff
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
+          isRefreshing = false;
+          return refreshAccessToken(context, retryCount + 1);
+        }
+        
+        // Refresh token inválido o expirado, o se acabaron los reintentos
+        console.error('[AuthManager] No se pudo renovar el token - limpiando sesión');
         
         // Limpiar tokens y redirigir a login
         clearTokens(ctx);
@@ -332,9 +364,29 @@ const AuthManager = (() => {
         return null;
       }
     } catch (error) {
-      console.error('[AuthManager] Error al renovar token:', error);
+      console.error(`[AuthManager] Error al renovar token (intento ${retryCount + 1}):`, error);
+      
+      // Si es un error de red y tenemos reintentos disponibles
+      if (retryCount < MAX_REFRESH_RETRIES - 1) {
+        const delay = RETRY_DELAYS[retryCount];
+        console.log(`[AuthManager] Error de red, reintentando en ${delay}ms... (${retryCount + 1}/${MAX_REFRESH_RETRIES})`);
+        
+        // Esperar con exponential backoff
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        isRefreshing = false;
+        return refreshAccessToken(context, retryCount + 1);
+      }
+      
+      // Se acabaron los reintentos
+      console.error('[AuthManager] Máximo de reintentos alcanzado - limpiando sesión');
       isRefreshing = false;
       onRefreshComplete(null);
+      
+      // Limpiar tokens y mostrar modal
+      clearTokens(ctx);
+      showSessionExpiredModal();
+      
       return null;
     }
   };
