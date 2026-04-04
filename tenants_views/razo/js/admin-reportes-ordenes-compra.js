@@ -209,6 +209,13 @@ function renderizarOrdenes() {
  * Generar reporte PDF de una orden de compra usando módulo unificado
  */
 async function generarReportePDF(ordenId) {
+  // Obtener botón y mostrar loading
+  const botonPDF = event?.target?.closest('button');
+  let restoreButton = null;
+  if (botonPDF && typeof UI !== 'undefined' && UI && typeof UI.setButtonLoading === 'function') {
+    restoreButton = UI.setButtonLoading(botonPDF, 'Generando...');
+  }
+
   try {
     Swal.fire({
       title: 'Generando reporte...',
@@ -307,12 +314,15 @@ async function generarReportePDF(ordenId) {
 
   } catch (error) {
     console.error('Error al generar reporte:', error);
+    if (restoreButton) restoreButton();
     Swal.fire({
       icon: 'error',
       title: 'Error',
       text: 'No se pudo generar el reporte PDF',
       confirmButtonColor: '#F97316'
     });
+  } finally {
+    if (restoreButton) restoreButton();
   }
 }
 

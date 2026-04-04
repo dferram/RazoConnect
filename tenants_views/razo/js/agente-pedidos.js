@@ -566,6 +566,13 @@
         }
       }
 
+      // Obtener botón y mostrar loading
+      const botonDescarga = event?.target?.closest('button');
+      let restoreButton = null;
+      if (botonDescarga && typeof UI !== 'undefined' && UI && typeof UI.setButtonLoading === 'function') {
+        restoreButton = UI.setButtonLoading(botonDescarga, 'Descargando...');
+      }
+
       try {
         const response = await fetch(`/api/pedidos/${pedidoId}/factura`, {
           method: 'GET',
@@ -601,6 +608,8 @@
       } catch (error) {
         console.error('Error al descargar factura:', error);
         showToast(error.message || 'Error al generar la factura', 'error');
+      } finally {
+        if (restoreButton) restoreButton();
       }
     };
 

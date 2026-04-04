@@ -315,6 +315,13 @@ function verDetalleSesion(sesionId) {
 }
 
 async function descargarReportePDF(sesionId, nombreSesion) {
+    // Obtener botón y mostrar loading
+    const botonPDF = event?.target?.closest('button');
+    let restoreButton = null;
+    if (botonPDF && typeof UI !== 'undefined' && UI && typeof UI.setButtonLoading === 'function') {
+        restoreButton = UI.setButtonLoading(botonPDF, 'Descargando...');
+    }
+
     const loadingAlert = Swal.fire({
         title: 'Generando reporte...',
         html: `
@@ -647,6 +654,7 @@ async function descargarReportePDF(sesionId, nombreSesion) {
 
     } catch (error) {
         console.error('Error al descargar reporte:', error);
+        if (restoreButton) restoreButton();
         loadingAlert.close();
 
         Swal.fire({
@@ -655,5 +663,7 @@ async function descargarReportePDF(sesionId, nombreSesion) {
             text: error.message || 'No se pudo generar el reporte PDF. Intenta nuevamente.',
             confirmButtonColor: '#F97316'
         });
+    } finally {
+        if (restoreButton) restoreButton();
     }
 }

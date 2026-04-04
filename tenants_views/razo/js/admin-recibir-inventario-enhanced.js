@@ -705,6 +705,13 @@ async function exportarPDF() {
     return;
   }
 
+  // Obtener botón y mostrar loading
+  const botonPDF = document.getElementById('btn-exportar-pdf');
+  let restoreButton = null;
+  if (botonPDF && typeof UI !== 'undefined' && UI && typeof UI.setButtonLoading === 'function') {
+    restoreButton = UI.setButtonLoading(botonPDF, 'Generando...');
+  }
+
   try {
     Swal.fire({
       title: 'Generando PDF...',
@@ -788,12 +795,15 @@ async function exportarPDF() {
 
   } catch (error) {
     console.error('Error generando PDF:', error);
+    if (restoreButton) restoreButton();
     Swal.fire({
       icon: 'error',
       title: 'Error',
       text: 'No se pudo generar el archivo PDF. Por favor intenta nuevamente.',
       confirmButtonColor: '#F97316'
     });
+  } finally {
+    if (restoreButton) restoreButton();
   }
 }
 

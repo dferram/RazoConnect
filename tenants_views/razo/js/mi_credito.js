@@ -871,6 +871,13 @@
     }
 
     async function descargarEstadoCuenta(mes, anio) {
+      // Obtener botón y mostrar loading
+      const botonPDF = event?.target?.closest('button');
+      let restoreButton = null;
+      if (botonPDF && typeof UI !== 'undefined' && UI && typeof UI.setButtonLoading === 'function') {
+        restoreButton = UI.setButtonLoading(botonPDF, 'Descargando...');
+      }
+
       try {
         const nombresMeses = [
           'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -926,12 +933,15 @@
 
       } catch (error) {
         console.error('Error descargando estado de cuenta:', error);
+        if (restoreButton) restoreButton();
         Swal.fire({
           icon: 'error',
           title: 'Error al descargar',
           text: error.message || 'No fue posible generar el estado de cuenta',
           confirmButtonColor: '#F97316'
         });
+      } finally {
+        if (restoreButton) restoreButton();
       }
     }
 

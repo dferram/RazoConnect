@@ -578,6 +578,13 @@ async function exportarPDF() {
     return;
   }
 
+  // Mostrar loading en botón
+  const botonPDF = document.getElementById('btnExportarPDF');
+  let restoreButton = null;
+  if (botonPDF && typeof UI !== 'undefined' && UI && typeof UI.setButtonLoading === 'function') {
+    restoreButton = UI.setButtonLoading(botonPDF, 'Generando...');
+  }
+
   mostrarLoading(true);
 
   try {
@@ -786,6 +793,7 @@ async function exportarPDF() {
 
   } catch (error) {
     console.error('Error generando PDF:', error);
+    if (restoreButton) restoreButton();
     Swal.fire({
       icon: 'error',
       title: 'Error al Generar PDF',
@@ -794,6 +802,7 @@ async function exportarPDF() {
     });
   } finally {
     mostrarLoading(false);
+    if (restoreButton) restoreButton();
   }
 }
 
