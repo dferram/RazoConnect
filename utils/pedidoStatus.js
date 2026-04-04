@@ -12,6 +12,114 @@ const {
 } = require('./pedidoEstados');
 
 /**
+ * Calcula el estado correcto de un pedido basado en:
+ * 1. Confirmaciones de remisiones (finanzas, almacén)
+ * 2. Disponibilidad de stock de los productos
+ * 
+ * PRIORIDAD 1: Estados de Surtimiento (basados en remisiones confirmadas)
+ * - Si hay remisión confirmada por FINANZAS:
+ *   • Si TODAS las remisiones → SURTIDO_COMPLETO
+ *   • Si ALGUNAS → SURTIDO_PARCIAL
+ * - Si hay remisión confirmada por ALMACÉN pero NO finanzas → LISTO_PARA_REMISIONAR
+ * 
+ * PRIORIDAD 2: Estados de Disponibilidad (si NO hay remisiones)
+ * - Si TODOS backorder → BAJO_PEDIDO
+ * - Si TODOS stock → COMPLETO
+ * - Si MIX backorder+stock → COMBINADO
+ * 
+ * @param {Object} params - { client (DB client), pedidoId (number) }
+ * @returns {Promise<string>} - Estado normalizado
+ */
+async function calcularEstadoPedidoCorrect(client, pedidoId) {
+  try {
+    // 1. Obtener todos los detalles del pedido
+    const detallesResult = await client.query(`
+      SELECT 
+        d.detalleid,
+        d.esbackorder,
+        d.cantidadpaquetes
+      FROM detallesdelpedido d
+      WHERE d.pedidoid = $1
+    `, [pedidoId]);
+
+    const detalles = detallesResult.rows;
+
+    if (detalles.length === 0) {
+      return ESTADOS_PEDIDO.PENDIENTE;
+    }
+
+    // 2. Obtener remisiones confirmadas
+    const remisionesResult = await client.query(`
+      SELECT 
+        COUNT(DISTINCT r.remision_id) as total_remisiones,
+        COUNT(DISTINCT CASE WHEN r.confirmado_por_almacen IS NOT NULL THEN r.remision_id END) as con_almacen,
+        COUNT(DISTINCT CASE WHEN r.confirmado_por_finanzas IS NOT NULL THEN r.remision_id END) as con_finanzas,
+        COUNT(DISTINCT CASE WHEN r.confirmado_por_finanzas IS NOT NULL THEN r.remision_id END) as remisiones_finanzas_confirmadas
+      FROM remisiones r
+      WHERE r.pedido_id = $1
+    `, [pedidoId]);
+
+    const remisiones = remisionesResult.rows[0] || {
+      total_remisiones: 0,
+      con_almacen: 0,
+      con_finanzas: 0,
+      remisiones_finanzas_confirmadas: 0
+    };
+
+    // ============================================================
+    // PRIORIDAD 1: Verificar Estados de Surtimiento
+    // ============================================================
+    
+    // Si hay remisiones confirmadas por finanzas
+    if (remisiones.con_finanzas > 0) {
+      // Si TODAS las remisiones están confirmadas por finanzas
+      if (remisiones.con_finanzas === remisiones.total_remisiones) {
+        return ESTADOS_PEDIDO.SURTIDO_COMPLETO;
+      } else {
+        // Si solo ALGUNAS remisiones están confirmadas
+        return ESTADOS_PEDIDO.SURTIDO_PARCIAL;
+      }
+    }
+
+    // Si hay remisiones confirmadas por almacén pero NO por finanzas
+    if (remisiones.con_almacen > 0 && remisiones.con_finanzas === 0) {
+      return ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR;
+    }
+
+    // ============================================================
+    // PRIORIDAD 2: Verificar Estados de Disponibilidad
+    // (Solo si NO hay remisiones confirmadas)
+    // ============================================================
+    
+    const totalProductos = detalles.length;
+    const productosBackorder = detalles.filter(d => d.esbackorder === true).length;
+    const productosConStock = detalles.filter(d => d.esbackorder === false).length;
+
+    // Si TODOS los productos son backorder
+    if (productosBackorder === totalProductos) {
+      return ESTADOS_PEDIDO.BAJO_PEDIDO;
+    }
+
+    // Si TODOS los productos tienen stock
+    if (productosConStock === totalProductos) {
+      return ESTADOS_PEDIDO.COMPLETO;
+    }
+
+    // Si hay MIX de backorder y stock
+    if (productosBackorder > 0 && productosConStock > 0) {
+      return ESTADOS_PEDIDO.COMBINADO;
+    }
+
+    // Fallback
+    return ESTADOS_PEDIDO.PENDIENTE;
+  } catch (error) {
+    console.error('Error calculating order state:', error.message);
+    return ESTADOS_PEDIDO.PENDIENTE;
+  }
+}
+
+/**
+ * DEPRECATED: Esta función se reemplaza por calcularEstadoPedidoCorrect que usa la BD
  * Calcula el estado correcto de un pedido basado en sus detalles
  * 
  * LÓGICA:
@@ -24,6 +132,7 @@ const {
  * 
  * @param {Array} detalles - Array de {cantidadpaquetes, cantidadsurtida, esbackorder}
  * @returns {string} - Estado normalizado
+ * @deprecated Use calcularEstadoPedidoCorrect instead
  */
 function calcularEstadoPedido(detalles = []) {
   if (!detalles || detalles.length === 0) {
@@ -39,9 +148,20 @@ function calcularEstadoPedido(detalles = []) {
   let todosCompletosSurtidos = true;
 
   for (const detalle of detalles) {
-    const cantidadPaquetes = Number(detalle.cantidadpaquetes || detalle.cantidad_pedida || 0);
-    const cantidadSurtida = Number(detalle.cantidadsurtida || detalle.cantidad_surtida || 0);
-    const esBackorder = Boolean(detalle.esbackorder || detalle.es_backorder);
+    // Soportar múltiples variantes de nombres de propiedades (DB, objeto local, etc.)
+    const cantidadPaquetes = Number(
+      detalle.cantidadpaquetes || 
+      detalle.cantidad_pedida || 
+      detalle.cantidad || 
+      0
+    );
+    const cantidadSurtida = Number(
+      detalle.cantidadsurtida || 
+      detalle.cantidad_surtida || 
+      detalle.cantidadSurtida || 
+      0
+    );
+    const esBackorder = Boolean(detalle.esbackorder || detalle.es_backorder || detalle.esBackorder);
 
     // Clasificar item
     if (esBackorder) {
@@ -62,32 +182,38 @@ function calcularEstadoPedido(detalles = []) {
   }
 
   // ============================================================
-  // APLICAR LÓGICA DE ESTADOS
+  // APLICAR LÓGICA DE ESTADOS - PRIORIDAD CORRECTA
   // ============================================================
-
-  // 1. BAJO PEDIDO: Todos los items son backorder
-  if (itemsBackorder === total && itemsConStock === 0) {
-    return ESTADOS_PEDIDO.BAJO_PEDIDO;
-  }
-
-  // 2. COMPLETO: Todos los items tienen stock (no backorder)
-  if (itemsConStock === total && itemsBackorder === 0) {
-    return ESTADOS_PEDIDO.COMPLETO;
-  }
-
-  // 3. COMBINADO: Mix de backorder y stock
-  if (itemsBackorder > 0 && itemsConStock > 0) {
-    return ESTADOS_PEDIDO.COMBINADO;
-  }
-
-  // 4. SURTIDO COMPLETO: Todos fueron surtidos
+  
+  // PRIORIDAD 1: Estados de surtimiento (si hay cantidades surtidas, ese es el estado principal)
+  // -------------------------------------------------------------------------
+  
+  // 1. SURTIDO COMPLETO: Todos fueron surtidos
   if (todosCompletosSurtidos && itemsConSurtida === total) {
     return ESTADOS_PEDIDO.SURTIDO_COMPLETO;
   }
 
-  // 5. SURTIDO PARCIAL: Al menos algunos fueron surtidos
+  // 2. SURTIDO PARCIAL: Al menos algunos fueron surtidos (pero no todos)
   if (itemsConSurtida > 0 && itemsConSurtida < total) {
     return ESTADOS_PEDIDO.SURTIDO_PARCIAL;
+  }
+
+  // PRIORIDAD 2: Estados de disponibilidad (si NO hay surtidos, verificar stock)
+  // -------------------------------------------------------------------------
+  
+  // 3. BAJO PEDIDO: Todos los items son backorder (sin stock disponible)
+  if (itemsBackorder === total && itemsConStock === 0) {
+    return ESTADOS_PEDIDO.BAJO_PEDIDO;
+  }
+
+  // 4. COMPLETO: Todos los items tienen stock disponible (no backorder)
+  if (itemsConStock === total && itemsBackorder === 0) {
+    return ESTADOS_PEDIDO.COMPLETO;
+  }
+
+  // 5. COMBINADO: Mix de backorder y stock disponible
+  if (itemsBackorder > 0 && itemsConStock > 0) {
+    return ESTADOS_PEDIDO.COMBINADO;
   }
 
   // 6. Default fallback
@@ -161,6 +287,7 @@ async function recalcularEstadoPedido(client, pedidoId, tenantId) {
 module.exports = {
   ESTADOS_PEDIDO,
   calcularEstadoPedido,
+  calcularEstadoPedidoCorrect,
   getDetallesPedido,
   updatePedidoStatus,
   recalcularEstadoPedido

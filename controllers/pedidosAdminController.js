@@ -441,6 +441,7 @@ const getPedidoDetalle = async (req, res) => {
         dp.preciounitario,
         dp.esbackorder,
         dp.cantidadsurtida,
+        dp.estado_producto,
         COALESCE(
           dp.preciounitario, 
           ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
@@ -554,6 +555,7 @@ const getPedidoDetalle = async (req, res) => {
             imagenUrl: row.imagenurl || null,
             stock: row.stock !== null ? parseInt(row.stock, 10) : 0,
             esBackorder: row.esbackorder || false,
+            estado_producto: row.estado_producto || 'Surtido',
             subtotal: row.precioporpaquete
               ? parseFloat((row.cantidadpaquetes || 0) * row.precioporpaquete)
               : 0,

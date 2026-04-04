@@ -40,6 +40,11 @@
   background-color: #16a34a;
 }
 
+.badge-stock.facturado {
+  background-color: #000000;
+  color: #ffffff;
+}
+
 /* ============================================
    QUANTITY ADJUSTER (STEPPER)
    ============================================ */
