@@ -568,13 +568,32 @@
         
         // Mapeo de variantes conocidas al estado estándar
         const mapeoEstatus = {
+          // Estados de Confirmación
           'pendiente de confirmación': 'pendiente_confirmacion',
           'pendiente de confirmacion': 'pendiente_confirmacion',
           'pendiente confirmación': 'pendiente_confirmacion',
           'pendiente confirmacion': 'pendiente_confirmacion',
+          
+          // Estados de Preparación
           'listo para surtir': 'listo_para_surtir',
+          'listo para pago': 'listo_para_pago',
+          
+          // Estados de Surtimiento
           'parcialmente surtido': 'parcialmente_surtido',
           'parcialmente_surtido': 'parcialmente_surtido',
+          'surtido parcial': 'parcialmente_surtido',
+          'parcial': 'parcialmente_surtido',
+          
+          // Estados de Completado
+          'completado': 'completado',
+          'surtido': 'surtido',
+          'enviado': 'enviado',
+          'entregado': 'entregado',
+          
+          // Estados base
+          'pendiente': 'pendiente',
+          'aprobado': 'aprobado',
+          'confirmado': 'confirmado',
         };
         
         return mapeoEstatus[base] || base;
@@ -608,7 +627,7 @@
             // 1. SURTIDOS: Enviados por inventarios, esperando confirmación de finanzas (PENDIENTE DE CONFIRMACIÓN)
             const pedidosSurtidos = allPedidos.filter(pedido => {
               const estatus = normalizarEstatus(pedido.estatus);
-              return estatus === 'pendiente_confirmacion';
+              return ['pendiente_confirmacion', 'listo_para_pago'].includes(estatus);
             });
             
             // 2. PENDIENTES: Pedidos confirmados/aprobados/pendientes (aún no procesados por inventarios o finanzas)
@@ -620,7 +639,7 @@
             // 3. HISTÓRICOS: Solo contar para mostrar el badge
             const pedidosHistoricos = allPedidos.filter(pedido => {
               const estatus = normalizarEstatus(pedido.estatus);
-              return ['surtido', 'enviado', 'entregado'].includes(estatus);
+              return ['surtido', 'enviado', 'entregado', 'completado'].includes(estatus);
             });
             
             pedidosData = allPedidos;
@@ -769,7 +788,7 @@
         // Separate into 3 categories
         let surtidos = filtered.filter(pedido => {
           const estatus = normalizarEstatus(pedido.estatus);
-          return estatus === 'pendiente_confirmacion';
+          return ['pendiente_confirmacion', 'listo_para_pago'].includes(estatus);
         });
         
         let pendientes = filtered.filter(pedido => {

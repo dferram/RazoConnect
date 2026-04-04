@@ -386,8 +386,7 @@ async function generarPDFPedido(req, res) {
        .text('CANT.', 55, headerY + 6)
        .text('PAQUETES', 110, headerY + 6)
        .text('DESCRIPCIÓN', 160, headerY + 6)
-       .text('TAMAÑO', 340, headerY + 6)
-       .text('ESTADO', 400, headerY + 6);
+       .text('TAMAÑO', 370, headerY + 6);
     
     // Only show price columns if mostrarPrecios is true
     if (mostrarPrecios) {
@@ -441,12 +440,9 @@ const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = 
            .font('Helvetica')
            .text(cantidadSegura, 55, currentY)
            .text(`${cantidadSegura} paquetes`, 110, currentY)
-           .text(descripcionLinea1, 160, currentY, { width: 170 })
-           .text(descripcionLinea2 + rondaTexto, 160, currentY + 10, { width: 170 })
-           .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unit.', 340, currentY)
-           .font('Helvetica-Bold')
-           .fontSize(8)
-           .text(estadoTexto, 400, currentY + 5, { width: 65 })
+           .text(descripcionLinea1, 160, currentY, { width: 200 })
+           .text(descripcionLinea2 + rondaTexto, 160, currentY + 10, { width: 200 })
+           .text(tamanoSeguro > 1 ? `Pack ${tamanoSeguro}` : 'Unit.', 370, currentY)
            .font('Helvetica')
            .fontSize(9);
         
