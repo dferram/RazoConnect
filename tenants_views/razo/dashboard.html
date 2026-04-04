@@ -1832,17 +1832,14 @@
           return;
         }
 
-        // Buscar el botón de descarga para este pedido y cambiar su texto
+        // Buscar el botón de descarga para este pedido
         const botonDescarga = event?.target?.closest('button');
-        let textoOriginal = null;
+        const originalText = botonDescarga?.innerHTML || '';
         
+        // Mostrar animación de cargando
         if (botonDescarga) {
-          const spanTexto = botonDescarga.querySelector('span:last-child');
-          if (spanTexto) {
-            textoOriginal = spanTexto.textContent;
-            spanTexto.textContent = 'Generando...';
-            botonDescarga.disabled = true;
-          }
+          botonDescarga.disabled = true;
+          botonDescarga.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Descargando...';
         }
 
         try {
@@ -1897,13 +1894,10 @@
           console.error('Error al descargar PDF:', error);
           showToast(error.message || 'Error al generar el PDF. Intenta de nuevo.', 'error');
         } finally {
-          // Restaurar texto y estado del botón
-          if (botonDescarga && textoOriginal) {
-            const spanTexto = botonDescarga.querySelector('span:last-child');
-            if (spanTexto) {
-              spanTexto.textContent = textoOriginal;
-            }
+          // Restaurar botón a su estado original
+          if (botonDescarga) {
             botonDescarga.disabled = false;
+            botonDescarga.innerHTML = originalText;
           }
         }
       }
@@ -1945,15 +1939,12 @@
         }
 
         const botonDescarga = event?.target?.closest('button');
-        let textoOriginal = null;
+        const originalText = botonDescarga?.innerHTML || '';
         
+        // Mostrar animación de cargando
         if (botonDescarga) {
-          const spanTexto = botonDescarga.querySelector('span:last-child');
-          if (spanTexto) {
-            textoOriginal = spanTexto.textContent;
-            spanTexto.textContent = 'Generando...';
-            botonDescarga.disabled = true;
-          }
+          botonDescarga.disabled = true;
+          botonDescarga.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Descargando...';
         }
 
         try {
@@ -1998,12 +1989,10 @@
           console.error('Error al descargar factura:', error);
           showToast(error.message || 'Error al generar la factura. Intenta de nuevo.', 'error');
         } finally {
-          if (botonDescarga && textoOriginal) {
-            const spanTexto = botonDescarga.querySelector('span:last-child');
-            if (spanTexto) {
-              spanTexto.textContent = textoOriginal;
-            }
+          // Restaurar botón a su estado original
+          if (botonDescarga) {
             botonDescarga.disabled = false;
+            botonDescarga.innerHTML = originalText;
           }
         }
       }

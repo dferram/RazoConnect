@@ -2620,7 +2620,17 @@
         btnCerrarSesion.addEventListener("click", cerrarSesion);
       }
       if (btnDescargarPDF) {
-        btnDescargarPDF.addEventListener("click", descargarPDFClasificado);
+        btnDescargarPDF.addEventListener("click", async (e) => {
+          const originalText = btnDescargarPDF.innerHTML;
+          btnDescargarPDF.disabled = true;
+          btnDescargarPDF.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Descargando...';
+          try {
+            await descargarPDFClasificado();
+          } finally {
+            btnDescargarPDF.disabled = false;
+            btnDescargarPDF.innerHTML = originalText;
+          }
+        });
       }
 
       // MISIÓN 4: Event listeners para filtros avanzados

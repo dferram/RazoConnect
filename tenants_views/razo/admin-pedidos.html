@@ -1139,9 +1139,17 @@
           return;
         }
 
+        // Obtener botón y guardar texto original
+        const botonDescarga = event?.target?.closest('button');
+        const originalText = botonDescarga?.innerHTML || '';
+        
+        // Mostrar animación de cargando
+        if (botonDescarga) {
+          botonDescarga.disabled = true;
+          botonDescarga.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Descargando...';
+        }
+
         try {
-          showToast('Generando PDF...', 'info');
-          
           console.log('Downloading PDF for order:', pedidoId);
           console.log('Using admin token:', token.substring(0, 20) + '...');
           
@@ -1193,6 +1201,12 @@
         } catch (error) {
           console.error('Error al descargar PDF:', error);
           showToast(error.message || 'Error al generar el PDF. Intenta de nuevo.', 'error');
+        } finally {
+          // Restaurar botón a su estado original
+          if (botonDescarga) {
+            botonDescarga.disabled = false;
+            botonDescarga.innerHTML = originalText;
+          }
         }
       }
 
@@ -1229,9 +1243,17 @@
           return;
         }
 
+        // Obtener botón y guardar texto original
+        const botonDescarga = event?.target?.closest('button');
+        const originalText = botonDescarga?.innerHTML || '';
+        
+        // Mostrar animación de cargando
+        if (botonDescarga) {
+          botonDescarga.disabled = true;
+          botonDescarga.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Descargando...';
+        }
+
         try {
-          showToast('Generando factura...', 'info');
-          
           const response = await fetch(`${API_BASE_URL}/admin/pedidos/${pedidoId}/factura`, {
             method: 'GET',
             headers: {
@@ -1270,6 +1292,12 @@
         } catch (error) {
           console.error('Error al descargar factura:', error);
           showToast(error.message || 'Error al generar la factura. Intenta de nuevo.', 'error');
+        } finally {
+          // Restaurar botón a su estado original
+          if (botonDescarga) {
+            botonDescarga.disabled = false;
+            botonDescarga.innerHTML = originalText;
+          }
         }
       }
 

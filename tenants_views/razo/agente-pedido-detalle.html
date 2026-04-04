@@ -1107,9 +1107,13 @@
           }
           
           const btn = document.getElementById('btnDescargarPDF');
-          const restore = (btn && typeof UI !== 'undefined')
-            ? UI.setButtonLoading(btn, 'Generando...')
-            : () => {};
+          const originalText = btn?.innerHTML || '';
+          
+          // Mostrar animación de cargando
+          if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Descargando...';
+          }
           
           try {
             // Abrir PDF en nueva pestaña
@@ -1121,8 +1125,11 @@
             console.error('Error al generar PDF:', error);
             showToast("Error al generar el PDF", "error");
           } finally {
-            // Restaurar botón después de un breve delay para que el usuario vea el feedback
-            setTimeout(() => restore(), 1000);
+            // Restaurar botón a su estado original
+            if (btn) {
+              btn.disabled = false;
+              btn.innerHTML = originalText;
+            }
           }
         }
 

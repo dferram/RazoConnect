@@ -2049,6 +2049,24 @@
             return;
           }
           
+          // Determinar cuál botón se clickeó y guard el texto original
+          let btnActivo;
+          if (!mode) {
+            btnActivo = document.getElementById('btnGenerarPDFPedido');
+          } else if (mode === 'full') {
+            btnActivo = document.getElementById('btnPDFFull');
+          } else if (mode === 'surtido_only') {
+            btnActivo = document.getElementById('btnPDFSurtido');
+          }
+          
+          const originalText = btnActivo?.innerHTML || '';
+          
+          // Mostrar animación de cargando
+          if (btnActivo) {
+            btnActivo.disabled = true;
+            btnActivo.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Descargando...';
+          }
+          
           try {
             // Get admin token
             const adminToken = localStorage.getItem("razoconnect_admin_token");
@@ -2113,6 +2131,12 @@
           } catch (error) {
             console.error('Error generando remisión:', error);
             showToast("Error al generar remisión", "error");
+          } finally {
+            // Restaurar botón a su estado original
+            if (btnActivo) {
+              btnActivo.disabled = false;
+              btnActivo.innerHTML = originalText;
+            }
           }
         };
 
@@ -2122,7 +2146,93 @@
             return;
           }
           
-          showToast("Función de factura en desarrollo", "info");
+          const adminToken = localStorage.getItem("razoconnect_admin_token");
+          if (!adminToken) {
+            window.location.href = "/login.html";
+            return;
+          }
+
+          // Mostrar alerta sobre el IVA
+          const result = await Swal.fire({
+            icon: 'info',
+            title: 'Información sobre la Factura',
+            html: `
+              <div style="text-align: left;">
+                <p><strong>⚠️ Importante:</strong></p>
+                <ul style="margin-left: 1rem;">
+                  <li>Esta factura incluye el <strong>IVA (16%)</strong> aplicable.</li>
+                  <li>Es un documento interno para control administrativo.</li>
+                  <li><strong>No es un CFDI fiscal válido</strong> ante el SAT.</li>
+                </ul>
+                <p style="margin-top: 1rem;">¿Deseas continuar con la descarga?</p>
+              </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Sí, descargar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280'
+          });
+
+          if (!result.isConfirmed) {
+            return;
+          }
+          
+          const btnFactura = document.getElementById('btnGenerarFactura');
+          const originalText = btnFactura?.innerHTML || '';
+          
+          // Mostrar animación de cargando
+          if (btnFactura) {
+            btnFactura.disabled = true;
+            btnFactura.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Descargando...';
+          }
+          
+          try {
+            const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/factura`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${adminToken}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (!response.ok) {
+              const contentType = response.headers.get('content-type');
+              if (contentType && contentType.includes('application/json')) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || errorData.error || 'Error al generar la factura');
+              } else {
+                throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+              }
+            }
+
+            const blob = await response.blob();
+            
+            if (blob.size === 0) {
+              throw new Error('La factura generada está vacía');
+            }
+            
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = `Factura-Pedido-${selectedOrderId}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+            
+            showToast('Factura descargada correctamente', 'success');
+          } catch (error) {
+            console.error('Error al descargar factura:', error);
+            showToast(error.message || 'Error al generar la factura. Intenta de nuevo.', 'error');
+          } finally {
+            // Restaurar botón a su estado original
+            if (btnFactura) {
+              btnFactura.disabled = false;
+              btnFactura.innerHTML = originalText;
+            }
+          }
         };
 
         // Function to mark order as fulfilled (for inventarios role)
