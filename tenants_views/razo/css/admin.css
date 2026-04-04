@@ -46,6 +46,57 @@
 }
 
 /* ============================================
+   ORDER STATUS BADGES
+   ============================================ */
+.badge-estado {
+  display: inline-block;
+  padding: 0.4em 0.8em;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Red - Critical/No Stock */
+.badge-estado-bajo-pedido,
+.badge-estado-cancelado {
+  background-color: #dc3545;
+}
+
+/* Orange - Partial Ready */
+.badge-estado-combinado,
+.badge-estado-surtido-parcial {
+  background-color: #fd7e14;
+}
+
+/* Yellow - In Preparation */
+.badge-estado-completo,
+.badge-estado-pendiente {
+  background-color: #ffc107;
+  color: #213529;
+}
+
+/* Green - Ready to Ship/Complete */
+.badge-estado-surtido-completo {
+  background-color: #16a34a;
+}
+
+/* Blue - Awaiting Finance Confirmation */
+.badge-estado-listo-remisionar {
+  background-color: #2563eb;
+}
+
+/* Gray/Black - Delivered */
+.badge-estado-entregado {
+  background-color: #6b7280;
+}
+
+/* ============================================
    QUANTITY ADJUSTER (STEPPER)
    ============================================ */
 .quantity-adjuster {

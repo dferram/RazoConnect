@@ -918,19 +918,19 @@ const surtirPedido = async (req, res) => {
     });
 
     // Actualizar estatus del pedido
-    // LÓGICA CORREGIDA: Cuando inventarios marca productos, SIEMPRE cambiar a "Pendiente de Confirmación"
+    // LÓGICA: Cuando inventarios marca productos, cambiar a "Listo para remisionar"
     // Esto hace que el pedido aparezca en la tabla de finanzas para que lo confirme
     // Sin importar si es surtido parcial o completo, finanzas necesita verlo y confirmarlo
     
     const detalles = await getDetallesPedido(client, pedidoId, tenant_id);
     const estadoCalculado = calcularEstadoPedido(detalles);
     
-    // Al menos un producto fue marcado como surtido → PENDIENTE DE CONFIRMACIÓN
+    // Al menos un producto fue marcado como surtido → LISTO PARA REMISIONAR
     // Esto permite que finanzas lo vea en su tabla y lo confirme
-    const nuevoEstatus = ESTADOS_PEDIDO.PENDIENTE_CONFIRMACION;
-    const completamenteSurtido = estadoCalculado === ESTADOS_PEDIDO.SURTIDO;
+    const nuevoEstatus = ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR;
+    const completamenteSurtido = estadoCalculado === ESTADOS_PEDIDO.SURTIDO_COMPLETO;
     
-    logger.info('✅ [ESTADO] Cambiando a PENDIENTE_CONFIRMACION para que finanzas lo revise', {
+    logger.info('✅ [ESTADO] Cambiando a LISTO_PARA_REMISIONAR para que finanzas lo revise', {
       pedidoId,
       productosActualizados: marcarResult.rowCount,
       completamenteSurtido,
@@ -1049,11 +1049,11 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     const estatusActual = (pedido.estatus || '').toLowerCase().trim();
     
     // Validar que el pedido está en estado correcto
-    if (!['listo para surtir', 'parcialmente surtido', 'parcialmente_surtido', 'surtido parcial', 'pendiente de confirmación', 'pendiente de confirmacion'].includes(estatusActual)) {
+    if (!['listo para surtir', 'parcialmente surtido', 'parcialmente_surtido', 'surtido parcial', 'listo para remisionar'].includes(estatusActual)) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        message: `No se puede confirmar. El pedido debe estar en estado "Listo para Surtir", "Surtido Parcial" o "Pendiente de Confirmación". Estado actual: ${pedido.estatus}`
+        message: `No se puede confirmar. El pedido debe estar en estado "Listo para Surtir", "Surtido Parcial" o "Listo para remisionar". Estado actual: ${pedido.estatus}`
       });
     }
 
@@ -1325,13 +1325,13 @@ const rechazarPedidoFinanzas = async (req, res) => {
     const pedido = pedidoResult.rows[0];
     const estatusActual = (pedido.estatus || '').toLowerCase().trim();
     
-    // Validar que el pedido está pendiente de confirmación
-    const estadosValidos = ['pendiente de confirmación', 'pendiente de confirmacion'];
+    // Validar que el pedido está listo para remisionar
+    const estadosValidos = ['listo para remisionar'];
     if (!estadosValidos.includes(estatusActual)) {
       await client.query('ROLLBACK');
       return res.status(400).json({
         success: false,
-        message: `No se puede rechazar. El pedido debe estar en estado "Pendiente de confirmación". Estado actual: ${pedido.estatus}`
+        message: `No se puede rechazar. El pedido debe estar en estado "Listo para remisionar". Estado actual: ${pedido.estatus}`
       });
     }
 

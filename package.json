@@ -19,7 +19,8 @@
     "security:audit:fix": "npm audit fix",
     "security:generate-secrets": "node scripts/generate-secrets.js",
     "dev:setup": "bash scripts/dev-setup.sh",
-    "dev:logs": "tail -f logs/*.log"
+    "dev:logs": "tail -f logs/*.log",
+    "migrate:estados-pedidos": "node scripts/migrate-estados-pedidos-v2.js"
   },
   "keywords": [
     "ecommerce",

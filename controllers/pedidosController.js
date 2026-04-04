@@ -967,7 +967,7 @@ const crearPedido = async (req, res) => {
           info.creditoId,
           montoReservar.toFixed(2),
           `PED-${pedidoId}`,
-          `Reserva de crédito por pedido #${pedidoId} (pendiente de confirmación)`,
+          `Reserva de crédito por pedido #${pedidoId} (listo para remisionar)`,
           nuevoSaldo.toFixed(2),
           tenant_id
         ]

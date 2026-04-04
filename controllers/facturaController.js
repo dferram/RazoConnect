@@ -93,7 +93,7 @@ async function descargarFactura(req, res) {
     }
 
     // Validación adicional de estatus del pedido
-    const estatusPermitidos = ['Surtido', 'Completado', 'Enviado', 'Entregado', 'Parcial', 'Pendiente de Confirmación'];
+    const estatusPermitidos = ['Surtido', 'Completado', 'Enviado', 'Entregado', 'Parcial', 'Listo para remisionar'];
     if (!estatusPermitidos.includes(pedido.estatus)) {
       return res.status(400).json({
         success: false,

@@ -285,7 +285,7 @@
             <!-- Pedidos Pendientes Section -->
             <div id="pedidosPendientesSection" style="margin-bottom: 2rem;">
               <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--razo-orange);">
-                📋 Pedidos Pendientes <span id="countPendientes" class="admin-badge warning" style="margin-left: 0.5rem;">0</span>
+                📋 Pedidos en Preparación <span id="countPendientes" class="admin-badge warning" style="margin-left: 0.5rem;">0</span>
               </h3>
               <div class="admin-table-container">
                 <div style="overflow-x: auto">
@@ -568,11 +568,7 @@
         
         // Mapeo de variantes conocidas al estado estándar
         const mapeoEstatus = {
-          // Estados de Confirmación
-          'pendiente de confirmación': 'pendiente_confirmacion',
-          'pendiente de confirmacion': 'pendiente_confirmacion',
-          'pendiente confirmación': 'pendiente_confirmacion',
-          'pendiente confirmacion': 'pendiente_confirmacion',
+          // Estados de Preparación (Almacén en proceso)
           
           // Estados de Preparación
           'listo para surtir': 'listo_para_surtir',
