@@ -10,6 +10,7 @@ const ESTADOS_PEDIDO = {
   REVISION_ALMACEN: 'Revisión de Almacén',
   PENDIENTE_CONFIRMACION: 'Pendiente de Confirmación',
   PARCIALMENTE_SURTIDO: 'Parcialmente Surtido',
+  CONFIRMADO: 'Confirmado',
   SURTIDO: 'Surtido',
   LISTO_PARA_PAGO: 'Listo para Pago',
   ENVIADO: 'Enviado',

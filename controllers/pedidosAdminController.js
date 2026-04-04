@@ -940,8 +940,7 @@ const surtirPedido = async (req, res) => {
       UPDATE pedidos 
       SET 
         estatus = $3,
-        completamente_surtido = $4,
-        ultima_actualizacion = NOW()
+        completamente_surtido = $4
       WHERE pedidoid = $1 AND tenant_id = $2
       RETURNING pedidoid, estatus, completamente_surtido
     `;
@@ -1148,10 +1147,13 @@ const confirmarSurtidoFinanzas = async (req, res) => {
 
     // Calcular estado usando utilidad centralizada
     const detalles = await getDetallesPedido(client, pedidoId, tenant_id);
-    const nuevoEstatus = calcularEstadoPedido(detalles);
+    const estadoCalculado = calcularEstadoPedido(detalles);
     
-    // Determinar flags basados en el estado calculado (usando estados normalizados)
-    const completamenteSurtido = nuevoEstatus === ESTADOS_PEDIDO.SURTIDO;
+    // Cuando finanzas confirma → estado = CONFIRMADO
+    const nuevoEstatus = ESTADOS_PEDIDO.CONFIRMADO;
+    
+    // Determinar flags basados en si todo está surtido
+    const completamenteSurtido = estadoCalculado === ESTADOS_PEDIDO.SURTIDO;
     
     // FIX 3: es_historico solo debe ser true cuando el pedido está 100% completado
     // No solo cuando inventarios marcó todo como surtido, sino cuando finanzas confirmó TODO
@@ -1208,11 +1210,12 @@ const confirmarSurtidoFinanzas = async (req, res) => {
 
     await client.query('COMMIT');
 
-    logger.info('Pedido confirmado y stock reducido:', {
+    logger.info('Pedido confirmado por finanzas y stock reducido:', {
       pedidoId,
       productosConfirmados,
       esHistorico,
       nuevoEstatus,
+      estadoCalculado,
       tenantId: tenant_id,
       userId,
       requestId: req.requestId
@@ -1225,7 +1228,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         pedidoId,
         estatus: nuevoEstatus,
         productosConfirmados,
-        esHistorico
+        esHistorico,
+        estadoCalculado
       }
     });
 
