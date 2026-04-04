@@ -260,14 +260,6 @@ const registrarAbonoCxC = async (req, res) => {
   }
 };
 
-module.exports = {
-  getCxcSummary,
-  registrarAbonoCxC,
-  obtenerConfigFactura,
-  actualizarConfigFactura,
-  validarNumeroFactura
-};
-
 /**
  * Obtener configuración de número de factura siguiente
  * @route GET /api/admin/cxc/config-factura
@@ -444,4 +436,12 @@ const validarNumeroFactura = async (req, res) => {
       message: "Error al validar número de factura"
     });
   }
+};
+
+module.exports = {
+  getCxcSummary,
+  registrarAbonoCxC,
+  obtenerConfigFactura,
+  actualizarConfigFactura,
+  validarNumeroFactura
 };
