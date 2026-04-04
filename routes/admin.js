@@ -1149,6 +1149,28 @@ router.get(
   cxcAdminController.getCxcSummary
 );
 
+// ✅ Configuración de número de factura
+router.get(
+  "/cxc/config-factura",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'contador']),
+  cxcAdminController.obtenerConfigFactura
+);
+
+router.post(
+  "/cxc/config-factura",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'contador']),
+  cxcAdminController.actualizarConfigFactura
+);
+
+router.post(
+  "/cxc/validar-factura",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'contador']),
+  cxcAdminController.validarNumeroFactura
+);
+
 router.get(
   "/cxc/metricas",
   authenticate,

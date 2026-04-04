@@ -254,9 +254,12 @@ async function generarPDF() {
 
   // Obtener botón y mostrar loading
   const botonPDF = document.getElementById('btnGenerarPDF');
-  let restoreButton = null;
-  if (botonPDF && typeof UI !== 'undefined' && UI && typeof UI.setButtonLoading === 'function') {
-    restoreButton = UI.setButtonLoading(botonPDF, 'Generando...');
+  if (botonPDF) {
+    botonPDF.disabled = true;
+    botonPDF.innerHTML = `
+      <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+      <span>Generando...</span>
+    `;
   }
 
   try {
@@ -344,7 +347,6 @@ async function generarPDF() {
 
   } catch (error) {
     console.error('Error al generar PDF:', error);
-    if (restoreButton) restoreButton();
     Swal.fire({
       icon: 'error',
       title: 'Error',
@@ -352,7 +354,11 @@ async function generarPDF() {
       confirmButtonColor: '#F97316'
     });
   } finally {
-    if (restoreButton) restoreButton();
+    // Restaurar botón
+    if (botonPDF) {
+      botonPDF.disabled = false;
+      botonPDF.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> Generar PDF';
+    }
   }
 }
 
