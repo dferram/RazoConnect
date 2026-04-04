@@ -262,5 +262,186 @@ const registrarAbonoCxC = async (req, res) => {
 
 module.exports = {
   getCxcSummary,
-  registrarAbonoCxC
+  registrarAbonoCxC,
+  obtenerConfigFactura,
+  actualizarConfigFactura,
+  validarNumeroFactura
+};
+
+/**
+ * Obtener configuración de número de factura siguiente
+ * @route GET /api/admin/cxc/config-factura
+ */
+const obtenerConfigFactura = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+
+    // Intentar obtener configuración existente
+    let configResult = await db.query(
+      `SELECT numero_factura_inicio, numero_factura_siguiente, ultima_actualizacion
+       FROM tenant_cxc_config 
+       WHERE tenant_id = $1`,
+      [tenant_id]
+    );
+
+    if (configResult.rows.length === 0) {
+      // Si no existe, retornar configuración por defecto
+      return res.json({
+        success: true,
+        data: {
+          numero_factura_inicio: null,
+          numero_factura_siguiente: null,
+          configurado: false,
+          mensaje: 'Necesita configurar el número de factura inicial'
+        }
+      });
+    }
+
+    const config = configResult.rows[0];
+    return res.json({
+      success: true,
+      data: {
+        numero_factura_inicio: config.numero_factura_inicio,
+        numero_factura_siguiente: config.numero_factura_siguiente,
+        configurado: true
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error al obtener configuración de factura:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
+    return res.status(500).json({
+      success: false,
+      message: "Error al obtener configuración de factura"
+    });
+  }
+};
+
+/**
+ * Actualizar configuración de número de factura
+ * @route POST /api/admin/cxc/config-factura
+ */
+const actualizarConfigFactura = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const { numero_factura_inicio } = req.body;
+
+    if (!numero_factura_inicio || Number.isNaN(parseInt(numero_factura_inicio))) {
+      return res.status(400).json({
+        success: false,
+        message: "Debe proporcionar un número de factura válido"
+      });
+    }
+
+    const numeroInicioInt = parseInt(numero_factura_inicio);
+    
+    if (numeroInicioInt < 1 || numeroInicioInt > 999999) {
+      return res.status(400).json({
+        success: false,
+        message: "El número debe estar entre 1 y 999999"
+      });
+    }
+
+    // Verificar si ya existe configuración
+    let configResult = await db.query(
+      `SELECT numero_factura_inicio FROM tenant_cxc_config WHERE tenant_id = $1`,
+      [tenant_id]
+    );
+
+    if (configResult.rows.length > 0) {
+      // Actualizar
+      await db.query(
+        `UPDATE tenant_cxc_config 
+         SET numero_factura_inicio = $1, numero_factura_siguiente = $1, ultima_actualizacion = NOW()
+         WHERE tenant_id = $2`,
+        [numeroInicioInt, tenant_id]
+      );
+    } else {
+      // Crear nueva configuración
+      await db.query(
+        `INSERT INTO tenant_cxc_config (tenant_id, numero_factura_inicio, numero_factura_siguiente)
+         VALUES ($1, $2, $2)`,
+        [tenant_id, numeroInicioInt]
+      );
+    }
+
+    logger.info('Configuración de factura actualizada', {
+      tenantId: tenant_id,
+      numeroInicio: numeroInicioInt
+    });
+
+    return res.json({
+      success: true,
+      message: "Configuración actualizada correctamente",
+      data: {
+        numero_factura_inicio: numeroInicioInt,
+        numero_factura_siguiente: numeroInicioInt
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error al actualizar configuración de factura:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
+    return res.status(500).json({
+      success: false,
+      message: "Error al actualizar configuración de factura"
+    });
+  }
+};
+
+/**
+ * Validar si número de factura ya existe
+ * @route POST /api/admin/cxc/validar-factura
+ */
+const validarNumeroFactura = async (req, res) => {
+  try {
+    const { tenant_id } = req.tenant;
+    const { numero_factura } = req.body;
+
+    if (!numero_factura) {
+      return res.status(400).json({
+        success: false,
+        message: "Debe proporcionar un número de factura"
+      });
+    }
+
+    // Validar que no exista este número de factura
+    const existResult = await db.query(
+      `SELECT cxc_id FROM cuentas_por_cobrar 
+       WHERE numero_factura = $1 AND tenant_id = $2`,
+      [numero_factura.toString().trim(), tenant_id]
+    );
+
+    if (existResult.rows.length > 0) {
+      return res.json({
+        success: false,
+        existe: true,
+        message: `El número de factura ${numero_factura} ya existe`,
+        numero_actual: numero_factura
+      });
+    }
+
+    return res.json({
+      success: true,
+      existe: false,
+      message: "El número de factura está disponible"
+    });
+
+  } catch (error) {
+    logger.error('Error al validar número de factura:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
+    return res.status(500).json({
+      success: false,
+      message: "Error al validar número de factura"
+    });
+  }
 };
