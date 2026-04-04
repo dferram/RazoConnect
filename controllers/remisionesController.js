@@ -1143,15 +1143,18 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
     await client.query('BEGIN');
 
     // Verificar remisión
+    // IMPORTANTE: Usar FOR UPDATE en ambas tablas para serializar confirmaciones concurrentes
+    // Esto evita race conditions donde dos remisiones se confirmen simultáneamente
     const remisionQuery = await client.query(
       `SELECT r.remision_id, r.pedido_id, r.cliente_id, r.agente_id, r.folio, r.fecha_emision, 
               r.total_remision, r.estado, r.pdf_url, r.notas, r.tenant_id, r.created_at, r.updated_at, 
               r.fecha_confirmacion_almacen, r.confirmado_por_almacen, r.fecha_emision_final, 
-              r.confirmado_por_finanzas, p.pedidoid, p.clienteid, p.es_credito, p.montototal
+              r.confirmado_por_finanzas, p.pedidoid, p.clienteid, p.es_credito, p.montototal,
+              p.primera_remision_confirmada_id
        FROM remisiones r
        INNER JOIN pedidos p ON r.pedido_id = p.pedidoid
        WHERE r.remision_id = $1 AND r.tenant_id = $2
-       FOR UPDATE`,
+       FOR UPDATE OF r, p`,
       [id, tenant_id]
     );
 
@@ -1317,6 +1320,11 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
     // - Se genera CARGO solo por lo realmente surtido (total_remision) EN CADA REMISIÓN
     // - Si es surtido parcial, el resto queda pendiente para futuras entregas
     // - Esto permite entregas parciales sin cobrar de más al cliente
+    
+    // CRITICAL: Determinar si es la primera remisión confirmada
+    // Esto se usa en la lógica de crédito AND para actualizar el pedido
+    let isPrimeraRemision = false;
+    
     if (remision.es_credito) {
       const creditoQuery = await client.query(
         `SELECT credito_id, saldo_deudor, limite_credito
@@ -1331,21 +1339,48 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
         const saldoActual = parseFloat(creditoInfo.saldo_deudor || 0);
         const montoRemision = parseFloat(remision.total_remision);
         
-        // CRITICAL FIX: Check if this is the first confirmed remision for this order
-        // Only release the reserve on the first remision, not on subsequent ones
-        // LOCK FIX: Add FOR UPDATE to serialize concurrent confirmations and prevent race
-        const priorRemisionesQuery = await client.query(
-          `SELECT remision_id
-           FROM remisiones
-           WHERE pedido_id = $1 
-             AND remision_id != $2
-             AND estado IN ('SURTIDO', 'EMPACADA', 'ENVIADA', 'ENTREGADA')
-             AND tenant_id = $3
-           FOR UPDATE`,
-          [remision.pedidoid, id, tenant_id]
-        );
+        // CRITICAL FIX: Usar campo primera_remision_confirmada_id en lugar de consultar previas
+        // Esto evita race conditions: si dos remisiones se confirman simultáneamente,
+        // PostreSQL asegura que solo UNA actualizará el campo (gracias a FOR UPDATE)
+        let isPrimeraRemision = false;
         
-        const isPrimeraRemision = priorRemisionesQuery.rows.length === 0;
+        if (remision.primera_remision_confirmada_id === null) {
+          // El campo es NULL → ESTA es la primera remisión confirmada
+          isPrimeraRemision = true;
+          
+          logger.info('🔒 [REMISIÓN] Primera remisión detectada', {
+            remision_id: id,
+            pedido_id: remision.pedidoid,
+            folio: remision.folio,
+            monto_liberacion: remision.montototal,
+            requestId: req.requestId,
+            tenantId: tenant_id
+          });
+        } else if (remision.primera_remision_confirmada_id === parseInt(id)) {
+          // El campo apunta a ESTA remisión → ya fue marcada como primera (estado anterior)
+          // Esto NO debería ocurrir en flujo normal (remisión no se confirma dos veces)
+          isPrimeraRemision = true;
+          
+          logger.warn('⚠️ [REMISIÓN] Re-confirmación de primera remisión detectada', {
+            remision_id: id,
+            pedido_id: remision.pedidoid,
+            requestId: req.requestId,
+            tenantId: tenant_id
+          });
+        } else {
+          // El campo apunta a OTRA remisión → ESTA es una remisión adicional
+          isPrimeraRemision = false;
+          
+          logger.info('➕ [REMISIÓN] Remisión adicional detectada', {
+            remision_id: id,
+            pedido_id: remision.pedidoid,
+            primera_remision_id: remision.primera_remision_confirmada_id,
+            folio: remision.folio,
+            requestId: req.requestId,
+            tenantId: tenant_id
+          });
+        }
+        
         let nuevoSaldo = saldoActual;
         
         if (isPrimeraRemision) {
@@ -1436,6 +1471,110 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
             tenant_id
           ]
         );
+        
+        // 🔒 CRITICAL: Registrar en auditoría de liberación de reservas
+        try {
+          await client.query(
+            `INSERT INTO auditoria_liberacion_reservas 
+             (pedido_id, remision_id, primera_remision_confirmada, monto_liberado, usuario_id, tenant_id, observaciones)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [
+              remision.pedidoid,
+              id,
+              isPrimeraRemision,
+              isPrimeraRemision ? remision.montototal : 0,
+              userId,
+              tenant_id,
+              `Confirmación de remisión ${remision.folio}. Estado primera: ${isPrimeraRemision}`
+            ]
+          );
+        } catch (auditError) {
+          logger.warn('⚠️ [AUDITORÍA] Error al registrar en auditoria_liberacion_reservas', {
+            error: auditError.message,
+            remision_id: id,
+            pedido_id: remision.pedidoid,
+            requestId: req.requestId
+          });
+          // No fallar por esto - es solo auditoría
+        }
+      } else {
+        // Pedido de contado (no es crédito)
+        // Aún así, necesitamos marcar la primera remisión para auditoría
+        if (remision.primera_remision_confirmada_id === null) {
+          isPrimeraRemision = true;
+          logger.info('🔒 [REMISIÓN] Primera remisión de pedido contado', {
+            remision_id: id,
+            pedido_id: remision.pedidoid,
+            folio: remision.folio,
+            requestId: req.requestId,
+            tenantId: tenant_id
+          });
+        } else {
+          isPrimeraRemision = false;
+          logger.info('➕ [REMISIÓN] Remisión adicional de pedido contado', {
+            remision_id: id,
+            pedido_id: remision.pedidoid,
+            folio: remision.folio,
+            requestId: req.requestId,
+            tenantId: tenant_id
+          });
+        }
+        
+        // Registrar auditoría para pedidos contado también
+        try {
+          await client.query(
+            `INSERT INTO auditoria_liberacion_reservas 
+             (pedido_id, remision_id, primera_remision_confirmada, monto_liberado, usuario_id, tenant_id, observaciones)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [
+              remision.pedidoid,
+              id,
+              isPrimeraRemision,
+              0,
+              userId,
+              tenant_id,
+              `Confirmación de remisión ${remision.folio} (pedido contado). Estado primera: ${isPrimeraRemision}`
+            ]
+          );
+        } catch (auditError) {
+          logger.warn('⚠️ [AUDITORÍA] Error al registrar auditoría para pedido contado', {
+            error: auditError.message,
+            remision_id: id,
+            pedido_id: remision.pedidoid,
+            requestId: req.requestId
+          });
+        }
+      }
+    }
+    
+    // 🔒 CRITICAL: Actualizar pedidos con primera_remision_confirmada_id SOLO si es la primera
+    // Esto debe hacerse FUERA del bloque de crédito ya que aplica a TODOS los pedidos (crédito o contado)
+    if (isPrimeraRemision && remision.primera_remision_confirmada_id === null) {
+      const updatePedidoResult = await client.query(
+        `UPDATE pedidos
+         SET primera_remision_confirmada_id = $1,
+             ultima_actualizacion = NOW()
+         WHERE pedidoid = $2 AND tenant_id = $3 AND primera_remision_confirmada_id IS NULL
+         RETURNING pedidoid, primera_remision_confirmada_id`,
+        [id, remision.pedidoid, tenant_id]
+      );
+      
+      if (updatePedidoResult.rows.length > 0) {
+        logger.info('✅ [REMISIÓN] primera_remision_confirmada_id actualizado exitosamente', {
+          remision_id: id,
+          pedido_id: remision.pedidoid,
+          folio: remision.folio,
+          requestId: req.requestId,
+          tenantId: tenant_id
+        });
+      } else {
+        logger.warn('⚠️ [REMISIÓN] No se lograron actualizar primera_remision_confirmada_id', {
+          remision_id: id,
+          pedido_id: remision.pedidoid,
+          razon: 'Primera remisión ya había sido asignada (race condition detectada)',
+          requestId: req.requestId,
+          tenantId: tenant_id
+        });
       }
     }
 
