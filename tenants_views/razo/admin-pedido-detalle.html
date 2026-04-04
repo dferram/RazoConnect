@@ -1634,8 +1634,13 @@
                   
                   let badgeClass, badgeText;
                   
+                  // PRIORIDAD 0 (MÁXIMA): Producto marcado como Facturado en finanzas
+                  if (item.estado_producto === 'Facturado') {
+                    badgeClass = 'badge-stock facturado';
+                    badgeText = 'FACTURADO';
+                  }
                   // PRIORIDAD 1: Producto ya surtido
-                  if (productoSurtido) {
+                  else if (productoSurtido) {
                     badgeClass = 'badge-stock surtido';
                     badgeText = 'SURTIDO';
                   }
@@ -2576,10 +2581,18 @@
         });
       })();
 
-      // Cargar botón de volver
+      // Cargar botón de volver - Dinámico según rol del usuario
       window.addEventListener('DOMContentLoaded', function() {
+        const userRole = getUserRole();
+        let backUrl = '/admin-clientes-facturacion.html'; // Default para finanzas
+        
+        // Inventarios regresa a admin-pedidos
+        if (userRole === 'inventarios') {
+          backUrl = '/admin-pedidos.html';
+        }
+        
         loadBackButton({
-          backUrl: '/admin-clientes-facturacion.html',
+          backUrl: backUrl,
           backText: 'Volver a pedidos'
         });
       });

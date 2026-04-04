@@ -11,6 +11,8 @@ const {
 const { checkStockBajo } = require("../utils/stockAlerts");
 const { calcularTotalPedido, validarConsistenciaTotales } = require("../utils/calculadoraPedidos");
 const SmartStockService = require("../services/SmartStockService");
+const { calcularEstadoPedido } = require("../utils/pedidoStatus");
+const { normalizarEstado, ESTADOS_PEDIDO } = require("../utils/pedidoEstados");
 
 const TAMANO_VALUE_KEYS = [
   "valor",
@@ -837,35 +839,31 @@ const crearPedido = async (req, res) => {
     let pedidoId;
     let pedidoTransaccionId = null;
     let pedidoComprobanteUrl = null;
-    let pedidoEstatus = "Pendiente";
+    // NUEVO: Estado inicial será PENDIENTE, luego se recalculará basado en detalles
+    let pedidoEstatus = ESTADOS_PEDIDO.PENDIENTE;
     let pedidoPagado = false;
 
-    // Lógica de estatus según método de pago
+    // Lógica de pago según método de pago
+    // NOTA: El estado se recalculará después de insertar los detalles basándose en stock/backorder
     if (metodoPago === "mercadopago") {
       pedidoPagado = false;
-      pedidoEstatus = "Esperando Surtido";
       pedidoTransaccionId = null;
       pedidoComprobanteUrl = null;
     } else if (metodoPago === "transferencia") {
-      // Si se subió comprobante, el pedido está pagado y confirmado
+      // Si se subió comprobante, el pedido está pagado
       if (comprobanteUrl) {
         pedidoPagado = true;
-        pedidoEstatus = "Confirmado";
         pedidoComprobanteUrl = comprobanteUrl;
       } else {
-        // Si NO se subió comprobante, se espera pago post-surtido
         pedidoPagado = false;
-        pedidoEstatus = "Esperando Surtido";
         pedidoComprobanteUrl = null;
       }
     } else if (metodoPago === "contra_entrega") {
       pedidoPagado = false;
-      pedidoEstatus = "Confirmado";
       pedidoTransaccionId = null;
       pedidoComprobanteUrl = null;
     } else if (metodoPagoEsCredito) {
       pedidoPagado = false;
-      pedidoEstatus = "Aprobado";
       pedidoComprobanteUrl = null;
     }
 
@@ -969,7 +967,7 @@ const crearPedido = async (req, res) => {
           info.creditoId,
           montoReservar.toFixed(2),
           `PED-${pedidoId}`,
-          `Reserva de crédito por pedido #${pedidoId} (pendiente de confirmación)`,
+          `Reserva de crédito por pedido #${pedidoId} (listo para remisionar)`,
           nuevoSaldo.toFixed(2),
           tenant_id
         ]
@@ -1372,16 +1370,29 @@ const crearPedido = async (req, res) => {
       }
     }
 
-    if (pedidoTieneBackorder) {
+    // NUEVO: Calcular estado correcto basado en los detalles del pedido
+    // El estado será: Bajo pedido, Combinado, Completo, Surtido parcial, o Surtido completo
+    const detallesParaCalculo = detallesPedido.map(d => ({
+      cantidadpaquetes: d.cantidad,        // Cantidad total solicitada
+      cantidadsurtida: d.cantidadSurtida,  // Cantidad ya surtida (0 para nuevos pedidos)
+      esbackorder: d.esBackorder           // Si es backorder o tiene stock
+    }));
+
+    const estadoCalculado = calcularEstadoPedido(detallesParaCalculo);
+    const estadoNormalizado = normalizarEstado(estadoCalculado);
+
+    if (estadoNormalizado !== pedidoEstatus) {
       const updatePedidoResult = await client.query(
-        "UPDATE Pedidos SET Estatus = 'Parcialmente Surtido' WHERE PedidoID = $1 RETURNING Estatus",
-        [pedidoId]
+        "UPDATE Pedidos SET Estatus = $1 WHERE PedidoID = $2 RETURNING Estatus",
+        [estadoNormalizado, pedidoId]
       );
       if (updatePedidoResult.rows.length > 0) {
         pedido.estatus = updatePedidoResult.rows[0].estatus;
       } else {
-        pedido.estatus = "Parcialmente Surtido";
+        pedido.estatus = estadoNormalizado;
       }
+    } else {
+      pedido.estatus = estadoNormalizado;
     }
 
     // 8. Crear comisión si se usó código de agente

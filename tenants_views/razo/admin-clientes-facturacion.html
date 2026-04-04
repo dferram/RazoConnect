@@ -285,7 +285,7 @@
             <!-- Pedidos Pendientes Section -->
             <div id="pedidosPendientesSection" style="margin-bottom: 2rem;">
               <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 1rem; color: var(--razo-orange);">
-                📋 Pedidos Pendientes <span id="countPendientes" class="admin-badge warning" style="margin-left: 0.5rem;">0</span>
+                📋 Pedidos en Preparación <span id="countPendientes" class="admin-badge warning" style="margin-left: 0.5rem;">0</span>
               </h3>
               <div class="admin-table-container">
                 <div style="overflow-x: auto">
@@ -568,32 +568,34 @@
         
         // Mapeo de variantes conocidas al estado estándar
         const mapeoEstatus = {
-          // Estados de Confirmación
-          'pendiente de confirmación': 'pendiente_confirmacion',
-          'pendiente de confirmacion': 'pendiente_confirmacion',
-          'pendiente confirmación': 'pendiente_confirmacion',
-          'pendiente confirmacion': 'pendiente_confirmacion',
+          // Estados de Preparación (Almacén en proceso)
           
           // Estados de Preparación
           'listo para surtir': 'listo_para_surtir',
           'listo para pago': 'listo_para_pago',
+          // NUEVOS ESTADOS NORMALIZADOS
+          'bajo pedido': 'bajo_pedido',
+          'combinado': 'combinado',
+          'completo': 'completo',
+          'listo para remisionar': 'listo_para_remisionar',
+          'surtido parcial': 'surtido_parcial',
+          'surtido completo': 'surtido_completo',
           
-          // Estados de Surtimiento
-          'parcialmente surtido': 'parcialmente_surtido',
-          'parcialmente_surtido': 'parcialmente_surtido',
-          'surtido parcial': 'parcialmente_surtido',
-          'parcial': 'parcialmente_surtido',
+          // Estados de Surtimiento (legacy)
+          'parcialmente surtido': 'surtido_parcial',
+          'parcialmente_surtido': 'surtido_parcial',
+          'parcial': 'surtido_parcial',
           
           // Estados de Completado
           'completado': 'completado',
-          'surtido': 'surtido',
+          'surtido': 'surtido_completo',
           'enviado': 'enviado',
           'entregado': 'entregado',
           
           // Estados base
           'pendiente': 'pendiente',
-          'aprobado': 'aprobado',
-          'confirmado': 'confirmado',
+          'aprobado': 'listo_para_remisionar',
+          'confirmado': 'completo',
         };
         
         return mapeoEstatus[base] || base;
@@ -624,16 +626,16 @@
             const allPedidos = data.data || [];
             
             // Separar pedidos en 3 categorías:
-            // 1. SURTIDOS: Enviados por inventarios, esperando confirmación de finanzas (PENDIENTE DE CONFIRMACIÓN)
+            // 1. SURTIDOS: Enviados por inventarios, esperando confirmación de finanzas
             const pedidosSurtidos = allPedidos.filter(pedido => {
               const estatus = normalizarEstatus(pedido.estatus);
-              return ['pendiente_confirmacion', 'listo_para_pago'].includes(estatus);
+              return ['listo_para_remisionar', 'surtido_parcial', 'surtido_completo'].includes(estatus);
             });
             
-            // 2. PENDIENTES: Pedidos confirmados/aprobados/pendientes (aún no procesados por inventarios o finanzas)
+            // 2. PENDIENTES: Pedidos en preparación o esperando surtido
             const pedidosPendientes = allPedidos.filter(pedido => {
               const estatus = normalizarEstatus(pedido.estatus);
-              return ['pendiente', 'aprobado', 'confirmado', 'listo_para_surtir', 'parcialmente_surtido'].includes(estatus);
+              return ['pendiente', 'bajo_pedido', 'combinado', 'completo'].includes(estatus);
             });
             
             // 3. HISTÓRICOS: Solo contar para mostrar el badge
@@ -788,12 +790,12 @@
         // Separate into 3 categories
         let surtidos = filtered.filter(pedido => {
           const estatus = normalizarEstatus(pedido.estatus);
-          return ['pendiente_confirmacion', 'listo_para_pago'].includes(estatus);
+          return ['listo_para_remisionar', 'surtido_parcial', 'surtido_completo'].includes(estatus);
         });
         
         let pendientes = filtered.filter(pedido => {
           const estatus = normalizarEstatus(pedido.estatus);
-          return ['pendiente', 'aprobado', 'confirmado', 'listo_para_surtir', 'parcialmente_surtido'].includes(estatus);
+          return ['pendiente', 'bajo_pedido', 'combinado', 'completo'].includes(estatus);
         });
 
         // Apply tipo filter

@@ -66,7 +66,7 @@ exports.generarRemision = async (req, res) => {
     const pedido = pedidoQuery.rows[0];
 
     // BUG FIX 2: Validar que el pedido está en estado válido para generar remisión
-    const estadosValidos = ['Pendiente', 'Confirmado', 'Listo para Surtir', 'Parcial', 'Parcialmente Surtido', 'Pendiente de Confirmación', 'Pendiente de Confirmacion'];
+    const estadosValidos = ['Pendiente', 'Confirmado', 'Listo para Surtir', 'Parcial', 'Parcialmente Surtido', 'Listo para remisionar'];
     if (!estadosValidos.includes(pedido.estatus)) {
       await client.query('ROLLBACK');
       return res.status(400).json({ 
@@ -333,11 +333,11 @@ exports.generarRemision = async (req, res) => {
     // Determinar si está completamente surtido comparando MONTOS (con tolerancia de 1 centavo)
     const completamenteSurtido = Math.abs(nuevoMontoSurtido - montoTotalPedido) < 0.01;
 
-    // SOLUCIÓN: Cuando se genera una remisión, SIEMPRE cambiar a "Pendiente de Confirmación"
+    // SOLUCIóN: Cuando se genera una remisión, SIEMPRE cambiar a "Listo para remisionar"
     // Esto indica: "Surtido y esperando confirmación de finanzas"
     // Sin importar si es contado o crédito, el pedido debe aparecer en tabla de "Pedidos Surtidos"
     // Finanzas VE el pedido → Confirma → Estatus cambia a "Completado" → Stock se descuenta
-    const nuevoEstatus = 'Pendiente de Confirmación';
+    const nuevoEstatus = 'Listo para remisionar';
 
     // FIX 3: es_historico solo debe ser true cuando el pedido está 100% completado y remisionado
     // No marcar como histórico hasta que todo esté confirmado por finanzas
@@ -1780,7 +1780,7 @@ exports.confirmarRemisionAlmacen = async (req, res) => {
     );
 
     // 🔒 CRITICAL: Actualizar estado del pedido para que aparezca en tabla de finanzas
-    // Cuando inventarios confirma una remisión, el pedido debe cambiar a "Pendiente de Confirmación"
+    // Cuando inventarios confirma una remisión, el pedido debe cambiar a "Listo para remisionar"
     // para que finanzas lo vea y lo procese
     const montoTotalPedidoQuery = await client.query(
       `SELECT montototal, monto_surtido
@@ -1804,8 +1804,8 @@ exports.confirmarRemisionAlmacen = async (req, res) => {
       const completamenteSurtido = Math.abs(nuevoMontoSurtido - montoTotalPedido) < 0.01;
 
       // ACTUALIZAR ESTADO DEL PEDIDO
-      // Siempre cambiar a "Pendiente de Confirmación" cuando hay una remisión confirmada
-      const nuevoEstatus = 'Pendiente de Confirmación';
+      // Siempre cambiar a "Listo para remisionar" cuando hay una remisión confirmada
+      const nuevoEstatus = 'Listo para remisionar';
       const esHistorico = completamenteSurtido; // Solo si está 100% surtido
 
       await client.query(
