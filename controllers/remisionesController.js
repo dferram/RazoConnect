@@ -1717,6 +1717,59 @@ exports.confirmarRemisionAlmacen = async (req, res) => {
       [notasCompletas, userId, id, tenant_id]
     );
 
+    // 🔒 CRITICAL: Actualizar estado del pedido para que aparezca en tabla de finanzas
+    // Cuando inventarios confirma una remisión, el pedido debe cambiar a "Pendiente de Confirmación"
+    // para que finanzas lo vea y lo procese
+    const montoTotalPedidoQuery = await client.query(
+      `SELECT montototal, monto_surtido
+       FROM pedidos
+       WHERE pedidoid = $1 AND tenant_id = $2`,
+      [remision.pedido_id, tenant_id]
+    );
+
+    if (montoTotalPedidoQuery.rows.length > 0) {
+      const pedidoInfo = montoTotalPedidoQuery.rows[0];
+      const montoTotalPedido = parseFloat(pedidoInfo.montototal || 0);
+      const montoSurtidoAnterior = parseFloat(pedidoInfo.monto_surtido || 0);
+      
+      // Calcular nuevo monto surtido (se suma el de esta remisión)
+      const nuevoMontoSurtido = parseFloat((montoSurtidoAnterior + remision.total_remision).toFixed(2));
+      
+      // Calcular monto backorder (pendiente)
+      const montoBackorder = parseFloat((montoTotalPedido - nuevoMontoSurtido).toFixed(2));
+      
+      // Determinar si está completamente surtido
+      const completamenteSurtido = Math.abs(nuevoMontoSurtido - montoTotalPedido) < 0.01;
+
+      // ACTUALIZAR ESTADO DEL PEDIDO
+      // Siempre cambiar a "Pendiente de Confirmación" cuando hay una remisión confirmada
+      const nuevoEstatus = 'Pendiente de Confirmación';
+      const esHistorico = completamenteSurtido; // Solo si está 100% surtido
+
+      await client.query(
+        `UPDATE pedidos 
+         SET tiene_remisiones = TRUE,
+             completamente_surtido = $1,
+             estatus = $2,
+             monto_surtido = $3,
+             monto_backorder = $4,
+             es_historico = $5
+         WHERE pedidoid = $6 AND tenant_id = $7`,
+        [completamenteSurtido, nuevoEstatus, nuevoMontoSurtido, montoBackorder, esHistorico, remision.pedido_id, tenant_id]
+      );
+
+      logger.info('✅ [PEDIDO] Estado actualizado al confirmar remisión por almacén', {
+        pedido_id: remision.pedido_id,
+        remision_id: id,
+        nuevo_estado: nuevoEstatus,
+        completamente_surtido: completamenteSurtido,
+        monto_total: montoTotalPedido,
+        monto_surtido: nuevoMontoSurtido,
+        requestId: req.requestId,
+        tenantId: tenant_id
+      });
+    }
+
     // Registrar en historial
     await client.query(
       `INSERT INTO historial_remisiones (
