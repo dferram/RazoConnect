@@ -1,34 +1,67 @@
 /**
- * Constantes y utilidades para estados de pedidos
+ * Constantes y utilidades para estados de pedidos normalizados
+ * ESTRUCTURA: 6 Estados + 2 Excepciones
  * @module utils/pedidoEstados
+ * @date 2026-04-04
  */
 
-// Definición centralizada de estados de pedidos
+// ==========================================
+// NUEVOS ESTADOS NORMALIZADOS (6)
+// ==========================================
 const ESTADOS_PEDIDO = {
+  // Estados de disponibilidad de stock
+  BAJO_PEDIDO: 'Bajo pedido',           // Todos backorder
+  COMBINADO: 'Combinado',                // Mix backorder + stock
+  COMPLETO: 'Completo',                  // Todos con stock
+  
+  // Estados de surtimiento y confirmación
+  LISTO_PARA_REMISIONAR: 'Listo para remisionar', // Confirmado por inventarios, waiting finanzas
+  SURTIDO_PARCIAL: 'Surtido parcial',   // Al menos 1 producto surtido/confirmado
+  SURTIDO_COMPLETO: 'Surtido completo', // Todo surtido y confirmado
+  
+  // Estados de transición (legacy, mantenidos para compatibilidad)
   PENDIENTE: 'Pendiente',
-  LISTO_PARA_SURTIR: 'Listo para Surtir',
   REVISION_ALMACEN: 'Revisión de Almacén',
   PENDIENTE_CONFIRMACION: 'Pendiente de Confirmación',
-  PARCIALMENTE_SURTIDO: 'Parcialmente Surtido',
-  CONFIRMADO: 'Confirmado',
-  SURTIDO: 'Surtido',
   LISTO_PARA_PAGO: 'Listo para Pago',
   ENVIADO: 'Enviado',
-  ENTREGADO: 'Entregado',
-  COMPLETADO: 'Completado',
-  CANCELADO: 'Cancelado'
+  
+  // EXCEPCIONES
+  CANCELADO: 'Cancelado',                // Final: Cancelación del pedido
+  ENTREGADO: 'Entregado'                 // Final: Fin del ciclo → Histórico
 };
 
-// Alias para mantener compatibilidad con código legacy
-const ESTADOS_LEGACY = {
-  'Parcial': ESTADOS_PEDIDO.PARCIALMENTE_SURTIDO,
-  'Confirmado': ESTADOS_PEDIDO.LISTO_PARA_SURTIR,
-  'Aprobado': ESTADOS_PEDIDO.LISTO_PARA_SURTIR,
-  'Surtido Parcial': ESTADOS_PEDIDO.PARCIALMENTE_SURTIDO // Nueva variante del estado
+// ==========================================
+// MAPEO DE ESTADOS LEGACY A NUEVOS
+// ==========================================
+const MAPEO_STATES_LEGACY = {
+  'Parcial': ESTADOS_PEDIDO.SURTIDO_PARCIAL,
+  'Parcialmente Surtido': ESTADOS_PEDIDO.SURTIDO_PARCIAL,
+  'Surtido Parcial': ESTADOS_PEDIDO.SURTIDO_PARCIAL,
+  'Confirmado': ESTADOS_PEDIDO.COMPLETO,
+  'Aprobado': ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR,
+  'Surtido': ESTADOS_PEDIDO.SURTIDO_COMPLETO,
+  'Completado': ESTADOS_PEDIDO.ENTREGADO
 };
+
+// Estados que son finales (no pueden cambiar)
+const ESTADOS_FINALES = [
+  ESTADOS_PEDIDO.CANCELADO,
+  ESTADOS_PEDIDO.ENTREGADO
+];
+
+// Estados principales normalizados
+const ESTADOS_PRINCIPALES = [
+  ESTADOS_PEDIDO.BAJO_PEDIDO,
+  ESTADOS_PEDIDO.COMBINADO,
+  ESTADOS_PEDIDO.COMPLETO,
+  ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR,
+  ESTADOS_PEDIDO.SURTIDO_PARCIAL,
+  ESTADOS_PEDIDO.SURTIDO_COMPLETO
+];
 
 /**
- * Normaliza un estado de pedido a su forma canónica
+ * Normaliza un estado a su forma canónica
  * @param {string} estado - Estado a normalizar
  * @returns {string} - Estado normalizado
  */
@@ -36,17 +69,12 @@ function normalizarEstado(estado) {
   if (!estado) return ESTADOS_PEDIDO.PENDIENTE;
   
   const estadoTrimmed = estado.toString().trim();
-  const estadoLower = estadoTrimmed.toLowerCase().replace(/_/g, ' ');
+  const estadoLower = estadoTrimmed.toLowerCase();
   
-  // CRITICAL: Handle 'Surtido Parcial' and 'Parcialmente Surtido' as same state
-  if (estadoLower === 'surtido parcial' || estadoLower === 'parcialmente surtido') {
-    return ESTADOS_PEDIDO.PARCIALMENTE_SURTIDO;
-  }
-  
-  // CRITICAL FIX: Buscar en estados legacy (case-insensitive)
-  // Build lowercase version of ESTADOS_LEGACY for matching
-  for (const [legacyKey, legacyValue] of Object.entries(ESTADOS_LEGACY)) {
+  // Buscar en mapeo de legacy
+  for (const [legacyKey, legacyValue] of Object.entries(MAPEO_STATES_LEGACY)) {
     if (legacyKey.toLowerCase() === estadoLower) {
+      console.warn(`[STATUS] Legacy state "${estado}" → "${legacyValue}"`);
       return legacyValue;
     }
   }
@@ -54,50 +82,59 @@ function normalizarEstado(estado) {
   // Buscar en estados principales (case-insensitive)
   const estadoUpper = estadoTrimmed.toUpperCase().replace(/\s+/g, '_');
   for (const [key, value] of Object.entries(ESTADOS_PEDIDO)) {
-    if (key === estadoUpper || value.toUpperCase() === estadoTrimmed.toUpperCase()) {
+    if (value.toLowerCase() === estadoLower) {
       return value;
     }
   }
   
-  // Si no se encuentra, retornar el original
-  return estadoTrimmed;
+  console.warn(`[STATUS] Unknown state: "${estado}" → defaulting to PENDIENTE`);
+  return ESTADOS_PEDIDO.PENDIENTE;
 }
 
 /**
  * Verifica si un estado es válido
- * @param {string} estado - Estado a verificar
- * @returns {boolean} - true si es válido
  */
 function esEstadoValido(estado) {
   if (!estado) return false;
-  
   const estadoNormalizado = normalizarEstado(estado);
   return Object.values(ESTADOS_PEDIDO).includes(estadoNormalizado);
 }
 
 /**
- * Obtiene todos los estados válidos
- * @returns {Array<string>} - Array de estados válidos
+ * Verifica si un estado es final (no puede cambiar)
  */
-function obtenerEstadosValidos() {
-  return Object.values(ESTADOS_PEDIDO);
+function esEstadoFinal(estado) {
+  const normalizado = normalizarEstado(estado);
+  return ESTADOS_FINALES.includes(normalizado);
 }
 
 /**
- * Compara dos estados (case-insensitive, normalizado)
- * @param {string} estado1 
- * @param {string} estado2 
- * @returns {boolean}
+ * Obtiene clase CSS para badge de estado
  */
-function sonEstadosIguales(estado1, estado2) {
-  return normalizarEstado(estado1) === normalizarEstado(estado2);
+function getClassBadgeEstado(estado) {
+  const normalizado = normalizarEstado(estado);
+  
+  const mapa = {
+    [ESTADOS_PEDIDO.BAJO_PEDIDO]: 'badge-warning',          // 🟡 Amarillo
+    [ESTADOS_PEDIDO.COMBINADO]: 'badge-info',               // 🔵 Azul
+    [ESTADOS_PEDIDO.COMPLETO]: 'badge-success',             // 🟢 Verde
+    [ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR]: 'badge-primary', // 🟣 Morado
+    [ESTADOS_PEDIDO.SURTIDO_PARCIAL]: 'badge-warning',      // 🟡 Amarillo
+    [ESTADOS_PEDIDO.SURTIDO_COMPLETO]: 'badge-success',     // 🟢 Verde
+    [ESTADOS_PEDIDO.CANCELADO]: 'badge-danger',             // 🔴 Rojo
+    [ESTADOS_PEDIDO.ENTREGADO]: 'badge-dark'                // ⚫ Gris/Negro
+  };
+  
+  return mapa[normalizado] || 'badge-secondary';
 }
 
 module.exports = {
   ESTADOS_PEDIDO,
-  ESTADOS_LEGACY,
+  ESTADOS_PRINCIPALES,
+  ESTADOS_FINALES,
+  MAPEO_STATES_LEGACY,
   normalizarEstado,
   esEstadoValido,
-  obtenerEstadosValidos,
-  sonEstadosIguales
+  esEstadoFinal,
+  getClassBadgeEstado
 };
