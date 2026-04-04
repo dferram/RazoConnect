@@ -463,11 +463,21 @@ const exportarExcel = () => {
     });
 };
 
-const exportarPDF = () => {
-    Swal.fire({
-        icon: 'info',
-        title: 'Exportación a PDF',
-        text: 'La exportación a PDF estará disponible próximamente',
-        confirmButtonColor: '#F97316'
-    });
+const exportarPDF = async () => {
+    const botonPDF = document.getElementById('btn-exportar-pdf');
+    let restoreButton = null;
+    if (botonPDF && typeof UI !== 'undefined' && UI && typeof UI.setButtonLoading === 'function') {
+        restoreButton = UI.setButtonLoading(botonPDF, 'Generando PDF...');
+    }
+
+    try {
+        Swal.fire({
+            icon: 'info',
+            title: 'Exportación a PDF',
+            text: 'La exportación a PDF estará disponible próximamente',
+            confirmButtonColor: '#F97316'
+        });
+    } finally {
+        if (restoreButton) restoreButton();
+    }
 };

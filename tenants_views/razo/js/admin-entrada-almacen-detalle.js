@@ -252,6 +252,13 @@ function renderizarProductosFaltantes() {
 async function generarPDF() {
   if (!ordenData) return;
 
+  // Obtener botón y mostrar loading
+  const botonPDF = document.getElementById('btnGenerarPDF');
+  let restoreButton = null;
+  if (botonPDF && typeof UI !== 'undefined' && UI && typeof UI.setButtonLoading === 'function') {
+    restoreButton = UI.setButtonLoading(botonPDF, 'Generando...');
+  }
+
   try {
     Swal.fire({
       title: 'Generando PDF...',
@@ -337,12 +344,15 @@ async function generarPDF() {
 
   } catch (error) {
     console.error('Error al generar PDF:', error);
+    if (restoreButton) restoreButton();
     Swal.fire({
       icon: 'error',
       title: 'Error',
       text: 'No se pudo generar el reporte PDF',
       confirmButtonColor: '#F97316'
     });
+  } finally {
+    if (restoreButton) restoreButton();
   }
 }
 

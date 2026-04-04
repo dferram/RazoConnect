@@ -462,6 +462,13 @@ async function descargarPDF() {
         return;
     }
 
+    // Obtener botón y mostrar loading
+    const botonPDF = document.getElementById('btnDescargarPDF');
+    let restoreButton = null;
+    if (botonPDF && typeof UI !== 'undefined' && UI && typeof UI.setButtonLoading === 'function') {
+        restoreButton = UI.setButtonLoading(botonPDF, 'Descargando...');
+    }
+
     const loadingAlert = Swal.fire({
         title: 'Generando reporte...',
         html: `
@@ -727,11 +734,14 @@ async function descargarPDF() {
         });
     } catch (error) {
         console.error('Error generando PDF:', error);
+        if (restoreButton) restoreButton();
         loadingAlert.close();
         Swal.fire({
             icon: 'error',
             title: 'Error al generar PDF',
             text: error.message || 'No se pudo generar el reporte PDF'
         });
+    } finally {
+        if (restoreButton) restoreButton();
     }
 }

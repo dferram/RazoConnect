@@ -610,6 +610,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Exportación a PDF con filtros activos
     document.getElementById('btn-exportar-pdf')?.addEventListener('click', async () => {
+        const botonPDF = document.getElementById('btn-exportar-pdf');
+        let restoreButton = null;
+        if (botonPDF && typeof UI !== 'undefined' && UI && typeof UI.setButtonLoading === 'function') {
+            restoreButton = UI.setButtonLoading(botonPDF, 'Generando...');
+        }
+
         try {
             const params = new URLSearchParams();
             if (state.filters.fechaInicio) params.append('fechaInicio', state.filters.fechaInicio);
@@ -649,7 +655,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         } catch (error) {
             console.error(error);
+            if (restoreButton) restoreButton();
             Swal.fire('Error', 'No se pudo generar el PDF.', 'error');
+        } finally {
+            if (restoreButton) restoreButton();
         }
     });
 });

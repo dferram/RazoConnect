@@ -126,6 +126,14 @@ function agregarBotonesExportacion(container) {
 async function descargarPDF(tipo) {
   if (!grupoActual) return;
 
+  // Obtener botón según el tipo
+  const botonId = tipo === 'proveedor' ? 'btnPDFProveedor' : 'btnPDFInterno';
+  const botonPDF = document.getElementById(botonId);
+  let restoreButton = null;
+  if (botonPDF && typeof UI !== 'undefined' && UI && typeof UI.setButtonLoading === 'function') {
+    restoreButton = UI.setButtonLoading(botonPDF, 'Generando...');
+  }
+
   try {
     Swal.fire({
       title: 'Generando PDF...',
@@ -165,12 +173,15 @@ async function descargarPDF(tipo) {
     });
   } catch (error) {
     console.error('Error descargando PDF:', error);
+    if (restoreButton) restoreButton();
     Swal.fire({
       icon: 'error',
       title: 'Error',
       text: 'No se pudo generar el PDF',
       confirmButtonColor: '#F97316'
     });
+  } finally {
+    if (restoreButton) restoreButton();
   }
 }
 
