@@ -1056,13 +1056,14 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     }
 
     // PROTECCIÓN PARA SURTIDO PARCIAL: Obtener productos que están SURTIDOS (marcados por inventarios)
-    // Solo procesar items con cantidadsurtida > 0, sin importar el flag esbackorder
+    // Filtrar solo los que NO han sido confirmados aún por finanzas
     const productosQuery = `
       SELECT 
         dp.detalleid,
         dp.varianteid,
         dp.piezastotales,
         dp.cantidadsurtida,
+        dp.estado_confirmacion,
         dp.esbackorder,
         pv.sku,
         pr.nombreproducto
@@ -1071,6 +1072,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       INNER JOIN productos pr ON pv.productoid = pr.productoid
       WHERE dp.pedidoid = $1 
         AND dp.cantidadsurtida > 0
+        AND COALESCE(dp.estado_confirmacion, '') != 'Confirmado'
         AND dp.tenant_id = $2
     `;
     
@@ -1084,7 +1086,6 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       });
     }
 
-    const motivo = `Confirmación surtido Pedido #${pedidoId}`;
     let productosConfirmados = 0;
 
     logger.info('🔍 [DEBUG] Iniciando confirmación de surtido:', {
@@ -1095,33 +1096,41 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       productosConStock: productosResult.rows.length
     });
 
-    // Reducir inventario solo para productos con stock
+    // Reducir inventario solo para productos con stock que no han sido confirmados
     for (const item of productosResult.rows) {
       const varianteId = parseInt(item.varianteid);
-      const piezasTotales = parseInt(item.piezastotales || 0);
+      const piezasSurtidas = parseInt(item.cantidadsurtida || 0);
 
-      if (piezasTotales <= 0) continue;
-
-      logger.info('🔍 [DEBUG] Procesando producto:', {
+      logger.info('🔍 [DEBUG] Procesando producto para confirmar:', {
         varianteId,
-        piezasTotales,
+        piezasSurtidas,
         sku: item.sku,
-        nombre: item.nombreproducto
+        nombre: item.nombreproducto,
+        estadoActual: item.estado_confirmacion
       });
 
       try {
         await inventoryService.registrarMovimiento(client, {
           varianteId,
-          cantidadDelta: -1 * piezasTotales,
-          motivo,
+          cantidadDelta: -1 * piezasSurtidas,
+          motivo: `Confirmación surtido Pedido #${pedidoId}`,
           usuarioId: userId,
           esExcepcion: false,
           tenantId: tenant_id,
           userRole: ['finanzas', 'admin'],
           tipoOrigen: 'VENTA'
         });
+        
+        // Actualizar ESTADO DEL DETALLE a "Confirmado" para evitar doble confirmación
+        await client.query(
+          `UPDATE detallesdelpedido 
+           SET estado_confirmacion = 'Confirmado' 
+           WHERE detalleid = $1`,
+          [item.detalleid]
+        );
+        
         productosConfirmados++;
-        logger.info('✅ [DEBUG] Producto confirmado exitosamente:', { varianteId, productosConfirmados });
+        logger.info('✅ [DEBUG] Producto confirmado exitosamente:', { varianteId, productosConfirmados, estadoNuevo: 'Confirmado' });
       } catch (invError) {
         await client.query('ROLLBACK');
 
@@ -1149,28 +1158,26 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     const detalles = await getDetallesPedido(client, pedidoId, tenant_id);
     const estadoCalculado = calcularEstadoPedido(detalles);
     
-    // Cuando finanzas confirma → estado = CONFIRMADO
-    const nuevoEstatus = ESTADOS_PEDIDO.CONFIRMADO;
-    
-    // Determinar flags basados en si todo está surtido
-    const completamenteSurtido = estadoCalculado === ESTADOS_PEDIDO.SURTIDO;
-    
-    // FIX 3: es_historico solo debe ser true cuando el pedido está 100% completado
-    // No solo cuando inventarios marcó todo como surtido, sino cuando finanzas confirmó TODO
-    // Verificar si hay productos pendientes de confirmación por finanzas
-    const productosPendientesQuery = await client.query(
-      `SELECT COUNT(*) as pendientes
+    // Contar cuántos detalles están confirmados
+    const detallesConfirmadosQuery = await client.query(
+      `SELECT COUNT(*) as confirmados, COUNT(*) FILTER (WHERE estado_confirmacion = 'Confirmado') as confirmados_count
        FROM detallesdelpedido
-       WHERE pedidoid = $1 
-         AND tenant_id = $2
-         AND cantidadpaquetes > COALESCE(cantidadsurtida, 0)`,
+       WHERE pedidoid = $1 AND tenant_id = $2 AND cantidadsurtida > 0`,
       [pedidoId, tenant_id]
     );
+    const totalDetallesSurtidos = parseInt(detallesConfirmadosQuery.rows[0].confirmados) || 0;
+    const detallesConfirmados = parseInt(detallesConfirmadosQuery.rows[0].confirmados_count) || 0;
     
-    const tienePendientes = parseInt(productosPendientesQuery.rows[0].pendientes) > 0;
-    const esHistorico = completamenteSurtido && !tienePendientes;
+    // El pedido mantiene su estado: Parcialmente Surtido hasta que TODOS los detalles se confirmen
+    // Solo el estado del DETALLE cambia a "Confirmado"
+    const todoConfirmado = totalDetallesSurtidos > 0 && totalDetallesSurtidos === detallesConfirmados;
+    const nuevoEstatusPedido = todoConfirmado ? ESTADOS_PEDIDO.SURTIDO : estadoCalculado;
+    
+    // Para es_historico: solo si todo está confirmado y completamente surtido
+    const completamenteSurtido = estadoCalculado === ESTADOS_PEDIDO.SURTIDO;
+    const esHistorico = todoConfirmado && completamenteSurtido;
 
-    // Actualizar pedido con el estatus correcto
+    // Actualizar pedido: mantiene su estado calculado (Parcialmente Surtido hasta completarse)
     const updateQuery = `
       UPDATE pedidos 
       SET 
@@ -1182,7 +1189,20 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       RETURNING *
     `;
     
-    await client.query(updateQuery, [pedidoId, tenant_id, nuevoEstatus, completamenteSurtido, esHistorico]);
+    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, nuevoEstatusPedido, completamenteSurtido, esHistorico]);
+    
+    if (!updateResult.rows || updateResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      logger.error('❌ [ERROR] El UPDATE del estado del pedido no retornó filas', {
+        pedidoId,
+        nuevoEstatus,
+        tenantId: tenant_id
+      });
+      return res.status(500).json({
+        success: false,
+        message: 'Error: No se pudo actualizar el estado del pedido'
+      });
+    }
 
     // BUG FIX 6: Insertar en histórico cuando Finanzas confirma
     await client.query(
@@ -1210,12 +1230,14 @@ const confirmarSurtidoFinanzas = async (req, res) => {
 
     await client.query('COMMIT');
 
-    logger.info('Pedido confirmado por finanzas y stock reducido:', {
+    logger.info('Productos confirmados (estado individual = Confirmado), pedido mantiene su estado:', {
       pedidoId,
       productosConfirmados,
+      detallesConfirmados,
+      totalDetallesSurtidos,
+      estadoPedido: nuevoEstatusPedido,
+      todoConfirmado,
       esHistorico,
-      nuevoEstatus,
-      estadoCalculado,
       tenantId: tenant_id,
       userId,
       requestId: req.requestId
@@ -1223,13 +1245,15 @@ const confirmarSurtidoFinanzas = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Pedido confirmado. ${productosConfirmados} producto(s) descontado(s) del inventario.${esHistorico ? ' Pedido movido a histórico.' : ' Pedido con productos pendientes.'}`,
+      message: `${productosConfirmados} producto(s) marcado(s) como Confirmado. Pedido sigue en "${nuevoEstatusPedido}".`,
       data: {
         pedidoId,
-        estatus: nuevoEstatus,
+        estatusPedido: nuevoEstatusPedido,
         productosConfirmados,
-        esHistorico,
-        estadoCalculado
+        detallesConfirmados,
+        totalDetallesSurtidos,
+        todoConfirmado,
+        esHistorico
       }
     });
 
