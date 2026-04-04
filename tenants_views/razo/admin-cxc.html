@@ -169,10 +169,234 @@
                             <i class="bi bi-file-earmark-pdf"></i>
                             Exportar a PDF
                         </button>
+                        <button id="btnAdminSecuencias" class="btn btn-primary" style="margin-left: 0.5rem;" title="Administrar secuencias de remisión">
+                            <i class="bi bi-hash"></i>
+                            Secuencias
+                        </button>
                     </div>
                 </section>
             </div>
         </main>
+    </div>
+
+    <!-- Modal de Administración de Secuencias -->
+    <div class="modal fade" id="modalAdminSecuencias" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-hash me-2"></i>
+                        Administración de Secuencias de Remisión
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Estado Actual -->
+                    <div class="card mb-3" id="secuenciaEstadoCard">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Estado Actual
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <div class="h2 text-primary" id="numeroActual">
+                                        <i class="bi bi-hourglass-split"></i>
+                                    </div>
+                                    <small class="text-muted">Número Actual</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="h3 text-success" id="siguienteNumero">
+                                        <i class="bi bi-hourglass"></i>
+                                    </div>
+                                    <small class="text-muted">Siguiente</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <div id="estadoBadge">
+                                        <span class="badge bg-warning">Cargando...</span>
+                                    </div>
+                                    <small class="text-muted d-block" id="fechaInicializacion">No inicializado</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Acciones -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="bi bi-gear me-2"></i>
+                                Acciones
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <button class="btn btn-success w-100" onclick="mostrarInicializarModal()" id="btnInicializar">
+                                        <i class="bi bi-plus-circle me-2"></i>
+                                        Inicializar
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button class="btn btn-primary w-100" onclick="obtenerSiguiente()">
+                                        <i class="bi bi-arrow-right-circle me-2"></i>
+                                        Siguiente
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button class="btn btn-info w-100" onclick="mostrarValidarModal()">
+                                        <i class="bi bi-check-circle me-2"></i>
+                                        Validar Número
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button class="btn btn-warning w-100" onclick="mostrarCorregirModal()">
+                                        <i class="bi bi-tools me-2"></i>
+                                        Corregir
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Auditoría Reciente -->
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="bi bi-clock-history me-2"></i>
+                                Actividad Reciente
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="auditoriaReciente">
+                                <div class="text-center text-muted">
+                                    <i class="bi bi-hourglass-split me-2"></i>
+                                    Cargando auditoría...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mensajes -->
+                    <div id="secuenciaMessages"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="actualizarSecuencia()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>
+                        Actualizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Inicializar -->
+    <div class="modal fade" id="modalInicializar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Inicializar Secuencia
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Importante:</strong> Esta acción solo se puede realizar una vez. Establecerá el número inicial para todas las remisiones futuras.
+                    </div>
+                    <form id="formInicializar">
+                        <div class="mb-3">
+                            <label for="numeroInicial" class="form-label">Número Inicial</label>
+                            <input type="number" class="form-control" id="numeroInicial" min="1" max="99999" required>
+                            <small class="text-muted">Ej: 100 (la siguiente remisión será 100)</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="inicializarSecuencia()">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Inicializar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Validar -->
+    <div class="modal fade" id="modalValidar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Validar Número
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formValidar">
+                        <div class="mb-3">
+                            <label for="numeroValidar" class="form-label">Número a Validar</label>
+                            <input type="number" class="form-control" id="numeroValidar" min="1" max="99999" required>
+                            <small class="text-muted">Verificar si este número ya está siendo usado</small>
+                        </div>
+                    </form>
+                    <div id="validarResultado"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="validarNumero()">
+                        <i class="bi bi-search me-2"></i>
+                        Validar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Corregir -->
+    <div class="modal fade" id="modalCorregir" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="bi bi-tools me-2"></i>
+                        Corregir Secuencia
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Advertencia:</strong> Esta acción solo debe usarse para corrección de errores. Quedará registrada en auditoría.
+                    </div>
+                    <form id="formCorregir">
+                        <div class="mb-3">
+                            <label for="numeroCorregido" class="form-label">Número Corregido</label>
+                            <input type="number" class="form-control" id="numeroCorregido" min="1" max="99999" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="justificacion" class="form-label">Justificación</label>
+                            <textarea class="form-control" id="justificacion" rows="3" required placeholder="Explique detalladamente por qué necesita corregir la secuencia..."></textarea>
+                            <small class="text-muted">Mínimo 10 caracteres</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-warning" onclick="corregirSecuencia()">
+                        <i class="bi bi-tools me-2"></i>
+                        Corregir
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Utilidades compartidas -->
@@ -189,5 +413,283 @@
     <script src="js/pagination-component.js"></script>
     <script src="js/instructional-banner.js"></script>
     <script src="js/admin-cxc.js" defer></script>
+    
+    <!-- Script para administración de secuencias -->
+    <script>
+        // Configuración
+        const API_SECUENCIAS = '/api/remisiones/secuencia';
+        let secuenciaData = null;
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Botón principal de administración
+            const btnAdminSecuencias = document.getElementById('btnAdminSecuencias');
+            if (btnAdminSecuencias) {
+                btnAdminSecuencias.addEventListener('click', mostrarModalAdminSecuencias);
+            }
+        });
+
+        // Funciones principales
+        function mostrarModalAdminSecuencias() {
+            const modal = new bootstrap.Modal(document.getElementById('modalAdminSecuencias'));
+            modal.show();
+            cargarEstadoSecuencia();
+        }
+
+        async function cargarEstadoSecuencia() {
+            try {
+                const response = await fetch(`${API_SECUENCIAS}/estado`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    secuenciaData = result.data;
+                    actualizarUIEstado(result.data);
+                    await cargarAuditoria();
+                } else {
+                    mostrarMensaje('Error cargando estado: ' + result.error, 'error');
+                    actualizarUIEstado(null);
+                }
+            } catch (error) {
+                mostrarMensaje('Error de conexión: ' + error.message, 'error');
+                actualizarUIEstado(null);
+            }
+        }
+
+        function actualizarUIEstado(data) {
+            const numeroActual = document.getElementById('numeroActual');
+            const siguienteNumero = document.getElementById('siguienteNumero');
+            const estadoBadge = document.getElementById('estadoBadge');
+            const fechaInicializacion = document.getElementById('fechaInicializacion');
+            const btnInicializar = document.getElementById('btnInicializar');
+            
+            if (data && data.secuencia) {
+                const secuencia = data.secuencia;
+                
+                numeroActual.innerHTML = secuencia.numero_actual;
+                siguienteNumero.innerHTML = secuencia.siguiente_numero;
+                
+                if (secuencia.estado === 'ACTIVA') {
+                    estadoBadge.innerHTML = '<span class="badge bg-success">Activa</span>';
+                    fechaInicializacion.innerHTML = `Inicializada: ${new Date(secuencia.inicializado_en).toLocaleDateString()}`;
+                    btnInicializar.disabled = true;
+                } else {
+                    estadoBadge.innerHTML = '<span class="badge bg-warning">Pendiente de inicialización</span>';
+                    fechaInicializacion.innerHTML = 'No inicializado';
+                    btnInicializar.disabled = false;
+                }
+            } else {
+                numeroActual.innerHTML = '<i class="bi bi-dash"></i>';
+                siguienteNumero.innerHTML = '<i class="bi bi-dash"></i>';
+                estadoBadge.innerHTML = '<span class="badge bg-danger">No disponible</span>';
+                fechaInicializacion.innerHTML = 'Error';
+            }
+        }
+
+        async function cargarAuditoria() {
+            try {
+                const response = await fetch(`${API_SECUENCIAS}/auditoria?limite=5`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    actualizarUIAuditoria(result.data.auditoria);
+                }
+            } catch (error) {
+                console.error('Error cargando auditoría:', error);
+            }
+        }
+
+        function actualizarUIAuditoria(auditoria) {
+            const container = document.getElementById('auditoriaReciente');
+            
+            if (auditoria.length === 0) {
+                container.innerHTML = '<div class="text-center text-muted">No hay actividad reciente</div>';
+                return;
+            }
+            
+            container.innerHTML = auditoria.map(item => {
+                const date = new Date(item.created_at);
+                const actionClass = item.accion === 'INICIALIZACION' ? 'text-success' : 'text-warning';
+                const actionIcon = item.accion === 'INICIALIZACION' ? 'plus-circle' : 'tools';
+                
+                return `
+                    <div class="d-flex justify-content-between align-items-start border-bottom pb-2 mb-2">
+                        <div>
+                            <span class="badge ${actionClass} me-2">
+                                <i class="bi bi-${actionIcon} me-1"></i>
+                                ${item.accion}
+                            </span>
+                            <strong>${item.numero_anterior || 'N/A'} → ${item.numero_nuevo}</strong>
+                            ${item.observaciones ? `<br><small class="text-muted">${item.observaciones}</small>` : ''}
+                        </div>
+                        <small class="text-muted">
+                            ${item.nombre_usuario || 'Usuario'}<br>
+                            ${date.toLocaleDateString()}
+                        </small>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Funciones de acción
+        function mostrarInicializarModal() {
+            new bootstrap.Modal(document.getElementById('modalInicializar')).show();
+        }
+
+        function mostrarValidarModal() {
+            document.getElementById('validarResultado').innerHTML = '';
+            new bootstrap.Modal(document.getElementById('modalValidar')).show();
+        }
+
+        function mostrarCorregirModal() {
+            new bootstrap.Modal(document.getElementById('modalCorregir')).show();
+        }
+
+        async function inicializarSecuencia() {
+            const numero = document.getElementById('numeroInicial').value;
+            
+            if (!numero || numero < 1 || numero > 99999) {
+                mostrarMensaje('Por favor ingrese un número válido (1-99999)', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_SECUENCIAS}/inicializar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numero_inicial: parseInt(numero) })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    mostrarMensaje(result.message, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('modalInicializar')).hide();
+                    await cargarEstadoSecuencia();
+                } else {
+                    mostrarMensaje(result.error, 'error');
+                }
+            } catch (error) {
+                mostrarMensaje('Error de conexión: ' + error.message, 'error');
+            }
+        }
+
+        async function obtenerSiguiente() {
+            try {
+                const response = await fetch(`${API_SECUENCIAS}/siguiente`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    mostrarMensaje(`Siguiente número reservado: ${result.data.siguiente_numero}`, 'success');
+                    await cargarEstadoSecuencia();
+                } else {
+                    mostrarMensaje(result.error, 'error');
+                }
+            } catch (error) {
+                mostrarMensaje('Error de conexión: ' + error.message, 'error');
+            }
+        }
+
+        async function validarNumero() {
+            const numero = document.getElementById('numeroValidar').value;
+            const resultadoDiv = document.getElementById('validarResultado');
+            
+            if (!numero || numero < 1 || numero > 99999) {
+                resultadoDiv.innerHTML = '<div class="alert alert-danger">Por favor ingrese un número válido (1-99999)</div>';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_SECUENCIAS}/validar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numero: parseInt(numero) })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultadoDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>Número Disponible:</strong> El número ${numero} está disponible para usar.
+                        </div>
+                    `;
+                } else {
+                    resultadoDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-x-circle me-2"></i>
+                            <strong>Número No Disponible:</strong> ${result.mensaje}
+                            ${result.correccion_sugerida ? `<br><strong>Sugerencia:</strong> Use el número ${result.correccion_sugerida}` : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultadoDiv.innerHTML = `<div class="alert alert-danger">Error de conexión: ${error.message}</div>`;
+            }
+        }
+
+        async function corregirSecuencia() {
+            const numero = document.getElementById('numeroCorregido').value;
+            const justificacion = document.getElementById('justificacion').value;
+            
+            if (!numero || numero < 1 || numero > 99999) {
+                mostrarMensaje('Por favor ingrese un número válido (1-99999)', 'error');
+                return;
+            }
+            
+            if (!justificacion || justificacion.trim().length < 10) {
+                mostrarMensaje('La justificación debe tener al menos 10 caracteres', 'error');
+                return;
+            }
+            
+            if (!confirm('¿Está seguro de corregir la secuencia? Esta acción quedará registrada en auditoría.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_SECUENCIAS}/corregir`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        numero_corregido: parseInt(numero),
+                        justificacion: justificacion.trim()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    mostrarMensaje(result.message, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('modalCorregir')).hide();
+                    await cargarEstadoSecuencia();
+                } else {
+                    mostrarMensaje(result.error, 'error');
+                }
+            } catch (error) {
+                mostrarMensaje('Error de conexión: ' + error.message, 'error');
+            }
+        }
+
+        async function actualizarSecuencia() {
+            await cargarEstadoSecuencia();
+        }
+
+        function mostrarMensaje(message, type) {
+            const container = document.getElementById('secuenciaMessages');
+            const alertClass = type === 'success' ? 'alert-success' : type === 'error' ? 'alert-danger' : 'alert-info';
+            
+            container.innerHTML = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            // Auto-ocultar después de 5 segundos
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+    </script>
 </body>
 </html>
