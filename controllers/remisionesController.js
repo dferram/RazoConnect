@@ -1170,11 +1170,19 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
     // PENDIENTE_REVISION debe ser corregido por almacén primero
     if (remision.estado !== 'PENDIENTE_CONFIRMACION_FINANZAS') {
       await client.query('ROLLBACK');
+      
+      // Mensaje más específico para doble confirmación
+      let mensaje = `No se puede confirmar finanzas. Estado actual: ${remision.estado}. Se requiere PENDIENTE_CONFIRMACION_FINANZAS`;
+      if (remision.estado === 'SURTIDO') {
+        mensaje = `Remisión ${remision.folio} ya fue confirmada por finanzas. No se puede confirmar dos veces.`;
+      }
+      
       return res.status(400).json({
         success: false,
-        error: `No se puede confirmar finanzas. Estado actual: ${remision.estado}. Se requiere PENDIENTE_CONFIRMACION_FINANZAS`,
+        error: mensaje,
         estado_actual: remision.estado,
-        estado_requerido: 'PENDIENTE_CONFIRMACION_FINANZAS'
+        estado_requerido: 'PENDIENTE_CONFIRMACION_FINANZAS',
+        remision_folio: remision.folio
       });
     }
 
@@ -1458,19 +1466,47 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
         }
 
         // Crear registro en CXC (siempre, en todas las remisiones)
-        await client.query(
-          `INSERT INTO cuentas_por_cobrar 
-           (pedido_id, cliente_id, remision_id, tipo_movimiento, monto, descripcion, tenant_id)
-           VALUES ($1, $2, $3, 'CARGO', $4, $5, $6)`,
-          [
-            remision.pedidoid,
-            remision.clienteid,
-            id,
-            montoRemision.toFixed(2),
-            `Remisión ${remision.folio}`,
-            tenant_id
-          ]
+        // 🔒 CRÍTICO: Verificar que NO exista ya un CXC para esta remisión (evita doble inserción)
+        const cxcExistenteQuery = await client.query(
+          `SELECT cxc_id FROM cuentas_por_cobrar 
+           WHERE remision_id = $1 AND pedido_id = $2 AND tenant_id = $3`,
+          [id, remision.pedidoid, tenant_id]
         );
+        
+        if (cxcExistenteQuery.rows.length === 0) {
+          // No existe CXC previo → crear uno nuevo
+          await client.query(
+            `INSERT INTO cuentas_por_cobrar 
+             (pedido_id, cliente_id, remision_id, tipo_movimiento, monto, descripcion, tenant_id)
+             VALUES ($1, $2, $3, 'CARGO', $4, $5, $6)`,
+            [
+              remision.pedidoid,
+              remision.clienteid,
+              id,
+              montoRemision.toFixed(2),
+              `Remisión ${remision.folio}`,
+              tenant_id
+            ]
+          );
+          
+          logger.info('✅ [CXC] Registro creado en cuentas_por_cobrar', {
+            remision_id: id,
+            remision_folio: remision.folio,
+            pedido_id: remision.pedidoid,
+            monto: montoRemision.toFixed(2),
+            requestId: req.requestId,
+            tenantId: tenant_id
+          });
+        } else {
+          logger.warn('⚠️ [CXC] CXC ya existe para esta remisión - no se duplica', {
+            remision_id: id,
+            remision_folio: remision.folio,
+            pedido_id: remision.pedidoid,
+            cxc_id: cxcExistenteQuery.rows[0].cxc_id,
+            requestId: req.requestId,
+            tenantId: tenant_id
+          });
+        }
         
         // 🔒 CRITICAL: Registrar en auditoría de liberación de reservas
         try {
@@ -1692,6 +1728,32 @@ exports.confirmarRemisionAlmacen = async (req, res) => {
 
     const remision = remisionQuery.rows[0];
 
+    // 🔒 VALIDACIÓN CRÍTICA: Bloquear doble confirmación por inventarios
+    // Si la remisión ya está en PENDIENTE_CONFIRMACION_FINANZAS, fue confirmada por almacén
+    // Inventarios NO puede volver a confirmar
+    if (remision.estado === 'PENDIENTE_CONFIRMACION_FINANZAS') {
+      await client.query('ROLLBACK');
+      logger.warn('⚠️ [DOBLE CONFIRMACIÓN] Intento de re-confirmar remisión', {
+        remision_id: id,
+        remision_folio: remision.folio,
+        remision_estado: remision.estado,
+        usuario_id: userId,
+        requestId: req.requestId,
+        tenantId: tenant_id
+      });
+      return res.status(409).json({ 
+        success: false,
+        error: `Remisión ${remision.folio} ya fue confirmada por almacén. Está en espera de confirmación por finanzas. No se puede confirmar dos veces.`,
+        estado_actual: remision.estado,
+        detalles: {
+          remision_id: id,
+          folio: remision.folio,
+          razon: 'Ya fue confirmada', 
+          siguiente_paso: 'Finanzas debe confirmar esta remisión'
+        }
+      });
+    }
+
     if (!['PENDIENTE_REVISION', 'REVISION_ALMACEN'].includes(remision.estado)) {
       await client.query('ROLLBACK');
       return res.status(400).json({ 
@@ -1761,10 +1823,22 @@ exports.confirmarRemisionAlmacen = async (req, res) => {
       logger.info('✅ [PEDIDO] Estado actualizado al confirmar remisión por almacén', {
         pedido_id: remision.pedido_id,
         remision_id: id,
+        remision_folio: remision.folio,
         nuevo_estado: nuevoEstatus,
         completamente_surtido: completamenteSurtido,
-        monto_total: montoTotalPedido,
-        monto_surtido: nuevoMontoSurtido,
+        monto_total_pedido: montoTotalPedido,
+        monto_surtido_anterior: montoSurtidoAnterior,
+        monto_remision: remision.total_remision,
+        nuevo_monto_surtido: nuevoMontoSurtido,
+        monto_backorder: montoBackorder,
+        es_historico: esHistorico,
+        requestId: req.requestId,
+        tenantId: tenant_id
+      });
+    } else {
+      logger.error('❌ [PEDIDO] No se encontró pedido para actualizar', {
+        pedido_id: remision.pedido_id,
+        remision_id: id,
         requestId: req.requestId,
         tenantId: tenant_id
       });
