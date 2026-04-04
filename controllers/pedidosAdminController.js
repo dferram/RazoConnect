@@ -733,6 +733,7 @@ const surtirPedido = async (req, res) => {
 
     // Marcar productos seleccionados como surtidos (NO reduce inventario)
     let marcarResult;
+    let checkResult = null; // CRITICAL: Initialize for use in error handling
     
     if (detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0) {
       // MODO SELECTIVO: Solo marcar productos específicos seleccionados por inventarios
@@ -764,7 +765,7 @@ const surtirPedido = async (req, res) => {
           AND d.detalleid = ANY($2::int[]) 
           AND d.tenant_id = $3
       `;
-      const checkResult = await client.query(checkQuery, [pedidoId, detalleIds, tenant_id]);
+      checkResult = await client.query(checkQuery, [pedidoId, detalleIds, tenant_id]);
       
       logger.info('Estado actual de productos seleccionados:', {
         encontrados: checkResult.rows.length,
@@ -812,23 +813,31 @@ const surtirPedido = async (req, res) => {
     // VALIDATION: Ensure at least one product was actually marked
     if (marcarResult.rowCount === 0) {
       // Provide detailed feedback about why products couldn't be marked
-      const yaSurtidos = checkResult.rows.filter(r => r.cantidadsurtida > 0);
-      const sinStock = checkResult.rows.filter(r => r.cantidadsurtida === 0 && r.stock_libre < r.piezastotales);
-      
       let errorMsg = 'No se pudo marcar ningún producto. ';
-      if (yaSurtidos.length > 0) {
-        errorMsg += `${yaSurtidos.length} producto(s) ya están surtidos. `;
-      }
-      if (sinStock.length > 0) {
-        errorMsg += `${sinStock.length} producto(s) no tienen stock suficiente disponible.`;
-      }
       
-      logger.warn('No se marcaron productos como surtidos:', {
-        pedidoId,
-        detalleIds,
-        yaSurtidos: yaSurtidos.map(r => r.detalleid),
-        sinStock: sinStock.map(r => ({ detalleid: r.detalleid, necesita: r.piezastotales, disponible: r.stock_libre }))
-      });
+      if (checkResult && checkResult.rows && checkResult.rows.length > 0) {
+        const yaSurtidos = checkResult.rows.filter(r => r.cantidadsurtida > 0);
+        const sinStock = checkResult.rows.filter(r => r.cantidadsurtida === 0 && r.stock_libre < r.piezastotales);
+        
+        if (yaSurtidos.length > 0) {
+          errorMsg += `${yaSurtidos.length} producto(s) ya están surtidos. `;
+        }
+        if (sinStock.length > 0) {
+          errorMsg += `${sinStock.length} producto(s) no tienen stock suficiente disponible. `;
+        }
+        
+        logger.warn('❌ No se marcaron productos como surtidos:', {
+          pedidoId,
+          detalleIds,
+          checkResultLength: checkResult.rows.length,
+          yaSurtidos: yaSurtidos.map(r => ({ id: r.detalleid, surtida: r.cantidadsurtida, necesita: r.cantidadpaquetes })),
+          sinStock: sinStock.map(r => ({ id: r.detalleid, disponible: r.stock_libre, necesita: r.piezastotales })),
+          tenantId: tenant_id
+        });
+      } else {
+        errorMsg += 'Verifica que los productos tengan stock disponible y no estén ya surtidos.';
+        errorMsg += 'Verifica que los productos tengan stock disponible y no estén ya surtidos.';
+      }
       
       await client.query('ROLLBACK');
       return res.status(400).json({
@@ -906,43 +915,47 @@ const surtirPedido = async (req, res) => {
       productosRegistrados: detallesMarcadosResult.rows.length
     });
 
-    // Actualizar estatus del pedido usando utilidad centralizada
+    // Actualizar estatus del pedido
+    // LÓGICA CORREGIDA: Cuando inventarios marca productos, SIEMPRE cambiar a "Pendiente de Confirmación"
+    // Esto hace que el pedido aparezca en la tabla de finanzas para que lo confirme
+    // Sin importar si es surtido parcial o completo, finanzas necesita verlo y confirmarlo
+    
     const detalles = await getDetallesPedido(client, pedidoId, tenant_id);
     const estadoCalculado = calcularEstadoPedido(detalles);
     
-    // Determinar si está completamente surtido (usando estado normalizado)
+    // Al menos un producto fue marcado como surtido → PENDIENTE DE CONFIRMACIÓN
+    // Esto permite que finanzas lo vea en su tabla y lo confirme
+    const nuevoEstatus = ESTADOS_PEDIDO.PENDIENTE_CONFIRMACION;
     const completamenteSurtido = estadoCalculado === ESTADOS_PEDIDO.SURTIDO;
     
-    // NUEVA LÓGICA DE TRANSICIÓN DE ESTADOS - USANDO ESTADOS NORMALIZADOS
-    let nuevoEstatus;
-    const totalItems = detalles.length;
-    const itemsSurtidosCompletos = detalles.filter(d => {
-      const surtida = Number(d.cantidad_surtida || 0);
-      const pedida = Number(d.cantidad_pedida || 0);
-      return surtida >= pedida;
-    }).length;
-    
-    if (itemsSurtidosCompletos === totalItems) {
-      // Todos los items están completamente surtidos -> Enviar a finanzas para confirmación
-      nuevoEstatus = ESTADOS_PEDIDO.PENDIENTE_CONFIRMACION;
-    } else if (itemsSurtidosCompletos > 0) {
-      // Algunos items están surtidos (parcialmente)
-      nuevoEstatus = ESTADOS_PEDIDO.PARCIALMENTE_SURTIDO;
-    } else {
-      // Ningún item está surtido
-      nuevoEstatus = ESTADOS_PEDIDO.REVISION_ALMACEN;
-    }
+    logger.info('✅ [ESTADO] Cambiando a PENDIENTE_CONFIRMACION para que finanzas lo revise', {
+      pedidoId,
+      productosActualizados: marcarResult.rowCount,
+      completamenteSurtido,
+      estadoCalculado,
+      tenantId: tenant_id
+    });
     
     const updateQuery = `
       UPDATE pedidos 
       SET 
         estatus = $3,
-        completamente_surtido = $4
+        completamente_surtido = $4,
+        ultima_actualizacion = NOW()
       WHERE pedidoid = $1 AND tenant_id = $2
-      RETURNING *
+      RETURNING pedidoid, estatus, completamente_surtido
     `;
     
     const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, nuevoEstatus, completamenteSurtido]);
+    
+    if (!updateResult.rows || updateResult.rows.length === 0) {
+      logger.error('❌ [ERROR] El UPDATE del estado del pedido no retornó filas', {
+        pedidoId,
+        nuevoEstatus,
+        tenantId: tenant_id
+      });
+      throw new Error('No se pudo actualizar el estado del pedido');
+    }
 
     await client.query('COMMIT');
 
