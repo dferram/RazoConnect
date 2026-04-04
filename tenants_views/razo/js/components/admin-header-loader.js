@@ -89,10 +89,29 @@
   function initializeHeader() {
     console.log("🔄 Inicializando header...");
     
-    // Cargar datos inmediatamente con timeout de seguridad
-    setTimeout(() => {
+    // Esperar a que los elementos del header existan antes de llenar datos
+    waitForElements(['headerUserName', 'headerUserRole', 'headerUserAvatar'], () => {
       loadHeaderData();
-    }, 100);
+    });
+  }
+
+  // Función auxiliar para esperar a que múltiples elementos existan
+  function waitForElements(elementIds, callback, maxAttempts = 50) {
+    let attempts = 0;
+    const checkInterval = setInterval(() => {
+      attempts++;
+      const allExist = elementIds.every(id => document.getElementById(id));
+      
+      if (allExist) {
+        clearInterval(checkInterval);
+        console.log('✅ Elementos del header encontrados');
+        callback();
+      } else if (attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+        console.warn('⚠️ Timeout esperando elementos del header. Intentando llenar datos de todos modos...');
+        callback();
+      }
+    }, 50);
   }
 
   function loadHeaderData() {
@@ -164,16 +183,31 @@
     const headerUserRole = document.getElementById("headerUserRole");
     const headerUserAvatar = document.getElementById("headerUserAvatar");
 
-    if (headerUserName) headerUserName.textContent = nombre;
-    if (headerUserRole) headerUserRole.textContent = rolTexto;
+    if (headerUserName) {
+      headerUserName.textContent = nombre;
+      console.log('✅ headerUserName actualizado:', nombre);
+    } else {
+      console.warn('⚠️ elemento headerUserName no encontrado');
+    }
+
+    if (headerUserRole) {
+      headerUserRole.textContent = rolTexto;
+      console.log('✅ headerUserRole actualizado:', rolTexto);
+    } else {
+      console.warn('⚠️ elemento headerUserRole no encontrado');
+    }
+
     if (headerUserAvatar) {
       headerUserAvatar.textContent = getIniciales(nombre);
+      console.log('✅ headerUserAvatar actualizado:', getIniciales(nombre));
       // Aplicar clase super-admin para badge naranja
       if (isSuperAdmin) {
         headerUserAvatar.classList.add('super-admin');
       } else {
         headerUserAvatar.classList.remove('super-admin');
       }
+    } else {
+      console.warn('⚠️ elemento headerUserAvatar no encontrado');
     }
 
     // Backwards compat IDs

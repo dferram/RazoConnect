@@ -148,6 +148,7 @@ function renderizarTabla(remisiones) {
                     <div style="font-weight: 600;">${remision.cliente_nombre || ''} ${remision.cliente_apellido || ''}</div>
                     ${remision.agente_nombre ? `<div style="font-size: 0.875rem; color: var(--razo-gray-warm);">Agente: ${remision.agente_nombre}</div>` : ''}
                 </td>
+                <td style="text-align: center; font-weight: 600; color: #f97316;">${remision.cantidadpaquetes || remision.cantidad || 0} pz</td>
                 <td>${fecha}</td>
                 <td>
                     <strong style="color: #10b981;">$${parseFloat(remision.total_remision).toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong>
