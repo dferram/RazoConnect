@@ -326,7 +326,7 @@ async function generarPDFPedido(req, res) {
             return cantidadSurtida === 0 && stockActual < piezasRequeridas;
         });
 
-        // Apply mode filtering
+        // Apply mode filtering and role-specific logic
         if (finalMode === 'surtido_only') {
             // Mode: surtido_only - Only show items with cantidadsurtida > 0
             // Used by Finanzas (only charge what's ready to ship)
@@ -341,9 +341,34 @@ async function generarPDFPedido(req, res) {
                 pedidoId,
                 requestId: req.requestId
             });
+        } else if (userRoles.some(r => r === 'inventarios')) {
+            // Mode: inventarios - Show MARCADOS (partial surtido) and SIN MARCAR (no surtido yet)
+            // From itemsSurtidos, keep only PARTIAL surtido (not completely fulfilled)
+            let itemsMarcados = itemsSurtidos.filter(item => {
+                const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
+                const cantidadRequerida = parseInt(item.cantidad || 0);
+                const tamanoCantidad = parseInt(item.tamano_cantidad || 1);
+                const piezasRequeridas = cantidadRequerida * tamanoCantidad;
+                return cantidadSurtida > 0 && cantidadSurtida < piezasRequeridas;
+            });
+            
+            let itemsSinMarcar = itemsConStock; // Already no surtido with stock available
+            
+            // Replace tables for inventory view: NO mostrar surtidos completos, mostrar marcados/sin marcar
+            itemsSurtidos = itemsMarcados;      // Reuse for "MARCADOS PARA SURTIR"
+            itemsConStock = itemsSinMarcar;     // Reuse for "DISPONIBLE - SIN MARCAR"
+            itemsBajoPedido = itemsBajoPedido;  // Keep bajo pedido
+            
+            logger.info('PDF: Applying inventarios filter', {
+                itemsMarcados: itemsMarcados.length,
+                itemsSinMarcar: itemsSinMarcar.length,
+                itemsBajoPedido: itemsBajoPedido.length,
+                pedidoId,
+                requestId: req.requestId
+            });
         } else {
-            // Mode: full - Show ALL items (default)
-            // Used by Inventarios (need to see what's missing), Admin, Cliente
+            // Mode: full - Show ALL items (default for Admin/Cliente)
+            // Used by Admin, Cliente (need to see everything)
             logger.info('PDF: Showing full remision with three tables', {
                 itemsSurtidos: itemsSurtidos.length,
                 itemsConStock: itemsConStock.length,
@@ -355,6 +380,15 @@ async function generarPDFPedido(req, res) {
 
         let yPosition = 260;
         const rowHeight = 25;
+
+        // Determine table titles based on role
+        let titleSurtidos = 'PRODUCTOS SURTIDOS';
+        let titleConStock = 'PRODUCTOS CON STOCK';
+        
+        if (userRoles.some(r => r === 'inventarios')) {
+            titleSurtidos = '✓ PRODUCTOS MARCADOS PARA SURTIR';
+            titleConStock = '⭕ DISPONIBLE - SIN MARCAR';
+        }
 
         // Helper function to render table header (SMART PAGINATION)
         const renderTableHeader = (title, yPos, headerColor = '#F97316') => {
@@ -463,21 +497,21 @@ const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = 
 
 // Render SURTIDO items section (products with cantidadsurtida > 0) - NARANJA
 if (itemsSurtidos.length > 0) {
-    yPosition = renderTableHeader('PRODUCTOS SURTIDOS', yPosition, '#F97316');
-    yPosition = renderItems(itemsSurtidos, yPosition, '#FFF7ED', pedido.estatus, mostrarPrecios);
+    yPosition = renderTableHeader(titleSurtidos, yPosition, '#10B981');
+    yPosition = renderItems(itemsSurtidos, yPosition, '#F0FDF4', pedido.estatus, mostrarPrecios);
     yPosition += 10;
 }
 
-// Render CON STOCK items section (products with stock but not surtido yet) - VERDE  
+// Render CON STOCK items section (products with stock but not surtido yet) - AZUL/VERDE  
 if (itemsConStock.length > 0) {
-    yPosition = renderTableHeader('PRODUCTOS CON STOCK', yPosition, '#10B981');
-    yPosition = renderItems(itemsConStock, yPosition, '#F0FDF4', pedido.estatus, mostrarPrecios);
+    yPosition = renderTableHeader(titleConStock, yPosition, '#3B82F6');
+    yPosition = renderItems(itemsConStock, yPosition, '#EFF6FF', pedido.estatus, mostrarPrecios);
     yPosition += 10;
 }
 
 // Render BAJO PEDIDO items section (products without sufficient stock) - ROJO
 if (itemsBajoPedido.length > 0) {
-    yPosition = renderTableHeader('PRODUCTOS BAJO PEDIDO', yPosition, '#DC2626');
+    yPosition = renderTableHeader('❌ BAJO PEDIDO - SIN STOCK', yPosition, '#DC2626');
     yPosition = renderItems(itemsBajoPedido, yPosition, '#FEF2F2', pedido.estatus, mostrarPrecios);
     yPosition += 10;
 }
