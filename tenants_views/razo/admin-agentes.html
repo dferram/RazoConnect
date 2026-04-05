@@ -992,17 +992,17 @@
                     <tbody>
                       ${ventas
                         .map((v) => {
-                          // Determinar badge color basado en estatus
+                          // Determinar badge color basado en estatus (Sistema de 6 estados)
                           const estatusVal = (v.estatus || "").toLowerCase().trim();
                           let badge = "secondary";
                           
                           // NUEVOS ESTADOS
-                          if (estatusVal === "bajo pedido") badge = "danger";
-                          else if (estatusVal === "combinado") badge = "info";
-                          else if (estatusVal === "completo") badge = "success";
-                          else if (estatusVal === "listo para remisionar") badge = "primary";
-                          else if (estatusVal === "surtido parcial") badge = "warning";
-                          else if (estatusVal === "surtido completo") badge = "success";
+                          if (estatusVal === "bajo pedido") badge = "danger";       // 🔴 Rojo
+                          else if (estatusVal === "combinado") badge = "warning";   // 🟠 Naranja
+                          else if (estatusVal === "completo") badge = "warning";    // 🟡 Amarillo
+                          else if (estatusVal === "listo para remisionar") badge = "primary"; // 🔵 Azul
+                          else if (estatusVal === "surtido parcial") badge = "warning"; // 🟠 Naranja
+                          else if (estatusVal === "surtido completo") badge = "success"; // 🟢 Verde
                           // LEGACY
                           else if (estatusVal === "confirmado" || estatusVal === "surtido") badge = "success";
                           else if (estatusVal === "enviado") badge = "info";

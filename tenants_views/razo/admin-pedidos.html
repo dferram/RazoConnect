@@ -585,13 +585,23 @@
       }
 
       // Mapea el estatus del pedido a un badge normalizado con diseño admin-badge info
+      // Sistema de 6 estados: BAJO PEDIDO | COMBINADO | COMPLETO | LISTO PARA REMISIONAR | SURTIDO PARCIAL | SURTIDO COMPLETO
       function getPedidoStatusBadgeClass(estatus) {
         const value = (estatus || "").toString().toLowerCase().trim();
 
+        // Nuevos estados dinámicos (PRIORIDAD ALTA)
+        if (value === "bajo pedido") return "pedido-estatus-badge danger";           // 🔴 Rojo
+        if (value === "combinado") return "pedido-estatus-badge warning";           // 🟠 Naranja
+        if (value === "completo") return "pedido-estatus-badge warning";            // 🟡 Amarillo
+        if (value === "listo para remisionar") return "pedido-estatus-badge primary"; // 🔵 Azul
+        if (value === "surtido parcial" || value === "parcialmente_surtido" || value === "parcialmente surtido") 
+          return "pedido-estatus-badge warning";                                     // 🟠 Naranja
+        if (value === "surtido completo") return "pedido-estatus-badge success";    // 🟢 Verde
+
+        // Estados legacy (compatibilidad)
         if (value === "pendiente") return "pedido-estatus-badge pendiente";
         if (value === "pendiente de confirmación" || value === "pendiente de confirmacion") return "pedido-estatus-badge pendiente-confirmacion";
         if (value === "confirmado" || value === "surtido") return "pedido-estatus-badge confirmado";
-        if (value === "parcialmente surtido" || value === "parcialmente_surtido" || value === "surtido parcial") return "pedido-estatus-badge parcialmente-surtido";
         if (
           value === "enviado" ||
           value === "en ruta" ||

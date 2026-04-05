@@ -954,13 +954,13 @@
 
       function getEstatusBadge(estatus) {
         const estatusMap = {
-          // NUEVOS ESTADOS NORMALIZADOS
-          'Bajo Pedido': 'danger',
-          'Combinado': 'info',
-          'Completo': 'success',
-          'Listo para Remisionar': 'primary',
-          'Surtido Parcial': 'warning',
-          'Surtido Completo': 'success',
+          // NUEVOS ESTADOS NORMALIZADOS (Sistema de 6 estados)
+          'Bajo Pedido': 'danger',          // 🔴 Rojo
+          'Combinado': 'warning',           // 🟠 Naranja
+          'Completo': 'warning',            // 🟡 Amarillo
+          'Listo para Remisionar': 'primary', // 🔵 Azul
+          'Surtido Parcial': 'warning',     // 🟠 Naranja
+          'Surtido Completo': 'success',    // 🟢 Verde
           
           // LEGACY/ANTIGUOS ESTADOS
           'Pendiente': 'warning',
