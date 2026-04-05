@@ -11,7 +11,7 @@ const {
 const { checkStockBajo } = require("../utils/stockAlerts");
 const { calcularTotalPedido, validarConsistenciaTotales } = require("../utils/calculadoraPedidos");
 const SmartStockService = require("../services/SmartStockService");
-const { calcularEstadoPedido, calcularEstadoPedidoCorrect } = require("../utils/pedidoStatus");
+const { calcularEstadoPedidoCorrect } = require("../utils/pedidoStatus");
 const { normalizarEstado, ESTADOS_PEDIDO } = require("../utils/pedidoEstados");
 
 const TAMANO_VALUE_KEYS = [

@@ -264,15 +264,12 @@ async function updatePedidoStatus(client, pedidoId, nuevoEstado, tenantId) {
 
 /**
  * Recalcula y actualiza el estado de un pedido
- * (Función auxiliar para consistency)
+ * Usa calcularEstadoPedidoCorrect que verifica stock ACTUAL en BD
  */
 async function recalcularEstadoPedido(client, pedidoId, tenantId) {
   try {
-    // Obtener detalles
-    const detalles = await getDetallesPedido(client, pedidoId, tenantId);
-    
-    // Calcular estado
-    const nuevoEstado = calcularEstadoPedido(detalles);
+    // Calcular estado usando lógica que consulta stock en tiempo real
+    const nuevoEstado = await calcularEstadoPedidoCorrect(client, pedidoId);
     
     // Actualizar
     const resultado = await updatePedidoStatus(client, pedidoId, nuevoEstado, tenantId);

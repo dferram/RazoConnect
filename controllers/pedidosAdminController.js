@@ -13,7 +13,7 @@ const db = require('../db');
 const logger = require('../utils/logger');
 const inventoryService = require('../services/inventoryService');
 const { getPaginationParams, buildPaginationMeta } = require('../utils/pagination');
-const { calcularEstadoPedido, getDetallesPedido, updatePedidoStatus, calcularEstadoPedidoCorrect } = require('../utils/pedidoStatus');
+const { updatePedidoStatus, calcularEstadoPedidoCorrect } = require('../utils/pedidoStatus');
 const { ESTADOS_PEDIDO, normalizarEstado } = require('../utils/pedidoEstados');
 
 /**
@@ -1191,9 +1191,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       }
     }
 
-    // Calcular estado usando utilidad centralizada
-    const detalles = await getDetallesPedido(client, pedidoId, tenant_id);
-    const estadoCalculado = calcularEstadoPedido(detalles);
+    // Calcular estado usando utilidad centralizada (consulta stock REAL en BD)
+    const estadoCalculado = await calcularEstadoPedidoCorrect(client, pedidoId);
     
     // Contar cuántos detalles están confirmados
     const detallesConfirmadosQuery = await client.query(

@@ -1137,15 +1137,12 @@ async function reallocateStockForVariant(varianteId, tenantId) {
     const pedidosAfectados = [...new Set(cambios.map(c => c.pedidoId))];
     
     // Usar utilidad centralizada para calcular estados
-    const { calcularEstadoPedido, getDetallesPedido } = require('../utils/pedidoStatus');
+    const { calcularEstadoPedidoCorrect } = require('../utils/pedidoStatus');
     
     for (const pedidoId of pedidosAfectados) {
       try {
-        // Obtener detalles del pedido con cantidades
-        const detalles = await getDetallesPedido(client, pedidoId, tenantId);
-        
-        // Calcular estado usando lógica centralizada
-        const nuevoEstatus = calcularEstadoPedido(detalles);
+        // Calcular estado usando lógica centralizada (consulta stock REAL)
+        const nuevoEstatus = await calcularEstadoPedidoCorrect(client, pedidoId);
         
         // Actualizar estado del pedido
         await client.query(
