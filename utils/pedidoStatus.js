@@ -156,7 +156,14 @@ function calcularEstadoPedido(detalles = []) {
       detalle.cantidadSurtida || 
       0
     );
-    const esBackorder = Boolean(detalle.esbackorder || detalle.es_backorder || detalle.esBackorder);
+    
+    // BUG FIX: Convertir correctamente strings "true"/"false" a booleano
+    let esBackorder = detalle.esbackorder || detalle.es_backorder || detalle.esBackorder;
+    if (typeof esBackorder === 'string') {
+      esBackorder = esBackorder.toLowerCase() === 'true';
+    } else {
+      esBackorder = Boolean(esBackorder);
+    }
 
     // Clasificar item
     if (esBackorder) {
@@ -183,13 +190,17 @@ function calcularEstadoPedido(detalles = []) {
   // PRIORIDAD 1: Estados de surtimiento (si hay cantidades surtidas, ese es el estado principal)
   // -------------------------------------------------------------------------
   
-  // 1. SURTIDO COMPLETO: Todos fueron surtidos
+  // 1. SURTIDO COMPLETO: Todos fueron surtidos COMPLETAMENTE
   if (todosCompletosSurtidos && itemsConSurtida === total) {
     return ESTADOS_PEDIDO.SURTIDO_COMPLETO;
   }
 
-  // 2. SURTIDO PARCIAL: Al menos algunos fueron surtidos (pero no todos)
-  if (itemsConSurtida > 0 && itemsConSurtida < total) {
+  // 2. SURTIDO PARCIAL: Al menos alguno tiene surtida (pero no TODOS están completamente surtidos)
+  // Esto incluye:
+  // - Algunos items completamente surtidos y otros no
+  // - Todos los items tienen surtida parcial
+  // - Mix de ambos
+  if (itemsConSurtida > 0 && !todosCompletosSurtidos) {
     return ESTADOS_PEDIDO.SURTIDO_PARCIAL;
   }
 
