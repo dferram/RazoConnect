@@ -273,6 +273,116 @@ PEDIDO FINALIZADO
 
 ---
 
+## 📋 PDF de Verificación PRE-CONFIRMACIÓN
+
+### Propósito
+El PDF de verificación es una herramienta para que el personal de **inventarios/almacén** pueda:
+1. **Seleccionar** qué productos marcar para surtir (antes de confirmar en sistema)
+2. **Descargar PDF** con las 3 categorías de productos
+3. **Verificar en almacén** físicamente todos los items
+4. **Regresar al sistema** y confirmar la selección
+
+### Cuándo se usa
+- **ANTES** de marcar productos como surtidos en el sistema
+- Como ayuda visual para el warehouse staff
+- Para reducir errores en selección de items
+
+### Estructura del PDF
+
+#### Tabla 1: ✓ PRODUCTOS MARCADOS PARA SURTIR (Verde)
+- Productos que ya fueron marcados (`cantidadsurtida > 0`)
+- Muestran stock disponible actual
+- Es lo que SERÁ surtido si se confirma
+
+#### Tabla 2: ⭕ DISPONIBLE - SIN MARCAR (Azul)
+- Productos CON STOCK pero NO marcados (`cantidadsurtida = 0` AND `stock >= piezas`)
+- El warehouse puede cambiar de idea aquí
+- Si se necesita, pueden ser incluidos
+
+#### Tabla 3: ❌ BAJO PEDIDO - SIN STOCK (Rojo)
+- Productos SIN STOCK SUFICIENTE
+- Información referencial
+- NO pueden ser surtidos en esta remisión
+
+### Información en Cada Tabla
+- SKU
+- Producto (nombre + color)
+- Cantidad de paquetes
+- Tamaño (Pack X, Unit.)
+- Stock disponible actual (desde stock_admin)
+- Precio unitario
+
+### Endpoint
+```
+GET /api/admin/pedidos/:id/pdf-verificacion
+```
+
+**Roles autorizados**:
+- `super_admin`
+- `admin`
+- `inventarios`
+- `jefe_almacen`
+
+### Flujo Completo de Uso
+
+```
+1. CLIENTE HACE PEDIDO
+   └─► Sistema calcula estado dinámico (🔴/🟠/🟡)
+
+2. INVENTARIOS VE PEDIDO
+   └─► Selecciona qué productos surtir (click checkbox)
+   └─► Productos se marcan: cantidadsurtida = 0 → valor > 0
+
+3. INVENTARIOS DESCARGA PDF
+   └─► GET /pedidos/:id/pdf-verificacion
+   └─► PDF muestra 3 tablas con categorías
+
+4. VA AL ALMACÉN
+   └─► Verifica físicamente:
+       - Tabla Verde: ¿Están los 100 productos marcados?
+       - Tabla Azul: ¿Realmente disponibles esos otros?
+       - Tabla Roja: Confirma que no hay stock
+
+5. REGRESA A SISTEMA
+   └─► Confirma marcado (si selección es correcta)
+   └─► O vuelve atrás y re-selecciona
+
+6. SISTEMA MARCA COMO SURTIDOS
+   └─► cantidadsurtida = cantidadpaquetes
+   └─► estado_producto = 'Surtido'
+   └─► estado = 🔵 LISTO PARA REMISIONAR
+
+7. FINANZAS CONFIRMA REMISIÓN
+   └─► Crea REMISIÓN y DETALLES_REMISION
+   └─► Genera CXC entries
+   └─► estado = 🟠 SURTIDO PARCIAL (si hay más) O 🟢 COMPLETO
+```
+
+### Ejemplo de Descarga
+
+```
+Cliente: John Doe
+Pedido: #12345
+Fecha: 15 de Abril, 2026
+
+✓ PRODUCTOS MARCADOS PARA SURTIR (2 items)
+  SKU001 | Remera Azul   | 50 paquetes | Unit. | Stock: 120 | $10.00
+  SKU002 | Jean Negro    | 30 paquetes | Pack 5 | Stock: 80  | $25.00
+
+⭕ DISPONIBLE - SIN MARCAR (1 items)
+  SKU003 | Calcetines    | 20 paquetes | Pack 10 | Stock: 200 | $5.00
+
+❌ BAJO PEDIDO - SIN STOCK (1 items)
+  SKU004 | Chamarra      | 10 paquetes | Unit. | Stock: 0 | $95.00
+
+RESUMEN:
+  Productos Marcados: 2
+  Disponibles (sin marcar): 1
+  Bajo Pedido: 1
+```
+
+---
+
 ## Checklist de Validación
 
 ### Pre-requisitos

@@ -518,6 +518,17 @@ router.get(
   pdfController.generarPDFPedido
 );
 
+// Generar PDF de verificación PRE-CONFIRMACIÓN para inventarios
+// Shows 3 tables: Marcados | Con Stock No Marcados | Bajo Pedido
+// For warehouse verification before system confirmation
+router.get(
+  "/pedidos/:id/pdf-verificacion",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'jefe_almacen']),
+  heavyOperationLimiter,
+  pdfController.generarPDFVerificacion
+);
+
 // Generar factura PDF para pedido (admin)
 // Available for admin and finanzas roles
 const facturaController = require("../controllers/facturaController");
