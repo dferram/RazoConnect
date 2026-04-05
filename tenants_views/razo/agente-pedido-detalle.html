@@ -99,6 +99,32 @@
         color: #dc2626;
       }
 
+      /* NUEVOS ESTADOS */
+      .pedido-estatus-badge.success {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+
+      .pedido-estatus-badge.danger {
+        background: #fee2e2;
+        color: #dc2626;
+      }
+
+      .pedido-estatus-badge.warning {
+        background: #fff7ed;
+        color: var(--razo-orange);
+      }
+
+      .pedido-estatus-badge.info {
+        background: #dbeafe;
+        color: #2563eb;
+      }
+
+      .pedido-estatus-badge.primary {
+        background: #e0e7ff;
+        color: #4f46e5;
+      }
+
       .pedido-monto-section {
         display: flex;
         align-items: baseline;
@@ -623,9 +649,16 @@
             const estatusValor = (pedido.estatus || "").toString().toLowerCase().trim();
             let estatusClass = "pedido-estatus-badge pendiente";
 
+            // NUEVOS ESTADOS NORMALIZADOS
             if (estatusValor === "pendiente") estatusClass = "pedido-estatus-badge pendiente";
+            else if (estatusValor === "bajo pedido") estatusClass = "pedido-estatus-badge danger";
+            else if (estatusValor === "combinado") estatusClass = "pedido-estatus-badge info";
+            else if (estatusValor === "completo") estatusClass = "pedido-estatus-badge success";
+            else if (estatusValor === "listo para remisionar") estatusClass = "pedido-estatus-badge primary";
+            else if (estatusValor === "surtido parcial" || estatusValor === "parcialmente surtido" || estatusValor === "parcialmente_surtido") estatusClass = "pedido-estatus-badge parcialmente-surtido";
+            else if (estatusValor === "surtido completo") estatusClass = "pedido-estatus-badge success";
+            // LEGACY
             else if (estatusValor === "confirmado" || estatusValor === "surtido") estatusClass = "pedido-estatus-badge confirmado";
-            else if (estatusValor === "parcialmente surtido" || estatusValor === "parcialmente_surtido") estatusClass = "pedido-estatus-badge parcialmente-surtido";
             else if (
               estatusValor === "enviado" ||
               estatusValor === "en ruta" ||

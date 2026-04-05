@@ -992,10 +992,23 @@
                     <tbody>
                       ${ventas
                         .map((v) => {
-                          let badge = "info";
-                          if (v.estatus === "Confirmado") badge = "success";
-                          else if (v.estatus === "Enviado") badge = "warning";
-                          else if (v.estatus === "Entregado") badge = "success";
+                          // Determinar badge color basado en estatus
+                          const estatusVal = (v.estatus || "").toLowerCase().trim();
+                          let badge = "secondary";
+                          
+                          // NUEVOS ESTADOS
+                          if (estatusVal === "bajo pedido") badge = "danger";
+                          else if (estatusVal === "combinado") badge = "info";
+                          else if (estatusVal === "completo") badge = "success";
+                          else if (estatusVal === "listo para remisionar") badge = "primary";
+                          else if (estatusVal === "surtido parcial") badge = "warning";
+                          else if (estatusVal === "surtido completo") badge = "success";
+                          // LEGACY
+                          else if (estatusVal === "confirmado" || estatusVal === "surtido") badge = "success";
+                          else if (estatusVal === "enviado") badge = "info";
+                          else if (estatusVal === "entregado") badge = "success";
+                          else if (estatusVal === "cancelado") badge = "danger";
+                          else if (estatusVal === "pendiente") badge = "warning";
 
                           return `
                           <tr style="border-bottom: 1px solid #E5E7EB;">
