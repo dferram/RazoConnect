@@ -231,7 +231,8 @@
           pedidosTable.style.display = "none";
           emptyPedidos.style.display = "none";
 
-          const response = await fetch(`${API_BASE_URL}/admin/pedidos`, {
+          // ✅ IMPORTANTE: Enviar parámetro showHistorico=true para obtener pedidos entregados
+          const response = await fetch(`${API_BASE_URL}/admin/pedidos?showHistorico=true`, {
             method: "GET",
             headers: {
               Authorization: `Bearer ${adminToken}`,
@@ -239,23 +240,32 @@
             },
           });
 
-          if (!response.ok) throw new Error("Error al cargar pedidos");
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Error al cargar pedidos históricos");
+          }
 
           const data = await response.json();
           if (data.success) {
-            const pedidos = data.data || [];
+            allPedidos = data.data || [];
             
-            allPedidos = pedidos.filter(pedido => {
-              const estatus = (pedido.estatus || '').toLowerCase();
-              return ['surtido', 'enviado', 'entregado'].includes(estatus);
-            });
-            
+            // Los pedidos ya vienen filtrados desde backend (solo Entregado)
+            // No necesitamos filtrar en frontend
             updateStats(allPedidos);
             renderPedidos(allPedidos);
+          } else {
+            throw new Error(data.message || "Error al cargar pedidos");
           }
         } catch (error) {
           console.error("Error loading pedidos:", error);
-          showToast("Error al cargar pedidos históricos", "error");
+          let errorMessage = "Error al cargar pedidos históricos";
+          
+          // Detectar si es error de permisos
+          if (error.message.includes("Acceso denegado")) {
+            errorMessage = "Acceso denegado: Solo Finanzas, Admin y SuperAdmin pueden ver históricos.";
+          }
+          
+          showToast(errorMessage, "error");
           emptyPedidos.style.display = "block";
         } finally {
           loadingPedidos.style.display = "none";

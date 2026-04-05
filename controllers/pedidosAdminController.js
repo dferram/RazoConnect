@@ -137,12 +137,24 @@ const { ESTADOS_PEDIDO, normalizarEstado } = require('../utils/pedidoEstados');
 const getAllPedidos = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
-    const { estatus, clienteId, agenteId, fechaInicio, fechaFin } = req.query;
+    const { estatus, clienteId, agenteId, fechaInicio, fechaFin, showHistorico } = req.query;
     const { limit, offset, page } = getPaginationParams(req.query);
 
     // Detectar rol del usuario
     const userRole = req.user?.rol?.toLowerCase()?.trim() || '';
     const isInventarios = userRole === 'inventarios';
+    const isFinanzas = userRole === 'finanzas';
+    const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+    
+    // VALIDACIÓN: Inventarios NO puede ver históricos
+    const wantsHistorico = showHistorico === 'true';
+    if (isInventarios && wantsHistorico) {
+      return res.status(403).json({
+        success: false,
+        message: 'Acceso denegado. El rol inventarios no tiene permiso para ver pedidos históricos.',
+        data: []
+      });
+    }
 
     let query = `
       SELECT 
@@ -173,12 +185,31 @@ const getAllPedidos = async (req, res) => {
       WHERE p.tenant_id = $1
     `;
 
-    // FILTRO PARA INVENTARIOS: Excluir pedidos ya surtidos/entregados (deben estar en histórico)
+    // FILTRO POR ROL Y TIPO DE VISTA
     if (isInventarios) {
+      // Inventarios solo ve ACTIVOS (no entregados)
       query += ` AND p.Estatus NOT IN ('Surtido', 'Enviado', 'Entregado')`;
-      logger.info('⚠️ [PEDIDOS] Aplicando filtro para rol inventarios - excluyendo Surtido/Enviado/Entregado', {
+      logger.info('✅ [PEDIDOS] Inventarios - mostrando solo pedidos activos (excluyendo Surtido/Enviado/Entregado)', {
         userId: req.user?.id,
         rol: userRole
+      });
+    } else if (wantsHistorico) {
+      // Finanzas/Admin/SuperAdmin pueden ver históricos (solo Entregado)
+      query += ` AND p.Estatus IN ('Entregado')`;
+      logger.info('✅ [PEDIDOS] Histórico - mostrando solo pedidos entregados', {
+        userId: req.user?.id,
+        rol: userRole,
+        isFinanzas,
+        isAdmin
+      });
+    } else {
+      // Finanzas/Admin/SuperAdmin ven activos (todo MENOS Entregado)
+      query += ` AND p.Estatus NOT IN ('Entregado')`;
+      logger.info('✅ [PEDIDOS] Activos - mostrando pedidos activos', {
+        userId: req.user?.id,
+        rol: userRole,
+        isFinanzas,
+        isAdmin
       });
     }
 
@@ -220,9 +251,13 @@ const getAllPedidos = async (req, res) => {
     let countParamIndex = 2;
     let countQuery = `SELECT COUNT(*) FROM Pedidos p WHERE p.tenant_id = $1`;
     
-    // Aplicar mismo filtro de inventarios en el count
+    // Aplicar mismo filtro por rol en el count
     if (isInventarios) {
       countQuery += ` AND p.Estatus NOT IN ('Surtido', 'Enviado', 'Entregado')`;
+    } else if (wantsHistorico) {
+      countQuery += ` AND p.Estatus IN ('Entregado')`;
+    } else {
+      countQuery += ` AND p.Estatus NOT IN ('Entregado')`;
     }
     
     if (estatus) {
