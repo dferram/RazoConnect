@@ -585,6 +585,25 @@
         return value; // Retornar valor normalizado si no hay mapeo específico
       }
 
+      // Función para mostrar estado en UI (con capitalización correcta)
+      // Mapea estados legacy a nuevos valores y mantiene formato capitalizado
+      function getDisplayStatus(estatus) {
+        const normalized = normalizeStatus(estatus);
+        const displayMap = {
+          'bajo pedido': 'Bajo pedido',
+          'combinado': 'Combinado',
+          'completo': 'Completo',
+          'listo para remisionar': 'Listo para remisionar',
+          'surtido completo': 'Surtido completo',
+          'pendiente': 'Pendiente',
+          'confirmado': 'Confirmado',
+          'enviado': 'Enviado',
+          'entregado': 'Entregado',
+          'cancelado': 'Cancelado'
+        };
+        return displayMap[normalized] || estatus;
+      }
+
       // Mapea el estatus del pedido a un badge normalizado con diseño admin-badge info
       // Sistema de 6 estados: BAJO PEDIDO | COMBINADO | COMPLETO | LISTO PARA REMISIONAR | SURTIDO COMPLETO
       function getPedidoStatusBadgeClass(estatus) {
@@ -754,7 +773,7 @@
                   <td>${fecha}</td>
                   ${!isInventarios ? `<td><strong>${formatCurrency(order.montoTotal || 0)}</strong></td>` : ''}
                   <td>${order.agente ? `${order.agente.nombre} ${order.agente.apellido || ''}`.trim() : "-"}</td>
-                  <td><span class="${badgeClass}">${order.estatus}</span></td>
+                  <td><span class="${badgeClass}">${getDisplayStatus(order.estatus)}</span></td>
                   <td>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                       <button 

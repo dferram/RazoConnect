@@ -634,6 +634,15 @@
         document.getElementById("saldoDisponible").textContent = `$${saldoDisponible.toFixed(2)}`;
       });
 
+      // Función para mostrar estado en UI - mapea Surtido Parcial a Combinado
+      function getDisplayStatus(estatus) {
+        const value = (estatus || "").toString().toLowerCase().trim();
+        if (value === "surtido parcial" || value === "parcialmente surtido" || value === "parcialmente_surtido") {
+          return "Combinado";
+        }
+        return estatus;
+      }
+
       function renderPedidos(pedidos) {
         const pedidosTableBody = document.getElementById("pedidosTableBody");
         const pedidosVacio = document.getElementById("pedidosVacio");
@@ -700,7 +709,7 @@
             <td>${fecha}</td>
             <td>${monto}</td>
             <td><span class="${badgeClass}">${
-              pedido.estatus || "Sin estatus"
+              getDisplayStatus(pedido.estatus) || "Sin estatus"
             }</span></td>
             <td>${
               pedido.direccionEnvioId ? `#${pedido.direccionEnvioId}` : "-"

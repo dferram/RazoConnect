@@ -644,7 +644,12 @@
             );
 
             const estatusEl = document.getElementById("pedidoEstatus");
-            estatusEl.textContent = pedido.estatus || "";
+            const estatusValorOriginal = (pedido.estatus || "").toString().toLowerCase().trim();
+            // Mapear Surtido Parcial a Combinado para mostrar
+            const displayEstatus = (estatusValorOriginal === "surtido parcial" || estatusValorOriginal === "parcialmente surtido" || estatusValorOriginal === "parcialmente_surtido") 
+              ? "Combinado" 
+              : pedido.estatus || "";
+            estatusEl.textContent = displayEstatus;
 
             const estatusValor = (pedido.estatus || "").toString().toLowerCase().trim();
             let estatusClass = "pedido-estatus-badge pendiente";

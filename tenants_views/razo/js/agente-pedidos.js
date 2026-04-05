@@ -97,7 +97,11 @@
     function renderStatusSelector(pedido) {
       const estatus = pedido.estatus || "";
       const badgeClass = getPedidoStatusBadgeClass(estatus);
-      return `<span class="${badgeClass}">${estatus || "Desconocido"}</span>`;
+      // Mapear Surtido Parcial a Combinado
+      const displayEstatus = (estatus.toLowerCase() === "surtido parcial" || estatus.toLowerCase() === "parcialmente surtido" || estatus.toLowerCase() === "parcialmente_surtido") 
+        ? "Combinado" 
+        : (estatus || "Desconocido");
+      return `<span class="${badgeClass}">${displayEstatus}</span>`;
     }
 
     function setLoading(message = "Cargando pedidos...") {

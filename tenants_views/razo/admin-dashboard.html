@@ -450,6 +450,15 @@
         return "pedido-estatus-badge pendiente";
       }
 
+      // Función para mostrar estado en UI - mapea Surtido Parcial a Combinado
+      function getDisplayStatus(estatus) {
+        const value = (estatus || "").toString().toLowerCase().trim();
+        if (value === "surtido parcial" || value === "parcialmente surtido" || value === "parcialmente_surtido") {
+          return "Combinado";
+        }
+        return estatus;
+      }
+
       async function loadInventoryValuation() {
         // FASE 5 - TAREA 2: Solo cargar valuación para roles con acceso a inventario
         const userRole = getUserRole();
@@ -597,7 +606,7 @@
                   "es-MX"
                 )}</td>
                 ${!isInventarios ? `<td><strong>${formatCurrency(order.montoTotal)}</strong></td>` : ''}
-                <td><span class="${badgeClass}">${order.estatus}</span></td>
+                <td><span class=\"${badgeClass}\">${getDisplayStatus(order.estatus)}</span></td>
                 <td>
                   <button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;" 
                     onclick="verDetallePedido(${order.pedidoId})">
