@@ -649,15 +649,16 @@
             const estatusValor = (pedido.estatus || "").toString().toLowerCase().trim();
             let estatusClass = "pedido-estatus-badge pendiente";
 
-            // NUEVOS ESTADOS NORMALIZADOS (Sistema de 6 estados)
+            // NUEVOS ESTADOS NORMALIZADOS (Sistema de 6 estados - Surtido Parcial ELIMINADO)
             if (estatusValor === "pendiente") estatusClass = "pedido-estatus-badge pendiente";
             else if (estatusValor === "bajo pedido") estatusClass = "pedido-estatus-badge danger";           // 🔴 Rojo
             else if (estatusValor === "combinado") estatusClass = "pedido-estatus-badge warning";           // 🟠 Naranja
             else if (estatusValor === "completo") estatusClass = "pedido-estatus-badge warning";            // 🟡 Amarillo
             else if (estatusValor === "listo para remisionar") estatusClass = "pedido-estatus-badge primary"; // 🔵 Azul
-            else if (estatusValor === "surtido parcial" || estatusValor === "parcialmente surtido" || estatusValor === "parcialmente_surtido") estatusClass = "pedido-estatus-badge warning"; // 🟠 Naranja
             else if (estatusValor === "surtido completo") estatusClass = "pedido-estatus-badge success";    // 🟢 Verde
-            // LEGACY
+            // LEGACY - Mapear viejo Surtido Parcial a warning
+            else if (estatusValor === "surtido parcial" || estatusValor === "parcialmente surtido" || estatusValor === "parcialmente_surtido") estatusClass = "pedido-estatus-badge warning";
+            // LEGACY FIN
             else if (estatusValor === "confirmado" || estatusValor === "surtido") estatusClass = "pedido-estatus-badge confirmado";
             else if (
               estatusValor === "enviado" ||

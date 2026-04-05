@@ -454,8 +454,9 @@
                   else if (estatusValor === "combinado") badgeClass = "pedido-estatus-badge warning";           // 🟠 Naranja
                   else if (estatusValor === "completo") badgeClass = "pedido-estatus-badge warning";            // 🟡 Amarillo
                   else if (estatusValor === "listo para remisionar") badgeClass = "pedido-estatus-badge primary"; // 🔵 Azul
-                  else if (estatusValor === "surtido parcial" || estatusValor === "parcialmente surtido" || estatusValor === "parcialmente_surtido") badgeClass = "pedido-estatus-badge warning"; // 🟠 Naranja
                   else if (estatusValor === "surtido completo") badgeClass = "pedido-estatus-badge success";    // 🟢 Verde
+                  // LEGACY - Mapear Surtido Parcial al equivalente
+                  else if (estatusValor === "surtido parcial" || estatusValor === "parcialmente surtido" || estatusValor === "parcialmente_surtido") badgeClass = "pedido-estatus-badge warning";
                   // LEGACY
                   else if (estatusValor === "confirmado" || estatusValor === "surtido") badgeClass = "pedido-estatus-badge confirmado";
                   else if (

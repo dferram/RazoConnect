@@ -55,30 +55,60 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
     const totalProductos = detalles.length;
     
     // ============================================================
-    // PRIORIDAD 1: Estados de Surtimiento (acciones de almacén/finanzas)
+    // PRIORIDAD 1: Verificar si TODOS están facturados
     // ============================================================
-    // Estos SÍ son fijos y se basan en acciones reales realizadas
-    
     const productosFacturados = detalles.filter(d => d.estado_producto === 'Facturado').length;
-    const productosSurtidos = detalles.filter(d => d.estado_producto === 'Surtido').length;
     
     if (productosFacturados === totalProductos && productosFacturados > 0) {
-      return ESTADOS_PEDIDO.SURTIDO_COMPLETO; // 🟢
+      return ESTADOS_PEDIDO.SURTIDO_COMPLETO; // 🟢 - Ciclo completado
     }
+    
+    // ============================================================
+    // PRIORIDAD 2: Si hay productos facturados pero NO todos
+    // NUEVO FLUJO: Recalcular estado basado SOLO en NO FACTURADOS
+    // ============================================================
     if (productosFacturados > 0 && productosFacturados < totalProductos) {
-      return ESTADOS_PEDIDO.SURTIDO_PARCIAL; // 🟠
+      // Filtrar solo los productos NO FACTURADOS para recalcular estado
+      const productosNoFacturados = detalles.filter(d => d.estado_producto !== 'Facturado');
+      const totalNoFacturados = productosNoFacturados.length;
+      
+      // Calcular stock disponible SOLO para no facturados
+      let conStockActual = 0;
+      let backorderActual = 0;
+      
+      productosNoFacturados.forEach(d => {
+        const tieneStock = d.stock_disponible_actual >= d.piezastotales;
+        if (tieneStock) {
+          conStockActual++;
+        } else {
+          backorderActual++;
+        }
+      });
+      
+      // Retornar al estado original según stock de lo NO facturado
+      if (backorderActual === totalNoFacturados && conStockActual === 0) {
+        return ESTADOS_PEDIDO.BAJO_PEDIDO;      // 🔴 Todos sin stock
+      }
+      if (conStockActual === totalNoFacturados && backorderActual === 0) {
+        return ESTADOS_PEDIDO.COMPLETO;          // 🟡 Todos con stock
+      }
+      if (backorderActual > 0 && conStockActual > 0) {
+        return ESTADOS_PEDIDO.COMBINADO;         // 🟠 Mix de stock/backorder
+      }
     }
+    
+    // ============================================================
+    // PRIORIDAD 3: Hay surtidos pero NINGUNO facturado
+    // ============================================================
+    const productosSurtidos = detalles.filter(d => d.estado_producto === 'Surtido').length;
     if (productosSurtidos > 0 && productosFacturados === 0) {
-      return ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR; // 🔵
+      return ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR; // 🔵 Waiting finanzas confirmation
     }
 
     // ============================================================
-    // PRIORIDAD 2: Estados de Disponibilidad (DINÁMICOS, basados en stock ACTUAL)
+    // PRIORIDAD 4: Ningún producto surtido/facturado
+    // Calcular estado de disponibilidad dinámico
     // ============================================================
-    // Estos verifican stock disponible en tiempo real, NO el flag fijo
-    // Esto permite que un producto que empezó como "Bajo pedido"
-    // cambie a "Con stock" si después llega inventario
-    
     let productosConStockActual = 0;
     let productosBackorderActual = 0;
     

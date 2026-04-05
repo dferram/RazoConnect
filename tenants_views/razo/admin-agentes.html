@@ -1001,9 +1001,9 @@
                           else if (estatusVal === "combinado") badge = "warning";   // 🟠 Naranja
                           else if (estatusVal === "completo") badge = "warning";    // 🟡 Amarillo
                           else if (estatusVal === "listo para remisionar") badge = "primary"; // 🔵 Azul
-                          else if (estatusVal === "surtido parcial") badge = "warning"; // 🟠 Naranja
                           else if (estatusVal === "surtido completo") badge = "success"; // 🟢 Verde
-                          // LEGACY
+                          // LEGACY - Mapear viejo Surtido Parcial
+                          else if (estatusVal === "surtido parcial" || estatusVal === "parcialmente surtido") badge = "warning";
                           else if (estatusVal === "confirmado" || estatusVal === "surtido") badge = "success";
                           else if (estatusVal === "enviado") badge = "info";
                           else if (estatusVal === "entregado") badge = "success";

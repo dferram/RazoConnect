@@ -439,9 +439,9 @@
         if (value === "combinado") return "pedido-estatus-badge warning";           // 🟠 Naranja
         if (value === "completo") return "pedido-estatus-badge warning";            // 🟡 Amarillo
         if (value === "listo para remisionar") return "pedido-estatus-badge primary"; // 🔵 Azul
-        if (value === "surtido parcial" || value === "parcialmente surtido" || value === "parcialmente_surtido") return "pedido-estatus-badge warning"; // 🟠 Naranja
         if (value === "surtido completo") return "pedido-estatus-badge success";    // 🟢 Verde
-        // LEGACY
+        // LEGACY - Mapear Surtido Parcial al equivalente nuevo
+        if (value === "surtido parcial" || value === "parcialmente surtido" || value === "parcialmente_surtido") return "pedido-estatus-badge warning";
         if (value === "confirmado" || value === "surtido") return "pedido-estatus-badge confirmado";
         if (value === "enviado" || value === "en ruta" || value === "en_ruta" || value === "en-ruta") return "pedido-estatus-badge enviado";
         if (value === "entregado" || value === "completado") return "pedido-estatus-badge entregado";

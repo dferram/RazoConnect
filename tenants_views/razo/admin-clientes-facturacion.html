@@ -578,13 +578,13 @@
           'combinado': 'combinado',
           'completo': 'completo',
           'listo para remisionar': 'listo_para_remisionar',
-          'surtido parcial': 'surtido_parcial',
           'surtido completo': 'surtido_completo',
           
-          // Estados de Surtimiento (legacy)
-          'parcialmente surtido': 'surtido_parcial',
-          'parcialmente_surtido': 'surtido_parcial',
-          'parcial': 'surtido_parcial',
+          // Estados de Surtimiento (legacy) - Mapear viejo SP a combinado
+          'surtido parcial': 'combinado',
+          'parcialmente surtido': 'combinado',
+          'parcialmente_surtido': 'combinado',
+          'parcial': 'combinado',
           
           // Estados de Completado
           'completado': 'completado',
@@ -629,7 +629,7 @@
             // 1. SURTIDOS: Enviados por inventarios, esperando confirmación de finanzas
             const pedidosSurtidos = allPedidos.filter(pedido => {
               const estatus = normalizarEstatus(pedido.estatus);
-              return ['listo_para_remisionar', 'surtido_parcial', 'surtido_completo'].includes(estatus);
+              return ['listo_para_remisionar', 'surtido_completo'].includes(estatus);
             });
             
             // 2. PENDIENTES: Pedidos en preparación o esperando surtido
@@ -954,15 +954,15 @@
 
       function getEstatusBadge(estatus) {
         const estatusMap = {
-          // NUEVOS ESTADOS NORMALIZADOS (Sistema de 6 estados)
+          // NUEVOS ESTADOS NORMALIZADOS (Sistema de 6 estados - Surtido Parcial ELIMINADO)
           'Bajo Pedido': 'danger',          // 🔴 Rojo
           'Combinado': 'warning',           // 🟠 Naranja
           'Completo': 'warning',            // 🟡 Amarillo
           'Listo para Remisionar': 'primary', // 🔵 Azul
-          'Surtido Parcial': 'warning',     // 🟠 Naranja
           'Surtido Completo': 'success',    // 🟢 Verde
           
-          // LEGACY/ANTIGUOS ESTADOS
+          // LEGACY/ANTIGUOS ESTADOS - Mapear viejo Surtido Parcial a Combinado
+          'Surtido Parcial': 'warning',
           'Pendiente': 'warning',
           'Aprobado': 'info',
           'Confirmado': 'info',

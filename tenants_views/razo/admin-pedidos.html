@@ -574,7 +574,8 @@
         // Mapear variantes a valores canónicos
         if (value === "pendiente") return "pendiente";
         if (value === "confirmado" || value === "surtido") return "confirmado";
-        if (value === "parcialmente surtido" || value === "surtido parcial" || value === "surtido parcial") return "parcialmente surtido";
+        // LEGACY - Mapear Surtido Parcial a Combinado
+        if (value === "parcialmente surtido" || value === "surtido parcial" || value === "surtido parcial") return "combinado";
         if (value === "enviado" || value === "en ruta" || value === "en-ruta") return "enviado";
         if (value === "entregado" || value === "completado") return "entregado";
         if (value === "cancelado") return "cancelado";
@@ -585,7 +586,7 @@
       }
 
       // Mapea el estatus del pedido a un badge normalizado con diseño admin-badge info
-      // Sistema de 6 estados: BAJO PEDIDO | COMBINADO | COMPLETO | LISTO PARA REMISIONAR | SURTIDO PARCIAL | SURTIDO COMPLETO
+      // Sistema de 6 estados: BAJO PEDIDO | COMBINADO | COMPLETO | LISTO PARA REMISIONAR | SURTIDO COMPLETO
       function getPedidoStatusBadgeClass(estatus) {
         const value = (estatus || "").toString().toLowerCase().trim();
 
@@ -594,11 +595,11 @@
         if (value === "combinado") return "pedido-estatus-badge warning";           // 🟠 Naranja
         if (value === "completo") return "pedido-estatus-badge warning";            // 🟡 Amarillo
         if (value === "listo para remisionar") return "pedido-estatus-badge primary"; // 🔵 Azul
-        if (value === "surtido parcial" || value === "parcialmente_surtido" || value === "parcialmente surtido") 
-          return "pedido-estatus-badge warning";                                     // 🟠 Naranja
         if (value === "surtido completo") return "pedido-estatus-badge success";    // 🟢 Verde
 
-        // Estados legacy (compatibilidad)
+        // Estados legacy (compatibilidad - mapear a equivalente nuevo)
+        if (value === "surtido parcial" || value === "parcialmente surtido" || value === "parcialmente_surtido") 
+          return "pedido-estatus-badge warning"; // Mapear a COMBINADO color
         if (value === "pendiente") return "pedido-estatus-badge pendiente";
         if (value === "pendiente de confirmación" || value === "pendiente de confirmacion") return "pedido-estatus-badge pendiente-confirmacion";
         if (value === "confirmado" || value === "surtido") return "pedido-estatus-badge confirmado";

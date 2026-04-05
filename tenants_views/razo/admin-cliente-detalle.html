@@ -671,17 +671,16 @@
             const estatusValor = (pedido.estatus || "").toString().toLowerCase().trim();
             let badgeClass = "pedido-estatus-badge pendiente";
 
-            // Nuevos estados normalizados (Sistema de 6 estados)
+            // Nuevos estados normalizados (Sistema de 6 estados - Surtido Parcial ELIMINADO)
             if (estatusValor === "pendiente") badgeClass = "pedido-estatus-badge pendiente";
             else if (estatusValor === "bajo pedido") badgeClass = "pedido-estatus-badge danger";           // 🔴 Rojo
             else if (estatusValor === "combinado") badgeClass = "pedido-estatus-badge warning";           // 🟠 Naranja
             else if (estatusValor === "completo") badgeClass = "pedido-estatus-badge warning";            // 🟡 Amarillo
             else if (estatusValor === "listo para remisionar") badgeClass = "pedido-estatus-badge primary"; // 🔵 Azul
-            else if (estatusValor === "surtido parcial") badgeClass = "pedido-estatus-badge warning";    // 🟠 Naranja
             else if (estatusValor === "surtido completo") badgeClass = "pedido-estatus-badge success";   // 🟢 Verde
             // Legacy (aún soportados)
             else if (estatusValor === "confirmado" || estatusValor === "surtido") badgeClass = "pedido-estatus-badge success";
-            else if (estatusValor === "parcialmente surtido" || estatusValor === "parcialmente_surtido") badgeClass = "pedido-estatus-badge warning";
+            else if (estatusValor === "parcialmente surtido" || estatusValor === "parcialmente_surtido" || estatusValor === "surtido parcial") badgeClass = "pedido-estatus-badge warning";
             else if (
               estatusValor === "enviado" ||
               estatusValor === "en ruta" ||

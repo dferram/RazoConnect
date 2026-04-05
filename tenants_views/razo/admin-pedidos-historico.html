@@ -376,15 +376,15 @@
       function getEstatusBadge(estatus) {
         const estatusLower = (estatus || '').toLowerCase();
         const badges = {
-          // NUEVOS ESTADOS NORMALIZADOS (Sistema de 6 estados)
+          // NUEVOS ESTADOS NORMALIZADOS (Sistema de 6 estados - Surtido Parcial ELIMINADO)
           'bajo pedido': '<span class="admin-badge danger">Bajo Pedido</span>',     // 🔴 Rojo
           'combinado': '<span class="admin-badge warning">Combinado</span>',         // 🟠 Naranja
           'completo': '<span class="admin-badge warning">Completo</span>',           // 🟡 Amarillo
           'listo para remisionar': '<span class="admin-badge primary">Listo para Remisionar</span>', // 🔵 Azul
-          'surtido parcial': '<span class="admin-badge warning">Surtido Parcial</span>', // 🟠 Naranja
           'surtido completo': '<span class="admin-badge success">Surtido Completo</span>', // 🟢 Verde
           
           // LEGACY/ANTIGUOS
+          'surtido parcial': '<span class="admin-badge warning">Combinado</span>',  // Mapear viejo estado a warning
           'surtido': '<span class="admin-badge success">Surtido</span>',
           'confirmado': '<span class="admin-badge info">Confirmado</span>',
           'pendiente': '<span class="admin-badge warning">Pendiente</span>',
