@@ -691,13 +691,21 @@
               filteredOrders = filteredOrders.filter(order => !order.es_prioritario);
             }
 
+            // FASE 3 - TASK 2: Get user role for conditional rendering
+            const userRole = getUserRole();
+            const isInventarios = userRole === 'inventarios';
+            
+            // RESTRICCIÓN: Inventario no debe ver pedidos "Surtido Completo" (su ciclo ya terminó)
+            if (isInventarios) {
+              filteredOrders = filteredOrders.filter(order => {
+                const estatusNormalizado = normalizeStatus(order.estatus);
+                return estatusNormalizado !== 'surtido completo' && estatusNormalizado !== 'surtido_completo';
+              });
+            }
+
             if (filteredOrders.length === 0) {
               emptyOrders.style.display = "block";
             } else {
-              // FASE 3 - TASK 2: Get user role for conditional rendering
-              const userRole = getUserRole();
-              const isInventarios = userRole === 'inventarios';
-              
               ordersTableBody.innerHTML = filteredOrders
                 .map((order) => {
                   const badgeClass = getPedidoStatusBadgeClass(order.estatus);
