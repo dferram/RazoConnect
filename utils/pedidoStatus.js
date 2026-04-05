@@ -28,15 +28,21 @@ const {
  */
 async function calcularEstadoPedidoCorrect(client, pedidoId) {
   try {
-    // 1. Obtener detalles con estado_producto
+    // 1. Obtener detalles CON stock actual en tiempo real
+    // CRÍTICO: Verificar stock ACTUAL en stock_admin, NO usar esbackorder fijo
     const detallesResult = await client.query(`
       SELECT 
         d.detalleid,
-        d.esbackorder,
-        d.cantidadpaquetes,
+        d.varianteid,
+        d.piezastotales,
         d.estado_producto,
-        COALESCE(d.cantidadsurtida, 0) as cantidadsurtida
+        COALESCE(d.cantidadsurtida, 0) as cantidadsurtida,
+        -- Stock ACTUAL disponible (sin reservar)
+        COALESCE(sa.cantidad - sa.cantidad_reservada, 0) as stock_disponible_actual,
+        -- Flag original (para auditoría)
+        d.esbackorder as esbackorder_original
       FROM detallesdelpedido d
+      LEFT JOIN stock_admin sa ON d.varianteid = sa.variante_id
       WHERE d.pedidoid = $1
       ORDER BY d.detalleid
     `, [pedidoId]);
@@ -47,10 +53,15 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
     }
 
     const totalProductos = detalles.length;
+    
+    // ============================================================
+    // PRIORIDAD 1: Estados de Surtimiento (acciones de almacén/finanzas)
+    // ============================================================
+    // Estos SÍ son fijos y se basan en acciones reales realizadas
+    
     const productosFacturados = detalles.filter(d => d.estado_producto === 'Facturado').length;
     const productosSurtidos = detalles.filter(d => d.estado_producto === 'Surtido').length;
     
-    // PRIORIDAD 1: Estados de Surtimiento basados en estado_producto
     if (productosFacturados === totalProductos && productosFacturados > 0) {
       return ESTADOS_PEDIDO.SURTIDO_COMPLETO; // 🟢
     }
@@ -61,18 +72,38 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
       return ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR; // 🔵
     }
 
-    // PRIORIDAD 2: Estados de Disponibilidad basados en esbackorder
-    const productosBackorder = detalles.filter(d => d.esbackorder === true).length;
-    const productosConStock = detalles.filter(d => d.esbackorder === false).length;
-
-    if (productosBackorder === totalProductos) {
-      return ESTADOS_PEDIDO.BAJO_PEDIDO; // 🔴
+    // ============================================================
+    // PRIORIDAD 2: Estados de Disponibilidad (DINÁMICOS, basados en stock ACTUAL)
+    // ============================================================
+    // Estos verifican stock disponible en tiempo real, NO el flag fijo
+    // Esto permite que un producto que empezó como "Bajo pedido"
+    // cambie a "Con stock" si después llega inventario
+    
+    let productosConStockActual = 0;
+    let productosBackorderActual = 0;
+    
+    detalles.forEach(d => {
+      const tieneStockDisponible = d.stock_disponible_actual >= d.piezastotales;
+      if (tieneStockDisponible) {
+        productosConStockActual++;
+      } else {
+        productosBackorderActual++;
+      }
+    });
+    
+    // 🔴 BAJO PEDIDO: Todos sin stock disponible
+    if (productosBackorderActual === totalProductos && productosConStockActual === 0) {
+      return ESTADOS_PEDIDO.BAJO_PEDIDO;
     }
-    if (productosConStock === totalProductos) {
-      return ESTADOS_PEDIDO.COMPLETO; // 🟡
+    
+    // 🟡 COMPLETO: Todos con stock disponible
+    if (productosConStockActual === totalProductos && productosBackorderActual === 0) {
+      return ESTADOS_PEDIDO.COMPLETO;
     }
-    if (productosBackorder > 0 && productosConStock > 0) {
-      return ESTADOS_PEDIDO.COMBINADO; // 🟠
+    
+    // 🟠 COMBINADO: Mix de stock y backorder
+    if (productosBackorderActual > 0 && productosConStockActual > 0) {
+      return ESTADOS_PEDIDO.COMBINADO;
     }
 
     return ESTADOS_PEDIDO.PENDIENTE;
