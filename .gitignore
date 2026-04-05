@@ -71,6 +71,7 @@ dist/
 build/
 out/
 *.tsbuildinfo
+.deployment
 
 # ============================================
 # TESTING
