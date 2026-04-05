@@ -2,6 +2,8 @@ const pool = require('../db');
 const logger = require('../utils/logger');
 const kardexService = require('../services/kardexService');
 const { calcularTotalSurtido } = require('../utils/calcularTotalSurtido');
+const { calcularEstadoPedidoCorrect } = require('../utils/pedidoStatus');
+const { ESTADOS_PEDIDO, normalizarEstado } = require('../utils/pedidoEstados');
 
 /**
  * CONTROLADOR DE REMISIONES
@@ -1321,6 +1323,59 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
        WHERE remision_id = $2`,
       [userId, id]
     );
+
+    // 🔹 CRITICAL: Marcar productos como "Facturado" en detallesdelpedido
+    // Esto indica que finanzas ha confirmado estos productos
+    const updateProductosResult = await client.query(
+      `UPDATE detallesdelpedido
+       SET estado_producto = 'Facturado',
+           fecha_actualizacion = NOW()
+       WHERE pedidoid = $1
+         AND detalle_pedido_id IN (
+           SELECT detalle_pedido_id FROM detalles_remision 
+           WHERE remision_id = $2
+         )
+       RETURNING detalle_pedido_id, estado_producto`,
+      [remision.pedidoid, id]
+    );
+
+    logger.info(`✅ [FINANZAS] ${updateProductosResult.rowCount} productos marcados como Facturado`, {
+      remision_id: id,
+      pedidoid: remision.pedidoid,
+      productos_actualizados: updateProductosResult.rowCount,
+      tenantId: tenant_id
+    });
+
+    // 🔹 Verificar si TODOS los productos del pedido están ahora "Facturado"
+    // O si ALGUNOS están facturados (Surtido parcial)
+    // Usa calcularEstadoPedidoCorrect para lógica centralizada
+    
+    const resultadoEstado = await calcularEstadoPedidoCorrect(client || pool, remision.pedidoid);
+    const nuevoEstatus = normalizarEstado(resultadoEstado.nuevoEstado || resultadoEstado.estado);
+    
+    logger.info('✅ [FINANZAS] Estado del pedido actualizado', {
+      remision_id: id,
+      pedidoid: remision.pedidoid,
+      productos_facturados_ahora: updateProductosResult.rowCount,
+      nuevoEstatus,
+      tenantId: tenant_id
+    });
+
+    // Actualizar el estado del pedido basado en el nuevo cálculo
+    await client.query(
+      `UPDATE pedidos
+       SET estatus = $1,
+           ultima_actualizacion = NOW()
+       WHERE pedidoid = $2 AND tenant_id = $3`,
+      [nuevoEstatus, remision.pedidoid, tenant_id]
+    );
+
+    logger.info('🎉 [PEDIDO] Estado actualizado después de finanzas confirmar', {
+      pedidoid: remision.pedidoid,
+      remision_id: id,
+      nuevoEstatus,
+      tenantId: tenant_id
+    });
 
     // AHORA SÍ: Generar movimiento en CXC si es crédito
     // ⚠️ PROTECCIÓN DE LÓGICA FINANCIERA PARA SURTIDO PARCIAL:

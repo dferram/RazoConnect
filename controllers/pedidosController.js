@@ -11,7 +11,7 @@ const {
 const { checkStockBajo } = require("../utils/stockAlerts");
 const { calcularTotalPedido, validarConsistenciaTotales } = require("../utils/calculadoraPedidos");
 const SmartStockService = require("../services/SmartStockService");
-const { calcularEstadoPedido } = require("../utils/pedidoStatus");
+const { calcularEstadoPedido, calcularEstadoPedidoCorrect } = require("../utils/pedidoStatus");
 const { normalizarEstado, ESTADOS_PEDIDO } = require("../utils/pedidoEstados");
 
 const TAMANO_VALUE_KEYS = [
@@ -1110,10 +1110,11 @@ const crearPedido = async (req, res) => {
              EsBackorder,
              CantidadSurtida,
              CantidadBackorder,
-             tenant_id
+             tenant_id,
+             estado_producto
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0, $8)
-           RETURNING DetalleID`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0, $8, 'Con stock')
+           RETURNING DetalleID`
           [
             pedidoId,
             item.varianteid,
@@ -1287,10 +1288,11 @@ const crearPedido = async (req, res) => {
              EsBackorder,
              CantidadSurtida,
              CantidadBackorder,
-             tenant_id
+             tenant_id,
+             estado_producto
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, 0, $4, $8)
-           RETURNING DetalleID`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, 0, $4, $8, 'Bajo pedido')
+           RETURNING DetalleID`
           [
             pedidoId,
             item.varianteid,
@@ -1371,14 +1373,10 @@ const crearPedido = async (req, res) => {
     }
 
     // NUEVO: Calcular estado correcto basado en los detalles del pedido
-    // El estado será: Bajo pedido, Combinado, Completo, Surtido parcial, o Surtido completo
-    const detallesParaCalculo = detallesPedido.map(d => ({
-      cantidadpaquetes: d.cantidad,        // Cantidad total solicitada
-      cantidadsurtida: d.cantidadSurtida,  // Cantidad ya surtida (0 para nuevos pedidos)
-      esbackorder: d.esBackorder           // Si es backorder o tiene stock
-    }));
-
-    const estadoCalculado = calcularEstadoPedido(detallesParaCalculo);
+    // El estado será: Bajo pedido, Combinado, Completo, Listo para remisionar, Surtido parcial, o Surtido completo
+    // Usar calcularEstadoPedidoCorrect que accede a BD para estado_producto
+    const estadoResult = await calcularEstadoPedidoCorrect(client, pedidoId);
+    const estadoCalculado = estadoResult.nuevoEstado || estadoResult.estado;
     const estadoNormalizado = normalizarEstado(estadoCalculado);
 
     if (estadoNormalizado !== pedidoEstatus) {

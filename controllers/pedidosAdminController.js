@@ -13,7 +13,7 @@ const db = require('../db');
 const logger = require('../utils/logger');
 const inventoryService = require('../services/inventoryService');
 const { getPaginationParams, buildPaginationMeta } = require('../utils/pagination');
-const { calcularEstadoPedido, getDetallesPedido, updatePedidoStatus } = require('../utils/pedidoStatus');
+const { calcularEstadoPedido, getDetallesPedido, updatePedidoStatus, calcularEstadoPedidoCorrect } = require('../utils/pedidoStatus');
 const { ESTADOS_PEDIDO, normalizarEstado } = require('../utils/pedidoEstados');
 
 /**
@@ -786,7 +786,9 @@ const surtirPedido = async (req, res) => {
       // 2. Have actual stock available (stock_libre >= piezastotales)
       const marcarSurtidosQuery = `
         UPDATE detallesdelpedido d
-        SET cantidadsurtida = cantidadpaquetes
+        SET cantidadsurtida = cantidadpaquetes,
+            estado_producto = 'Surtido',
+            fecha_actualizacion = NOW()
         FROM stock_admin sa
         WHERE d.pedidoid = $1 
           AND d.detalleid = ANY($2::int[])
@@ -802,7 +804,9 @@ const surtirPedido = async (req, res) => {
       // MODO LEGACY: Marcar todos los productos con stock (compatibilidad con código anterior)
       const marcarSurtidosQuery = `
         UPDATE detallesdelpedido
-        SET cantidadsurtida = cantidadpaquetes
+        SET cantidadsurtida = cantidadpaquetes,
+            estado_producto = 'Surtido',
+            fecha_actualizacion = NOW()
         WHERE pedidoid = $1 
           AND esbackorder = false
           AND cantidadsurtida = 0
@@ -918,23 +922,19 @@ const surtirPedido = async (req, res) => {
     });
 
     // Actualizar estatus del pedido
-    // LÓGICA: Cuando inventarios marca productos, cambiar a "Listo para remisionar"
-    // Esto hace que el pedido aparezca en la tabla de finanzas para que lo confirme
-    // Sin importar si es surtido parcial o completo, finanzas necesita verlo y confirmarlo
+    // LÓGICA: Recalcular basado en estado_producto de los detalles
+    // Si warehouse marcó productos, Estado debe ser LISTO_PARA_REMISIONAR
+    // PERO si finanzas ya confirmó algunos → SURTIDO_PARCIAL, si todos → SURTIDO_COMPLETO
     
-    const detalles = await getDetallesPedido(client, pedidoId, tenant_id);
-    const estadoCalculado = calcularEstadoPedido(detalles);
+    const resultadoEstado = await calcularEstadoPedidoCorrect(client, pedidoId);
+    const nuevoEstatus = normalizarEstado(resultadoEstado.nuevoEstado || resultadoEstado.estado);
+    const completamenteSurtido = nuevoEstatus === ESTADOS_PEDIDO.SURTIDO_COMPLETO;
     
-    // Al menos un producto fue marcado como surtido → LISTO PARA REMISIONAR
-    // Esto permite que finanzas lo vea en su tabla y lo confirme
-    const nuevoEstatus = ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR;
-    const completamenteSurtido = estadoCalculado === ESTADOS_PEDIDO.SURTIDO_COMPLETO;
-    
-    logger.info('✅ [ESTADO] Cambiando a LISTO_PARA_REMISIONAR para que finanzas lo revise', {
+    logger.info('✅ [ESTADO] Actualizando estado del pedido después de marcar surtidos', {
       pedidoId,
       productosActualizados: marcarResult.rowCount,
       completamenteSurtido,
-      estadoCalculado,
+      nuevoEstatus,
       tenantId: tenant_id
     });
     
