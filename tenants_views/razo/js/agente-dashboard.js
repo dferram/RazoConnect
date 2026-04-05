@@ -77,9 +77,16 @@
     function getPedidoStatusBadgeClass(estatus) {
       const value = (estatus || "").toString().toLowerCase().trim();
 
+      // NUEVOS ESTADOS NORMALIZADOS
       if (value === "pendiente") return "pedido-estatus-badge pendiente";
+      if (value === "bajo pedido") return "pedido-estatus-badge danger";
+      if (value === "combinado") return "pedido-estatus-badge info";
+      if (value === "completo") return "pedido-estatus-badge success";
+      if (value === "listo para remisionar") return "pedido-estatus-badge primary";
+      if (value === "surtido parcial" || value === "parcialmente surtido" || value === "parcialmente_surtido") return "pedido-estatus-badge parcialmente-surtido";
+      if (value === "surtido completo") return "pedido-estatus-badge success";
+      // LEGACY
       if (value === "confirmado" || value === "surtido") return "pedido-estatus-badge confirmado";
-      if (value === "parcialmente surtido" || value === "parcialmente_surtido") return "pedido-estatus-badge parcialmente-surtido";
       if (
         value === "enviado" ||
         value === "en ruta" ||

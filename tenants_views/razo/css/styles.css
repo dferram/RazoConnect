@@ -1062,6 +1062,32 @@ h3 {
   color: #dc2626;
 }
 
+/* Nuevos estados normalizados */
+.pedido-estatus-badge.danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.pedido-estatus-badge.warning {
+  background: #fff7ed;
+  color: #f97316;
+}
+
+.pedido-estatus-badge.info {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.pedido-estatus-badge.success {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.pedido-estatus-badge.primary {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
 /* ============================================
    SUMMARY
    ============================================ */
