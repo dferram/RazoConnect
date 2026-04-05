@@ -1113,7 +1113,7 @@ const crearPedido = async (req, res) => {
              tenant_id
            )
            VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0, $8)
-           RETURNING DetalleID`
+           RETURNING DetalleID`,
           [
             pedidoId,
             item.varianteid,
@@ -1290,7 +1290,7 @@ const crearPedido = async (req, res) => {
              tenant_id
            )
            VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, 0, $4, $8)
-           RETURNING DetalleID`
+           RETURNING DetalleID`,
           [
             pedidoId,
             item.varianteid,

@@ -111,7 +111,7 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
     console.error('Error calculating order state:', error.message);
     return ESTADOS_PEDIDO.PENDIENTE;
   }
-}}
+}
 
 /**
  * DEPRECATED: Esta función se reemplaza por calcularEstadoPedidoCorrect que usa la BD
