@@ -128,14 +128,6 @@
       if (!adminData || typeof adminData !== 'object') {
         throw new Error("Datos de admin inválidos");
       }
-      
-      // Si no tiene nombre o rol, usar defaults
-      if (!adminData.nombre) {
-        adminData.nombre = "Usuario";
-      }
-      if (!adminData.rol && !adminData.role) {
-        adminData.rol = "admin";
-      }
     } catch (recoveryError) {
       console.error("❌ No se pudo recuperar datos del header:", recoveryError);
       // Intentar con datos mínimos
@@ -146,21 +138,24 @@
     }
 
     // Construir nombre completo preferiendo nombre + apellido
+    // MEJORA: Validar que nombre y apellido NO sean vacíos/null antes de usar
     let nombreCompleto = "Usuario";
-    if (adminData.nombre) {
+    if (adminData && adminData.nombre) {
       const nombre = adminData.nombre.toString().trim();
-      const apellido = adminData.apellido ? adminData.apellido.toString().trim() : '';
+      const apellido = (adminData.apellido && adminData.apellido.toString().trim()) || '';
       
-      if (apellido) {
-        nombreCompleto = `${nombre} ${apellido}`;
-      } else {
-        nombreCompleto = nombre;
+      if (nombre) { // Validar que nombre no esté vacío
+        if (apellido) {
+          nombreCompleto = `${nombre} ${apellido}`;
+        } else {
+          nombreCompleto = nombre;
+        }
       }
     }
     
     // Asegurar que nombre y rol sean strings válidos
     const nombre = nombreCompleto || "Usuario";
-    const rolSession = (adminData.rol || adminData.role || "admin").toString().trim() || "admin";
+    const rolSession = (adminData?.rol || adminData?.role || "admin").toString().trim() || "admin";
     const rolRaw = rolSession.toLowerCase();
     const isSuperAdmin = rolRaw === "super admin" || rolRaw === "superadmin" || rolRaw === "super-admin" || rolRaw === "super_admin" || rolRaw === "admin";
     

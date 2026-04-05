@@ -77,14 +77,15 @@
     function getPedidoStatusBadgeClass(estatus) {
       const value = (estatus || "").toString().toLowerCase().trim();
 
-      // NUEVOS ESTADOS NORMALIZADOS
+      // NUEVOS ESTADOS NORMALIZADOS (Sistema de 6 estados - Surtido Parcial ELIMINADO)
       if (value === "pendiente") return "pedido-estatus-badge pendiente";
-      if (value === "bajo pedido") return "pedido-estatus-badge danger";
-      if (value === "combinado") return "pedido-estatus-badge info";
-      if (value === "completo") return "pedido-estatus-badge success";
-      if (value === "listo para remisionar") return "pedido-estatus-badge primary";
-      if (value === "surtido parcial" || value === "parcialmente surtido" || value === "parcialmente_surtido") return "pedido-estatus-badge parcialmente-surtido";
-      if (value === "surtido completo") return "pedido-estatus-badge success";
+      if (value === "bajo pedido") return "pedido-estatus-badge danger";           // 🔴 Rojo
+      if (value === "combinado") return "pedido-estatus-badge warning";           // 🟠 Naranja
+      if (value === "completo") return "pedido-estatus-badge warning";            // 🟡 Amarillo
+      if (value === "listo para remisionar") return "pedido-estatus-badge primary"; // 🔵 Azul
+      if (value === "surtido completo") return "pedido-estatus-badge success";    // 🟢 Verde
+      // LEGACY - Mapear viejo Surtido Parcial a warning
+      if (value === "surtido parcial" || value === "parcialmente surtido" || value === "parcialmente_surtido") return "pedido-estatus-badge warning";
       // LEGACY
       if (value === "confirmado" || value === "surtido") return "pedido-estatus-badge confirmado";
       if (
@@ -145,7 +146,11 @@
     function renderStatusSelector(pedido) {
       const estatus = pedido.estatus || "";
       const badgeClass = getPedidoStatusBadgeClass(estatus);
-      return `<span class="${badgeClass}">${estatus || "Desconocido"}</span>`;
+      // Mapear Surtido Parcial a Combinado
+      const displayEstatus = (estatus.toLowerCase() === "surtido parcial" || estatus.toLowerCase() === "parcialmente surtido" || estatus.toLowerCase() === "parcialmente_surtido") 
+        ? "Combinado" 
+        : (estatus || "Desconocido");
+      return `<span class="${badgeClass}">${displayEstatus}</span>`;
     }
 
     function getDisplayName(user) {

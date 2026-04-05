@@ -574,7 +574,8 @@
         // Mapear variantes a valores canónicos
         if (value === "pendiente") return "pendiente";
         if (value === "confirmado" || value === "surtido") return "confirmado";
-        if (value === "parcialmente surtido" || value === "surtido parcial" || value === "surtido parcial") return "parcialmente surtido";
+        // LEGACY - Mapear Surtido Parcial a Combinado
+        if (value === "parcialmente surtido" || value === "surtido parcial" || value === "surtido parcial") return "combinado";
         if (value === "enviado" || value === "en ruta" || value === "en-ruta") return "enviado";
         if (value === "entregado" || value === "completado") return "entregado";
         if (value === "cancelado") return "cancelado";
@@ -584,14 +585,43 @@
         return value; // Retornar valor normalizado si no hay mapeo específico
       }
 
+      // Función para mostrar estado en UI (con capitalización correcta)
+      // Mapea estados legacy a nuevos valores y mantiene formato capitalizado
+      function getDisplayStatus(estatus) {
+        const normalized = normalizeStatus(estatus);
+        const displayMap = {
+          'bajo pedido': 'Bajo pedido',
+          'combinado': 'Combinado',
+          'completo': 'Completo',
+          'listo para remisionar': 'Listo para remisionar',
+          'surtido completo': 'Surtido completo',
+          'pendiente': 'Pendiente',
+          'confirmado': 'Confirmado',
+          'enviado': 'Enviado',
+          'entregado': 'Entregado',
+          'cancelado': 'Cancelado'
+        };
+        return displayMap[normalized] || estatus;
+      }
+
       // Mapea el estatus del pedido a un badge normalizado con diseño admin-badge info
+      // Sistema de 6 estados: BAJO PEDIDO | COMBINADO | COMPLETO | LISTO PARA REMISIONAR | SURTIDO COMPLETO
       function getPedidoStatusBadgeClass(estatus) {
         const value = (estatus || "").toString().toLowerCase().trim();
 
+        // Nuevos estados dinámicos (PRIORIDAD ALTA)
+        if (value === "bajo pedido") return "pedido-estatus-badge danger";           // 🔴 Rojo
+        if (value === "combinado") return "pedido-estatus-badge warning";           // 🟠 Naranja
+        if (value === "completo") return "pedido-estatus-badge warning";            // 🟡 Amarillo
+        if (value === "listo para remisionar") return "pedido-estatus-badge primary"; // 🔵 Azul
+        if (value === "surtido completo") return "pedido-estatus-badge success";    // 🟢 Verde
+
+        // Estados legacy (compatibilidad - mapear a equivalente nuevo)
+        if (value === "surtido parcial" || value === "parcialmente surtido" || value === "parcialmente_surtido") 
+          return "pedido-estatus-badge warning"; // Mapear a COMBINADO color
         if (value === "pendiente") return "pedido-estatus-badge pendiente";
         if (value === "pendiente de confirmación" || value === "pendiente de confirmacion") return "pedido-estatus-badge pendiente-confirmacion";
         if (value === "confirmado" || value === "surtido") return "pedido-estatus-badge confirmado";
-        if (value === "parcialmente surtido" || value === "parcialmente_surtido" || value === "surtido parcial") return "pedido-estatus-badge parcialmente-surtido";
         if (
           value === "enviado" ||
           value === "en ruta" ||
@@ -681,13 +711,21 @@
               filteredOrders = filteredOrders.filter(order => !order.es_prioritario);
             }
 
+            // FASE 3 - TASK 2: Get user role for conditional rendering
+            const userRole = getUserRole();
+            const isInventarios = userRole === 'inventarios';
+            
+            // RESTRICCIÓN: Inventario no debe ver pedidos "Surtido Completo" (su ciclo ya terminó)
+            if (isInventarios) {
+              filteredOrders = filteredOrders.filter(order => {
+                const estatusNormalizado = normalizeStatus(order.estatus);
+                return estatusNormalizado !== 'surtido completo' && estatusNormalizado !== 'surtido_completo';
+              });
+            }
+
             if (filteredOrders.length === 0) {
               emptyOrders.style.display = "block";
             } else {
-              // FASE 3 - TASK 2: Get user role for conditional rendering
-              const userRole = getUserRole();
-              const isInventarios = userRole === 'inventarios';
-              
               ordersTableBody.innerHTML = filteredOrders
                 .map((order) => {
                   const badgeClass = getPedidoStatusBadgeClass(order.estatus);
@@ -735,7 +773,7 @@
                   <td>${fecha}</td>
                   ${!isInventarios ? `<td><strong>${formatCurrency(order.montoTotal || 0)}</strong></td>` : ''}
                   <td>${order.agente ? `${order.agente.nombre} ${order.agente.apellido || ''}`.trim() : "-"}</td>
-                  <td><span class="${badgeClass}">${order.estatus}</span></td>
+                  <td><span class="${badgeClass}">${getDisplayStatus(order.estatus)}</span></td>
                   <td>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end;">
                       <button 

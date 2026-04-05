@@ -433,21 +433,30 @@
       function getPedidoStatusBadgeClass(estatus) {
         const value = (estatus || "").toString().toLowerCase().trim();
 
-        // NUEVOS ESTADOS NORMALIZADOS
+        // NUEVOS ESTADOS NORMALIZADOS (Sistema de 6 estados)
         if (value === "pendiente") return "pedido-estatus-badge pendiente";
-        if (value === "bajo pedido") return "pedido-estatus-badge danger";
-        if (value === "combinado") return "pedido-estatus-badge info";
-        if (value === "completo") return "pedido-estatus-badge success";
-        if (value === "listo para remisionar") return "pedido-estatus-badge primary";
-        if (value === "surtido parcial" || value === "parcialmente surtido" || value === "parcialmente_surtido") return "pedido-estatus-badge parcialmente-surtido";
-        if (value === "surtido completo") return "pedido-estatus-badge success";
-        // LEGACY
+        if (value === "bajo pedido") return "pedido-estatus-badge danger";           // 🔴 Rojo
+        if (value === "combinado") return "pedido-estatus-badge warning";           // 🟠 Naranja
+        if (value === "completo") return "pedido-estatus-badge warning";            // 🟡 Amarillo
+        if (value === "listo para remisionar") return "pedido-estatus-badge primary"; // 🔵 Azul
+        if (value === "surtido completo") return "pedido-estatus-badge success";    // 🟢 Verde
+        // LEGACY - Mapear Surtido Parcial al equivalente nuevo
+        if (value === "surtido parcial" || value === "parcialmente surtido" || value === "parcialmente_surtido") return "pedido-estatus-badge warning";
         if (value === "confirmado" || value === "surtido") return "pedido-estatus-badge confirmado";
         if (value === "enviado" || value === "en ruta" || value === "en_ruta" || value === "en-ruta") return "pedido-estatus-badge enviado";
         if (value === "entregado" || value === "completado") return "pedido-estatus-badge entregado";
         if (value === "cancelado") return "pedido-estatus-badge cancelado";
 
         return "pedido-estatus-badge pendiente";
+      }
+
+      // Función para mostrar estado en UI - mapea Surtido Parcial a Combinado
+      function getDisplayStatus(estatus) {
+        const value = (estatus || "").toString().toLowerCase().trim();
+        if (value === "surtido parcial" || value === "parcialmente surtido" || value === "parcialmente_surtido") {
+          return "Combinado";
+        }
+        return estatus;
       }
 
       async function loadInventoryValuation() {
@@ -597,7 +606,7 @@
                   "es-MX"
                 )}</td>
                 ${!isInventarios ? `<td><strong>${formatCurrency(order.montoTotal)}</strong></td>` : ''}
-                <td><span class="${badgeClass}">${order.estatus}</span></td>
+                <td><span class=\"${badgeClass}\">${getDisplayStatus(order.estatus)}</span></td>
                 <td>
                   <button class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;" 
                     onclick="verDetallePedido(${order.pedidoId})">

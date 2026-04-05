@@ -16,7 +16,6 @@ const ESTADOS_PEDIDO = {
   
   // Estados de surtimiento y confirmación
   LISTO_PARA_REMISIONAR: 'Listo para remisionar', // Confirmado por inventarios, waiting finanzas
-  SURTIDO_PARCIAL: 'Surtido parcial',   // Al menos 1 producto surtido/confirmado
   SURTIDO_COMPLETO: 'Surtido completo', // Todo surtido y confirmado
   
   // Estados de transición (legacy, mantenidos para compatibilidad)
@@ -31,16 +30,17 @@ const ESTADOS_PEDIDO = {
 // MAPEO DE ESTADOS LEGACY A NUEVOS
 // ==========================================
 const MAPEO_STATES_LEGACY = {
-  'Parcial': ESTADOS_PEDIDO.SURTIDO_PARCIAL,
-  'Parcialmente Surtido': ESTADOS_PEDIDO.SURTIDO_PARCIAL,
-  'Surtido Parcial': ESTADOS_PEDIDO.SURTIDO_PARCIAL,
   'Confirmado': ESTADOS_PEDIDO.COMPLETO,
   'Aprobado': ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR,
   'Pendiente de confirmación': ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR,
   'Pendiente de confirmacion': ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR,
   'Pendiente Confirmación': ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR,
   'Surtido': ESTADOS_PEDIDO.SURTIDO_COMPLETO,
-  'Completado': ESTADOS_PEDIDO.ENTREGADO
+  'Completado': ESTADOS_PEDIDO.ENTREGADO,
+  // DEPRECATED: Campos legacy que pueden aparecer en datos antiguos
+  'Parcial': ESTADOS_PEDIDO.COMBINADO,
+  'Parcialmente Surtido': ESTADOS_PEDIDO.COMBINADO,
+  'Surtido Parcial': ESTADOS_PEDIDO.COMBINADO
 };
 
 // Estados que son finales (no pueden cambiar)
