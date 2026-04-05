@@ -32,7 +32,7 @@
       if (value === "pendiente") return "pedido-estatus-badge pendiente";
       if (value === "bajo pedido") return "pedido-estatus-badge danger";           // 🔴 Rojo
       if (value === "combinado") return "pedido-estatus-badge warning";           // 🟠 Naranja
-      if (value === "completo") return "pedido-estatus-badge warning";            // 🟡 Amarillo
+      if (value === "completo") return "pedido-estatus-badge success";            // 🟢 Verde
       if (value === "listo para remisionar") return "pedido-estatus-badge primary"; // 🔵 Azul
       if (value === "surtido completo") return "pedido-estatus-badge success";    // 🟢 Verde
       // LEGACY - Mapear viejo Surtido Parcial a warning

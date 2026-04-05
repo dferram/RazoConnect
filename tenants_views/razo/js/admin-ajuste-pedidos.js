@@ -397,7 +397,7 @@ function mostrarResultadosBusqueda(productos) {
       const stockDisponible = variante.stock > 0;
       const badgeClass = stockDisponible ? 'badge-stock-ok' : 'badge-stock-low';
       const badgeIcon = stockDisponible ? '✓' : '⚠';
-      const badgeText = stockDisponible ? 'En Stock' : 'Bajo Pedido';
+      const badgeText = stockDisponible ? 'En Stock' : 'Bajo pedido';
 
       const imagenUrl = variante.imagenUrl;
       const imagenHtml = imagenUrl 
