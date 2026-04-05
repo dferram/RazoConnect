@@ -376,11 +376,23 @@
       function getEstatusBadge(estatus) {
         const estatusLower = (estatus || '').toLowerCase();
         const badges = {
+          // NUEVOS ESTADOS NORMALIZADOS
+          'bajo pedido': '<span class="admin-badge warning">Bajo Pedido</span>',
+          'combinado': '<span class="admin-badge info">Combinado</span>',
+          'completo': '<span class="admin-badge success">Completo</span>',
+          'listo para remisionar': '<span class="admin-badge primary">Listo para Remisionar</span>',
+          'surtido parcial': '<span class="admin-badge warning">Surtido Parcial</span>',
+          'surtido completo': '<span class="admin-badge success">Surtido Completo</span>',
+          
+          // LEGACY/ANTIGUOS
           'surtido': '<span class="admin-badge success">Surtido</span>',
+          'confirmado': '<span class="admin-badge info">Confirmado</span>',
+          'pendiente': '<span class="admin-badge warning">Pendiente</span>',
           'enviado': '<span class="admin-badge info">Enviado</span>',
-          'entregado': '<span class="admin-badge" style="background: #10b981;">Entregado</span>',
+          'entregado': '<span class="admin-badge success" style="background: #10b981;">Entregado</span>',
+          'cancelado': '<span class="admin-badge danger">Cancelado</span>',
         };
-        return badges[estatusLower] || `<span class="admin-badge">${estatus}</span>`;
+        return badges[estatusLower] || `<span class="admin-badge secondary">${estatus}</span>`;
       }
 
       function formatCurrency(amount) {

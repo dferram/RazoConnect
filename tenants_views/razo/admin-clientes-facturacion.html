@@ -954,6 +954,15 @@
 
       function getEstatusBadge(estatus) {
         const estatusMap = {
+          // NUEVOS ESTADOS NORMALIZADOS
+          'Bajo Pedido': 'warning',
+          'Combinado': 'info',
+          'Completo': 'success',
+          'Listo para Remisionar': 'primary',
+          'Surtido Parcial': 'warning',
+          'Surtido Completo': 'success',
+          
+          // LEGACY/ANTIGUOS ESTADOS
           'Pendiente': 'warning',
           'Aprobado': 'info',
           'Confirmado': 'info',
