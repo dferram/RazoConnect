@@ -1395,6 +1395,7 @@
             const estaParcialmenteSurtido = estatusValor === 'parcialmente surtido' || estatusValor === 'parcialmente_surtido';
             const estaPendienteConfirmacion = estatusValor === 'pendiente de confirmación' || estatusValor === 'pendiente de confirmacion';
             const estaRevisionAlmacen = estatusValor === 'revisión de almacén' || estatusValor === 'revision de almacen' || estatusValor === 'revision_almacen';
+            const estaListoParaRemisionar = estatusValor === 'listo para remisionar';
             
             // Inventarios role - Surtir button
             // Backend permite: 'inventarios', 'gerente_operaciones', 'jefe_almacen', 'admin', 'super_admin'
@@ -1403,7 +1404,7 @@
             if (btnSurtir && puedeMarcarSurtido) {
               // ⚡ FIXED BUTTON STATE LOGIC: Support incremental fulfillment
               // ENABLED states: Pendiente, Confirmado, Revision de Almacen, Surtido Parcial
-              // BLOCKED states: Pendiente de Confirmación (waiting for finance), Surtido (already closed)
+              // BLOCKED states: Pendiente de Confirmación (waiting for finance), Surtido (already closed), Listo para Remisionar (waiting for finance)
               
               if (estaSurtido) {
                 // Already confirmed by finanzas - BLOCKED
@@ -1412,7 +1413,7 @@
                 btnSurtir.disabled = true;
                 btnSurtir.style.display = 'inline-block';
                 btnSurtir.title = 'El pedido ya fue confirmado por Finanzas';
-              } else if (estaPendienteConfirmacion) {
+              } else if (estaPendienteConfirmacion || estaListoParaRemisionar) {
                 // Sent to finance, waiting for confirmation - BLOCKED
                 btnSurtir.innerHTML = '⏳ Esperando Finanzas';
                 btnSurtir.style.background = '#6c757d';
@@ -1665,35 +1666,35 @@
                     console.error(`[ERROR DE INTEGRIDAD] El producto SKU: ${item.sku} muestra stock fantasma.`);
                   }
                   
-                  // Determinar estado del badge basado en esbackorder flag Y stock
+                  // Determinar estado del badge basado en esbackorder flag Y stock Y estado_producto
                   const esBackorder = item.esbackorder === true || item.esbackorder === 'true';
                   const cantidadSurtida = parseInt(item.cantidadSurtida || 0);
                   const cantidadPaquetes = parseInt(item.cantidadPaquetes || 0);
-                  const productoSurtido = cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
+                  const estadoProducto = (item.estadoProducto || '').trim().toLowerCase();
                   
                   let badgeClass, badgeText;
                   
-                  // PRIORIDAD 0 (MÁXIMA): Producto marcado como Facturado en finanzas
-                  if (item.estado_producto === 'Facturado') {
+                  // PRIORIDAD 1: Usar el estado_producto del backend si está disponible
+                  if (estadoProducto === 'facturado') {
                     badgeClass = 'badge-stock facturado';
                     badgeText = 'FACTURADO';
                   }
-                  // PRIORIDAD 1: Producto ya surtido
-                  else if (productoSurtido) {
-                    badgeClass = 'badge-stock surtido';
-                    badgeText = 'SURTIDO';
+                  // PRIORIDAD 2: Producto parcialmente surtido
+                  else if (estadoProducto === 'parcialmente surtido' || (cantidadSurtida > 0 && cantidadSurtida < cantidadPaquetes)) {
+                    badgeClass = 'badge-stock parcialmente-surtido';
+                    badgeText = 'PARCIALMENTE SURTIDO';
                   }
-                  // PRIORIDAD 2: Marcado como backorder en el pedido (esbackorder=true)
+                  // PRIORIDAD 3: Marcado como backorder en el pedido (esbackorder=true)
                   else if (esBackorder) {
                     badgeClass = 'badge-stock bajo-pedido';
                     badgeText = 'BAJO PEDIDO';
                   }
-                  // PRIORIDAD 3: No hay stock suficiente
+                  // PRIORIDAD 4: No hay stock suficiente
                   else if (!hayStockSuficiente) {
                     badgeClass = 'badge-stock bajo-pedido';
                     badgeText = 'BAJO PEDIDO';
                   }
-                  // PRIORIDAD 4: Hay stock y no está surtido
+                  // PRIORIDAD 5: Hay stock y no está surtido
                   else {
                     badgeClass = 'badge-stock con-stock';
                     badgeText = 'CON STOCK';
@@ -1710,8 +1711,12 @@
                   const faltanPorSurtir = cantidadSurtidaNum < cantidadPaquetesNum;
                   const estaSurtido = cantidadSurtidaNum > 0;
                   
-                  // Show checkbox if: inventarios role + has stock + not fully fulfilled
-                  const puedeSeleccionar = isInventariosRole && tieneStockDisponible && faltanPorSurtir;
+                  // Verificar si el pedido está esperando confirmación de Finanzas
+                  const estatusActual = (selectedOrderStatus || '').toLowerCase().trim();
+                  const estaEsperandoFinanzas = estatusActual === 'listo para remisionar';
+                  
+                  // Show checkbox if: inventarios role + has stock + not fully fulfilled + NOT waiting for finance confirmation
+                  const puedeSeleccionar = isInventariosRole && tieneStockDisponible && faltanPorSurtir && !estaEsperandoFinanzas;
                   
                   // ⚡ FINANCE-ONLY STYLING: Apply gray layer only for finance roles
                   // This creates visual separation between chargeable (bright) and informational (dimmed) items

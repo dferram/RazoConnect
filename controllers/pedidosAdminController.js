@@ -476,6 +476,12 @@ const getPedidoDetalle = async (req, res) => {
         dp.preciounitario,
         dp.esbackorder,
         dp.cantidadsurtida,
+        CASE 
+          WHEN dp.cantidadsurtida > 0 AND dp.cantidadsurtida = dp.cantidadpaquetes THEN 'Facturado'
+          WHEN dp.cantidadsurtida > 0 AND dp.cantidadsurtida < dp.cantidadpaquetes THEN 'Parcialmente Surtido'
+          WHEN dp.cantidadsurtida > 0 THEN 'Parcialmente Surtido'
+          ELSE 'Pendiente' 
+        END as estado_producto,
         COALESCE(
           dp.preciounitario, 
           ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
@@ -575,6 +581,7 @@ const getPedidoDetalle = async (req, res) => {
             sku: row.sku,
             cantidadPaquetes: parseInt(row.cantidadpaquetes, 10),
             cantidadSurtida: row.cantidadsurtida !== null ? parseInt(row.cantidadsurtida, 10) : 0,
+            estadoProducto: row.estado_producto || 'Pendiente',
             piezasPorPaquete,
             precioPorPaquete: row.precioporpaquete
               ? parseFloat(row.precioporpaquete)
@@ -768,9 +775,11 @@ const surtirPedido = async (req, res) => {
 
     // Marcar productos seleccionados como surtidos (NO reduce inventario)
     let marcarResult;
-    let checkResult = null; // CRITICAL: Initialize for use in error handling
     
-    if (detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0) {
+    // FIX: Check if detalleIds is provided AND not empty (prevent LEGACY mode with empty array)
+    const esModoSelectivo = detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0;
+    
+    if (esModoSelectivo) {
       // MODO SELECTIVO: Solo marcar productos específicos seleccionados por inventarios
       // FIX: Trust frontend validation - if inventarios selected them, they have stock
       // Don't filter by esbackorder flag as it can be inconsistent
@@ -782,64 +791,108 @@ const surtirPedido = async (req, res) => {
         tenantId: tenant_id
       });
       
-      // Check products with actual stock availability from stock_admin
-      const checkQuery = `
+      // STEP 1: Get detailed info about products and their stock
+      // Single query to check what we need to mark
+      const detalleProductosQuery = `
         SELECT 
-          d.detalleid, 
-          d.cantidadpaquetes, 
-          d.cantidadsurtida, 
-          d.esbackorder,
-          d.varianteid,
-          d.piezastotales,
-          COALESCE(sa.cantidad, 0) as stock_disponible,
-          COALESCE(sa.cantidad_reservada, 0) as stock_reservado,
-          (COALESCE(sa.cantidad, 0) - COALESCE(sa.cantidad_reservada, 0)) as stock_libre
-        FROM detallesdelpedido d
-        LEFT JOIN stock_admin sa ON sa.variante_id = d.varianteid AND sa.tenant_id = d.tenant_id
-        WHERE d.pedidoid = $1 
-          AND d.detalleid = ANY($2::int[]) 
-          AND d.tenant_id = $3
+          dp.detalleid,
+          dp.varianteid,
+          dp.cantidadsurtida,
+          dp.piezastotales,
+          pv.stock as stock_pv,
+          pv.nombre_producto,
+          COALESCE(sa.cantidad, 0) as stock_sa,
+          COALESCE(sa.cantidad_reservada, 0) as stock_reservado
+        FROM detallesdelpedido dp
+        INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid AND pv.tenant_id = $3
+        LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = $3
+        WHERE dp.pedidoid = $1 
+          AND dp.detalleid = ANY($2::int[])
+          AND dp.cantidadsurtida = 0
+          AND dp.tenant_id = $3
       `;
-      checkResult = await client.query(checkQuery, [pedidoId, detalleIds, tenant_id]);
       
-      logger.info('Estado actual de productos seleccionados:', {
-        encontrados: checkResult.rows.length,
-        detalles: checkResult.rows.map(r => ({
-          detalleid: r.detalleid,
-          cantidadsurtida: r.cantidadsurtida,
-          piezasNecesarias: r.piezastotales,
-          stockDisponible: r.stock_disponible,
-          stockLibre: r.stock_libre,
-          tieneStock: r.stock_libre >= r.piezastotales
+      const detalleProductos = await client.query(detalleProductosQuery, [pedidoId, detalleIds, tenant_id]);
+      
+      logger.info('Stock info para productos seleccionados:', {
+        encontrados: detalleProductos.rows.length,
+        detalles: detalleProductos.rows.map(p => ({
+          detalleid: p.detalleid,
+          producto: p.nombre_producto,
+          piezas: p.piezastotales,
+          stock_variante: p.stock_pv,
+          stock_admin: p.stock_sa,
+          stock_disponible: Math.max(p.stock_sa - p.stock_reservado, p.stock_pv)
         }))
       });
       
-      // Only mark products that:
-      // 1. Are not already surtidos (cantidadsurtida = 0)
-      // 2. Have actual stock available (stock_libre >= piezastotales)
-      const marcarSurtidosQuery = `
-        UPDATE detallesdelpedido d
-        SET cantidadsurtida = cantidadpaquetes
-        FROM stock_admin sa
-        WHERE d.pedidoid = $1 
-          AND d.detalleid = ANY($2::int[])
-          AND d.cantidadsurtida = 0
-          AND d.tenant_id = $3
-          AND sa.variante_id = d.varianteid
-          AND sa.tenant_id = d.tenant_id
-          AND (sa.cantidad - sa.cantidad_reservada) >= d.piezastotales
-      `;
+      // STEP 2: Only keep products with sufficient stock
+      const productosConStock = detalleProductos.rows.filter(p => {
+        const stockSaDisponible = p.stock_sa - p.stock_reservado;
+        return stockSaDisponible >= p.piezastotales || p.stock_pv >= p.piezastotales;
+      });
       
-      marcarResult = await client.query(marcarSurtidosQuery, [pedidoId, detalleIds, tenant_id]);
-    } else {
-      // MODO LEGACY: Marcar todos los productos con stock (compatibilidad con código anterior)
+      if (productosConStock.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          success: false,
+          message: 'Ninguno de los productos seleccionados tiene stock suficiente'
+        });
+      }
+      
+      // STEP 3: Now mark only those with stock
+      const detalleIdsConStock = productosConStock.map(p => p.detalleid);
       const marcarSurtidosQuery = `
         UPDATE detallesdelpedido
         SET cantidadsurtida = cantidadpaquetes
         WHERE pedidoid = $1 
-          AND esbackorder = false
+          AND detalleid = ANY($2::int[])
           AND cantidadsurtida = 0
-          AND tenant_id = $2
+          AND tenant_id = $3
+        RETURNING detalleid, cantidadsurtida, cantidadpaquetes
+      `;
+      
+      marcarResult = await client.query(marcarSurtidosQuery, [pedidoId, detalleIdsConStock, tenant_id]);
+    } else if (!esModoSelectivo && detalleIds && Array.isArray(detalleIds)) {
+      // VALIDATION: Prevent empty array from triggering LEGACY mode
+      await client.query('ROLLBACK');
+      logger.warn('Empty detalleIds array sent - aborting to prevent mass marking', {
+        pedidoId,
+        detalleIds,
+        tenantId: tenant_id
+      });
+      return res.status(400).json({
+        success: false,
+        message: 'Debes seleccionar al menos un producto para surtir',
+        error: 'empty_selection'
+      });
+    } else {
+      // MODO LEGACY: Marcar todos los productos con stock VERIFICANDO disponibilidad
+      // Verifica en stock_admin si existe, sino en producto_variantes.stock
+      logger.info('=== SURTIR PEDIDO - MODO LEGACY (SIN SELECCIÓN ESPECÍFICA) ===', { 
+        pedidoId, 
+        tenantId: tenant_id,
+        razon: 'detalleIds no proporcionado o vacío'
+      });
+      
+      const marcarSurtidosQuery = `
+        UPDATE detallesdelpedido d
+        SET cantidadsurtida = cantidadpaquetes
+        FROM producto_variantes pv
+        LEFT JOIN stock_admin sa ON sa.variante_id = d.varianteid AND sa.tenant_id = d.tenant_id
+        WHERE d.pedidoid = $1 
+          AND d.esbackorder = false
+          AND d.cantidadsurtida = 0
+          AND d.tenant_id = $2
+          AND pv.varianteid = d.varianteid
+          AND pv.tenant_id = $2
+          AND (
+            CASE 
+              WHEN sa.cantidad IS NOT NULL THEN (sa.cantidad - COALESCE(sa.cantidad_reservada, 0)) >= d.piezastotales
+              ELSE pv.stock >= d.piezastotales
+            END
+          )
+        RETURNING d.detalleid, d.cantidadsurtida, d.cantidadpaquetes
       `;
       
       marcarResult = await client.query(marcarSurtidosQuery, [pedidoId, tenant_id]);
@@ -848,44 +901,26 @@ const surtirPedido = async (req, res) => {
     // VALIDATION: Ensure at least one product was actually marked
     if (marcarResult.rowCount === 0) {
       // Provide detailed feedback about why products couldn't be marked
-      let errorMsg = 'No se pudo marcar ningún producto. ';
-      
-      if (checkResult && checkResult.rows && checkResult.rows.length > 0) {
-        const yaSurtidos = checkResult.rows.filter(r => r.cantidadsurtida > 0);
-        const sinStock = checkResult.rows.filter(r => r.cantidadsurtida === 0 && r.stock_libre < r.piezastotales);
-        
-        if (yaSurtidos.length > 0) {
-          errorMsg += `${yaSurtidos.length} producto(s) ya están surtidos. `;
-        }
-        if (sinStock.length > 0) {
-          errorMsg += `${sinStock.length} producto(s) no tienen stock suficiente disponible. `;
-        }
-        
-        logger.warn('❌ No se marcaron productos como surtidos:', {
-          pedidoId,
-          detalleIds,
-          checkResultLength: checkResult.rows.length,
-          yaSurtidos: yaSurtidos.map(r => ({ id: r.detalleid, surtida: r.cantidadsurtida, necesita: r.cantidadpaquetes })),
-          sinStock: sinStock.map(r => ({ id: r.detalleid, disponible: r.stock_libre, necesita: r.piezastotales })),
-          tenantId: tenant_id
-        });
-      } else {
-        errorMsg += 'Verifica que los productos tengan stock disponible y no estén ya surtidos.';
-        errorMsg += 'Verifica que los productos tengan stock disponible y no estén ya surtidos.';
-      }
-      
       await client.query('ROLLBACK');
+      
+      logger.warn('No products could be marked', {
+        pedidoId,
+        selectedCount: esModoSelectivo ? detalleIds.length : 'LEGACY',
+        modo: esModoSelectivo ? 'SELECTIVO' : 'LEGACY',
+        tenantId: tenant_id
+      });
+      
       return res.status(400).json({
         success: false,
-        message: errorMsg.trim()
+        message: 'No se pudo marcar ningún producto. Verifica que tengan stock suficiente disponible.'
       });
     }
     
     logger.info('Productos marcados como surtidos:', {
       pedidoId,
       productosActualizados: marcarResult.rowCount,
-      modoSelectivo: !!(detalleIds && detalleIds.length > 0),
-      detalleIds: detalleIds || 'todos',
+      modoSelectivo: esModoSelectivo,
+      detalleIds: esModoSelectivo ? detalleIds : 'todos',
       tenantId: tenant_id
     });
 
@@ -955,19 +990,17 @@ const surtirPedido = async (req, res) => {
     });
 
     // Actualizar estatus del pedido
-    // LÓGICA: Recalcular basado en estado_producto de los detalles
-    // Si warehouse marcó productos, Estado debe ser LISTO_PARA_REMISIONAR
-    // PERO si finanzas ya confirmó algunos → SURTIDO_PARCIAL, si todos → SURTIDO_COMPLETO
+    // LÓGICA: Inventarios marcó productos → Cambiar a "Listo para remisionar"
+    // Después Finanzas confirmará y el status será "Surtido"
     
-    const resultadoEstado = await calcularEstadoPedidoCorrect(client, pedidoId);
-    const nuevoEstatus = normalizarEstado(resultadoEstado.nuevoEstado || resultadoEstado.estado);
-    const completamenteSurtido = nuevoEstatus === ESTADOS_PEDIDO.SURTIDO_COMPLETO;
-    
+    const nuevoEstatus = 'Listo para remisionar';
+    const completamenteSurtido = false; // Inventarios solo marca, Finanzas confirma y cambia esto
+
     logger.info('✅ [ESTADO] Actualizando estado del pedido después de marcar surtidos', {
       pedidoId,
       productosActualizados: marcarResult.rowCount,
-      completamenteSurtido,
       nuevoEstatus,
+      completamenteSurtido,
       tenantId: tenant_id
     });
     
@@ -993,11 +1026,26 @@ const surtirPedido = async (req, res) => {
 
     await client.query('COMMIT');
 
-    logger.info('Pedido enviado a finanzas para confirmación (sin reducir stock):', {
+    // Obtener datos actualizados de productos marcados
+    const productosActualizadosQuery = `
+      SELECT 
+        dp.detalleid,
+        dp.cantidadsurtida,
+        dp.cantidadpaquetes,
+        pv.sku
+      FROM detallesdelpedido dp
+      INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
+      WHERE dp.pedidoid = $1 
+        AND dp.tenant_id = $2
+        AND dp.cantidadsurtida > 0
+      ORDER BY dp.detalleid
+    `;
+    const productosActualizadosResult = await client.query(productosActualizadosQuery, [pedidoId, tenant_id]);
+
+    logger.info('✅ Pedido marcado como listo para remisionar - Enviando a Finanzas', {
       pedidoId,
-      estatusMostrado: nuevoEstatus,
-      estadoCalculado: estadoCalculado,
-      completamenteSurtido,
+      estatus: nuevoEstatus,
+      productosActualizados: marcarResult.rowCount,
       userRole,
       tenantId: tenant_id,
       requestId: req.requestId
@@ -1005,13 +1053,14 @@ const surtirPedido = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Pedido enviado a finanzas para confirmación. ${marcarResult.rowCount} producto(s) marcado(s) como listo(s), ${productosBackorder} en backorder. Stock NO afectado hasta confirmación de finanzas.`,
+      message: `Pedido enviado a finanzas para confirmación. ${marcarResult.rowCount} producto(s) marcado(s) como listo(s) para remisionar, ${productosBackorder} en backorder. Stock NO afectado hasta confirmación de finanzas.`,
       data: {
         pedidoId: updateResult.rows[0].pedidoid,
         estatus: updateResult.rows[0].estatus,
         completamente_surtido: updateResult.rows[0].completamente_surtido,
         productosMarcados: marcarResult.rowCount,
-        productosBackorder
+        productosBackorder,
+        productosActualizados: productosActualizadosResult.rows
       }
     });
 
@@ -1178,41 +1227,39 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       }
     }
 
-    // Calcular estado usando utilidad centralizada (consulta stock REAL en BD)
-    const estadoCalculado = await calcularEstadoPedidoCorrect(client, pedidoId);
+    // Verificar si todos los productos han sido confirmados
+    const todosProductosQuery = `
+      SELECT COUNT(*) as total FROM detallesdelpedido 
+      WHERE pedidoid = $1 AND tenant_id = $2 AND cantidadsurtida > 0
+    `;
+    const todosProductosResult = await client.query(todosProductosQuery, [pedidoId, tenant_id]);
+    const totalProductosSurtidos = parseInt(todosProductosResult.rows[0].total);
     
-    // El número de productos confirmados ya fue contado en el loop anterior
-    // todoConfirmado se determina si todos los productos surtidos fueron procesados
-    const totalDetallesSurtidos = productosResult.rows.length;
-    const detallesConfirmados = productosConfirmados;
-    
-    // El pedido mantiene su estado calculado
-    const todoConfirmado = totalDetallesSurtidos > 0 && totalDetallesSurtidos === detallesConfirmados;
-    const nuevoEstatusPedido = todoConfirmado ? ESTADOS_PEDIDO.SURTIDO : estadoCalculado;
-    
-    // Para es_historico: solo si todo está confirmado y completamente surtido
-    const completamenteSurtido = estadoCalculado === ESTADOS_PEDIDO.SURTIDO;
-    const esHistorico = todoConfirmado && completamenteSurtido;
+    // Determinar nuevo estado basado en lo que se confirmó
+    // Si se confirmaron todos los que tenían cantidadsurtida > 0, entonces "Surtido"
+    // Si solo se confirmaron algunos, entonces "Parcialmente Surtido"
+    const todoConfirmado = totalProductosSurtidos > 0 && totalProductosSurtidos === productosConfirmados;
+    const nuevoEstatusPedido = todoConfirmado ? 'Surtido' : 'Parcialmente Surtido';
+    const completamenteSurtido = todoConfirmado;
 
-    // Actualizar pedido: mantiene su estado calculado (Parcialmente Surtido hasta completarse)
+    // Actualizar pedido con el nuevo estado
     const updateQuery = `
       UPDATE pedidos 
       SET 
         estatus = $3,
         completamente_surtido = $4,
-        es_historico = $5,
         fecha_confirmacion = NOW()
       WHERE pedidoid = $1 AND tenant_id = $2
-      RETURNING *
+      RETURNING pedidoid, estatus, completamente_surtido
     `;
     
-    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, nuevoEstatusPedido, completamenteSurtido, esHistorico]);
+    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, nuevoEstatusPedido, completamenteSurtido]);
     
     if (!updateResult.rows || updateResult.rows.length === 0) {
       await client.query('ROLLBACK');
       logger.error('❌ [ERROR] El UPDATE del estado del pedido no retornó filas', {
         pedidoId,
-        nuevoEstatus,
+        nuevoEstatusPedido,
         tenantId: tenant_id
       });
       return res.status(500).json({
@@ -1221,40 +1268,36 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       });
     }
 
-    // BUG FIX 6: Insertar en histórico cuando Finanzas confirma
-    await client.query(
-      `INSERT INTO historial_pedidos (
-        pedido_id,
-        accion,
-        detalles,
-        usuario_id,
-        tenant_id
-      ) VALUES ($1, $2, $3, $4, $5)`,
-      [
-        pedidoId,
-        'CONFIRMADO_FINANZAS',
-        JSON.stringify({
-          productos_confirmados: productosConfirmados,
-          es_historico: esHistorico,
-          estatus_final: nuevoEstatusPedido,
-          total_detalles: productosResult.rows.length,
-          timestamp: new Date().toISOString()
-        }),
-        userId,
-        tenant_id
-      ]
-    );
-
     await client.query('COMMIT');
 
-    logger.info('Productos confirmados (estado individual = Confirmado), pedido mantiene su estado:', {
+    // Obtener datos actualizados del pedido y productos después de la confirmación
+    const pedidoActualizadoQuery = `
+      SELECT p.pedidoid, p.estatus, p.completamente_surtido
+      FROM pedidos 
+      WHERE pedidoid = $1 AND tenant_id = $2
+    `;
+    const pedidoActualizadoResult = await client.query(pedidoActualizadoQuery, [pedidoId, tenant_id]);
+    
+    const productosActualizadosQuery = `
+      SELECT 
+        dp.detalleid,
+        dp.cantidadsurtida,
+        dp.cantidadpaquetes,
+        CASE WHEN dp.cantidadsurtida > 0 AND dp.cantidadsurtida = dp.cantidadpaquetes THEN 'Surtido'
+             WHEN dp.cantidadsurtida > 0 AND dp.cantidadsurtida < dp.cantidadpaquetes THEN 'Parcialmente Surtido'
+             ELSE 'Pendiente' END as estado_producto
+      FROM detallesdelpedido dp
+      WHERE dp.pedidoid = $1 AND dp.tenant_id = $2
+    `;
+    const productosActualizadosResult = await client.query(productosActualizadosQuery, [pedidoId, tenant_id]);
+
+    logger.info('✅ Pedido confirmado por Finanzas - Estado actualizado:', {
       pedidoId,
       productosConfirmados,
-      detallesConfirmados,
-      totalDetallesSurtidos,
-      estadoPedido: nuevoEstatusPedido,
+      totalProductosSurtidos,
+      nuevoEstatusPedido,
       todoConfirmado,
-      esHistorico,
+      completamenteSurtido,
       tenantId: tenant_id,
       userId,
       requestId: req.requestId
@@ -1262,15 +1305,15 @@ const confirmarSurtidoFinanzas = async (req, res) => {
 
     res.json({
       success: true,
-      message: `${productosConfirmados} producto(s) marcado(s) como Confirmado. Pedido sigue en "${nuevoEstatusPedido}".`,
+      message: `✅ ${productosConfirmados} producto(s) confirmado(s) exitosamente. Pedido actualizado a estado: "${nuevoEstatusPedido}".`,
       data: {
         pedidoId,
         estatusPedido: nuevoEstatusPedido,
         productosConfirmados,
-        detallesConfirmados,
-        totalDetallesSurtidos,
-        todoConfirmado,
-        esHistorico
+        totalProductosSurtidos,
+        completamenteSurtido,
+        pedidoActualizado: pedidoActualizadoResult.rows[0] || {},
+        productosActualizados: productosActualizadosResult.rows || []
       }
     });
 

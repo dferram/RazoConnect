@@ -45,6 +45,11 @@
   color: #ffffff;
 }
 
+.badge-stock.parcialmente-surtido {
+  background-color: #f59e0b;
+  color: #ffffff;
+}
+
 /* ============================================
    ORDER STATUS BADGES
    ============================================ */
