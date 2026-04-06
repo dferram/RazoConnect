@@ -331,7 +331,18 @@ async function generarPDFPedido(req, res) {
         // For inventarios role: Use selectedItemIds if available (from current session)
         // Otherwise use cantidadsurtida (from database)
         // CRITICAL: Use current session selection (selectedItemIds) first if provided
+        // EXCLUDE: Products from orders with status "Facturado" (already invoiced)
         let itemsSurtidos = detalles.filter(item => {
+            // 🚫 CRITICAL FILTER: Exclude Facturado orders - they are already completed
+            if (pedido.estatus && pedido.estatus.toLowerCase() === 'facturado') {
+                logger.debug('📦 Item excluded - order is Facturado', {
+                    detalleid: item.detalleid,
+                    producto: item.producto_nombre,
+                    pedidoEstatus: pedido.estatus
+                });
+                return false;
+            }
+            
             const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
             
             // If selectedItemIds are provided (current session), use those for categorization
@@ -358,6 +369,11 @@ async function generarPDFPedido(req, res) {
         });
         
         let itemsConStock = detalles.filter(item => {
+            // 🚫 CRITICAL FILTER: Exclude Facturado orders - they are already completed
+            if (pedido.estatus && pedido.estatus.toLowerCase() === 'facturado') {
+                return false;
+            }
+            
             const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
             const stockActual = parseInt(item.stock_actual_variante) || 0;
             const cantidadRequerida = parseInt(item.cantidad) || 0;
@@ -375,6 +391,11 @@ async function generarPDFPedido(req, res) {
         });
         
         let itemsBajoPedido = detalles.filter(item => {
+            // 🚫 CRITICAL FILTER: Exclude Facturado orders - they are already completed
+            if (pedido.estatus && pedido.estatus.toLowerCase() === 'facturado') {
+                return false;
+            }
+            
             const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
             const stockActual = parseInt(item.stock_actual_variante) || 0;
             const cantidadRequerida = parseInt(item.cantidad) || 0;

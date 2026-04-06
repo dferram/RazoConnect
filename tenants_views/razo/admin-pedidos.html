@@ -509,6 +509,29 @@
           document.addEventListener("DOMContentLoaded", () => {
             loadOrders();
             
+            // 🔍 ADD EVENT LISTENERS FOR SEARCH AND FILTERS
+            const clientSearchEl = document.getElementById("clientSearchFilter");
+            const statusFilterEl = document.getElementById("statusFilter");
+            const priorityFilterEl = document.getElementById("priorityFilter");
+            
+            if (clientSearchEl) {
+              clientSearchEl.addEventListener("input", () => {
+                loadOrders();
+              });
+            }
+            
+            if (statusFilterEl) {
+              statusFilterEl.addEventListener("change", () => {
+                loadOrders();
+              });
+            }
+            
+            if (priorityFilterEl) {
+              priorityFilterEl.addEventListener("change", () => {
+                loadOrders();
+              });
+            }
+            
             // Validación de archivo de evidencia
             const evidenciaFileInput = document.getElementById('evidenciaFile');
             if (evidenciaFileInput) {

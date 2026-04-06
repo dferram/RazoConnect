@@ -476,7 +476,6 @@ const getPedidoDetalle = async (req, res) => {
         dp.preciounitario,
         dp.esbackorder,
         dp.cantidadsurtida,
-        dp.estado_producto,
         COALESCE(
           dp.preciounitario, 
           ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
@@ -590,7 +589,6 @@ const getPedidoDetalle = async (req, res) => {
             imagenUrl: row.imagenurl || null,
             stock: row.stock !== null ? parseInt(row.stock, 10) : 0,
             esBackorder: row.esbackorder || false,
-            estado_producto: row.estado_producto || 'Surtido',
             subtotal: row.precioporpaquete
               ? parseFloat((row.cantidadpaquetes || 0) * row.precioporpaquete)
               : 0,
@@ -821,9 +819,7 @@ const surtirPedido = async (req, res) => {
       // 2. Have actual stock available (stock_libre >= piezastotales)
       const marcarSurtidosQuery = `
         UPDATE detallesdelpedido d
-        SET cantidadsurtida = cantidadpaquetes,
-            estado_producto = 'Surtido',
-            fecha_actualizacion = NOW()
+        SET cantidadsurtida = cantidadpaquetes
         FROM stock_admin sa
         WHERE d.pedidoid = $1 
           AND d.detalleid = ANY($2::int[])
@@ -839,9 +835,7 @@ const surtirPedido = async (req, res) => {
       // MODO LEGACY: Marcar todos los productos con stock (compatibilidad con código anterior)
       const marcarSurtidosQuery = `
         UPDATE detallesdelpedido
-        SET cantidadsurtida = cantidadpaquetes,
-            estado_producto = 'Surtido',
-            fecha_actualizacion = NOW()
+        SET cantidadsurtida = cantidadpaquetes
         WHERE pedidoid = $1 
           AND esbackorder = false
           AND cantidadsurtida = 0
@@ -920,39 +914,43 @@ const surtirPedido = async (req, res) => {
     
     const detallesMarcadosResult = await client.query(detallesMarcadosQuery, detallesMarcadosParams);
     
+    // ⚠️ NOTA: Inserción a historial_pedidos comentada pendiente verificación de tabla
     // Insertar registro en historial_pedidos para auditoría
-    await client.query(
-      `INSERT INTO historial_pedidos (
-        pedido_id,
-        accion,
-        detalles,
-        usuario_id,
-        tenant_id
-      ) VALUES ($1, $2, $3, $4, $5)`,
-      [
-        pedidoId,
-        'SURTIDO_INVENTARIOS',
-        JSON.stringify({
-          productos_marcados: detallesMarcadosResult.rows.map(r => ({
-            detalle_id: r.detalleid,
-            variante_id: r.varianteid,
-            sku: r.sku,
-            nombre: r.nombreproducto,
-            cantidad_surtida: r.cantidadsurtida,
-            piezas_totales: r.piezastotales
-          })),
-          cantidad_productos: marcarResult.rowCount,
-          modo: detalleIds && detalleIds.length > 0 ? 'selectivo' : 'todos',
-          timestamp: new Date().toISOString()
-        }),
-        req.user?.id || req.user?.adminid || null,
-        tenant_id
-      ]
-    );
+    // try {
+    //   await client.query(
+    //     `INSERT INTO historial_pedidos (
+    //       pedido_id,
+    //       accion,
+    //       detalles,
+    //       usuario_id,
+    //       tenant_id
+    //     ) VALUES ($1, $2, $3, $4, $5)`,
+    //     [
+    //       pedidoId,
+    //       'SURTIDO_INVENTARIOS',
+    //       JSON.stringify({
+    //         productos_marcados: detallesMarcadosResult.rows.map(r => ({
+    //           detalle_id: r.detalleid,
+    //           variante_id: r.varianteid,
+    //           sku: r.sku,
+    //           nombre: r.nombreproducto,
+    //           cantidad_surtida: r.cantidadsurtida,
+    //           piezas_totales: r.piezastotales
+    //         })),
+    //         cantidad_productos: marcarResult.rowCount,
+    //         modo: detalleIds && detalleIds.length > 0 ? 'selectivo' : 'todos',
+    //         timestamp: new Date().toISOString()
+    //       }),
+    //       req.user?.id || req.user?.adminid || null,
+    //       tenant_id
+    //     ]
+    //   );
+    // } catch (auditError) {
+    //   logger.warn('No se pudo registrar en historial_pedidos (tabla posiblemente no existe):', { error: auditError.message });
+    // }
 
-    logger.info('Registro insertado en historial_pedidos:', {
+    logger.info('Productos marcados para surtir:', {
       pedidoId,
-      accion: 'SURTIDO_INVENTARIOS',
       productosRegistrados: detallesMarcadosResult.rows.length
     });
 
@@ -1100,7 +1098,6 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         dp.varianteid,
         dp.piezastotales,
         dp.cantidadsurtida,
-        dp.estado_confirmacion,
         dp.esbackorder,
         pv.sku,
         pr.nombreproducto
@@ -1109,7 +1106,6 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       INNER JOIN productos pr ON pv.productoid = pr.productoid
       WHERE dp.pedidoid = $1 
         AND dp.cantidadsurtida > 0
-        AND COALESCE(dp.estado_confirmacion, '') != 'Confirmado'
         AND dp.tenant_id = $2
     `;
     
@@ -1142,8 +1138,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         varianteId,
         piezasSurtidas,
         sku: item.sku,
-        nombre: item.nombreproducto,
-        estadoActual: item.estado_confirmacion
+        nombre: item.nombreproducto
       });
 
       try {
@@ -1158,16 +1153,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
           tipoOrigen: 'VENTA'
         });
         
-        // Actualizar ESTADO DEL DETALLE a "Confirmado" para evitar doble confirmación
-        await client.query(
-          `UPDATE detallesdelpedido 
-           SET estado_confirmacion = 'Confirmado' 
-           WHERE detalleid = $1`,
-          [item.detalleid]
-        );
-        
         productosConfirmados++;
-        logger.info('✅ [DEBUG] Producto confirmado exitosamente:', { varianteId, productosConfirmados, estadoNuevo: 'Confirmado' });
+        logger.info('✅ [DEBUG] Producto confirmado exitosamente:', { varianteId, productosConfirmados });
       } catch (invError) {
         await client.query('ROLLBACK');
 
@@ -1194,18 +1181,12 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     // Calcular estado usando utilidad centralizada (consulta stock REAL en BD)
     const estadoCalculado = await calcularEstadoPedidoCorrect(client, pedidoId);
     
-    // Contar cuántos detalles están confirmados
-    const detallesConfirmadosQuery = await client.query(
-      `SELECT COUNT(*) as confirmados, COUNT(*) FILTER (WHERE estado_confirmacion = 'Confirmado') as confirmados_count
-       FROM detallesdelpedido
-       WHERE pedidoid = $1 AND tenant_id = $2 AND cantidadsurtida > 0`,
-      [pedidoId, tenant_id]
-    );
-    const totalDetallesSurtidos = parseInt(detallesConfirmadosQuery.rows[0].confirmados) || 0;
-    const detallesConfirmados = parseInt(detallesConfirmadosQuery.rows[0].confirmados_count) || 0;
+    // El número de productos confirmados ya fue contado en el loop anterior
+    // todoConfirmado se determina si todos los productos surtidos fueron procesados
+    const totalDetallesSurtidos = productosResult.rows.length;
+    const detallesConfirmados = productosConfirmados;
     
-    // El pedido mantiene su estado: Parcialmente Surtido hasta que TODOS los detalles se confirmen
-    // Solo el estado del DETALLE cambia a "Confirmado"
+    // El pedido mantiene su estado calculado
     const todoConfirmado = totalDetallesSurtidos > 0 && totalDetallesSurtidos === detallesConfirmados;
     const nuevoEstatusPedido = todoConfirmado ? ESTADOS_PEDIDO.SURTIDO : estadoCalculado;
     
@@ -1255,8 +1236,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         JSON.stringify({
           productos_confirmados: productosConfirmados,
           es_historico: esHistorico,
-          estatus_final: nuevoEstatus,
-          total_detalles: detalles.length,
+          estatus_final: nuevoEstatusPedido,
+          total_detalles: productosResult.rows.length,
           timestamp: new Date().toISOString()
         }),
         userId,
