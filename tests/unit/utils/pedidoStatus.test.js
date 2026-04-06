@@ -23,22 +23,22 @@ describe('calcularEstadoPedido', () => {
     expect(calcularEstadoPedido(detalles)).toBe(ESTADOS_PEDIDO.COMPLETO);
   });
 
-  test('debe retornar "Surtido Parcial" cuando algún producto está surtido pero no todos', () => {
+  test('debe retornar "Combinado" cuando algún producto está surtido pero no todos', () => {
     const detalles = [
       { cantidad_pedida: 10, cantidad_surtida: 10 },
       { cantidad_pedida: 5, cantidad_surtida: 0 },
       { cantidad_pedida: 2, cantidad_surtida: 0 }
     ];
-    expect(calcularEstadoPedido(detalles)).toBe(ESTADOS_PEDIDO.SURTIDO_PARCIAL);
+    expect(calcularEstadoPedido(detalles)).toBe(ESTADOS_PEDIDO.COMBINADO);
   });
 
-  test('debe retornar "Surtido Parcial" cuando algún producto está parcialmente surtido', () => {
+  test('debe retornar "Combinado" cuando algún producto está parcialmente surtido', () => {
     const detalles = [
       { cantidad_pedida: 10, cantidad_surtida: 5, esbackorder: false },
       { cantidad_pedida: 5, cantidad_surtida: 3, esbackorder: false },
       { cantidad_pedida: 2, cantidad_surtida: 2, esbackorder: false }
     ];
-    expect(calcularEstadoPedido(detalles)).toBe(ESTADOS_PEDIDO.SURTIDO_PARCIAL);
+    expect(calcularEstadoPedido(detalles)).toBe(ESTADOS_PEDIDO.COMBINADO);
   });
 
   test('debe retornar "Surtido Completo" cuando todos los productos están completamente surtidos', () => {
@@ -89,7 +89,7 @@ describe('calcularEstadoPedido', () => {
       { cantidad_pedida: 5, cantidad_surtida: 0 },
       { cantidad_pedida: 2, cantidad_surtida: 0 }
     ];
-    expect(calcularEstadoPedido(detalles)).toBe(ESTADOS_PEDIDO.SURTIDO_PARCIAL);
+    expect(calcularEstadoPedido(detalles)).toBe(ESTADOS_PEDIDO.COMBINADO);
   });
 
   test('caso real: pedido de prueba con todos surtidos', () => {
@@ -142,13 +142,13 @@ describe('calcularEstadoPedido', () => {
     expect(calcularEstadoPedido(detalles)).toBe(ESTADOS_PEDIDO.COMBINADO);
   });
 
-  test('UNDER/NORMAL: Bajo Pedido con parcialmente surtido debería ser "Surtido Parcial" (surtimiento tiene prioridad)', () => {
+  test('UNDER/NORMAL: Bajo Pedido con parcialmente surtido debería ser "Combinado" (surtimiento tiene prioridad)', () => {
     const detalles = [
       { cantidadpaquetes: 10, cantidadsurtida: 2, esbackorder: true }, // Parcialmente surtido backorder
       { cantidadpaquetes: 5, cantidadsurtida: 0, esbackorder: true }
     ];
-    // Con surtidos parciales, debería ser "Surtido Parcial", no "Bajo Pedido"
-    expect(calcularEstadoPedido(detalles)).toBe(ESTADOS_PEDIDO.SURTIDO_PARCIAL);
+    // Con surtidos parciales, debería ser "Combinado", no "Bajo Pedido"
+    expect(calcularEstadoPedido(detalles)).toBe(ESTADOS_PEDIDO.COMBINADO);
   });
 
   test('EDGE CASE: Un solo producto en backorder → Bajo Pedido', () => {

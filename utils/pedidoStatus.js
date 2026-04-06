@@ -15,12 +15,12 @@ const {
  * Calcula el estado correcto de un pedido basado en:
  * 1. Estado de productos (estado_producto) - Marca de finanzas
  * 2. Estado de disponibilidad (esbackorder) - Stock disponible
- * 
+ *
  * PRIORIDAD 1: Estados de Surtimiento (basados en estado_producto)
  * - Si TODOS los productos = 'Facturado' → SURTIDO_COMPLETO 🟢
- * - Si AL MENOS 1 = 'Facturado' → SURTIDO_PARCIAL 🟠
+ * - Si AL MENOS 1 facturado/surtido (pero no todos) → COMBINADO 🟠
  * - Si AL MENOS 1 = 'Surtido' (y ninguno Facturado) → LISTO_PARA_REMISIONAR 🔵
- * 
+ *
  * PRIORIDAD 2: Estados de Disponibilidad (si NO hay productos surtidos/facturados)
  * - Si TODOS sin stock → BAJO_PEDIDO 🔴
  * - Si TODOS con stock → COMPLETO 🟡
@@ -149,10 +149,10 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
  * 
  * LÓGICA:
  * 1. Si TODOS backorder → BAJO_PEDIDO
- * 2. Si TODOS stock → COMPLETO  
+ * 2. Si TODOS stock → COMPLETO
  * 3. Si MIX backorder+stock → COMBINADO
  * 4. Si TODOS surtidos → SURTIDO_COMPLETO
- * 5. Si AL MENOS 1 surtido → SURTIDO_PARCIAL
+ * 5. Si AL MENOS 1 surtido (pero no todos) → COMBINADO
  * 6. Default → PENDIENTE
  * 
  * @param {Array} detalles - Array de {cantidadpaquetes, cantidadsurtida, esbackorder}
@@ -225,13 +225,14 @@ function calcularEstadoPedido(detalles = []) {
     return ESTADOS_PEDIDO.SURTIDO_COMPLETO;
   }
 
-  // 2. SURTIDO PARCIAL: Al menos alguno tiene surtida (pero no TODOS están completamente surtidos)
+  // 2. PARCIALMENTE SURTIDO: Al menos alguno tiene surtida (pero no TODOS están completamente surtidos)
   // Esto incluye:
   // - Algunos items completamente surtidos y otros no
   // - Todos los items tienen surtida parcial
   // - Mix de ambos
+  // → Mapeado a COMBINADO
   if (itemsConSurtida > 0 && !todosCompletosSurtidos) {
-    return ESTADOS_PEDIDO.SURTIDO_PARCIAL;
+    return ESTADOS_PEDIDO.COMBINADO;
   }
 
   // PRIORIDAD 2: Estados de disponibilidad (si NO hay surtidos, verificar stock)

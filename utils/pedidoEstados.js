@@ -11,16 +11,16 @@
 const ESTADOS_PEDIDO = {
   // Estados de disponibilidad de stock
   BAJO_PEDIDO: 'Bajo pedido',           // Todos backorder
-  COMBINADO: 'Combinado',                // Mix backorder + stock
+  COMBINADO: 'Combinado',                // Mix backorder + stock (o parcialmente surtido)
   COMPLETO: 'Completo',                  // Todos con stock
-  
+
   // Estados de surtimiento y confirmación
   LISTO_PARA_REMISIONAR: 'Listo para remisionar', // Confirmado por inventarios, waiting finanzas
   SURTIDO_COMPLETO: 'Surtido completo', // Todo surtido y confirmado
-  
+
   // Estados de transición (legacy, mantenidos para compatibilidad)
   PENDIENTE: 'Pendiente',
-  
+
   // EXCEPCIONES
   CANCELADO: 'Cancelado',                // Final: Cancelación del pedido
   ENTREGADO: 'Entregado'                 // Final: Fin del ciclo → Histórico
@@ -55,8 +55,10 @@ const ESTADOS_PRINCIPALES = [
   ESTADOS_PEDIDO.COMBINADO,
   ESTADOS_PEDIDO.COMPLETO,
   ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR,
-  ESTADOS_PEDIDO.SURTIDO_PARCIAL,
-  ESTADOS_PEDIDO.SURTIDO_COMPLETO
+  ESTADOS_PEDIDO.SURTIDO_COMPLETO,
+  ESTADOS_PEDIDO.PENDIENTE,
+  ESTADOS_PEDIDO.CANCELADO,
+  ESTADOS_PEDIDO.ENTREGADO
 ];
 
 /**
@@ -113,19 +115,18 @@ function esEstadoFinal(estado) {
  */
 function getClassBadgeEstado(estado) {
   const normalizado = normalizarEstado(estado);
-  
+
   const mapa = {
     [ESTADOS_PEDIDO.BAJO_PEDIDO]: 'badge-estado-bajo-pedido',           // 🔴 Rojo
     [ESTADOS_PEDIDO.COMBINADO]: 'badge-estado-combinado',               // 🟠 Naranja
-    [ESTADOS_PEDIDO.COMPLETO]: 'badge-estado-completo',                 // 🟡 Amarillo
+    [ESTADOS_PEDIDO.COMPLETO]: 'badge-estado-completo',                 // 🟢 Verde
     [ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR]: 'badge-estado-listo-remisionar', // 🔵 Azul
-    [ESTADOS_PEDIDO.SURTIDO_PARCIAL]: 'badge-estado-surtido-parcial',   // 🟠 Naranja
     [ESTADOS_PEDIDO.SURTIDO_COMPLETO]: 'badge-estado-surtido-completo', // 🟢 Verde
     [ESTADOS_PEDIDO.PENDIENTE]: 'badge-estado-pendiente',               // 🟡 Amarillo
     [ESTADOS_PEDIDO.CANCELADO]: 'badge-estado-cancelado',               // 🔴 Rojo
     [ESTADOS_PEDIDO.ENTREGADO]: 'badge-estado-entregado'                // ⚫ Negro/Gris
   };
-  
+
   return mapa[normalizado] || 'badge-secondary';
 }
 
