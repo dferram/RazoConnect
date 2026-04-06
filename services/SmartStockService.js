@@ -125,12 +125,34 @@ async function determineUserContext({ userId, userRole, tenantId }) {
     };
   }
 
-  // CASO 4: Cliente - Buscar su admin asignado
+  // CASO 4: Cliente - Buscar su admin asignado POR ESTADO
   if (isCliente) {
-    // ⚠️ NOTA: Los clientes NO tienen admin asignado directamente
-    // El stock será visto como "global" (producto_variantes.stock)
-    // No intentar buscar admin - los clientes ven stock agregado de todos los admins
+    try {
+      const estadosHelper = require("../utils/estadosHelper");
 
+      // Obtener el estado del cliente
+      const clienteEstado = await estadosHelper.getClienteEstado(userId, tenantId);
+
+      if (clienteEstado && clienteEstado.estado_id) {
+        // Obtener el admin responsable de ese estado
+        adminId = await estadosHelper.getAdminByClienteEstado(userId, tenantId);
+
+        if (adminId) {
+          return {
+            isSuperAdmin: false,
+            isAdmin: false,
+            isAgente: false,
+            isCliente: true,
+            adminId,  // Admin del estado del cliente
+            clienteAdminId: adminId
+          };
+        }
+      }
+    } catch (error) {
+      console.error('[SmartStockService] Error al obtener admin por estado:', error);
+    }
+
+    // Fallback: Sin asignación de estado o sin admin del estado → stock global
     return {
       isSuperAdmin: false,
       isAdmin: false,

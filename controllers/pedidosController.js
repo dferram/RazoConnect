@@ -13,6 +13,7 @@ const { calcularTotalPedido, validarConsistenciaTotales } = require("../utils/ca
 const SmartStockService = require("../services/SmartStockService");
 const { calcularEstadoPedidoCorrect } = require("../utils/pedidoStatus");
 const { normalizarEstado, ESTADOS_PEDIDO } = require("../utils/pedidoEstados");
+const { getClienteEstado, asignarEstadoCliente } = require("../utils/estadosHelper");
 
 const TAMANO_VALUE_KEYS = [
   "valor",
@@ -227,6 +228,31 @@ const crearPedido = async (req, res) => {
         success: false,
         message: "Dirección no encontrada o no pertenece al cliente",
       });
+    }
+
+    // 1.5 NUEVO: Asegurar que el cliente tenga estado_id asignado
+    // Si no lo tiene, asignar el estado de la dirección de envío o el primero disponible
+    const clienteEstado = await getClienteEstado(clienteId, tenant_id);
+
+    if (!clienteEstado || !clienteEstado.estado_id) {
+      // El cliente no tiene estado asignado, asignar el primero disponible (Querétaro por defecto)
+      try {
+        // Obtener primer estado (o puedes usar un default como Querétaro)
+        const estadoResult = await client.query(
+          "SELECT estadoid FROM estados ORDER BY estadoid LIMIT 1"
+        );
+
+        if (estadoResult.rows.length > 0) {
+          const estadoId = estadoResult.rows[0].estadoid;
+          await client.query(
+            "UPDATE clientes SET estado_id = $1 WHERE clienteid = $2",
+            [estadoId, clienteId]
+          );
+        }
+      } catch (error) {
+        logger.error('Error al asignar estado al cliente:', { error, clienteId });
+        // No es fatal, continuar sin estado
+      }
     }
 
     // 2. Obtener el carrito del cliente
@@ -867,7 +893,7 @@ const crearPedido = async (req, res) => {
       pedidoComprobanteUrl = null;
     }
 
-    async function registrarPedido() {
+    async function registrarPedido(adminIdAsignado, estadoIdAsignado) {
       const pedidoResult = await client.query(
         `INSERT INTO Pedidos (
            ClienteID,
@@ -886,7 +912,9 @@ const crearPedido = async (req, res) => {
            Saldo_Pendiente,
            monto_surtido,
            monto_backorder,
-           tenant_id
+           tenant_id,
+           estado_id,
+           admin_asignado_id
          )
          VALUES (
            $1,
@@ -908,7 +936,9 @@ const crearPedido = async (req, res) => {
            $14,
            0,
            $4,
-           $15
+           $15,
+           $16,
+           $17
          )
          RETURNING PedidoID, FechaPedido, MontoTotal, Estatus, Fecha_Vencimiento, Es_Credito, Pagado, Metodo_Pago, Transaccion_ID, Comprobante_URL, Cupon_ID, Monto_Descuento, Saldo_Pendiente`,
         [
@@ -927,6 +957,8 @@ const crearPedido = async (req, res) => {
           montoDescuento,
           metodoPagoEsCredito ? montoTotalFinal : 0,
           tenant_id,
+          estadoIdAsignado || null,
+          adminIdAsignado || null,
         ]
       );
       pedido = pedidoResult.rows[0];
@@ -984,7 +1016,23 @@ const crearPedido = async (req, res) => {
       };
     }
 
-    await registrarPedido();
+    // NUEVO: Obtener estado_id y admin responsable del cliente para asignarlos al pedido
+    let estadoIdPedido = null;
+    let adminIdPedido = null;
+
+    try {
+      const estadosHelper = require("../utils/estadosHelper");
+      const clienteEstadoInfo = await estadosHelper.getClienteEstado(clienteId, tenant_id);
+
+      if (clienteEstadoInfo && clienteEstadoInfo.estado_id) {
+        estadoIdPedido = clienteEstadoInfo.estado_id;
+        adminIdPedido = await estadosHelper.getAdminByClienteEstado(clienteId, tenant_id);
+      }
+    } catch (error) {
+      logger.warn('Error al obtener estado/admin del cliente para pedido:', { error, clienteId });
+    }
+
+    await registrarPedido(adminIdPedido, estadoIdPedido);
 
     // 7. Crear los detalles del pedido y actualizar inventario
     const detallesPedido = [];
