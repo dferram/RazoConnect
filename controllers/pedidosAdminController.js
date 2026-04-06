@@ -1343,20 +1343,37 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       }
     }
 
-    // Verificar si todos los productos han sido confirmados
-    const todosProductosQuery = `
-      SELECT COUNT(*) as total FROM detallesdelpedido 
-      WHERE pedidoid = $1 AND tenant_id = $2 AND cantidadsurtida > 0
+    // Verificar estado de TODOS los productos del pedido (no solo los con cantidad > 0)
+    const estadosProductosQuery = `
+      SELECT
+        estado_producto,
+        COUNT(*) as cantidad
+      FROM detallesdelpedido
+      WHERE pedidoid = $1 AND tenant_id = $2 AND estado_producto != 'Facturado'
+      GROUP BY estado_producto
     `;
-    const todosProductosResult = await client.query(todosProductosQuery, [pedidoId, tenant_id]);
-    const totalProductosSurtidos = parseInt(todosProductosResult.rows[0].total);
-    
-    // Determinar nuevo estado basado en lo que se confirmó
-    // Si se confirmaron todos los que tenían cantidadsurtida > 0, entonces "Surtido"
-    // Si solo se confirmaron algunos, entonces "Parcialmente Surtido"
-    const todoConfirmado = totalProductosSurtidos > 0 && totalProductosSurtidos === productosConfirmados;
-    const nuevoEstatusPedido = todoConfirmado ? 'Surtido' : 'Parcialmente Surtido';
-    const completamenteSurtido = todoConfirmado;
+    const estadosProductosResult = await client.query(estadosProductosQuery, [pedidoId, tenant_id]);
+
+    // Determinar nuevo estado del pedido basado en los productos restantes (no facturados)
+    let nuevoEstatusPedido = 'Surtido'; // por defecto si todos están facturados
+    let completamenteSurtido = true;
+
+    if (estadosProductosResult.rows.length > 0) {
+      const estados = estadosProductosResult.rows;
+      const tieneBackorder = estados.some(e => e.estado_producto === 'Bajo pedido');
+      const tieneOtros = estados.some(e => e.estado_producto !== 'Surtido' && e.estado_producto !== 'Bajo pedido');
+
+      if (tieneBackorder) {
+        nuevoEstatusPedido = 'Bajo pedido';
+        completamenteSurtido = false;
+      } else if (tieneOtros) {
+        nuevoEstatusPedido = 'Parcialmente Surtido';
+        completamenteSurtido = false;
+      } else if (estados.some(e => e.estado_producto === 'Surtido')) {
+        nuevoEstatusPedido = 'Parcialmente Surtido';
+        completamenteSurtido = false;
+      }
+    }
 
     // Actualizar pedido con el nuevo estado
     const updateQuery = `
