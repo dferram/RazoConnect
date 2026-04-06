@@ -1675,9 +1675,9 @@
                   let badgeClass, badgeText;
                   
                   // PRIORIDAD 1: Usar el estado_producto del backend si está disponible
-                  if (estadoProducto === 'facturado') {
-                    badgeClass = 'badge-stock facturado';
-                    badgeText = 'FACTURADO';
+                  if (estadoProducto === 'surtido') {
+                    badgeClass = 'badge-stock surtido';
+                    badgeText = 'SURTIDO';
                   }
                   // PRIORIDAD 2: Producto parcialmente surtido
                   else if (estadoProducto === 'parcialmente surtido' || (cantidadSurtida > 0 && cantidadSurtida < cantidadPaquetes)) {
@@ -1792,15 +1792,19 @@
             
             setupCheckboxListeners();
 
-            // Calculate total based on role - SOLO PRODUCTOS SURTIDOS
+            // Calculate total based on role - SOLO PRODUCTOS SURTIDOS (NO FACTURADO)
             let totalToShow = pedido.montoTotal;
             let totalSurtidos = 0;
             
-            // Calcular total de productos SURTIDOS (no solo con stock)
+            // Calcular total de productos SURTIDOS PENDIENTES DE CONFIRMACIÓN
+            // Solo contar si el pedido está en "Listo para remisionar" y el producto está en estado "Surtido"
+            const estatusActualPedido = (selectedOrderStatus || '').toLowerCase().trim();
+            const estaListoParaRemisionar = estatusActualPedido === 'listo para remisionar';
+            
             const productosSurtidosParaTotal = productos.filter(item => {
-              const cantidadSurtida = parseInt(item.cantidadSurtida || 0);
-              const cantidadPaquetes = parseInt(item.cantidadPaquetes || 0);
-              return cantidadSurtida > 0 && cantidadSurtida === cantidadPaquetes;
+              const estadoProducto = (item.estadoProducto || '').trim().toLowerCase();
+              // Solo contar productosque están en estado "Surtido" y el pedido está en "Listo para remisionar"
+              return estaListoParaRemisionar && estadoProducto === 'surtido';
             });
             
             totalSurtidos = productosSurtidosParaTotal.reduce((sum, item) => sum + (parseFloat(item.subtotal) || 0), 0);

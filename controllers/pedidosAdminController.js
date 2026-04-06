@@ -477,7 +477,7 @@ const getPedidoDetalle = async (req, res) => {
         dp.esbackorder,
         dp.cantidadsurtida,
         CASE 
-          WHEN dp.cantidadsurtida > 0 AND dp.cantidadsurtida = dp.cantidadpaquetes THEN 'Facturado'
+          WHEN dp.cantidadsurtida > 0 AND dp.cantidadsurtida = dp.cantidadpaquetes THEN 'Surtido'
           WHEN dp.cantidadsurtida > 0 AND dp.cantidadsurtida < dp.cantidadpaquetes THEN 'Parcialmente Surtido'
           WHEN dp.cantidadsurtida > 0 THEN 'Parcialmente Surtido'
           ELSE 'Pendiente' 

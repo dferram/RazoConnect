@@ -1374,6 +1374,16 @@ body.sidebar-collapsed .admin-main-content {
   color: var(--razo-turquoise-dark);
 }
 
+.admin-badge.primary {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.admin-badge.secondary {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
 /* Badges de estatus de pedido (compartidos con admin-pedido-detalle) */
 .pedido-estatus-badge {
   padding: 0.4rem 1rem;

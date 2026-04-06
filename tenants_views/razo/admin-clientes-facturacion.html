@@ -954,25 +954,44 @@
 
       function getEstatusBadge(estatus) {
         const estatusMap = {
-          // NUEVOS ESTADOS NORMALIZADOS (Sistema de 6 estados - Surtido Parcial ELIMINADO)
-          'Bajo Pedido': 'danger',          // 🔴 Rojo
-          'Combinado': 'warning',           // 🟠 Naranja
-          'Completo': 'warning',            // 🟡 Amarillo
-          'Listo para Remisionar': 'primary', // 🔵 Azul
-          'Surtido Completo': 'success',    // 🟢 Verde
+          // NUEVOS ESTADOS NORMALIZADOS
+          'Bajo Pedido': 'danger',               // 🔴 Rojo
+          'bajo pedido': 'danger',               // 🔴 Rojo
+          'Combinado': 'warning',                // 🟠 Naranja
+          'combinado': 'warning',                // 🟠 Naranja
+          'Completo': 'warning',                 // 🟡 Amarillo
+          'completo': 'warning',                 // 🟡 Amarillo
+          'Listo para Remisionar': 'primary',    // 🔵 Azul
+          'listo para remisionar': 'primary',    // 🔵 Azul
+          'Listo Para Remisionar': 'primary',    // 🔵 Azul
+          'Surtido Completo': 'success',         // 🟢 Verde
+          'surtido completo': 'success',         // 🟢 Verde
+          'Surtido': 'success',                  // 🟢 Verde
+          'surtido': 'success',                  // 🟢 Verde
           
           // LEGACY/ANTIGUOS ESTADOS - Mapear viejo Surtido Parcial a Combinado
-          'Surtido Parcial': 'warning',
-          'Pendiente': 'warning',
+          'Surtido Parcial': 'warning',          // 🟠 Naranja
+          'surtido parcial': 'warning',          // 🟠 Naranja
+          'Pendiente': 'warning',                // 🟠 Naranja
+          'pendiente': 'warning',                // 🟠 Naranja
           'Aprobado': 'info',
+          'aprobado': 'info',
           'Confirmado': 'info',
+          'confirmado': 'info',
           'Listo para Surtir': 'primary',
-          'Parcialmente Surtido': 'warning',
-          'Pendiente de Confirmación': 'warning',
-          'Surtido': 'success',
+          'listo para surtir': 'primary',
+          'Parcialmente Surtido': 'warning',     // 🟠 Naranja
+          'parcialmente surtido': 'warning',     // 🟠 Naranja
+          'Parcialmente_Surtido': 'warning',     // 🟠 Naranja
+          'parcialmente_surtido': 'warning',     // 🟠 Naranja
+          'Pendiente de Confirmación': 'warning', // 🟠 Naranja
+          'pendiente de confirmación': 'warning', // 🟠 Naranja
           'Enviado': 'info',
-          'Entregado': 'success',
-          'Cancelado': 'danger'
+          'enviado': 'info',
+          'Entregado': 'success',                // 🟢 Verde
+          'entregado': 'success',                // 🟢 Verde
+          'Cancelado': 'danger',                 // 🔴 Rojo
+          'cancelado': 'danger'                  // 🔴 Rojo
         };
         const badgeClass = estatusMap[estatus] || 'secondary';
         return `<span class="admin-badge ${badgeClass}">${estatus}</span>`;
