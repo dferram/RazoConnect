@@ -302,27 +302,11 @@ async function generarPDFPedido(req, res) {
         renderHeader(doc, pedido, logoPath, logoExists);
 
         // ⚡ THREE-TABLE CATEGORIZATION (NEW LOGIC)
-        // Find the MAXIMUM ronda_surtido across all products (current session)
-        let maxRonda = 0;
-        detalles.forEach(item => {
-            if (item.rondas_surtido && Array.isArray(item.rondas_surtido) && item.rondas_surtido.length > 0) {
-                const itemMaxRonda = Math.max(...item.rondas_surtido.map(r => r.ronda));
-                maxRonda = Math.max(maxRonda, itemMaxRonda);
-            }
-        });
-
-        // Categorize items by surtido and stock status
-        // For inventarios role: ONLY show items from the CURRENT session (maxRonda)
+        // For inventarios role: Use cantidadsurtida to determine current session selection
+        // CRITICAL: cantidadsurtida is updated when user selects items to ship
         let itemsSurtidos = detalles.filter(item => {
-            if (userRoles.some(r => r === 'inventarios')) {
-                // Inventarios: Show ONLY items from the current session (maxRonda)
-                if (!item.rondas_surtido || !Array.isArray(item.rondas_surtido)) return false;
-                return item.rondas_surtido.some(r => r.ronda === maxRonda);
-            } else {
-                // Other roles: Show all items with cantidadsurtida > 0
-                const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
-                return cantidadSurtida > 0;
-            }
+            const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
+            return cantidadSurtida > 0;
         });
         
         let itemsConStock = detalles.filter(item => {
@@ -359,12 +343,12 @@ async function generarPDFPedido(req, res) {
                 requestId: req.requestId
             });
         } else if (userRoles.some(r => r === 'inventarios')) {
-            // Mode: inventarios - Show MARCADOS (from current session) and SIN MARCAR (available but not in current session)
-            let itemsMarcados = itemsSurtidos;  // Already filtered to current session above
-            let itemsSinMarcar = itemsConStock; // Products with stock but not in current session
+            // Mode: inventarios - Show MARCADOS (cantidadsurtida > 0) and SIN MARCAR (available but not selected)
+            let itemsMarcados = itemsSurtidos;  // Items with cantidadsurtida > 0 (user selected)
+            let itemsSinMarcar = itemsConStock; // Items with stock but cantidadsurtida = 0
             
-            // Replace tables for inventory view: NO mostrar surtidos completos, mostrar marcados/sin marcar
-            itemsSurtidos = itemsMarcados;      // Reuse for "MARCADOS PARA SURTIR" (current session only)
+            // Replace tables for inventory view
+            itemsSurtidos = itemsMarcados;      // Reuse for "PRODUCTOS MARCADOS PARA SURTIR"
             itemsConStock = itemsSinMarcar;     // Reuse for "DISPONIBLE - SIN MARCAR"
             itemsBajoPedido = itemsBajoPedido;  // Keep bajo pedido
             
@@ -372,7 +356,6 @@ async function generarPDFPedido(req, res) {
                 itemsMarcados: itemsMarcados.length,
                 itemsSinMarcar: itemsSinMarcar.length,
                 itemsBajoPedido: itemsBajoPedido.length,
-                maxRonda,
                 pedidoId,
                 requestId: req.requestId
             });
