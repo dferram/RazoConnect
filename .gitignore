@@ -65,6 +65,7 @@ Desktop.ini
 .settings/
 *.sublime-workspace
 .history/
+.hintrc
 
 # ============================================
 # BUILD Y DISTRIBUCIÓN

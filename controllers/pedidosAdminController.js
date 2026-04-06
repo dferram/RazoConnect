@@ -1311,22 +1311,12 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         });
         
         // Marcar el detalle como confirmado por finanzas y cambiar estado a Facturado
-        try {
-          const updateDetalleQuery = `
-            UPDATE detallesdelpedido 
-            SET confirmado_finanzas = true, 
-                fecha_confirmacion_finanzas = NOW(),
-                estado_producto = 'Facturado'
-            WHERE detalleid = $1 AND tenant_id = $2
-          `;
-          await client.query(updateDetalleQuery, [item.detalleid, tenant_id]);
-        } catch (updateError) {
-          // Si los campos no existen en la BD, simplemente continúa
-          if (!updateError.message.includes('column') && !updateError.message.includes('does not exist')) {
-            throw updateError;
-          }
-          logger.warn('⚠️ Campos de confirmación finanzas no existen en BD. Continuando sin actualizar...', { detalleid: item.detalleid });
-        }
+        const updateDetalleQuery = `
+          UPDATE detallesdelpedido
+          SET estado_producto = 'Facturado'
+          WHERE detalleid = $1 AND tenant_id = $2
+        `;
+        await client.query(updateDetalleQuery, [item.detalleid, tenant_id]);
         
         productosConfirmados++;
         logger.info('✅ [DEBUG] Producto confirmado exitosamente:', { varianteId, productosConfirmados });
@@ -1399,8 +1389,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     // Obtener datos actualizados del pedido y productos después de la confirmación
     const pedidoActualizadoQuery = `
       SELECT p.pedidoid, p.estatus, p.completamente_surtido
-      FROM pedidos 
-      WHERE pedidoid = $1 AND tenant_id = $2
+      FROM pedidos p
+      WHERE p.pedidoid = $1 AND p.tenant_id = $2
     `;
     const pedidoActualizadoResult = await client.query(pedidoActualizadoQuery, [pedidoId, tenant_id]);
     
@@ -1529,12 +1519,10 @@ const rechazarPedidoFinanzas = async (req, res) => {
           WHEN (COALESCE(sa.cantidad, 0) - COALESCE(sa.cantidad_reservada, 0)) >= dp.piezastotales THEN 'Con stock'
           ELSE 'Bajo pedido'
         END,
-        confirmado_finanzas = false,
-        fecha_confirmacion_finanzas = NULL,
         cantidadsurtida = 0
         FROM detallesdelpedido dp2
         LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = dp.tenant_id
-        WHERE dp.pedidoid = $1 
+        WHERE dp.pedidoid = $1
           AND dp.detalleid = ANY($2::int[])
           AND dp.tenant_id = $3
           AND dp.estado_producto = 'Facturado'
