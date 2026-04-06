@@ -8,9 +8,8 @@ const logger = require("../utils/logger");
 const getAllEstados = async (req, res) => {
   try {
     const result = await db.query(
-      `SELECT estadoid, nombre, abreviatura, region, activo
+      `SELECT estadoid, nombre, abreviatura
        FROM estados
-       WHERE activo = TRUE
        ORDER BY nombre ASC`,
     );
 

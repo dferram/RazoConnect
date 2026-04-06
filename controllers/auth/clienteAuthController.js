@@ -32,18 +32,20 @@ const registroCliente = async (req, res) => {
       });
     }
 
-    // Validar que el estado existe
+    // Validar que el estado existe (directamente de la tabla estados)
     const estadoCheck = await db.query(
-      "SELECT estadoid FROM estados WHERE estadoid = $1 AND activo = TRUE",
+      "SELECT estadoid, nombre FROM estados WHERE estadoid = $1",
       [estado_id]
     );
 
     if (estadoCheck.rows.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Estado inválido.",
+        message: "Estado seleccionado no existe en el sistema.",
       });
     }
+
+    const estadoNombre = estadoCheck.rows[0].nombre;
 
     if (numero_cliente && numero_cliente.trim() !== "") {
       const numeroClienteCheck = await db.query(

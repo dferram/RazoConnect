@@ -13,7 +13,6 @@ async function getAdminByClienteEstado(clienteId, tenantId) {
        FROM clientes c
        LEFT JOIN administrador_estados ame ON c.estado_id = ame.estado_id AND c.tenant_id = ame.tenant_id
        WHERE c.clienteid = $1 AND c.tenant_id = $2 AND c.activo = TRUE
-       AND ame.activo = TRUE
        LIMIT 1`,
       [clienteId, tenantId]
     );
@@ -82,7 +81,7 @@ async function getAdminesByEstado(estadoId, tenantId) {
       `SELECT DISTINCT a.adminid, a.nombre, a.apellido, a.email
        FROM administrador_estados ame
        JOIN administradores a ON ame.admin_id = a.adminid
-       WHERE ame.estado_id = $1 AND ame.tenant_id = $2 AND ame.activo = TRUE AND a.activo = TRUE`,
+       WHERE ame.estado_id = $1 AND ame.tenant_id = $2 AND a.activo = TRUE`,
       [estadoId, tenantId]
     );
 

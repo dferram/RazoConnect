@@ -21,7 +21,7 @@ const getAdminsConEstados = async (req, res) => {
         ARRAY_AGG(ae.estado_id) as estado_ids
        FROM administradores a
        LEFT JOIN administrador_estados ae ON a.adminid = ae.admin_id
-         AND a.tenant_id = ae.tenant_id AND ae.activo = TRUE
+         AND a.tenant_id = ae.tenant_id
        LEFT JOIN estados e ON ae.estado_id = e.estadoid
        WHERE a.tenant_id = $1 AND a.activo = TRUE
        GROUP BY a.adminid, a.nombre, a.apellido, a.email, a.rol
@@ -62,14 +62,12 @@ const getEstadosConAdmins = async (req, res) => {
         e.estadoid,
         e.nombre,
         e.abreviatura,
-        e.region,
         STRING_AGG(CONCAT(a.nombre, ' ', a.apellido), ', ' ORDER BY a.nombre) as admins_responsables
        FROM estados e
        LEFT JOIN administrador_estados ae ON e.estadoid = ae.estado_id
-         AND ae.tenant_id = $1 AND ae.activo = TRUE
-       LEFT JOIN administradores a ON ae.admin_id = a.adminid
-       WHERE e.activo = TRUE
-       GROUP BY e.estadoid, e.nombre, e.abreviatura, e.region
+         AND ae.tenant_id = $1
+       LEFT JOIN administradores a ON ae.admin_id = a.adminid AND a.activo = TRUE
+       GROUP BY e.estadoid, e.nombre, e.abreviatura
        ORDER BY e.nombre`,
       [tenant_id]
     );
@@ -111,7 +109,7 @@ const getClientesConEstado = async (req, res) => {
        FROM clientes c
        LEFT JOIN estados e ON c.estado_id = e.estadoid
        LEFT JOIN administrador_estados ae ON e.estadoid = ae.estado_id
-         AND ae.tenant_id = $1 AND ae.activo = TRUE
+         AND ae.tenant_id = $1
        LEFT JOIN administradores a ON ae.admin_id = a.adminid AND a.activo = TRUE
        WHERE c.tenant_id = $1 AND c.activo = TRUE
        GROUP BY c.clienteid, c.nombre, c.apellido, c.email, c.telefono, e.nombre
@@ -171,14 +169,14 @@ const asignarEstados = async (req, res) => {
     // Validar que todos los estados existen
     const estadosCheck = await db.query(
       `SELECT COUNT(*) as count FROM estados
-       WHERE estadoid = ANY($1) AND activo = TRUE`,
+       WHERE estadoid = ANY($1)`,
       [estadoIds]
     );
 
     if (parseInt(estadosCheck.rows[0].count) < estadoIds.length) {
       return res.status(400).json({
         success: false,
-        message: "Uno o más estados no existen o están inactivos",
+        message: "Uno o más estados no existen en el sistema",
       });
     }
 
