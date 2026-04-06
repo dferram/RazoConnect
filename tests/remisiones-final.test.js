@@ -138,14 +138,14 @@ describe('Remisiones Workflow - Final Tests', () => {
   });
 
   describe('7. NEW: Pedido Status Update on Almacen Confirmation', () => {
-    test('confirmarRemisionAlmacen should update pedido status to "Pendiente de Confirmación"', () => {
+    test('confirmarRemisionAlmacen should update pedido status to "Listo para remisionar"', () => {
       const fs = require('fs');
       const controllerPath = require.resolve('../controllers/remisionesController');
       const code = fs.readFileSync(controllerPath, 'utf8');
-      
+
       // Should update pedido status
       expect(code).toContain('UPDATE pedidos');
-      expect(code).toContain('Pendiente de Confirmación');
+      expect(code).toContain('Listo para remisionar');
       expect(code).toContain('tiene_remisiones = TRUE');
       expect(code).toContain('completamente_surtido');
       expect(code).toContain('monto_surtido');
