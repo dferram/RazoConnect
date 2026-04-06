@@ -1343,34 +1343,45 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       }
     }
 
-    // Verificar estado de TODOS los productos del pedido (no solo los con cantidad > 0)
-    const estadosProductosQuery = `
-      SELECT
-        estado_producto,
-        COUNT(*) as cantidad
+    // Verificar estado de TODOS los productos del pedido (EXCEPTO Surtido y Facturado)
+    const estadosQuery = `
+      SELECT DISTINCT estado_producto
       FROM detallesdelpedido
-      WHERE pedidoid = $1 AND tenant_id = $2 AND estado_producto != 'Facturado'
-      GROUP BY estado_producto
+      WHERE pedidoid = $1
+        AND tenant_id = $2
+        AND estado_producto NOT IN ('Surtido', 'Facturado')
     `;
-    const estadosProductosResult = await client.query(estadosProductosQuery, [pedidoId, tenant_id]);
+    const estadosResult = await client.query(estadosQuery, [pedidoId, tenant_id]);
 
-    // Determinar nuevo estado del pedido basado en los productos restantes (no facturados)
+    // Determinar nuevo estado del pedido basado en los estados de productos restantes
     let nuevoEstatusPedido = 'Surtido'; // por defecto si todos están facturados
     let completamenteSurtido = true;
 
-    if (estadosProductosResult.rows.length > 0) {
-      const estados = estadosProductosResult.rows;
-      const tieneBackorder = estados.some(e => e.estado_producto === 'Bajo pedido');
-      const tieneOtros = estados.some(e => e.estado_producto !== 'Surtido' && e.estado_producto !== 'Bajo pedido');
+    if (estadosResult.rows.length > 0) {
+      const estados = estadosResult.rows.map(r => r.estado_producto);
 
-      if (tieneBackorder) {
-        nuevoEstatusPedido = 'Bajo pedido';
-        completamenteSurtido = false;
-      } else if (tieneOtros) {
-        nuevoEstatusPedido = 'Parcialmente Surtido';
-        completamenteSurtido = false;
-      } else if (estados.some(e => e.estado_producto === 'Surtido')) {
-        nuevoEstatusPedido = 'Parcialmente Surtido';
+      logger.info('📊 [ESTADO] Estados de productos restantes', {
+        pedidoId,
+        estados,
+        tenantId: tenant_id
+      });
+
+      // Lógica simple:
+      // - Si TODOS son "Bajo pedido" → "Bajo pedido"
+      // - Si TODOS son "Con stock" → "Completo"
+      // - Si hay MIX → "Combinado"
+      if (estados.length === 1) {
+        // Un solo estado
+        if (estados[0] === 'Bajo pedido') {
+          nuevoEstatusPedido = 'Bajo pedido';
+          completamenteSurtido = false;
+        } else if (estados[0] === 'Con stock') {
+          nuevoEstatusPedido = 'Completo';
+          completamenteSurtido = true;
+        }
+      } else {
+        // Múltiples estados = MIX
+        nuevoEstatusPedido = 'Combinado';
         completamenteSurtido = false;
       }
     }
