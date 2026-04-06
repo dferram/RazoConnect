@@ -953,48 +953,32 @@
       // ════════════════════════════════════════════════════════════
 
       function getEstatusBadge(estatus) {
-        const estatusMap = {
+        const estatusNorm = (estatus || '').toLowerCase().trim();
+        const colorMap = {
           // NUEVOS ESTADOS NORMALIZADOS
-          'Bajo Pedido': 'danger',               // 🔴 Rojo
-          'bajo pedido': 'danger',               // 🔴 Rojo
-          'Combinado': 'warning',                // 🟠 Naranja
-          'combinado': 'warning',                // 🟠 Naranja
-          'Completo': 'warning',                 // 🟡 Amarillo
-          'completo': 'warning',                 // 🟡 Amarillo
-          'Listo para Remisionar': 'primary',    // 🔵 Azul
-          'listo para remisionar': 'primary',    // 🔵 Azul
-          'Listo Para Remisionar': 'primary',    // 🔵 Azul
-          'Surtido Completo': 'success',         // 🟢 Verde
-          'surtido completo': 'success',         // 🟢 Verde
-          'Surtido': 'success',                  // 🟢 Verde
-          'surtido': 'success',                  // 🟢 Verde
+          'bajo pedido': { bg: '#fee2e2', text: '#991b1b' },          // 🔴 Rojo
+          'combinado': { bg: '#fef3c7', text: '#92400e' },            // 🟠 Naranja
+          'completo': { bg: '#fef3c7', text: '#92400e' },             // 🟡 Amarillo
+          'listo para remisionar': { bg: '#dbeafe', text: '#1e40af' }, // 🔵 Azul
+          'listo para surtir': { bg: '#dbeafe', text: '#1e40af' },    // 🔵 Azul
+          'surtido completo': { bg: '#d1fae5', text: '#065f46' },     // 🟢 Verde
+          'surtido': { bg: '#d1fae5', text: '#065f46' },              // 🟢 Verde
           
-          // LEGACY/ANTIGUOS ESTADOS - Mapear viejo Surtido Parcial a Combinado
-          'Surtido Parcial': 'warning',          // 🟠 Naranja
-          'surtido parcial': 'warning',          // 🟠 Naranja
-          'Pendiente': 'warning',                // 🟠 Naranja
-          'pendiente': 'warning',                // 🟠 Naranja
-          'Aprobado': 'info',
-          'aprobado': 'info',
-          'Confirmado': 'info',
-          'confirmado': 'info',
-          'Listo para Surtir': 'primary',
-          'listo para surtir': 'primary',
-          'Parcialmente Surtido': 'warning',     // 🟠 Naranja
-          'parcialmente surtido': 'warning',     // 🟠 Naranja
-          'Parcialmente_Surtido': 'warning',     // 🟠 Naranja
-          'parcialmente_surtido': 'warning',     // 🟠 Naranja
-          'Pendiente de Confirmación': 'warning', // 🟠 Naranja
-          'pendiente de confirmación': 'warning', // 🟠 Naranja
-          'Enviado': 'info',
-          'enviado': 'info',
-          'Entregado': 'success',                // 🟢 Verde
-          'entregado': 'success',                // 🟢 Verde
-          'Cancelado': 'danger',                 // 🔴 Rojo
-          'cancelado': 'danger'                  // 🔴 Rojo
+          // LEGACY/ANTIGUOS ESTADOS
+          'surtido parcial': { bg: '#fef3c7', text: '#92400e' },      // 🟠 Naranja
+          'pendiente': { bg: '#fef3c7', text: '#92400e' },            // 🟠 Naranja
+          'aprobado': { bg: '#e6f9f9', text: '#0d8a8a' },             // 🩵 Teal
+          'confirmado': { bg: '#e6f9f9', text: '#0d8a8a' },           // 🩵 Teal
+          'parcialmente surtido': { bg: '#fef3c7', text: '#92400e' }, // 🟠 Naranja
+          'parcialmente_surtido': { bg: '#fef3c7', text: '#92400e' }, // 🟠 Naranja
+          'pendiente de confirmación': { bg: '#fef3c7', text: '#92400e' }, // 🟠 Naranja
+          'enviado': { bg: '#e6f9f9', text: '#0d8a8a' },              // 🩵 Teal
+          'entregado': { bg: '#d1fae5', text: '#065f46' },            // 🟢 Verde
+          'cancelado': { bg: '#fee2e2', text: '#991b1b' }             // 🔴 Rojo
         };
-        const badgeClass = estatusMap[estatus] || 'secondary';
-        return `<span class="admin-badge ${badgeClass}">${estatus}</span>`;
+        
+        const colors = colorMap[estatusNorm] || { bg: '#f3f4f6', text: '#4b5563' }; // Gray fallback
+        return `<span class="admin-badge" style="background-color: ${colors.bg}; color: ${colors.text}; padding: 0.25rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block;">${estatus}</span>`;
       }
 
       function formatCurrency(value) {

@@ -465,7 +465,7 @@ const getPedidoDetalle = async (req, res) => {
 
     // Obtener detalles de productos del pedido
     const detallesResult = await db.query(
-      `SELECT DISTINCT ON (dp.detalleid)
+      `SELECT 
         dp.detalleid,
         dp.pedidoid,
         dp.varianteid,
@@ -498,22 +498,8 @@ const getPedidoDetalle = async (req, res) => {
         ) as stock,
         pr.nombreproducto,
         COALESCE(
-          (
-            SELECT pvi.url_imagen 
-            FROM producto_variante_imagenes pvi 
-            WHERE pvi.varianteid = pv.varianteid 
-              AND pvi.tenant_id = $2
-            ORDER BY pvi.orden ASC 
-            LIMIT 1
-          ),
-          (
-            SELECT pi.url_imagen 
-            FROM producto_imagenes pi 
-            WHERE pi.productoid = pv.productoid 
-              AND pi.tenant_id = $2
-            ORDER BY pi.orden ASC 
-            LIMIT 1
-          )
+          (SELECT url_imagen FROM producto_variante_imagenes WHERE varianteid = pv.varianteid AND tenant_id = $2 ORDER BY orden ASC LIMIT 1),
+          (SELECT url_imagen FROM producto_imagenes WHERE productoid = pv.productoid AND tenant_id = $2 ORDER BY orden ASC LIMIT 1)
         ) as imagenurl,
         row_to_json(ct) as tamano_info
       FROM detallesdelpedido dp
