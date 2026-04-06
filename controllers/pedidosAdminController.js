@@ -1343,46 +1343,79 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       }
     }
 
-    // Verificar estado de TODOS los productos del pedido (EXCEPTO Surtido y Facturado)
+    // Verificar estado de TODOS los productos del pedido (EXCEPTO Facturado)
+    // CRÍTICO: Agregar stock de TODOS los admins que manejan cada variante
+    // Usando SUM porque puede haber múltiples admins por producto
     const estadosQuery = `
-      SELECT DISTINCT estado_producto
-      FROM detallesdelpedido
-      WHERE pedidoid = $1
-        AND tenant_id = $2
-        AND estado_producto NOT IN ('Surtido', 'Facturado')
+      SELECT
+        dp.detalleid,
+        dp.varianteid,
+        dp.piezastotales,
+        COALESCE(SUM(sa.cantidad), 0) as stock_total,
+        COALESCE(SUM(sa.cantidad_reservada), 0) as stock_reservado,
+        (COALESCE(SUM(sa.cantidad), 0) - COALESCE(SUM(sa.cantidad_reservada), 0)) as stock_disponible
+      FROM detallesdelpedido dp
+      LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = dp.tenant_id
+      WHERE dp.pedidoid = $1
+        AND dp.tenant_id = $2
+        AND dp.estado_producto != 'Facturado'
+      GROUP BY dp.detalleid, dp.varianteid, dp.piezastotales
+      ORDER BY dp.detalleid
     `;
     const estadosResult = await client.query(estadosQuery, [pedidoId, tenant_id]);
 
-    // Determinar nuevo estado del pedido basado en los estados de productos restantes
+    // Determinar nuevo estado del pedido basado en stock disponible de productos NO facturados
     let nuevoEstatusPedido = 'Surtido'; // por defecto si todos están facturados
     let completamenteSurtido = true;
 
     if (estadosResult.rows.length > 0) {
-      const estados = estadosResult.rows.map(r => r.estado_producto);
+      let productosConStock = 0;
+      let productosBackorder = 0;
 
-      logger.info('📊 [ESTADO] Estados de productos restantes', {
+      logger.info('📊 [ESTADO] Analizando stock de productos restantes', {
         pedidoId,
-        estados,
-        tenantId: tenant_id
+        totalProductos: estadosResult.rows.length,
+        tenantId: tenant_id,
+        detalles: estadosResult.rows.map(r => ({
+          detalleid: r.detalleid,
+          piezastotales: r.piezastotales,
+          stock_disponible: r.stock_disponible
+        }))
       });
 
-      // Lógica simple:
-      // - Si TODOS son "Bajo pedido" → "Bajo pedido"
-      // - Si TODOS son "Con stock" → "Completo"
-      // - Si hay MIX → "Combinado"
-      if (estados.length === 1) {
-        // Un solo estado
-        if (estados[0] === 'Bajo pedido') {
-          nuevoEstatusPedido = 'Bajo pedido';
-          completamenteSurtido = false;
-        } else if (estados[0] === 'Con stock') {
-          nuevoEstatusPedido = 'Completo';
-          completamenteSurtido = true;
+      // Contar productos con/sin stock disponible
+      estadosResult.rows.forEach(producto => {
+        const tieneStock = producto.stock_disponible >= producto.piezastotales;
+        if (tieneStock) {
+          productosConStock++;
+        } else {
+          productosBackorder++;
         }
-      } else {
-        // Múltiples estados = MIX
+      });
+
+      // Lógica de estado basada en stock disponible:
+      // - Si TODOS sin stock → "Bajo pedido"
+      // - Si TODOS con stock → "Completo"
+      // - Si MIX → "Combinado"
+      if (productosBackorder === estadosResult.rows.length && productosConStock === 0) {
+        // Todos sin stock
+        nuevoEstatusPedido = 'Bajo pedido';
+        completamenteSurtido = false;
+        logger.info('🔴 Estado: Bajo pedido (todos sin stock)', { pedidoId });
+      } else if (productosConStock === estadosResult.rows.length && productosBackorder === 0) {
+        // Todos con stock
+        nuevoEstatusPedido = 'Completo';
+        completamenteSurtido = true;
+        logger.info('🟢 Estado: Completo (todos con stock)', { pedidoId });
+      } else if (productosBackorder > 0 && productosConStock > 0) {
+        // Mix de stock y backorder
         nuevoEstatusPedido = 'Combinado';
         completamenteSurtido = false;
+        logger.info('🟠 Estado: Combinado (mix de stock/backorder)', {
+          pedidoId,
+          conStock: productosConStock,
+          sinStock: productosBackorder
+        });
       }
     }
 
@@ -1544,23 +1577,31 @@ const rechazarPedidoFinanzas = async (req, res) => {
     // Si se proporcionaron detalleIds, regresar solo esos productos de Facturado a su estado original
     if (detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0) {
       // Regresar productos específicos de Facturado a su estado original (Con stock o Bajo pedido)
-      // Para determinar el estado original, verificamos si tiene stock disponible
+      // Usando CTE para agregar stock de múltiples admins correctamente
       const regresarProductosQuery = `
+        WITH stock_agregado AS (
+          SELECT variante_id, tenant_id,
+            COALESCE(SUM(cantidad), 0) as total_cantidad,
+            COALESCE(SUM(cantidad_reservada), 0) as total_reservado
+          FROM stock_admin
+          GROUP BY variante_id, tenant_id
+        )
         UPDATE detallesdelpedido dp
         SET estado_producto = CASE
-          WHEN (COALESCE(sa.cantidad, 0) - COALESCE(sa.cantidad_reservada, 0)) >= dp.piezastotales THEN 'Con stock'
+          WHEN (sa.total_cantidad - sa.total_reservado) >= dp.piezastotales THEN 'Con stock'
           ELSE 'Bajo pedido'
         END,
         cantidadsurtida = 0
-        FROM detallesdelpedido dp2
-        LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = dp.tenant_id
+        FROM stock_agregado sa
         WHERE dp.pedidoid = $1
           AND dp.detalleid = ANY($2::int[])
           AND dp.tenant_id = $3
           AND dp.estado_producto = 'Facturado'
+          AND sa.variante_id = dp.varianteid
+          AND sa.tenant_id = dp.tenant_id
         RETURNING dp.detalleid, dp.estado_producto
       `;
-      
+
       const regresarResult = await client.query(regresarProductosQuery, [pedidoId, detalleIds, tenant_id]);
       
       if (regresarResult.rowCount === 0) {
