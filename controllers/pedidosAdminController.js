@@ -1412,7 +1412,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     const pedidoActualizadoResult = await client.query(pedidoActualizadoQuery, [pedidoId, tenant_id]);
     
     const productosActualizadosQuery = `
-      SELECT 
+      SELECT
         dp.detalleid,
         dp.cantidadsurtida,
         dp.cantidadpaquetes,
@@ -1423,6 +1423,10 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       WHERE dp.pedidoid = $1 AND dp.tenant_id = $2
     `;
     const productosActualizadosResult = await client.query(productosActualizadosQuery, [pedidoId, tenant_id]);
+
+    // Initialize missing variables
+    const totalProductosSurtidos = productosActualizadosResult.rows.length;
+    const todoConfirmado = completamenteSurtido;
 
     logger.info('✅ Pedido confirmado por Finanzas - Estado actualizado:', {
       pedidoId,

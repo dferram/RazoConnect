@@ -204,6 +204,7 @@ async function generarPDFPedido(req, res) {
                 dp.esbackorder,
                 dp.cantidadsurtida,
                 dp.cantidadbackorder,
+                COALESCE(dp.estado_producto, 'Pendiente') as estado_producto,
                 p.nombreproducto AS producto_nombre,
                 COALESCE(pv.dimensiones, pv.color_nombre, 'Estándar') AS variante_nombre,
                 pv.color_nombre,
@@ -351,9 +352,10 @@ async function generarPDFPedido(req, res) {
                 });
                 return false;
             }
-            
+
             const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
-            
+            const estadoProducto = (item.estado_producto || '').toLowerCase().trim();
+
             // If selectedItemIds are provided (current session), use those for categorization
             if (selectedItemIds && selectedItemIds.length > 0) {
                 const isSelected = selectedItemIds.includes(item.detalleid);
@@ -366,40 +368,30 @@ async function generarPDFPedido(req, res) {
                 return isSelected;
             } else {
                 // Fallback to cantidadsurtida for backward compatibility
-                return cantidadSurtida > 0;
+                // Include items that have been shipped OR marked as Facturado
+                return cantidadSurtida > 0 || estadoProducto === 'facturado';
             }
         });
-        
+
         logger.info('✅ Items categorized for Surtidos', {
             count: itemsSurtidos.length,
             selectedItemIds: selectedItemIds.slice(0, 3),
             pedidoId,
             requestId: req.requestId
         });
-        
-        // 🚨 DIAGNOSTIC LOG: Resultados del filtrado
-        logger.info('🔍 PDF DIAGNOSTIC - Filtering results', {
-            pedidoId,
-            pedidoEstatus: pedido.estatus,
-            totalDetalles: detalles.length,
-            itemsSurtidos: itemsSurtidos.length,
-            itemsConStock: itemsConStock.length,
-            itemsBajoPedido: itemsBajoPedido.length,
-            requestId: req.requestId
-        });
-        
+
         let itemsConStock = detalles.filter(item => {
             // 🚫 CRITICAL FILTER: Exclude Facturado orders - they are already completed
             if (pedido.estatus && pedido.estatus.toLowerCase() === 'facturado') {
                 return false;
             }
-            
+
             const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
             const stockActual = parseInt(item.stock_actual_variante) || 0;
             const cantidadRequerida = parseInt(item.cantidad) || 0;
             const tamanoCantidad = parseInt(item.tamano_cantidad || 1);
             const piezasRequeridas = cantidadRequerida * tamanoCantidad;
-            
+
             // If selectedItemIds are provided, exclude selected items from this category
             if (selectedItemIds && selectedItemIds.length > 0) {
                 // Only include items that are NOT selected AND have stock
@@ -409,19 +401,19 @@ async function generarPDFPedido(req, res) {
                 return cantidadSurtida === 0 && stockActual >= piezasRequeridas;
             }
         });
-        
+
         let itemsBajoPedido = detalles.filter(item => {
             // 🚫 CRITICAL FILTER: Exclude Facturado orders - they are already completed
             if (pedido.estatus && pedido.estatus.toLowerCase() === 'facturado') {
                 return false;
             }
-            
+
             const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
             const stockActual = parseInt(item.stock_actual_variante) || 0;
             const cantidadRequerida = parseInt(item.cantidad) || 0;
             const tamanoCantidad = parseInt(item.tamano_cantidad || 1);
             const piezasRequeridas = cantidadRequerida * tamanoCantidad;
-            
+
             // If selectedItemIds are provided, exclude selected items from this category
             if (selectedItemIds && selectedItemIds.length > 0) {
                 // Only include items that are NOT selected AND don't have stock
@@ -430,6 +422,17 @@ async function generarPDFPedido(req, res) {
                 // Fallback to original logic
                 return cantidadSurtida === 0 && stockActual < piezasRequeridas;
             }
+        });
+
+        // 🚨 DIAGNOSTIC LOG: Resultados del filtrado (NOW AFTER initialization)
+        logger.info('🔍 PDF DIAGNOSTIC - Filtering results', {
+            pedidoId,
+            pedidoEstatus: pedido.estatus,
+            totalDetalles: detalles.length,
+            itemsSurtidos: itemsSurtidos.length,
+            itemsConStock: itemsConStock.length,
+            itemsBajoPedido: itemsBajoPedido.length,
+            requestId: req.requestId
         });
 
         // Apply mode filtering and role-specific logic
