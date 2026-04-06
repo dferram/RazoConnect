@@ -1766,6 +1766,27 @@
               )
               .join("");
 
+            // ⚡ CRITICAL: Add event listeners to checkboxes to save selection in REAL TIME
+            // This saves the selected items to sessionStorage as they're marked/unmarked
+            const setupCheckboxListeners = () => {
+              const checkboxes = document.querySelectorAll('.producto-surtir-checkbox');
+              
+              const saveSelectedItems = () => {
+                const selectedCheckboxes = document.querySelectorAll('.producto-surtir-checkbox:checked');
+                const selectedIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.detalleId));
+                sessionStorage.setItem(`remision_items_${selectedOrderId}`, JSON.stringify(selectedIds));
+                console.log('💾 Productos seleccionados guardados:', selectedIds);
+              };
+
+              checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', saveSelectedItems);
+              });
+              
+              console.log(`✅ Listeners agregados a ${checkboxes.length} checkboxes`);
+            };
+            
+            setupCheckboxListeners();
+
             // Calculate total based on role - SOLO PRODUCTOS SURTIDOS
             let totalToShow = pedido.montoTotal;
             let totalSurtidos = 0;
@@ -2128,6 +2149,28 @@
             
             // Build query params based on role and mode
             let queryParams = [];
+            
+            // ⚡ CRITICAL: Add selected item IDs from current remision session
+            // These items were selected in the modal and saved to sessionStorage in REAL TIME
+            const sessionItemsKey = `remision_items_${selectedOrderId}`;
+            const sessionItems = sessionStorage.getItem(sessionItemsKey);
+            console.log('📋 PDF Generation - Session Check:', {
+                key: sessionItemsKey,
+                sessionItems: sessionItems,
+                selectedOrderId: selectedOrderId
+            });
+            
+            if (sessionItems) {
+              try {
+                const itemIds = JSON.parse(sessionItems);
+                console.log('✅ Selected items found:', itemIds);
+                queryParams.push(`selectedItems=${itemIds.join(',')}`);
+              } catch (e) {
+                console.warn('❌ Could not parse session items:', e);
+              }
+            } else {
+              console.warn('⚠️ No selected items in sessionStorage');
+            }
             
             // ⚡ MODE PARAMETER: Add mode to query if specified (for cliente role)
             // Backend will enforce role-based rules regardless

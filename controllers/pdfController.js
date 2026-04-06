@@ -8,6 +8,32 @@ async function generarPDFPedido(req, res) {
     const pedidoId = parseInt(req.params.id);
     const { tenant_id } = req.tenant;
     
+    // ⚡ NEW: Extract selectedItems from query parameter (current session selection)
+    const selectedItemsParam = req.query.selectedItems;
+    let selectedItemIds = [];
+    if (selectedItemsParam) {
+        try {
+            selectedItemIds = selectedItemsParam.split(',').map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+            logger.info('✅ PDF: Selected items extracted', {
+                count: selectedItemIds.length,
+                itemIds: selectedItemIds.slice(0, 5), // Show first 5
+                pedidoId,
+                requestId: req.requestId
+            });
+        } catch (e) {
+            logger.warn('❌ Could not parse selectedItems', { 
+                selectedItemsParam,
+                error: e.message,
+                requestId: req.requestId 
+            });
+        }
+    } else {
+        logger.info('⚠️ PDF: No selectedItems in query', {
+            pedidoId,
+            requestId: req.requestId
+        });
+    }
+    
     // ⚡ NEW: Extract mode parameter from query (?mode=surtido_only or ?mode=full)
     const requestedMode = (req.query.mode || 'full').toLowerCase().trim();
     
@@ -302,11 +328,33 @@ async function generarPDFPedido(req, res) {
         renderHeader(doc, pedido, logoPath, logoExists);
 
         // ⚡ THREE-TABLE CATEGORIZATION (NEW LOGIC)
-        // For inventarios role: Use cantidadsurtida to determine current session selection
-        // CRITICAL: cantidadsurtida is updated when user selects items to ship
+        // For inventarios role: Use selectedItemIds if available (from current session)
+        // Otherwise use cantidadsurtida (from database)
+        // CRITICAL: Use current session selection (selectedItemIds) first if provided
         let itemsSurtidos = detalles.filter(item => {
             const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
-            return cantidadSurtida > 0;
+            
+            // If selectedItemIds are provided (current session), use those for categorization
+            if (selectedItemIds && selectedItemIds.length > 0) {
+                const isSelected = selectedItemIds.includes(item.detalleid);
+                logger.debug('📦 Item categorization check', {
+                    detalleid: item.detalleid,
+                    producto: item.producto_nombre,
+                    isSelected,
+                    selectedItemIds: selectedItemIds.slice(0, 3)
+                });
+                return isSelected;
+            } else {
+                // Fallback to cantidadsurtida for backward compatibility
+                return cantidadSurtida > 0;
+            }
+        });
+        
+        logger.info('✅ Items categorized for Surtidos', {
+            count: itemsSurtidos.length,
+            selectedItemIds: selectedItemIds.slice(0, 3),
+            pedidoId,
+            requestId: req.requestId
         });
         
         let itemsConStock = detalles.filter(item => {
@@ -315,7 +363,15 @@ async function generarPDFPedido(req, res) {
             const cantidadRequerida = parseInt(item.cantidad) || 0;
             const tamanoCantidad = parseInt(item.tamano_cantidad || 1);
             const piezasRequeridas = cantidadRequerida * tamanoCantidad;
-            return cantidadSurtida === 0 && stockActual >= piezasRequeridas;
+            
+            // If selectedItemIds are provided, exclude selected items from this category
+            if (selectedItemIds && selectedItemIds.length > 0) {
+                // Only include items that are NOT selected AND have stock
+                return !selectedItemIds.includes(item.detalleid) && stockActual >= piezasRequeridas;
+            } else {
+                // Fallback to original logic
+                return cantidadSurtida === 0 && stockActual >= piezasRequeridas;
+            }
         });
         
         let itemsBajoPedido = detalles.filter(item => {
@@ -324,7 +380,15 @@ async function generarPDFPedido(req, res) {
             const cantidadRequerida = parseInt(item.cantidad) || 0;
             const tamanoCantidad = parseInt(item.tamano_cantidad || 1);
             const piezasRequeridas = cantidadRequerida * tamanoCantidad;
-            return cantidadSurtida === 0 && stockActual < piezasRequeridas;
+            
+            // If selectedItemIds are provided, exclude selected items from this category
+            if (selectedItemIds && selectedItemIds.length > 0) {
+                // Only include items that are NOT selected AND don't have stock
+                return !selectedItemIds.includes(item.detalleid) && stockActual < piezasRequeridas;
+            } else {
+                // Fallback to original logic
+                return cantidadSurtida === 0 && stockActual < piezasRequeridas;
+            }
         });
 
         // Apply mode filtering and role-specific logic

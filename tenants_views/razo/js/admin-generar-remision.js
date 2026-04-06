@@ -202,12 +202,21 @@ function configurarEventosModal() {
     const checkboxes = document.querySelectorAll('.item-checkbox');
     const cantidadInputs = document.querySelectorAll('.cantidad-input');
 
+    // ⚡ NUEVA FUNCIÓN: Guardar items seleccionados en sessionStorage en TIEMPO REAL
+    const saveSelectedItemsToSession = () => {
+        const selectedCheckboxes = document.querySelectorAll('.item-checkbox:checked');
+        const selectedIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.detalleId));
+        sessionStorage.setItem(`remision_items_${pedidoActual}`, JSON.stringify(selectedIds));
+        console.log('📝 Selección guardada en sesión:', selectedIds);
+    };
+
     selectAll?.addEventListener('change', (e) => {
         checkboxes.forEach(cb => {
             if (!cb.disabled) {
                 cb.checked = e.target.checked;
             }
         });
+        saveSelectedItemsToSession(); // ⚡ Guardar cuando se selecciona/deselecciona todo
         if (!isInventarios) {
             calcularTotalRemision();
         }
@@ -215,6 +224,7 @@ function configurarEventosModal() {
 
     checkboxes.forEach(cb => {
         cb.addEventListener('change', () => {
+            saveSelectedItemsToSession(); // ⚡ Guardar cada vez que se marca/desmarca
             if (!isInventarios) {
                 calcularTotalRemision();
             }
@@ -341,6 +351,11 @@ async function generarRemisionAPI(datos) {
         if (!response.ok) {
             throw new Error(result.error || 'Error al generar remisión');
         }
+
+        // ⚡ CRITICAL: Save selected items to sessionStorage for PDF generation
+        // This ensures the PDF shows ONLY the items that were marked in THIS session
+        const selectedItemIds = datos.items_a_surtir.map(item => item.detalle_pedido_id);
+        sessionStorage.setItem(`remision_items_${datos.pedido_id}`, JSON.stringify(selectedItemIds));
 
         const userRole = getUserRole();
         const isInventarios = userRole === 'inventarios';
