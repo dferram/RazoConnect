@@ -681,14 +681,14 @@
                   <h3>Productos del pedido</h3>
                   <div id="selectAllContainer" style="display: none; align-items: center; gap: 0.5rem;">
                     <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.875rem; font-weight: 500;">
-                      <input 
-                        type="checkbox" 
-                        id="selectAllConStock" 
-                        onchange="toggleSelectAllConStock(this.checked)"
+                      <input
+                        type="checkbox"
+                        id="selectAllConStock"
+                        onchange="toggleSelectAllProductos(this.checked)"
                         style="width: 1.25rem; height: 1.25rem; cursor: pointer;"
-                        title="Seleccionar todos los productos con stock"
+                        title="Seleccionar todos los productos"
                       />
-                      <span>Seleccionar todos con stock</span>
+                      <span id="selectAllLabel">Seleccionar todos con stock</span>
                     </label>
                   </div>
                 </div>
@@ -1734,9 +1734,13 @@
                   }
                   
                   const isInventariosRole = getUserRole() === 'inventarios';
-                  
-                  // Lógica simple: mostrar checkbox si tiene stock y es usuario de inventarios
-                  const puedeSeleccionar = isInventariosRole && badgeText === 'CON STOCK';
+                  const isFinanzasRole = getUserRole() === 'finanzas';
+
+                  // Lógica: mostrar checkbox si:
+                  // - Inventarios: tiene stock (CON STOCK)
+                  // - Finanzas: ya está surtido (SURTIDO)
+                  const puedeSeleccionar = (isInventariosRole && badgeText === 'CON STOCK') ||
+                                          (isFinanzasRole && badgeText === 'SURTIDO');
                   
                   // ⚡ FINANCE-ONLY STYLING: Apply gray layer only for finance roles
                   // This creates visual separation between chargeable (bright) and informational (dimmed) items
@@ -2520,11 +2524,21 @@
           const btnConfirmar = document.getElementById('btnConfirmarSurtido');
           if (!btnConfirmar) return;
 
+          // Recopilar IDs de productos seleccionados
+          const selectedCheckboxes = document.querySelectorAll('.producto-surtir-checkbox:checked');
+          const detalleIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.detalleId));
+
+          // Validar que al menos un producto esté seleccionado
+          if (detalleIds.length === 0) {
+            showToast("Debes seleccionar al menos un producto para confirmar", "error");
+            return;
+          }
+
           // Confirm action
           const confirmed = await Swal.fire({
             icon: 'warning',
             title: '¿Confirmar surtido?',
-            html: 'Esta acción:<br>• Reducirá el inventario<br>• Generará CxC (si aplica)<br>• Marcará el pedido como Surtido<br>• NO se puede deshacer',
+            html: `Esta acción para ${detalleIds.length} producto(s):<br>• Reducirá el inventario<br>• Generará CxC (si aplica)<br>• Marcará como Facturado<br>• NO se puede deshacer`,
             showCancelButton: true,
             confirmButtonText: 'Sí, confirmar',
             cancelButtonText: 'Cancelar',
@@ -2544,7 +2558,10 @@
               headers: {
                 'Authorization': `Bearer ${adminToken}`,
                 'Content-Type': 'application/json'
-              }
+              },
+              body: JSON.stringify({
+                detalleIds: detalleIds
+              })
             });
 
             const data = await response.json();
@@ -2553,10 +2570,10 @@
               await Swal.fire({
                 icon: 'success',
                 title: 'Pedido confirmado',
-                text: data.message || 'El pedido ha sido confirmado y el inventario reducido',
+                text: data.message || `${detalleIds.length} producto(s) confirmado(s) y el inventario reducido`,
                 confirmButtonColor: '#0d6efd'
               });
-              
+
               // Reload page to reflect changes
               window.location.reload();
             } else {
@@ -2652,33 +2669,43 @@
           }
         };
 
-        // ⚡ FIXED: Function to toggle select all products with stock (for inventarios role)
-        // Only selects checkboxes that are actually visible (not hidden due to backorder/fully surtido)
-        window.toggleSelectAllConStock = function(checked) {
+        // ⚡ FIXED: Function to toggle select all products (for inventarios and finanzas roles)
+        // Only selects checkboxes that are actually visible
+        window.toggleSelectAllProductos = function(checked) {
           const checkboxes = document.querySelectorAll('.producto-surtir-checkbox');
           checkboxes.forEach(cb => {
             // Only toggle checkboxes that are visible and enabled
-            // This filters out backorder items and fully surtido items
             const isVisible = cb.offsetParent !== null; // Check if element is visible in DOM
             if (isVisible && !cb.disabled) {
               cb.checked = checked;
             }
           });
-          console.log(`[SELECT ALL] ${checked ? 'Seleccionados' : 'Deseleccionados'} ${checkboxes.length} productos con stock`);
+          // Guardar la selección
+          const selectedCheckboxes = document.querySelectorAll('.producto-surtir-checkbox:checked');
+          const selectedIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.dataset.detalleId));
+          sessionStorage.setItem(`remision_items_${selectedOrderId}`, JSON.stringify(selectedIds));
+          console.log(`[SELECT ALL] ${checked ? 'Seleccionados' : 'Deseleccionados'} ${checkboxes.length} productos`);
         };
 
-        // Show select all container for inventarios role after products are loaded
-        function showSelectAllForInventarios() {
+        // Show select all container for inventarios and finanzas roles after products are loaded
+        function showSelectAllForSelectableRoles() {
           const userRole = getUserRole();
-          const isInventarios = userRole === 'inventarios';
+          const isInventariosOrFinanzas = userRole === 'inventarios' || userRole === 'finanzas';
           const selectAllContainer = document.getElementById('selectAllContainer');
-          
-          if (selectAllContainer && isInventarios) {
-            // Check if there are any checkboxes (products with stock)
+          const selectAllLabel = document.getElementById('selectAllLabel');
+
+          if (selectAllContainer && isInventariosOrFinanzas) {
+            // Check if there are any checkboxes (products with stock for inventarios, or surtidos for finanzas)
             const checkboxes = document.querySelectorAll('.producto-surtir-checkbox');
             if (checkboxes.length > 0) {
               selectAllContainer.style.display = 'flex';
-              console.log(`✅ [SELECT ALL] Mostrando selector para ${checkboxes.length} productos con stock`);
+              // Actualizar el label según el rol
+              if (selectAllLabel) {
+                selectAllLabel.textContent = userRole === 'finanzas'
+                  ? 'Seleccionar todos para confirmar'
+                  : 'Seleccionar todos con stock';
+              }
+              console.log(`✅ [SELECT ALL] Mostrando selector para ${checkboxes.length} productos (rol: ${userRole})`);
             }
           }
         }
@@ -2687,7 +2714,7 @@
         document.addEventListener('DOMContentLoaded', () => {
           // Wait for products to be loaded, then show select all
           setTimeout(() => {
-            showSelectAllForInventarios();
+            showSelectAllForSelectableRoles();
           }, 500);
         });
       })();

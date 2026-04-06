@@ -90,6 +90,11 @@
         color: var(--razo-gray-dark);
         margin: 0;
       }
+
+      .admin-table-container .empty-state {
+        width: 100%;
+        box-sizing: border-box;
+      }
     </style>
   </head>
   <body data-page-title="Pedidos Históricos">
@@ -149,20 +154,22 @@
                 />
               </div>
               <div class="filter-group">
-                <label class="filter-label">Fecha desde</label>
+                <label class="filter-label" for="filterFechaDesde">Fecha desde</label>
                 <input
                   type="date"
                   id="filterFechaDesde"
                   class="filter-input"
+                  title="Fecha desde"
                   onchange="filterPedidos()"
                 />
               </div>
               <div class="filter-group">
-                <label class="filter-label">Fecha hasta</label>
+                <label class="filter-label" for="filterFechaHasta">Fecha hasta</label>
                 <input
                   type="date"
                   id="filterFechaHasta"
                   class="filter-input"
+                  title="Fecha hasta"
                   onchange="filterPedidos()"
                 />
               </div>
@@ -194,10 +201,10 @@
                 <tbody id="pedidosTableBody"></tbody>
               </table>
             </div>
-            <div id="emptyPedidos" class="empty-state" style="display: none">
+            <div id="emptyPedidos" class="empty-state" style="display: none; min-height: 300px;">
               <div class="empty-state-icon">📦</div>
               <h3 class="empty-state-title">No hay pedidos históricos</h3>
-              <p class="empty-state-text">Los pedidos completamente confirmados aparecerán aquí.</p>
+              <p class="empty-state-text">Los pedidos completamente confirmados y entregados aparecerán aquí.</p>
             </div>
           </div>
         </div>
@@ -259,14 +266,15 @@
         } catch (error) {
           console.error("Error loading pedidos:", error);
           let errorMessage = "Error al cargar pedidos históricos";
-          
+
           // Detectar si es error de permisos
           if (error.message.includes("Acceso denegado")) {
             errorMessage = "Acceso denegado: Solo Finanzas, Admin y SuperAdmin pueden ver históricos.";
           }
-          
+
           showToast(errorMessage, "error");
-          emptyPedidos.style.display = "block";
+          pedidosTable.style.display = "none";
+          emptyPedidos.style.display = "flex";
         } finally {
           loadingPedidos.style.display = "none";
         }
@@ -289,7 +297,7 @@
 
         if (pedidos.length === 0) {
           pedidosTable.style.display = "none";
-          emptyPedidos.style.display = "block";
+          emptyPedidos.style.display = "flex";
           return;
         }
 

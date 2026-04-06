@@ -1311,22 +1311,12 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         });
         
         // Marcar el detalle como confirmado por finanzas y cambiar estado a Facturado
-        try {
-          const updateDetalleQuery = `
-            UPDATE detallesdelpedido 
-            SET confirmado_finanzas = true, 
-                fecha_confirmacion_finanzas = NOW(),
-                estado_producto = 'Facturado'
-            WHERE detalleid = $1 AND tenant_id = $2
-          `;
-          await client.query(updateDetalleQuery, [item.detalleid, tenant_id]);
-        } catch (updateError) {
-          // Si los campos no existen en la BD, simplemente continúa
-          if (!updateError.message.includes('column') && !updateError.message.includes('does not exist')) {
-            throw updateError;
-          }
-          logger.warn('⚠️ Campos de confirmación finanzas no existen en BD. Continuando sin actualizar...', { detalleid: item.detalleid });
-        }
+        const updateDetalleQuery = `
+          UPDATE detallesdelpedido
+          SET estado_producto = 'Facturado'
+          WHERE detalleid = $1 AND tenant_id = $2
+        `;
+        await client.query(updateDetalleQuery, [item.detalleid, tenant_id]);
         
         productosConfirmados++;
         logger.info('✅ [DEBUG] Producto confirmado exitosamente:', { varianteId, productosConfirmados });
@@ -1353,20 +1343,37 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       }
     }
 
-    // Verificar si todos los productos han sido confirmados
-    const todosProductosQuery = `
-      SELECT COUNT(*) as total FROM detallesdelpedido 
-      WHERE pedidoid = $1 AND tenant_id = $2 AND cantidadsurtida > 0
+    // Verificar estado de TODOS los productos del pedido (no solo los con cantidad > 0)
+    const estadosProductosQuery = `
+      SELECT
+        estado_producto,
+        COUNT(*) as cantidad
+      FROM detallesdelpedido
+      WHERE pedidoid = $1 AND tenant_id = $2 AND estado_producto != 'Facturado'
+      GROUP BY estado_producto
     `;
-    const todosProductosResult = await client.query(todosProductosQuery, [pedidoId, tenant_id]);
-    const totalProductosSurtidos = parseInt(todosProductosResult.rows[0].total);
-    
-    // Determinar nuevo estado basado en lo que se confirmó
-    // Si se confirmaron todos los que tenían cantidadsurtida > 0, entonces "Surtido"
-    // Si solo se confirmaron algunos, entonces "Parcialmente Surtido"
-    const todoConfirmado = totalProductosSurtidos > 0 && totalProductosSurtidos === productosConfirmados;
-    const nuevoEstatusPedido = todoConfirmado ? 'Surtido' : 'Parcialmente Surtido';
-    const completamenteSurtido = todoConfirmado;
+    const estadosProductosResult = await client.query(estadosProductosQuery, [pedidoId, tenant_id]);
+
+    // Determinar nuevo estado del pedido basado en los productos restantes (no facturados)
+    let nuevoEstatusPedido = 'Surtido'; // por defecto si todos están facturados
+    let completamenteSurtido = true;
+
+    if (estadosProductosResult.rows.length > 0) {
+      const estados = estadosProductosResult.rows;
+      const tieneBackorder = estados.some(e => e.estado_producto === 'Bajo pedido');
+      const tieneOtros = estados.some(e => e.estado_producto !== 'Surtido' && e.estado_producto !== 'Bajo pedido');
+
+      if (tieneBackorder) {
+        nuevoEstatusPedido = 'Bajo pedido';
+        completamenteSurtido = false;
+      } else if (tieneOtros) {
+        nuevoEstatusPedido = 'Parcialmente Surtido';
+        completamenteSurtido = false;
+      } else if (estados.some(e => e.estado_producto === 'Surtido')) {
+        nuevoEstatusPedido = 'Parcialmente Surtido';
+        completamenteSurtido = false;
+      }
+    }
 
     // Actualizar pedido con el nuevo estado
     const updateQuery = `
@@ -1399,8 +1406,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     // Obtener datos actualizados del pedido y productos después de la confirmación
     const pedidoActualizadoQuery = `
       SELECT p.pedidoid, p.estatus, p.completamente_surtido
-      FROM pedidos 
-      WHERE pedidoid = $1 AND tenant_id = $2
+      FROM pedidos p
+      WHERE p.pedidoid = $1 AND p.tenant_id = $2
     `;
     const pedidoActualizadoResult = await client.query(pedidoActualizadoQuery, [pedidoId, tenant_id]);
     
@@ -1529,12 +1536,10 @@ const rechazarPedidoFinanzas = async (req, res) => {
           WHEN (COALESCE(sa.cantidad, 0) - COALESCE(sa.cantidad_reservada, 0)) >= dp.piezastotales THEN 'Con stock'
           ELSE 'Bajo pedido'
         END,
-        confirmado_finanzas = false,
-        fecha_confirmacion_finanzas = NULL,
         cantidadsurtida = 0
         FROM detallesdelpedido dp2
         LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = dp.tenant_id
-        WHERE dp.pedidoid = $1 
+        WHERE dp.pedidoid = $1
           AND dp.detalleid = ANY($2::int[])
           AND dp.tenant_id = $3
           AND dp.estado_producto = 'Facturado'
