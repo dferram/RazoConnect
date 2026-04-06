@@ -1088,16 +1088,64 @@
 
       // FASE 3 - TASK 3: Setup role-based visibility
       function setupRoleBasedVisibility() {
+        console.log('🚀 [DEBUG] Ejecutando setupRoleBasedVisibility()');
+        
         const userRole = getUserRole();
+        console.log(`🔍 [DEBUG] Rol detectado: "${userRole}"`);
         const isInventarios = userRole === 'inventarios';
         const isFinanzas = userRole === 'finanzas' || userRole === 'gerente_finanzas';
         const isSecretaria = userRole === 'secretaria';
+        const isAdmin = userRole === 'admin' || userRole === 'super_admin';
+        const puedeVerBotonesFinanzas = isFinanzas || isSecretaria || isAdmin;
+        console.log(`🔍 [DEBUG] isFinanzas: ${isFinanzas}, isSecretaria: ${isSecretaria}, isAdmin: ${isAdmin}, puedeVerBotonesFinanzas: ${puedeVerBotonesFinanzas}`);
         
         const btnSurtir = document.getElementById('btnSurtirPedido');
         const btnAjustar = document.getElementById('btnAjustarPedido');
         const btnConfirmar = document.getElementById('btnConfirmarSurtido');
         const btnRechazar = document.getElementById('btnRechazarFinanzas');
         const btnCambiarEstatus = document.getElementById('btnCambiarEstatus');
+        
+        console.log(`🔍 [DEBUG] Botones encontrados: btnSurtir=${!!btnSurtir}, btnConfirmar=${!!btnConfirmar}, btnRechazar=${!!btnRechazar}`);
+        
+        // Esperar un momento a que se carguen los datos del pedido
+        setTimeout(() => {
+          // Verificar el estado del pedido
+          const estatusValor = (selectedOrderStatus || '').toLowerCase().trim();
+          console.log(`🔍 [DEBUG] selectedOrderStatus: "${selectedOrderStatus}", estatusValor: "${estatusValor}"`);
+          const estaPedidoListoParaRemisionar = estatusValor === 'listo para remisionar';
+          console.log(`🔍 [DEBUG] Estado pedido: "${estatusValor}", listo para remisionar: ${estaPedidoListoParaRemisionar}`);
+        
+        // Condición simple: pedido listo para remisionar (sin validar productos)
+        const debeMostrarBotones = puedeVerBotonesFinanzas && estaPedidoListoParaRemisionar;
+        console.log(`🔍 [DEBUG] ¿Mostrar botones? ${debeMostrarBotones} (rol: ${puedeVerBotonesFinanzas}, estado: ${estaPedidoListoParaRemisionar})`);
+        
+        if (debeMostrarBotones) {
+          console.log(`✅ [DEBUG] Mostrando botones - Rol: ${userRole}, Estado: ${estatusValor}`);
+          
+          if (btnConfirmar) {
+            btnConfirmar.style.display = 'inline-block';
+            btnConfirmar.style.visibility = 'visible';
+            btnConfirmar.disabled = false;
+            console.log(`✅ [DEBUG] Botón Confirmar visible`);
+          }
+          if (btnRechazar) {
+            btnRechazar.style.display = 'inline-block';
+            btnRechazar.style.visibility = 'visible';
+            btnRechazar.disabled = false;
+            console.log(`✅ [DEBUG] Botón Rechazar visible`);
+          }
+        } else {
+          console.log(`❌ [DEBUG] Ocultando botones - rol: ${puedeVerBotonesFinanzas}, estado: ${estaPedidoListoParaRemisionar}`);
+          if (btnConfirmar) {
+            btnConfirmar.style.display = 'none';
+            console.log(`🚫 [DEBUG] Botón Confirmar oculto`);
+          }
+          if (btnRechazar) {
+            btnRechazar.style.display = 'none';
+            console.log(`🚫 [DEBUG] Botón Rechazar oculto`);
+          }
+        }
+        }, 500); // Esperar 500ms a que se carguen los datos
         
         if (isInventarios) {
           console.log('📦 [PEDIDO-DETALLE] Rol inventarios - Configurando vista');
@@ -1135,26 +1183,43 @@
           return;
         }
         
-        if (isFinanzas || isSecretaria) {
-          console.log(`💰 [PEDIDO-DETALLE] Rol ${userRole} - Configurando vista`);
+        if (puedeVerBotonesFinanzas) {
+          console.log(`💰 [PEDIDO-DETALLE] Rol ${userRole} - Configurando vista de finanzas/admin`);
           
-          // Hide Pedido surtido button for finanzas/secretaria
+          // Verificar si el pedido está listo para confirmación por finanzas
+          const estatusValor = (selectedOrderStatus || '').toLowerCase().trim();
+          const estaPedidoEsperandoFinanzas = estatusValor === 'listo para remisionar';
+          console.log(`🔍 [DEBUG] Estado pedido: "${estatusValor}", esperando finanzas: ${estaPedidoEsperandoFinanzas}`);
+          
+          // Hide Pedido surtido button for finanzas/secretaria/admin
           if (btnSurtir) btnSurtir.style.display = 'none';
           
-          // Hide Ajustar Pedido button for finanzas/secretaria
+          // Hide Ajustar Pedido button for finanzas/secretaria/admin
           if (btnAjustar) {
             btnAjustar.style.display = 'none';
             console.log(`🚫 [PEDIDO-DETALLE] Botón Ajustar Pedido oculto para ${userRole}`);
           }
           
-          // Show Confirmar Surtido and Rechazar buttons for finanzas and secretaria
-          if (btnConfirmar) {
-            btnConfirmar.style.display = 'inline-block';
-            console.log(`✅ [PEDIDO-DETALLE] Botón Confirmar Surtido habilitado para ${userRole}`);
-          }
-          if (btnRechazar) {
-            btnRechazar.style.display = 'inline-block';
-            console.log(`✅ [PEDIDO-DETALLE] Botón Rechazar habilitado para ${userRole}`);
+          // Show Confirmar Surtido and Rechazar buttons SOLO si está en Listo para remisionar
+          if (estaPedidoEsperandoFinanzas) {
+            if (btnConfirmar) {
+              btnConfirmar.style.display = 'inline-block';
+              console.log(`✅ [PEDIDO-DETALLE] Botón Confirmar Surtido habilitado para ${userRole}`);
+            }
+            if (btnRechazar) {
+              btnRechazar.style.display = 'inline-block';
+              console.log(`✅ [PEDIDO-DETALLE] Botón Rechazar habilitado para ${userRole}`);
+            }
+          } else {
+            // Ocultar botones si no está en Listo para remisionar
+            if (btnConfirmar) {
+              btnConfirmar.style.display = 'none';
+              console.log(`🚫 [PEDIDO-DETALLE] Botón Confirmar oculto - pedido no está en Listo para remisionar`);
+            }
+            if (btnRechazar) {
+              btnRechazar.style.display = 'none';
+              console.log(`🚫 [PEDIDO-DETALLE] Botón Rechazar oculto - pedido no está en Listo para remisionar`);
+            }
           }
           
           return;
@@ -1349,6 +1414,10 @@
 
             selectedOrderId = pedido.pedidoId;
             selectedOrderStatus = pedido.estatus || "";
+            console.log(`🔍 [DEBUG] Pedido cargado - ID: ${selectedOrderId}, Estatus: "${selectedOrderStatus}"`);
+            
+            // Llamar a setupRoleBasedVisibility() después de cargar los datos
+            setupRoleBasedVisibility();
 
             const btnCambiarEstatus = document.getElementById("btnCambiarEstatus");
             if (btnCambiarEstatus) {

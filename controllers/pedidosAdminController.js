@@ -1194,6 +1194,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
   
   try {
     const { id: pedidoId } = req.params;
+    const { detalleIds } = req.body; // Array de IDs de productos seleccionados por finanzas
     const { tenant_id } = req.tenant;
     const userId = req.user?.id || req.user?.adminid;
 
@@ -1234,8 +1235,17 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       });
     }
 
+    // VALIDACIÓN: Verificar que se proporcionaron detalleIds
+    if (!detalleIds || !Array.isArray(detalleIds) || detalleIds.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({
+        success: false,
+        message: 'Debes seleccionar al menos un producto para confirmar.'
+      });
+    }
+
     // PROTECCIÓN PARA SURTIDO PARCIAL: Obtener productos que están SURTIDOS (marcados por inventarios)
-    // Filtrar solo los que NO han sido confirmados aún por finanzas
+    // Y que fueron seleccionados por finanzas para confirmar
     const productosQuery = `
       SELECT 
         dp.detalleid,
@@ -1243,17 +1253,20 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         dp.piezastotales,
         dp.cantidadsurtida,
         dp.esbackorder,
+        dp.estado_producto,
         pv.sku,
         pr.nombreproducto
       FROM detallesdelpedido dp
       INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
       INNER JOIN productos pr ON pv.productoid = pr.productoid
       WHERE dp.pedidoid = $1 
+        AND dp.detalleid = ANY($2::int[])
         AND dp.cantidadsurtida > 0
-        AND dp.tenant_id = $2
+        AND dp.tenant_id = $3
+        AND dp.estado_producto = 'Surtido'
     `;
     
-    const productosResult = await client.query(productosQuery, [pedidoId, tenant_id]);
+    const productosResult = await client.query(productosQuery, [pedidoId, detalleIds, tenant_id]);
     
     if (productosResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -1297,11 +1310,13 @@ const confirmarSurtidoFinanzas = async (req, res) => {
           tipoOrigen: 'VENTA'
         });
         
-        // Marcar el detalle como confirmado por finanzas (si el campo existe en la BD)
+        // Marcar el detalle como confirmado por finanzas y cambiar estado a Facturado
         try {
           const updateDetalleQuery = `
             UPDATE detallesdelpedido 
-            SET confirmado_finanzas = true, fecha_confirmacion_finanzas = NOW()
+            SET confirmado_finanzas = true, 
+                fecha_confirmacion_finanzas = NOW(),
+                estado_producto = 'Facturado'
             WHERE detalleid = $1 AND tenant_id = $2
           `;
           await client.query(updateDetalleQuery, [item.detalleid, tenant_id]);
@@ -1456,8 +1471,8 @@ const rechazarPedidoFinanzas = async (req, res) => {
   
   try {
     const { id: pedidoId } = req.params;
+    const { detalleIds, observaciones_finanzas } = req.body; // detalleIds para regresar productos específicos
     const { tenant_id } = req.tenant;
-    const { observaciones_finanzas } = req.body;
     const userId = req.user?.id || req.user?.adminid;
 
     if (!observaciones_finanzas || observaciones_finanzas.trim() === '') {
@@ -1501,6 +1516,75 @@ const rechazarPedidoFinanzas = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: `No se puede rechazar. El pedido debe estar en estado "Listo para remisionar". Estado actual: ${pedido.estatus}`
+      });
+    }
+
+    // Si se proporcionaron detalleIds, regresar solo esos productos de Facturado a su estado original
+    if (detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0) {
+      // Regresar productos específicos de Facturado a su estado original (Con stock o Bajo pedido)
+      // Para determinar el estado original, verificamos si tiene stock disponible
+      const regresarProductosQuery = `
+        UPDATE detallesdelpedido dp
+        SET estado_producto = CASE
+          WHEN (COALESCE(sa.cantidad, 0) - COALESCE(sa.cantidad_reservada, 0)) >= dp.piezastotales THEN 'Con stock'
+          ELSE 'Bajo pedido'
+        END,
+        confirmado_finanzas = false,
+        fecha_confirmacion_finanzas = NULL,
+        cantidadsurtida = 0
+        FROM detallesdelpedido dp2
+        LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = dp.tenant_id
+        WHERE dp.pedidoid = $1 
+          AND dp.detalleid = ANY($2::int[])
+          AND dp.tenant_id = $3
+          AND dp.estado_producto = 'Facturado'
+        RETURNING dp.detalleid, dp.estado_producto
+      `;
+      
+      const regresarResult = await client.query(regresarProductosQuery, [pedidoId, detalleIds, tenant_id]);
+      
+      if (regresarResult.rowCount === 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          success: false,
+          message: 'No se encontraron productos facturados para regresar'
+        });
+      }
+      
+      // Devolver stock a inventario (sumar las piezas)
+      for (const producto of regresarResult.rows) {
+        await client.query(
+          `UPDATE stock_admin 
+           SET cantidad = cantidad + (
+             SELECT piezastotales FROM detallesdelpedido 
+             WHERE detalleid = $1 AND tenant_id = $2
+           )
+           WHERE variante_id = (
+             SELECT varianteid FROM detallesdelpedido 
+             WHERE detalleid = $1 AND tenant_id = $2
+           ) AND tenant_id = $2`,
+          [producto.detalleid, tenant_id]
+        );
+      }
+      
+      await client.query('COMMIT');
+      
+      logger.info('Productos regresados de Facturado a estado original:', {
+        pedidoId,
+        productosRegresados: regresarResult.rowCount,
+        detalleIds,
+        userId,
+        tenantId: tenant_id
+      });
+      
+      return res.json({
+        success: true,
+        message: `${regresarResult.rowCount} producto(s) regresado(s) a su estado original`,
+        data: {
+          pedidoId,
+          productosRegresados: regresarResult.rowCount,
+          productos: regresarResult.rows
+        }
       });
     }
 
