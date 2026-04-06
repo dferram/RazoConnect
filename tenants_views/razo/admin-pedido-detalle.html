@@ -2640,19 +2640,44 @@
         });
       })();
 
-      // Cargar botón de volver - Dinámico según rol del usuario
+      // Cargar botón de volver - Dinámico según de dónde vengas
       window.addEventListener('DOMContentLoaded', function() {
-        const userRole = getUserRole();
-        let backUrl = '/admin-clientes-facturacion.html'; // Default para finanzas
+        const navigationSource = sessionStorage.getItem('pedido_detalle_source');
+        const sourceTab = sessionStorage.getItem('clientes_facturacion_source_tab'); // 'clientes' o 'pedidos'
         
-        // Inventarios regresa a admin-pedidos
-        if (userRole === 'inventarios') {
+        let backUrl = '/admin-pedidos.html';
+        let backText = 'Volver a Pedidos';
+        
+        // Si viene de clientes-facturacion, regresar aquí pero a la sección correcta
+        if (navigationSource === 'clientes-facturacion') {
+          if (sourceTab === 'clientes') {
+            backUrl = '/admin-clientes-facturacion.html?tab=clientes';
+            backText = 'Volver a Clientes';
+          } else if (sourceTab === 'pedidos') {
+            backUrl = '/admin-clientes-facturacion.html?tab=pedidos';
+            backText = 'Volver a Pedidos';
+          }
+        }
+        // Si viene de admin-pedidos
+        else if (navigationSource === 'admin-pedidos') {
           backUrl = '/admin-pedidos.html';
+          backText = 'Volver a Pedidos';
+        }
+        // Default según rol
+        else {
+          const userRole = getUserRole();
+          if (userRole === 'inventarios') {
+            backUrl = '/admin-pedidos.html';
+            backText = 'Volver a Pedidos';
+          } else if (userRole === 'finanzas' || userRole === 'gerente_finanzas') {
+            backUrl = '/admin-clientes-facturacion.html?tab=pedidos';
+            backText = 'Volver a Pedidos';
+          }
         }
         
         loadBackButton({
           backUrl: backUrl,
-          backText: 'Volver a pedidos'
+          backText: backText
         });
       });
     </script>

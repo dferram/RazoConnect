@@ -437,6 +437,9 @@
           content.classList.remove('active');
         });
         document.getElementById(`tab-${tabName}`).classList.add('active');
+        
+        // 💾 Guardar qué pestaña está activa para navegar de vuelta correctamente
+        sessionStorage.setItem('clientes_facturacion_active_tab', tabName);
 
         // Load data if needed
         if (tabName === 'clientes' && clientesData.length === 0) {
@@ -626,17 +629,26 @@
             const allPedidos = data.data || [];
             
             // Separar pedidos en 3 categorías:
-            // 1. SURTIDOS: Enviados por inventarios, esperando confirmación de finanzas
+            // 1. SURTIDOS: Enviados por inventarios, esperando confirmación de finanzas (NO incluyen surtido_completo)
             const pedidosSurtidos = allPedidos.filter(pedido => {
               const estatus = normalizarEstatus(pedido.estatus);
-              return ['listo_para_remisionar', 'surtido_completo'].includes(estatus);
+              return estatus === 'listo_para_remisionar';
             });
             
             // 2. PENDIENTES: Pedidos en preparación o esperando surtido
-            const pedidosPendientes = allPedidos.filter(pedido => {
+            // PRIORIDAD: 'surtido_completo' debe aparecer PRIMERO en esta tabla
+            const pedidosPendientesNoSurtido = allPedidos.filter(pedido => {
               const estatus = normalizarEstatus(pedido.estatus);
               return ['pendiente', 'bajo_pedido', 'combinado', 'completo'].includes(estatus);
             });
+            
+            const pedidosSurtidoCompleto = allPedidos.filter(pedido => {
+              const estatus = normalizarEstatus(pedido.estatus);
+              return estatus === 'surtido_completo';
+            });
+            
+            // Ordenar: Surtido Completo primero, luego los demás
+            const pedidosPendientes = [...pedidosSurtidoCompleto, ...pedidosPendientesNoSurtido];
             
             // 3. HISTÓRICOS: Solo contar para mostrar el badge
             const pedidosHistoricos = allPedidos.filter(pedido => {
@@ -693,7 +705,7 @@
                 <td>${estatusBadge}</td>
                 <td>
                   <div class="action-buttons">
-                    <a class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" href="/admin-pedido-detalle.html?id=${pedido.pedidoId}" onclick="setNavigationContext('clientes-facturacion')">
+                    <a class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" href="/admin-pedido-detalle.html?id=${pedido.pedidoId}" onclick="setNavigationContextFromTab('clientes-facturacion', 'pedidos')">
                       Ver detalle
                     </a>
                   </div>
@@ -730,7 +742,7 @@
                 <td>${estatusBadge}</td>
                 <td>
                   <div class="action-buttons">
-                    <a class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" href="/admin-pedido-detalle.html?id=${pedido.pedidoId}" onclick="setNavigationContext('clientes-facturacion')">
+                    <a class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;" href="/admin-pedido-detalle.html?id=${pedido.pedidoId}" onclick="setNavigationContextFromTab('clientes-facturacion', 'pendientes')">
                       Ver detalle
                     </a>
                     <button 
@@ -1162,12 +1174,43 @@
         console.log(`🔗 [NAVEGACIÓN] Contexto establecido: ${source}`);
       }
 
+      // Nueva función que guarda contexto + pestaña activa
+      function setNavigationContextFromTab(source, tab) {
+        // source siempre será 'clientes-facturacion'
+        // tab indica si viene de la sección 'clientes' o 'pedidos'
+        sessionStorage.setItem('pedido_detalle_source', source);
+        sessionStorage.setItem('clientes_facturacion_source_tab', tab);
+        console.log(`🔗 [NAVEGACIÓN] Contexto: ${source}, sección: ${tab}`);
+      }
+
       // ════════════════════════════════════════════════════════════
       // INITIALIZATION
       // ════════════════════════════════════════════════════════════
 
-      // Load clientes on page load (default tab)
-      loadClientes();
+      // Verificar si hay parámetro ?tab= para restaurar la sección correcta
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      
+      // Load data based on URL parameter or default
+      if (tabParam === 'pedidos') {
+        // Mostrar la pestaña Pedidos
+        document.querySelectorAll('.tab-button').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-button')[1].classList.add('active');
+        
+        document.querySelectorAll('.tab-content').forEach(content => {
+          content.classList.remove('active');
+        });
+        document.getElementById('tab-pedidos').classList.add('active');
+        
+        sessionStorage.setItem('clientes_facturacion_source_tab', 'pedidos');
+        loadPedidos();
+      } else {
+        // Default: Clientes (tab=clientes o sin parámetro)
+        sessionStorage.setItem('clientes_facturacion_source_tab', 'clientes');
+        loadClientes();
+      }
     </script>
   </body>
 </html>
