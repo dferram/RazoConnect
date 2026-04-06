@@ -29,15 +29,18 @@
 }
 
 .badge-stock.bajo-pedido {
-  background-color: #dc3545;
+  background-color: #dc3545 !important;
+  color: #ffffff !important;
 }
 
 .badge-stock.surtido {
   background-color: var(--razo-orange, #F97316);
+  color: #ffffff;
 }
 
 .badge-stock.con-stock {
   background-color: #16a34a;
+  color: #ffffff;
 }
 
 .badge-stock.facturado {

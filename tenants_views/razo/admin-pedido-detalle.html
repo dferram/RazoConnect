@@ -1582,41 +1582,27 @@
             const currentUserRole = getUserRole();
             const isFinanzasRole = currentUserRole === 'finanzas' || currentUserRole === 'gerente_finanzas';
             
-            // ⚡ DYNAMIC SORTING: TODOS ven productos surtidos primero
-            let productosToRender;
-            let productosSurtidos, productosConStock, productosBajoPedido;
+            // ⚡ ORDENAMIENTO EXPLÍCITO: Surtido → Con Stock → Facturado → Bajo Pedido
             
-            // Categorizar todos los productos
-            productosSurtidos = productos.filter(p => {
-              const estadoProducto = (p.estadoProducto || '').trim().toLowerCase();
-              return estadoProducto === 'surtido' || estadoProducto === 'facturado';
-            });
-            
-            productosConStock = productos.filter(p => {
-              const estadoProducto = (p.estadoProducto || '').trim().toLowerCase();
-              if (estadoProducto === 'surtido' || estadoProducto === 'facturado') return false;
-              
+            // Función para determinar el orden de cada producto
+            function getPrioridad(p) {
+              const estado = (p.estadoProducto || '').trim().toLowerCase();
               const esBackorder = p.esBackorder === true || p.esBackorder === 'true';
               const stock = p.stock !== undefined ? p.stock : 0;
               const piezasNecesarias = p.piezasTotales || 0;
               const hayStockSuficiente = stock >= piezasNecesarias;
-              return !esBackorder && hayStockSuficiente;
-            });
-            
-            productosBajoPedido = productos.filter(p => {
-              const estadoProducto = (p.estadoProducto || '').trim().toLowerCase();
-              if (estadoProducto === 'surtido' || estadoProducto === 'facturado') return false;
               
-              const esBackorder = p.esBackorder === true || p.esBackorder === 'true';
-              const stock = p.stock !== undefined ? p.stock : 0;
-              const piezasNecesarias = p.piezasTotales || 0;
-              const hayStockSuficiente = stock >= piezasNecesarias;
-              return esBackorder || !hayStockSuficiente;
-            });
+              // Orden estricto: 1=Surtido, 2=Con Stock, 3=Facturado, 4=Bajo Pedido
+              if (estado === 'surtido') return 1;
+              if (estado === 'con stock') return 2;
+              if (estado === 'facturado') return 3;
+              return 4; // Bajo Pedido o cualquier otro
+            }
             
-            // TODOS: Ordenar con SURTIDO primero
-            productosToRender = [...productosSurtidos, ...productosConStock, ...productosBajoPedido];
-            console.log(`✅ Ordenamiento aplicado a todos: ${productosSurtidos.length} surtidos primero, ${productosConStock.length} con stock, ${productosBajoPedido.length} bajo pedido`);
+            // Ordenar productos usando la prioridad
+            const productosToRender = productos.slice().sort((a, b) => getPrioridad(a) - getPrioridad(b));
+            
+            console.log(`✅ [ORDEN FINAL] Productos ordenados. Primero: ${productosToRender[0]?.nombre}, Último: ${productosToRender[productosToRender.length-1]?.nombre}`);
             
             const itemsContainer = document.getElementById("itemsContainer");
             itemsContainer.innerHTML = productosToRender
@@ -1639,7 +1625,10 @@
                   
                   let badgeClass, badgeText;
                   
-                  // MOSTRAR EXACTAMENTE lo que viene de la BD
+                  console.log(`[Badge - FUENTE DE BD] SKU: ${item.sku} | estadoProducto: "${estadoProducto}" | cantidadSurtida: ${item.cantidadSurtida} | cantidadPaquetes: ${item.cantidadPaquetes}`);
+                  
+                  // ✅ USAR LO QUE VIENE DE LA BD, PERO COMPLEMENTAR CON STOCK
+                  // Lógica: Si vino un estado explícito en BD, usarlo. Si es Pendiente/Vacío, determinar por stock
                   if (estadoProducto.toLowerCase() === 'facturado') {
                     badgeClass = 'badge-stock facturado';
                     badgeText = 'FACTURADO';
@@ -1652,8 +1641,12 @@
                     badgeClass = 'badge-stock parcialmente-surtido';
                     badgeText = 'PARCIALMENTE SURTIDO';
                   }
-                  // Si es "Pendiente" o vacío, determinar por stock
-                  else {
+                  else if (estadoProducto.toLowerCase() === 'bajo pedido') {
+                    badgeClass = 'badge-stock bajo-pedido';
+                    badgeText = 'BAJO PEDIDO';
+                  }
+                  else if (estadoProducto.toLowerCase() === 'pendiente' || estadoProducto === '') {
+                    // Si es Pendiente/Vacío: determinar por stock disponible
                     const esBackorder = item.esBackorder === true || item.esBackorder === 'true';
                     const stock = item.stock || 0;
                     const piezasNecesarias = item.piezasTotales || 0;
@@ -1666,6 +1659,12 @@
                       badgeClass = 'badge-stock con-stock';
                       badgeText = 'CON STOCK';
                     }
+                  }
+                  else {
+                    // Si tiene otro valor en la BD, mostrar exactamente ese valor
+                    badgeClass = 'badge-stock con-stock';
+                    badgeText = estadoProducto.toUpperCase();
+                    console.warn(`⚠️ [Badge] Valor desconocido de BD: "${estadoProducto}"`);
                   }
                   
                   const isInventariosRole = getUserRole() === 'inventarios';
