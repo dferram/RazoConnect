@@ -14,7 +14,7 @@ const { validateLogin } = require("../../utils/validator");
  */
 const registroCliente = async (req, res) => {
   try {
-    let { nombre, apellido, email, password, telefono, numero_cliente } = req.body;
+    let { nombre, apellido, email, password, telefono, numero_cliente, estado_id } = req.body;
 
     const { tenant_id } = req.tenant;
 
@@ -22,6 +22,26 @@ const registroCliente = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Debes proporcionar al menos un correo electrónico o número de teléfono.",
+      });
+    }
+
+    if (!estado_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Debes seleccionar un estado.",
+      });
+    }
+
+    // Validar que el estado existe
+    const estadoCheck = await db.query(
+      "SELECT estadoid FROM estados WHERE estadoid = $1 AND activo = TRUE",
+      [estado_id]
+    );
+
+    if (estadoCheck.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Estado inválido.",
       });
     }
 
@@ -80,10 +100,10 @@ const registroCliente = async (req, res) => {
     const telefonoFinal = telefono && telefono.trim() !== "" ? telefono.trim() : null;
 
     const result = await db.query(
-      `INSERT INTO clientes (nombre, apellido, email, passwordhash, telefono, tenant_id, numero_cliente)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING clienteid, nombre, apellido, email, telefono, fechaderegistro, numero_cliente`,
-      [nombre.trim(), apellido.trim(), emailFinal, PasswordHash, telefonoFinal, tenant_id, numeroClienteFinal]
+      `INSERT INTO clientes (nombre, apellido, email, passwordhash, telefono, tenant_id, numero_cliente, estado_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING clienteid, nombre, apellido, email, telefono, fechaderegistro, numero_cliente, estado_id`,
+      [nombre.trim(), apellido.trim(), emailFinal, PasswordHash, telefonoFinal, tenant_id, numeroClienteFinal, estado_id]
     );
 
     const nuevoCliente = result.rows[0];

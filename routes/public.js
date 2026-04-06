@@ -1,8 +1,24 @@
 const express = require('express');
 const router = express.Router();
 const { obtenerEstados } = require('../controllers/direccionesController');
+const { getAllEstados } = require('../controllers/estadosController');
 const landingEditorController = require('../controllers/landingEditorController');
 const { authenticate } = require('../middlewares/authMiddleware');
+
+/**
+ * @swagger
+ * /api/estados:
+ *   get:
+ *     summary: Obtener todos los estados disponibles
+ *     tags: [Público]
+ *     security: []
+ *     responses:
+ *       200:
+ *         description: Estados obtenidos exitosamente
+ *       500:
+ *         description: Error del servidor
+ */
+router.get('/estados-all', getAllEstados);
 
 /**
  * @swagger

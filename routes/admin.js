@@ -58,6 +58,7 @@ const reportesVentasController = require("../controllers/reportesVentasControlle
 const authAdminController = require("../controllers/authAdminController");
 const inventarioResumenController = require("../controllers/inventarioResumenController");
 const exportacionInventarioController = require("../controllers/exportacionInventarioController");
+const administradorEstadosController = require("../controllers/administradorEstadosController");
 const busquedaInventarioController = require("../controllers/busquedaInventarioController");
 const ajustesInventarioController = require("../controllers/ajustesInventarioController");
 const ajustesAlmacenController = require("../controllers/ajustesAlmacenController");
@@ -2515,11 +2516,52 @@ router.post(
  * @desc    Reporte de ventas del mes actual
  * @access  Private (Finanzas roles)
  */
+/**
+ * @route   GET /api/admin/gestionar-estados/admins
+ * @desc    Obtener administradores con sus estados asignados
+ * @access  Private (Admin roles)
+ */
 router.get(
-  "/reportes/ventas-mes",
+  "/gestionar-estados/admins",
   authenticate,
-  authorizeRole(['super_admin', 'admin', 'finanzas']),
-  reportesVentasController.getReporteVentasPorAdmin
+  authorizeRole(['super_admin', 'admin']),
+  administradorEstadosController.getAdminsConEstados
+);
+
+/**
+ * @route   GET /api/admin/gestionar-estados/estados
+ * @desc    Obtener estados con sus administradores responsables
+ * @access  Private (Admin roles)
+ */
+router.get(
+  "/gestionar-estados/estados",
+  authenticate,
+  authorizeRole(['super_admin', 'admin']),
+  administradorEstadosController.getEstadosConAdmins
+);
+
+/**
+ * @route   GET /api/admin/gestionar-estados/clientes
+ * @desc    Obtener clientes con su estado y admin asignado
+ * @access  Private (Admin roles)
+ */
+router.get(
+  "/gestionar-estados/clientes",
+  authenticate,
+  authorizeRole(['super_admin', 'admin']),
+  administradorEstadosController.getClientesConEstado
+);
+
+/**
+ * @route   POST /api/admin/gestionar-estados/asignar
+ * @desc    Asignar/reasignar estados a un administrador
+ * @access  Private (Super Admin)
+ */
+router.post(
+  "/gestionar-estados/asignar",
+  authenticate,
+  authorizeRole(['super_admin']),
+  administradorEstadosController.asignarEstados
 );
 
 module.exports = router;

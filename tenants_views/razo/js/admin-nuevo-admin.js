@@ -16,6 +16,7 @@
   const emailInput = document.getElementById("email");
   const passwordInput = document.getElementById("password");
   const rolSelect = document.getElementById("rol");
+  const estadosSelect = document.getElementById("estados");
   const submitBtn = document.getElementById("submitBtn");
   const btnText = document.getElementById("btnText");
   const btnSpinner = document.getElementById("btnSpinner");
@@ -44,6 +45,37 @@
   }
 
   /**
+   * Carga los estados disponibles en el select
+   */
+  async function loadEstados() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/public/estados-all`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data && Array.isArray(data.data)) {
+          estadosSelect.innerHTML = '<option value="" disabled>Selecciona los estados que manejará este admin...</option>';
+          data.data.forEach(estado => {
+            const option = document.createElement('option');
+            option.value = estado.estadoid;
+            option.textContent = estado.nombre;
+            estadosSelect.appendChild(option);
+          });
+        }
+      } else {
+        console.error('Error al cargar estados:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error al cargar estados:', error);
+    }
+  }
+
+  /**
    * Valida el formulario antes de enviar
    */
   function validateForm() {
@@ -67,6 +99,10 @@
 
     if (!rolSelect.value) {
       errors.push("Debes seleccionar un rol");
+    }
+
+    if (!estadosSelect.value || estadosSelect.selectedOptions.length === 0) {
+      errors.push("Debes seleccionar al menos un estado");
     }
 
     if (errors.length > 0) {
@@ -222,11 +258,13 @@
     }
 
     // Preparar datos
+    const selectedEstadosArray = Array.from(estadosSelect.selectedOptions).map(option => parseInt(option.value, 10));
     const formData = {
       nombre: nombreInput.value.trim(),
       email: emailInput.value.trim().toLowerCase(),
       password: passwordInput.value,
       rol: rolSelect.value,
+      estadoIds: selectedEstadosArray
     };
 
     // Mostrar loading
@@ -246,6 +284,9 @@
     if (!adminForm) {
       return;
     }
+
+    // Cargar estados
+    loadEstados();
 
     // Event listeners
     adminForm.addEventListener("submit", handleSubmit);
