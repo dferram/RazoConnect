@@ -1666,38 +1666,36 @@
                     console.error(`[ERROR DE INTEGRIDAD] El producto SKU: ${item.sku} muestra stock fantasma.`);
                   }
                   
-                  // Determinar estado del badge basado en esbackorder flag Y stock Y estado_producto
-                  const esBackorder = item.esbackorder === true || item.esbackorder === 'true';
-                  const cantidadSurtida = parseInt(item.cantidadSurtida || 0);
-                  const cantidadPaquetes = parseInt(item.cantidadPaquetes || 0);
-                  const estadoProducto = (item.estadoProducto || '').trim().toLowerCase();
+                  // Determinar estado del badge leyendo DIRECTAMENTE el estadoProducto de la BD
+                  const estadoProducto = (item.estadoProducto || '').trim();
                   
                   let badgeClass, badgeText;
                   
-                  // PRIORIDAD 1: Usar el estado_producto del backend si está disponible
-                  if (estadoProducto === 'surtido') {
+                  // MOSTRAR EXACTAMENTE lo que viene de la BD
+                  if (estadoProducto.toLowerCase() === 'facturado') {
+                    badgeClass = 'badge-stock facturado';
+                    badgeText = 'FACTURADO';
+                  }
+                  else if (estadoProducto.toLowerCase() === 'surtido') {
                     badgeClass = 'badge-stock surtido';
                     badgeText = 'SURTIDO';
                   }
-                  // PRIORIDAD 2: Producto parcialmente surtido
-                  else if (estadoProducto === 'parcialmente surtido' || (cantidadSurtida > 0 && cantidadSurtida < cantidadPaquetes)) {
+                  else if (estadoProducto.toLowerCase() === 'parcialmente surtido') {
                     badgeClass = 'badge-stock parcialmente-surtido';
                     badgeText = 'PARCIALMENTE SURTIDO';
                   }
-                  // PRIORIDAD 3: Marcado como backorder en el pedido (esbackorder=true)
-                  else if (esBackorder) {
-                    badgeClass = 'badge-stock bajo-pedido';
-                    badgeText = 'BAJO PEDIDO';
+                  else if (estadoProducto.toLowerCase() === 'pendiente') {
+                    badgeClass = 'badge-stock pendiente';
+                    badgeText = 'PENDIENTE';
                   }
-                  // PRIORIDAD 4: No hay stock suficiente
-                  else if (!hayStockSuficiente) {
-                    badgeClass = 'badge-stock bajo-pedido';
-                    badgeText = 'BAJO PEDIDO';
+                  // Fallback: Si no viene estado de la BD, mostrar lo que haya
+                  else if (estadoProducto) {
+                    badgeClass = 'badge-stock con-stock';
+                    badgeText = estadoProducto.toUpperCase();
                   }
-                  // PRIORIDAD 5: Hay stock y no está surtido
                   else {
                     badgeClass = 'badge-stock con-stock';
-                    badgeText = 'CON STOCK';
+                    badgeText = 'SIN ESTADO';
                   }
                   
                   const isInventariosRole = getUserRole() === 'inventarios';
@@ -1803,7 +1801,7 @@
             
             const productosSurtidosParaTotal = productos.filter(item => {
               const estadoProducto = (item.estadoProducto || '').trim().toLowerCase();
-              // Solo contar productosque están en estado "Surtido" y el pedido está en "Listo para remisionar"
+              // Solo contar productos que están en estado "Surtido" y el pedido está en "Listo para remisionar"
               return estaListoParaRemisionar && estadoProducto === 'surtido';
             });
             

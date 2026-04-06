@@ -476,12 +476,7 @@ const getPedidoDetalle = async (req, res) => {
         dp.preciounitario,
         dp.esbackorder,
         dp.cantidadsurtida,
-        CASE 
-          WHEN dp.cantidadsurtida > 0 AND dp.cantidadsurtida = dp.cantidadpaquetes THEN 'Surtido'
-          WHEN dp.cantidadsurtida > 0 AND dp.cantidadsurtida < dp.cantidadpaquetes THEN 'Parcialmente Surtido'
-          WHEN dp.cantidadsurtida > 0 THEN 'Parcialmente Surtido'
-          ELSE 'Pendiente' 
-        END as estado_producto,
+        COALESCE(dp.estado_producto, 'Pendiente') as estado_producto,
         COALESCE(
           dp.preciounitario, 
           ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
@@ -509,7 +504,54 @@ const getPedidoDetalle = async (req, res) => {
       WHERE dp.pedidoid = $1 AND dp.tenant_id = $2
       ORDER BY dp.detalleid`,
       [pedidoId, tenant_id]
-    );
+    ).catch(async (error) => {
+      // Si el campo confirmado_finanzas no existe, usar query sin ese campo
+      if (error.message && error.message.includes('column "confirmado_finanzas" does not exist')) {
+        logger.warn('⚠️ Campo confirmado_finanzas no existe. Usando query sin ese campo. Ejecuta add_finanzas_confirmation_fields.sql', { pedidoId });
+        return db.query(
+          `SELECT 
+            dp.detalleid,
+            dp.pedidoid,
+            dp.varianteid,
+            dp.tamanoid,
+            dp.cantidadpaquetes,
+            dp.precioporpaquete,
+            dp.piezastotales,
+            dp.preciounitario,
+            dp.esbackorder,
+            dp.cantidadsurtida,
+            COALESCE(dp.estado_producto, 'Pendiente') as estado_producto,
+            COALESCE(
+              dp.preciounitario, 
+              ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
+            ) as preciounitariocalculado,
+            pv.sku,
+            pv.dimensiones,
+            pv.productoid,
+            pv.color_nombre,
+            pv.color_hex,
+            COALESCE(
+              (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND tenant_id = $2 LIMIT 1),
+              pv.stock,
+              0
+            ) as stock,
+            pr.nombreproducto,
+            COALESCE(
+              (SELECT url_imagen FROM producto_variante_imagenes WHERE varianteid = pv.varianteid AND tenant_id = $2 ORDER BY orden ASC LIMIT 1),
+              (SELECT url_imagen FROM producto_imagenes WHERE productoid = pv.productoid AND tenant_id = $2 ORDER BY orden ASC LIMIT 1)
+            ) as imagenurl,
+            row_to_json(ct) as tamano_info
+          FROM detallesdelpedido dp
+          INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid AND pv.tenant_id = $2
+          INNER JOIN productos pr ON pv.productoid = pr.productoid AND pr.tenant_id = $2
+          LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid AND ct.tenant_id = $2
+          WHERE dp.pedidoid = $1 AND dp.tenant_id = $2
+          ORDER BY dp.detalleid`,
+          [pedidoId, tenant_id]
+        );
+      }
+      throw error;
+    });
 
     res.json({
       success: true,
@@ -1187,6 +1229,22 @@ const confirmarSurtidoFinanzas = async (req, res) => {
           userRole: ['finanzas', 'admin'],
           tipoOrigen: 'VENTA'
         });
+        
+        // Marcar el detalle como confirmado por finanzas (si el campo existe en la BD)
+        try {
+          const updateDetalleQuery = `
+            UPDATE detallesdelpedido 
+            SET confirmado_finanzas = true, fecha_confirmacion_finanzas = NOW()
+            WHERE detalleid = $1 AND tenant_id = $2
+          `;
+          await client.query(updateDetalleQuery, [item.detalleid, tenant_id]);
+        } catch (updateError) {
+          // Si los campos no existen en la BD, simplemente continúa
+          if (!updateError.message.includes('column') && !updateError.message.includes('does not exist')) {
+            throw updateError;
+          }
+          logger.warn('⚠️ Campos de confirmación finanzas no existen en BD. Continuando sin actualizar...', { detalleid: item.detalleid });
+        }
         
         productosConfirmados++;
         logger.info('✅ [DEBUG] Producto confirmado exitosamente:', { varianteId, productosConfirmados });

@@ -50,6 +50,11 @@
   color: #ffffff;
 }
 
+.badge-stock.pendiente {
+  background-color: #6b7280;
+  color: #ffffff;
+}
+
 /* ============================================
    ORDER STATUS BADGES
    ============================================ */
