@@ -564,7 +564,8 @@ const obtenerProductos = async (req, res) => {
           varianteIds,
           userId: req.user.id,
           userRole: req.user.roles || ['cliente'],
-          tenantId: req.tenant.tenant_id
+          tenantId: req.tenant.tenant_id,
+          estadoId: req.user.estadoId || null  // Pasar estado del cliente si está disponible
         });
       } catch (stockError) {
         logger.error('Error al obtener stock dinámico', {

@@ -407,7 +407,8 @@ const crearPedido = async (req, res) => {
             varianteIds: masterVarianteIds,
             userId: req.user.id || clienteId,
             userRole: req.user.roles || ['cliente'],
-            tenantId: tenant_id
+            tenantId: tenant_id,
+            estadoId: req.user.estadoId || null
           });
         } catch (stockError) {
           logger.error('Error al obtener stock dinámico', {

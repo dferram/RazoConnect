@@ -86,7 +86,8 @@ const buscarProductosAjuste = async (req, res) => {
       varianteIds,
       userId: req.user.id || req.user.userId,
       userRole: req.user.roles || [req.user.rol],
-      tenantId: tenant_id
+      tenantId: tenant_id,
+      estadoId: req.user.estadoId || null
     });
 
     const tamanosQuery = `

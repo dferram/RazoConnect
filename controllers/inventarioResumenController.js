@@ -137,7 +137,8 @@ const getInventarioResumen = async (req, res) => {
           varianteIds: allVarianteIds,
           userId,
           userRole: userRoles,
-          tenantId: tenant_id
+          tenantId: tenant_id,
+          estadoId: req.user?.estadoId || null
         });
       } catch (error) {
         logger.error('[getInventarioResumen] Error al obtener stock bulk:', {
@@ -294,7 +295,8 @@ const getProductoDetalleInventario = async (req, res) => {
           varianteIds,
           userId,
           userRole: userRoles,
-          tenantId: tenant_id
+          tenantId: tenant_id,
+          estadoId: req.user?.estadoId || null
         });
       } catch (error) {
         logger.error('[getProductoDetalleInventario] Error al obtener stock dinámico:', {

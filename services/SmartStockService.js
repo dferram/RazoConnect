@@ -23,9 +23,10 @@ const db = require("../db");
  * @param {number} params.userId - ID del usuario actual
  * @param {string|string[]} params.userRole - Rol(es) del usuario
  * @param {number} params.tenantId - ID del tenant
+ * @param {number} params.estadoId - (Opcional) ID del estado del cliente (si está disponible en token)
  * @returns {Promise<Object>} { isSuperAdmin, isAdmin, adminId, clienteAdminId }
  */
-async function determineUserContext({ userId, userRole, tenantId }) {
+async function determineUserContext({ userId, userRole, tenantId, estadoId }) {
   const roles = Array.isArray(userRole) ? userRole : [userRole];
   
   const isSuperAdmin = roles.some(r => 
@@ -130,10 +131,16 @@ async function determineUserContext({ userId, userRole, tenantId }) {
     try {
       const estadosHelper = require("../utils/estadosHelper");
 
-      // Obtener el estado del cliente
-      const clienteEstado = await estadosHelper.getClienteEstado(userId, tenantId);
+      // Preferir usar estadoId del token si está disponible
+      let estadoIdCliente = estadoId;
 
-      if (clienteEstado && clienteEstado.estado_id) {
+      // Si no está en el token, obtener del cliente
+      if (!estadoIdCliente) {
+        const clienteEstado = await estadosHelper.getClienteEstado(userId, tenantId);
+        estadoIdCliente = clienteEstado ? clienteEstado.estado_id : null;
+      }
+
+      if (estadoIdCliente) {
         // Obtener el admin responsable de ese estado
         adminId = await estadosHelper.getAdminByClienteEstado(userId, tenantId);
 
@@ -181,15 +188,16 @@ async function determineUserContext({ userId, userRole, tenantId }) {
  * @param {number} params.userId - ID del usuario actual
  * @param {string|string[]} params.userRole - Rol(es) del usuario
  * @param {number} params.tenantId - ID del tenant
+ * @param {number} params.estadoId - (Opcional) ID del estado del cliente (si está disponible en token)
  * @returns {Promise<number>} Cantidad de stock disponible
  */
-async function getStock({ varianteId, userId, userRole, tenantId }) {
+async function getStock({ varianteId, userId, userRole, tenantId, estadoId }) {
   if (!varianteId || !userId || !tenantId) {
     console.error('[SmartStockService] getStock: Parámetros inválidos', { varianteId, userId, tenantId });
     return 0;
   }
 
-  const context = await determineUserContext({ userId, userRole, tenantId });
+  const context = await determineUserContext({ userId, userRole, tenantId, estadoId });
 
   // CASO A: Super Admin - Lee stock global
   if (context.isSuperAdmin) {
@@ -257,14 +265,15 @@ async function getStock({ varianteId, userId, userRole, tenantId }) {
  * @param {number} params.userId - ID del usuario actual
  * @param {string|string[]} params.userRole - Rol(es) del usuario
  * @param {number} params.tenantId - ID del tenant
+ * @param {number} params.estadoId - (Opcional) ID del estado del cliente (si está disponible en token)
  * @returns {Promise<Map<number, number>>} Map de varianteId -> stock
  */
-async function getBulkStock({ varianteIds, userId, userRole, tenantId }) {
+async function getBulkStock({ varianteIds, userId, userRole, tenantId, estadoId }) {
   if (!varianteIds || varianteIds.length === 0) {
     return new Map();
   }
 
-  const context = await determineUserContext({ userId, userRole, tenantId });
+  const context = await determineUserContext({ userId, userRole, tenantId, estadoId });
   const stockMap = new Map();
 
   // CASO A: Super Admin - Lee stock global
