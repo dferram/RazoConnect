@@ -71,28 +71,19 @@ async function determineUserContext({ userId, userRole, tenantId, estadoId }) {
     try {
       // Primero intentar desde tabla administradores
       const { rows } = await db.query(
-        `SELECT admin_responsable_id 
-         FROM administradores 
+        `SELECT admin_responsable_id
+         FROM administradores
          WHERE adminid = $1 AND tenant_id = $2 AND activo = true`,
         [userId, tenantId]
       );
-      
+
       if (rows.length > 0 && rows[0].admin_responsable_id) {
         adminId = rows[0].admin_responsable_id;
-      } else if (roles.includes('agente')) {
-        // Fallback para agentes: buscar en agentesdeventas
-        const agenteResult = await db.query(
-          `SELECT admin_responsable_id 
-           FROM agentesdeventas 
-           WHERE agenteid = $1 AND tenant_id = $2 AND activo = true`,
-          [userId, tenantId]
-        );
-        
-        if (agenteResult.rows.length > 0 && agenteResult.rows[0].admin_responsable_id) {
-          adminId = agenteResult.rows[0].admin_responsable_id;
-        }
+      } else {
+        // Si no tiene admin_responsable_id asignado, usar su propio ID como fallback
+        adminId = userId;
       }
-      
+
       // Si no tiene admin asignado, usar su propio ID (fallback)
       if (!adminId) {
         adminId = userId;
@@ -103,13 +94,13 @@ async function determineUserContext({ userId, userRole, tenantId, estadoId }) {
       adminId = userId;
     }
 
-    return { 
-      isSuperAdmin: false, 
+    return {
+      isSuperAdmin: false,
       isAdmin: true, // Tratarlos como admin para acceso a stock_admin
       isAgente: roles.includes('agente'),
       isCliente: false,
-      adminId, 
-      clienteAdminId: null 
+      adminId,
+      clienteAdminId: null
     };
   }
 

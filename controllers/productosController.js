@@ -1050,7 +1050,8 @@ const obtenerProductoPorId = async (req, res) => {
           varianteIds: varianteIdsDetalle,
           userId: req.user.id,
           userRole: req.user.roles || ['cliente'],
-          tenantId: req.tenant.tenant_id
+          tenantId: req.tenant.tenant_id,
+          estadoId: req.user.estadoId || null
         });
       } catch (stockError) {
         logger.error('Error al obtener stock detalle', {
