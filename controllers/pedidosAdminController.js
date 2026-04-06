@@ -826,38 +826,40 @@ const surtirPedido = async (req, res) => {
           dp.detalleid,
           dp.varianteid,
           dp.cantidadsurtida,
+          dp.cantidadpaquetes,
           dp.piezastotales,
+          dp.esbackorder,
+          dp.estado_producto,
           pv.stock as stock_pv,
-          pv.nombre_producto,
+          p.nombreproducto,
           COALESCE(sa.cantidad, 0) as stock_sa,
           COALESCE(sa.cantidad_reservada, 0) as stock_reservado
         FROM detallesdelpedido dp
         INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid AND pv.tenant_id = $3
+        INNER JOIN productos p ON pv.productoid = p.productoid AND p.tenant_id = $3
         LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = $3
         WHERE dp.pedidoid = $1 
           AND dp.detalleid = ANY($2::int[])
-          AND dp.cantidadsurtida = 0
           AND dp.tenant_id = $3
       `;
       
       const detalleProductos = await client.query(detalleProductosQuery, [pedidoId, detalleIds, tenant_id]);
       
-      logger.info('Stock info para productos seleccionados:', {
-        encontrados: detalleProductos.rows.length,
-        detalles: detalleProductos.rows.map(p => ({
-          detalleid: p.detalleid,
-          producto: p.nombre_producto,
-          piezas: p.piezastotales,
-          stock_variante: p.stock_pv,
-          stock_admin: p.stock_sa,
-          stock_disponible: Math.max(p.stock_sa - p.stock_reservado, p.stock_pv)
-        }))
-      });
-      
       // STEP 2: Only keep products with sufficient stock
+      // FIX: No filtrar por esbackorder, solo validar stock real
       const productosConStock = detalleProductos.rows.filter(p => {
         const stockSaDisponible = p.stock_sa - p.stock_reservado;
-        return stockSaDisponible >= p.piezastotales || p.stock_pv >= p.piezastotales;
+        const stockPV = p.stock_pv;
+        const paquetesRequeridos = p.cantidadpaquetes;
+        const piezasRequeridas = p.piezastotales;
+        
+        // Validar stock usando piezas totales (unidades individuales requeridas)
+        // El stock en BD está en piezas, no en paquetes
+        const tieneStockSa = stockSaDisponible >= piezasRequeridas;
+        const tieneStockPV = stockPV >= piezasRequeridas;
+        const tieneStock = tieneStockSa || tieneStockPV;
+        
+        return tieneStock;
       });
       
       if (productosConStock.length === 0) {
@@ -870,14 +872,21 @@ const surtirPedido = async (req, res) => {
       
       // STEP 3: Now mark only those with stock
       const detalleIdsConStock = productosConStock.map(p => p.detalleid);
+      
+      // 🔥 FIX: Permitir surtir productos adicionales aunque ya estén parcialmente surtidos
+      // Solo actualizamos la cantidad surtida si es menor que la cantidad de paquetes
+      // Y cambiamos el estado_producto a 'Surtido'
       const marcarSurtidosQuery = `
         UPDATE detallesdelpedido
-        SET cantidadsurtida = cantidadpaquetes
+        SET cantidadsurtida = CASE 
+          WHEN cantidadsurtida < cantidadpaquetes THEN cantidadpaquetes 
+          ELSE cantidadsurtida 
+        END,
+        estado_producto = 'Surtido'
         WHERE pedidoid = $1 
           AND detalleid = ANY($2::int[])
-          AND cantidadsurtida = 0
           AND tenant_id = $3
-        RETURNING detalleid, cantidadsurtida, cantidadpaquetes
+        RETURNING detalleid, cantidadsurtida, cantidadpaquetes, estado_producto
       `;
       
       marcarResult = await client.query(marcarSurtidosQuery, [pedidoId, detalleIdsConStock, tenant_id]);
@@ -967,8 +976,11 @@ const surtirPedido = async (req, res) => {
       INNER JOIN productos pr ON pv.productoid = pr.productoid AND pr.tenant_id = $2
       WHERE dp.pedidoid = $1 
         AND dp.tenant_id = $2
-        AND dp.cantidadsurtida > 0
-        ${detalleIds && detalleIds.length > 0 ? 'AND dp.detalleid = ANY($3::int[])' : ''}
+        AND (
+          (dp.cantidadsurtida > 0 AND ${detalleIds && detalleIds.length > 0 ? 'dp.detalleid = ANY($3::int[])' : 'TRUE'})
+          OR
+          (${detalleIds && detalleIds.length > 0 ? 'dp.detalleid = ANY($3::int[])' : 'FALSE'})
+        )
     `;
     
     const detallesMarcadosParams = detalleIds && detalleIds.length > 0 
@@ -1017,9 +1029,64 @@ const surtirPedido = async (req, res) => {
       productosRegistrados: detallesMarcadosResult.rows.length
     });
 
+    // 🔥 CRÍTICO: Actualizar stock e insertar en pedido_surtido_detalle
+    // Por cada producto marcado, debemos:
+    // 1. Restar del stock_admin la cantidad de piezas surtidas
+    // 2. Insertar registro en pedido_surtido_detalle con las piezas correctas
+    
+    for (const detalle of detallesMarcadosResult.rows) {
+      const adminId = req.user?.id || req.user?.adminid;
+      const piezasSurtidas = detalle.piezastotales; // Usar piezas totales, no paquetes
+      
+      // 1. Restar del stock_admin
+      await client.query(
+        `UPDATE stock_admin 
+         SET cantidad = cantidad - $1,
+             cantidad_reservada = GREATEST(cantidad_reservada - $1, 0)
+         WHERE variante_id = $2 AND tenant_id = $3`,
+        [piezasSurtidas, detalle.varianteid, tenant_id]
+      );
+      
+      // 2. Insertar en pedido_surtido_detalle
+      await client.query(
+        `INSERT INTO pedido_surtido_detalle 
+         (pedido_id, detalle_id, variante_id, admin_id, cantidad, tenant_id, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+        [pedidoId, detalle.detalleid, detalle.varianteid, adminId, piezasSurtidas, tenant_id]
+      );
+      
+      // 3. Registrar movimiento en inventario
+      const observacionesMovimiento = `Surtido pedido #${pedidoId} - ${piezasSurtidas} piezas`;
+      
+      // Primero obtener el stock actual
+      const stockActualQuery = await client.query(
+        `SELECT cantidad FROM stock_admin WHERE variante_id = $1 AND tenant_id = $2`,
+        [detalle.varianteid, tenant_id]
+      );
+      
+      const stockPrevio = stockActualQuery.rows[0]?.cantidad || 0;
+      const stockPosterior = stockPrevio - piezasSurtidas;
+      
+      await client.query(
+        `INSERT INTO movimientos_inventario 
+         (admin_id, variante_id, tenant_id, tipo, cantidad, stock_previo, stock_posterior, motivo, observaciones, ip_origen)
+         VALUES ($1, $2, $3, 'MERMA', $4, $5, $6, 'Surtido de pedido', $7, $8)`,
+        [adminId, detalle.varianteid, tenant_id, piezasSurtidas, stockPrevio, stockPosterior, observacionesMovimiento, req.ip]
+      );
+      
+      logger.info('Stock actualizado y surtido registrado', {
+        pedidoId,
+        detalleId: detalle.detalleid,
+        varianteId: detalle.varianteid,
+        piezasSurtidas,
+        adminId,
+        tenantId: tenant_id
+      });
+    }
+
     // Actualizar estatus del pedido
-    // LÓGICA: Inventarios marcó productos → Cambiar a "Listo para remisionar"
-    // Después Finanzas confirmará y el status será "Surtido"
+    // LÓGICA: Inventarios marcó productos → Cambiar a "Listo para remisionar" (siempre)
+    // Después Finanzas confirmará y el status será "Surtido" o "Facturado"
     
     const nuevoEstatus = 'Listo para remisionar';
     const completamenteSurtido = false; // Inventarios solo marca, Finanzas confirma y cambia esto

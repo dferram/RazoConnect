@@ -332,6 +332,15 @@ async function generarPDFPedido(req, res) {
         // Otherwise use cantidadsurtida (from database)
         // CRITICAL: Use current session selection (selectedItemIds) first if provided
         // EXCLUDE: Products from orders with status "Facturado" (already invoiced)
+        
+        // 🚨 DIAGNOSTIC LOG: Verificar estatus del pedido
+        logger.info('🔍 PDF DIAGNOSTIC - Pedido status check', {
+            pedidoId,
+            pedidoEstatus: pedido.estatus,
+            pedidoEstatusLower: pedido.estatus ? pedido.estatus.toLowerCase() : 'NULL',
+            requestId: req.requestId
+        });
+        
         let itemsSurtidos = detalles.filter(item => {
             // 🚫 CRITICAL FILTER: Exclude Facturado orders - they are already completed
             if (pedido.estatus && pedido.estatus.toLowerCase() === 'facturado') {
@@ -365,6 +374,17 @@ async function generarPDFPedido(req, res) {
             count: itemsSurtidos.length,
             selectedItemIds: selectedItemIds.slice(0, 3),
             pedidoId,
+            requestId: req.requestId
+        });
+        
+        // 🚨 DIAGNOSTIC LOG: Resultados del filtrado
+        logger.info('🔍 PDF DIAGNOSTIC - Filtering results', {
+            pedidoId,
+            pedidoEstatus: pedido.estatus,
+            totalDetalles: detalles.length,
+            itemsSurtidos: itemsSurtidos.length,
+            itemsConStock: itemsConStock.length,
+            itemsBajoPedido: itemsBajoPedido.length,
             requestId: req.requestId
         });
         

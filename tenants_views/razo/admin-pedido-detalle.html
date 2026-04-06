@@ -1648,9 +1648,6 @@
                   else if (estadoProducto.toLowerCase() === 'pendiente' || estadoProducto === '') {
                     // Si es Pendiente/Vacío: determinar por stock disponible
                     const esBackorder = item.esBackorder === true || item.esBackorder === 'true';
-                    const stock = item.stock || 0;
-                    const piezasNecesarias = item.piezasTotales || 0;
-                    const hayStockSuficiente = stock >= piezasNecesarias;
                     
                     if (esBackorder || !hayStockSuficiente) {
                       badgeClass = 'badge-stock bajo-pedido';
@@ -1669,21 +1666,8 @@
                   
                   const isInventariosRole = getUserRole() === 'inventarios';
                   
-                  // ⚡ FIX: Checkbox visibility for INCREMENTAL fulfillment
-                  // Show checkbox when: stock > 0 AND cantidad_surtida < cantidad_paquetes
-                  // This allows partial shipments and incremental surtido
-                  const cantidadSurtidaNum = parseInt(item.cantidadSurtida) || 0;
-                  const cantidadPaquetesNum = parseInt(item.cantidadPaquetes) || 0;
-                  const tieneStockDisponible = hayStockSuficiente && stock > 0;
-                  const faltanPorSurtir = cantidadSurtidaNum < cantidadPaquetesNum;
-                  const estaSurtido = cantidadSurtidaNum > 0;
-                  
-                  // Verificar si el pedido está esperando confirmación de Finanzas
-                  const estatusActual = (selectedOrderStatus || '').toLowerCase().trim();
-                  const estaEsperandoFinanzas = estatusActual === 'listo para remisionar';
-                  
-                  // Show checkbox if: inventarios role + has stock + not fully fulfilled + NOT waiting for finance confirmation
-                  const puedeSeleccionar = isInventariosRole && tieneStockDisponible && faltanPorSurtir && !estaEsperandoFinanzas;
+                  // Lógica simple: mostrar checkbox si tiene stock y es usuario de inventarios
+                  const puedeSeleccionar = isInventariosRole && badgeText === 'CON STOCK';
                   
                   // ⚡ FINANCE-ONLY STYLING: Apply gray layer only for finance roles
                   // This creates visual separation between chargeable (bright) and informational (dimmed) items
