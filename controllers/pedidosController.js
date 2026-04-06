@@ -1211,55 +1211,69 @@ const crearPedido = async (req, res) => {
             );
           } else {
             // CASO 2: Cliente sin admin - usar allocation automática
-            
+
             const allocationResult = await SmartStockService.allocateStockAutomatically({
               varianteId: item.varianteid,
               cantidadRequerida: piezasRealmenteSurtidas,
               tenantId: tenant_id,
               estrategia: 'DESC'
             });
-            
-            if (!allocationResult.success) {
-              throw new Error(`Stock insuficiente para ${item.nombreproducto}: ${allocationResult.message}`);
-            }
-            
-            // Aplicar reservas en cada admin asignado
-            for (const allocation of allocationResult.allocations) {
-              const reservaResult = await client.query(
-                `UPDATE stock_admin
-                 SET cantidad_reservada = cantidad_reservada + $1,
-                     updated_at = NOW()
-                 WHERE variante_id = $2 
-                   AND admin_id = $3 
-                   AND tenant_id = $4
-                 RETURNING stockadminid, cantidad_reservada`,
-                [allocation.cantidad, item.varianteid, allocation.adminId, tenant_id]
-              );
-              
-              if (reservaResult.rows.length > 0) {
-                const stockInfo = reservaResult.rows[0];
-                
-                // Registrar en log
-                await client.query(
-                  `INSERT INTO inventario_reservas_log (
-                     stockadminid, variante_id, admin_id, pedido_id, detalle_id,
-                     cantidad_reservada, accion, cantidad_antes, cantidad_despues,
-                     usuario_id, tenant_id
-                   )
-                   VALUES ($1, $2, $3, $4, $5, $6, 'RESERVAR', $7, $8, $9, $10)`,
-                  [
-                    stockInfo.stockadminid,
-                    item.varianteid,
-                    allocation.adminId,
-                    pedidoId,
-                    detalleIdSurtido,
-                    allocation.cantidad,
-                    stockInfo.cantidad_reservada - allocation.cantidad,
-                    stockInfo.cantidad_reservada,
-                    clienteId,
-                    tenant_id
-                  ]
+
+            // ✅ NUEVO: Permitir parcial (con backorder) si hay algo asignado
+            // Si totalAsignado = 0 completamente, aún se genera automático backorder abajo
+            if (allocationResult.totalAsignado === 0 && allocationResult.faltante > 0) {
+              // Sin stock en ningún lado - permitir crear con backorder automático
+              logger.warn(`📦 Backorder automático: ${item.nombreproducto} (${allocationResult.message})`, {
+                varianteId: item.varianteid,
+                cantidadRequerida: piezasRealmenteSurtidas,
+                requestId: req.requestId,
+                tenantId: tenant_id
+              });
+            } else if (allocationResult.totalAsignado > 0) {
+              // ✅ Hay stock disponible - reservar en cada admin asignado
+              for (const allocation of allocationResult.allocations) {
+                // ⚠️ Omitir si es stock general (fallback from producto_variantes)
+                if (allocation.esStockGeneral) {
+                  logger.debug(`📦 Usando stock general (fallback) para ${item.nombreproducto}: ${allocation.cantidad} piezas`);
+                  continue; // No reservar en stock_admin si es stock general
+                }
+
+                const reservaResult = await client.query(
+                  `UPDATE stock_admin
+                   SET cantidad_reservada = cantidad_reservada + $1,
+                       updated_at = NOW()
+                   WHERE variante_id = $2
+                     AND admin_id = $3
+                     AND tenant_id = $4
+                   RETURNING stockadminid, cantidad_reservada`,
+                  [allocation.cantidad, item.varianteid, allocation.adminId, tenant_id]
                 );
+
+                if (reservaResult.rows.length > 0) {
+                  const stockInfo = reservaResult.rows[0];
+
+                  // Registrar en log
+                  await client.query(
+                    `INSERT INTO inventario_reservas_log (
+                       stockadminid, variante_id, admin_id, pedido_id, detalle_id,
+                       cantidad_reservada, accion, cantidad_antes, cantidad_despues,
+                       usuario_id, tenant_id
+                     )
+                     VALUES ($1, $2, $3, $4, $5, $6, 'RESERVAR', $7, $8, $9, $10)`,
+                    [
+                      stockInfo.stockadminid,
+                      item.varianteid,
+                      allocation.adminId,
+                      pedidoId,
+                      detalleIdSurtido,
+                      allocation.cantidad,
+                      stockInfo.cantidad_reservada - allocation.cantidad,
+                      stockInfo.cantidad_reservada,
+                      clienteId,
+                      tenant_id
+                    ]
+                  );
+                }
               }
             }
           }
@@ -1616,7 +1630,7 @@ const crearPedido = async (req, res) => {
         logger.error('No se pudo enviar notificación de nuevo pedido al agente', {
           error: err.message,
           pedidoId: pedido.pedidoid,
-          agenteId: agente.agenteid
+          agenteId: agenteId
         });
       });
     }

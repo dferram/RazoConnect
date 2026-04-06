@@ -128,28 +128,36 @@ async function determineUserContext({ userId, userRole, tenantId }) {
   // CASO 4: Cliente - Buscar su admin asignado
   if (isCliente) {
     try {
+      // ⚠️ NOTA: La tabla clientes NO tiene columna admin_id
+      // Los clientes se asignan a agentes (AgenteID), no a admins directamente
+      // Por lo tanto, clienteAdminId permanece NULL para clientes
+      // El stock será visto como "global" (producto_variantes.stock)
+
+      // Si necesitara buscar admin del agente asignado:
       const { rows } = await db.query(
-        `SELECT admin_id 
-         FROM clientes 
-         WHERE clienteid = $1 AND tenant_id = $2`,
+        `SELECT a.admin_responsable_id
+         FROM clientes c
+         LEFT JOIN agentesdeventas a ON c.agenteid = a.agenteid AND c.tenant_id = a.tenant_id
+         WHERE c.clienteid = $1 AND c.tenant_id = $2`,
         [userId, tenantId]
       );
-      
-      if (rows.length > 0 && rows[0].admin_id) {
-        clienteAdminId = rows[0].admin_id;
+
+      if (rows.length > 0 && rows[0].admin_responsable_id) {
+        clienteAdminId = rows[0].admin_responsable_id;
         adminId = clienteAdminId;
       }
     } catch (error) {
       console.error('[SmartStockService] Error al obtener admin del cliente:', error);
+      // No lanzar error - cliente puede no tener agente asignado
     }
 
-    return { 
-      isSuperAdmin: false, 
-      isAdmin: false, 
+    return {
+      isSuperAdmin: false,
+      isAdmin: false,
       isAgente: false,
       isCliente: true,
-      adminId, 
-      clienteAdminId 
+      adminId,
+      clienteAdminId
     };
   }
 
@@ -808,9 +816,9 @@ async function calculateAllocationStatus({
  *   message: string
  * }
  */
-async function allocateStockAutomatically({ 
-  varianteId, 
-  cantidadRequerida, 
+async function allocateStockAutomatically({
+  varianteId,
+  cantidadRequerida,
   tenantId,
   estrategia = 'DESC' // DESC = admin con más stock primero (evita fragmentación)
 }) {
@@ -841,13 +849,13 @@ async function allocateStockAutomatically({
     // PASO 1: Obtener todos los admins con stock disponible
     const ordenamiento = estrategia === 'DESC' ? 'DESC' : 'ASC';
     const query = `
-      SELECT 
+      SELECT
         sa.admin_id,
         sa.cantidad as stock_disponible,
         COALESCE(a.nombre || ' ' || a.apellido, 'Admin ID ' || sa.admin_id) as admin_nombre
       FROM stock_admin sa
       LEFT JOIN administradores a ON a.adminid = sa.admin_id AND a.tenant_id = sa.tenant_id
-      WHERE sa.variante_id = $1 
+      WHERE sa.variante_id = $1
         AND sa.tenant_id = $2
         AND sa.cantidad > 0
       ORDER BY sa.cantidad ${ordenamiento}, sa.admin_id ASC
@@ -855,44 +863,64 @@ async function allocateStockAutomatically({
 
     const { rows: adminsConStock } = await db.query(query, [varianteId, tenantId]);
 
-
-    if (adminsConStock.length === 0) {
-      return {
-        success: false,
-        totalAsignado: 0,
-        faltante: cantidadReq,
-        allocations: [],
-        message: 'No hay stock disponible en ningún administrador'
-      };
-    }
-
-    // PASO 2: Algoritmo de Asignación - Llenar desde los admins disponibles
+    // PASO 1B: Si no hay stock en stock_admin, hacer FALLBACK a producto_variantes.stock
     let cantidadRestante = cantidadReq;
     const allocations = [];
+    let totalAsignado = 0;
 
-    for (const admin of adminsConStock) {
-      if (cantidadRestante <= 0) break;
-
-      const cantidadDeEsteAdmin = Math.min(
-        parseInt(admin.stock_disponible, 10), 
-        cantidadRestante
+    if (adminsConStock.length === 0) {
+      // FALLBACK: Intentar asignar desde producto_variantes.stock
+      const { rows: varianteRows } = await db.query(
+        `SELECT stock FROM producto_variantes WHERE varianteid = $1 AND tenant_id = $2`,
+        [varianteId, tenantId]
       );
 
-      allocations.push({
-        adminId: parseInt(admin.admin_id, 10),
-        adminNombre: admin.admin_nombre,
-        cantidad: cantidadDeEsteAdmin,
-        stockDisponible: parseInt(admin.stock_disponible, 10)
-      });
+      if (varianteRows.length > 0) {
+        const stockVariante = parseInt(varianteRows[0].stock, 10) || 0;
 
-      cantidadRestante -= cantidadDeEsteAdmin;
+        if (stockVariante > 0) {
+          // ✅ Hay stock disponible en producto_variantes - permitir surtir parcialmente
+          totalAsignado = Math.min(stockVariante, cantidadReq);
+          cantidadRestante = cantidadReq - totalAsignado;
 
+          // Registrar como "Stock General" sin admin específico
+          if (totalAsignado > 0) {
+            allocations.push({
+              adminId: null,
+              adminNombre: 'Stock General (Variante)',
+              cantidad: totalAsignado,
+              stockDisponible: stockVariante,
+              esStockGeneral: true
+            });
+          }
+        }
+      }
+    } else {
+      // PASO 2: Algoritmo de Asignación - Llenar desde los admins disponibles
+      for (const admin of adminsConStock) {
+        if (cantidadRestante <= 0) break;
+
+        const cantidadDeEsteAdmin = Math.min(
+          parseInt(admin.stock_disponible, 10),
+          cantidadRestante
+        );
+
+        allocations.push({
+          adminId: parseInt(admin.admin_id, 10),
+          adminNombre: admin.admin_nombre,
+          cantidad: cantidadDeEsteAdmin,
+          stockDisponible: parseInt(admin.stock_disponible, 10)
+        });
+
+        cantidadRestante -= cantidadDeEsteAdmin;
+      }
+
+      totalAsignado = allocations.reduce((sum, a) => sum + a.cantidad, 0);
     }
 
-    // PASO 3: Verificar si se pudo cumplir la demanda
-    const totalAsignado = allocations.reduce((sum, a) => sum + a.cantidad, 0);
-    const success = totalAsignado >= cantidadReq;
-    const faltante = Math.max(cantidadReq - totalAsignado, 0);
+    // PASO 3: Permitir que exista faltante (backorder) - NO fallar si hay algo asignado
+    const faltante = Math.max(cantidadRestante, 0);
+    const success = totalAsignado > 0; // ✅ Éxito si se asignó algo, aunque sea parcial
 
 
     return {
@@ -900,9 +928,11 @@ async function allocateStockAutomatically({
       totalAsignado,
       faltante,
       allocations,
-      message: success 
-        ? `Stock asignado desde ${allocations.length} administrador(es)` 
-        : `Stock insuficiente: solo ${totalAsignado}/${cantidadReq} disponibles`
+      message: totalAsignado > 0
+        ? (faltante > 0
+          ? `📦 Split: ${totalAsignado} surtidas + ${faltante} en backorder`
+          : `✅ Stock completo asignado desde ${allocations.length} ubicación(es)`)
+        : `⚠️ Sin stock disponible - Backorder de ${cantidadReq}`
     };
 
   } catch (error) {
