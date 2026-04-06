@@ -127,37 +127,17 @@ async function determineUserContext({ userId, userRole, tenantId }) {
 
   // CASO 4: Cliente - Buscar su admin asignado
   if (isCliente) {
-    try {
-      // ⚠️ NOTA: La tabla clientes NO tiene columna admin_id
-      // Los clientes se asignan a agentes (AgenteID), no a admins directamente
-      // Por lo tanto, clienteAdminId permanece NULL para clientes
-      // El stock será visto como "global" (producto_variantes.stock)
-
-      // Si necesitara buscar admin del agente asignado:
-      const { rows } = await db.query(
-        `SELECT a.admin_responsable_id
-         FROM clientes c
-         LEFT JOIN agentesdeventas a ON c.agenteid = a.agenteid AND c.tenant_id = a.tenant_id
-         WHERE c.clienteid = $1 AND c.tenant_id = $2`,
-        [userId, tenantId]
-      );
-
-      if (rows.length > 0 && rows[0].admin_responsable_id) {
-        clienteAdminId = rows[0].admin_responsable_id;
-        adminId = clienteAdminId;
-      }
-    } catch (error) {
-      console.error('[SmartStockService] Error al obtener admin del cliente:', error);
-      // No lanzar error - cliente puede no tener agente asignado
-    }
+    // ⚠️ NOTA: Los clientes NO tienen admin asignado directamente
+    // El stock será visto como "global" (producto_variantes.stock)
+    // No intentar buscar admin - los clientes ven stock agregado de todos los admins
 
     return {
       isSuperAdmin: false,
       isAdmin: false,
       isAgente: false,
       isCliente: true,
-      adminId,
-      clienteAdminId
+      adminId: null,  // NULL = ver stock global
+      clienteAdminId: null
     };
   }
 

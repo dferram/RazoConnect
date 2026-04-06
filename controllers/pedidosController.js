@@ -1385,10 +1385,9 @@ const crearPedido = async (req, res) => {
     }
 
     // NUEVO: Calcular estado correcto basado en los detalles del pedido
-    // El estado será: Bajo pedido, Combinado, Completo, Listo para remisionar, Surtido parcial, o Surtido completo
+    // El estado será: Bajo pedido, Combinado, Completo, Listo para remisionar, Surtido completo
     // Usar calcularEstadoPedidoCorrect que accede a BD para estado_producto
-    const estadoResult = await calcularEstadoPedidoCorrect(client, pedidoId);
-    const estadoCalculado = estadoResult.nuevoEstado || estadoResult.estado;
+    const estadoCalculado = await calcularEstadoPedidoCorrect(client, pedidoId);
     const estadoNormalizado = normalizarEstado(estadoCalculado);
 
     if (estadoNormalizado !== pedidoEstatus) {
