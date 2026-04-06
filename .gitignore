@@ -6,6 +6,8 @@ yarn.lock
 pnpm-lock.yaml
 .pnp
 .pnp.js
+backup/
+backup.sql
 
 # ============================================
 # VARIABLES DE ENTORNO Y CONFIGURACIÓN SENSIBLE
