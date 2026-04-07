@@ -674,8 +674,8 @@ const agregarAlCarrito = async (req, res) => {
 
     // Verificar si la variante ya está en el carrito
     const itemExistente = await db.query(
-      "SELECT itemid, COALESCE(cantidadpaquetes, cantidad) AS cantidad_paquetes, tamanoid FROM itemsdelcarrito WHERE carritoid = $1 AND varianteid = $2 AND tamanoid = $3",
-      [carritoId, varianteId, tamanoId]
+      "SELECT itemid, COALESCE(cantidadpaquetes, cantidad) AS cantidad_paquetes, tamanoid FROM itemsdelcarrito WHERE carritoid = $1 AND varianteid = $2 AND tamanoid = $3 AND tenant_id = $4",
+      [carritoId, varianteId, tamanoId, tenant_id]
     );
 
     let itemResult;
@@ -687,8 +687,8 @@ const agregarAlCarrito = async (req, res) => {
       const nuevaCantidad = cantidadActual + cantidadEntera;
 
       itemResult = await db.query(
-        "UPDATE itemsdelcarrito SET cantidadpaquetes = $1, cantidad = $1 WHERE itemid = $2 RETURNING itemid, varianteid, cantidadpaquetes, cantidad, tamanoid",
-        [nuevaCantidad, itemExistente.rows[0].itemid]
+        "UPDATE itemsdelcarrito SET cantidadpaquetes = $1, cantidad = $1 WHERE itemid = $2 AND tenant_id = $3 RETURNING itemid, varianteid, cantidadpaquetes, cantidad, tamanoid",
+        [nuevaCantidad, itemExistente.rows[0].itemid, tenant_id]
       );
     } else {
       // Insertar nuevo item
@@ -903,8 +903,8 @@ const actualizarCarrito = async (req, res) => {
 
     // Actualizar la cantidad del item específico
     const updateResult = await db.query(
-      "UPDATE itemsdelcarrito SET cantidadpaquetes = $1, cantidad = $1 WHERE itemid = $2 RETURNING itemid, varianteid, cantidadpaquetes",
-      [cantidadPaquetesEntera, itemActual.itemid]
+      "UPDATE itemsdelcarrito SET cantidadpaquetes = $1, cantidad = $1 WHERE itemid = $2 AND tenant_id = $3 RETURNING itemid, varianteid, cantidadpaquetes",
+      [cantidadPaquetesEntera, itemActual.itemid, tenant_id]
     );
 
     // Actualizar última modificación del carrito
@@ -1009,8 +1009,8 @@ const cambiarVarianteItemCarrito = async (req, res) => {
 
     // Obtener el carrito del cliente
     const carritoResult = await db.query(
-      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1",
-      [clienteId]
+      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1 AND tenant_id = $2",
+      [clienteId, req.tenant?.tenant_id]
     );
 
     if (carritoResult.rows.length === 0) {
@@ -1261,8 +1261,8 @@ const eliminarDelCarrito = async (req, res) => {
 
     // Obtener el carrito del cliente
     const carritoResult = await db.query(
-      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1",
-      [clienteId]
+      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1 AND tenant_id = $2",
+      [clienteId, req.tenant?.tenant_id]
     );
 
     if (carritoResult.rows.length === 0) {
@@ -1276,8 +1276,8 @@ const eliminarDelCarrito = async (req, res) => {
 
     // Eliminar solo el item específico del carrito
     const deleteResult = await db.query(
-      "DELETE FROM itemsdelcarrito WHERE carritoid = $1 AND itemid = $2 RETURNING itemid",
-      [carritoId, itemId]
+      "DELETE FROM itemsdelcarrito WHERE carritoid = $1 AND itemid = $2 AND tenant_id = $3 RETURNING itemid",
+      [carritoId, itemId, tenant_id]
     );
 
     if (deleteResult.rows.length === 0) {

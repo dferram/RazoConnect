@@ -610,6 +610,7 @@ async function getSummaryAging(req, res) {
                 WHERE p.clienteid = c.clienteid
                 AND p.es_credito = true
                 AND p.saldo_pendiente > 0
+                AND p.tenant_id = $1
                 AND p.fecha_vencimiento >= $${countParamIndex}
             )`;
             countParamIndex++;
@@ -619,8 +620,9 @@ async function getSummaryAging(req, res) {
             countFilters += ` AND EXISTS (
                 SELECT 1 FROM pedidos p
                 WHERE p.clienteid = c.clienteid
-                AND p.es_credito = true 
+                AND p.es_credito = true
                 AND p.saldo_pendiente > 0
+                AND p.tenant_id = $1
                 AND p.fecha_vencimiento <= $${countParamIndex}
             )`;
             countParamIndex++;
@@ -651,6 +653,7 @@ async function getSummaryAging(req, res) {
                 WHERE p.clienteid = c.clienteid
                 AND p.es_credito = true
                 AND p.saldo_pendiente > 0
+                AND p.tenant_id = $1
                 AND p.fecha_vencimiento >= $${metricsParamIndex}
             )`;
             metricsParamIndex++;
@@ -662,6 +665,7 @@ async function getSummaryAging(req, res) {
                 WHERE p.clienteid = c.clienteid
                 AND p.es_credito = true
                 AND p.saldo_pendiente > 0
+                AND p.tenant_id = $1
                 AND p.fecha_vencimiento <= $${metricsParamIndex}
             )`;
             metricsParamIndex++;

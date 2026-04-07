@@ -163,11 +163,12 @@ async function generarPDFPedido(req, res) {
         let isAgenteAutorizado = false;
         if (userRoles.includes('agente') && userId) {
             const agenteClienteCheck = await db.query(
-                `SELECT 1 FROM clientes 
-                 WHERE clienteid = $1 
+                `SELECT 1 FROM clientes
+                 WHERE clienteid = $1
+                 AND tenant_id = $3
                  AND (agenteid = $2 OR agentedeventasid = $2)
                  LIMIT 1`,
-                [pedido.clienteid, userId]
+                [pedido.clienteid, userId, tenant_id]
             );
             isAgenteAutorizado = agenteClienteCheck.rows.length > 0;
         }

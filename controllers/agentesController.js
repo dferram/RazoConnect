@@ -736,8 +736,9 @@ const actualizarEstatusPedidoAgente = async (req, res) => {
       `UPDATE Pedidos
        SET Estatus = $1
        WHERE PedidoID = $2
+       AND tenant_id = $3
        RETURNING PedidoID, Estatus`,
-      [nuevoEstatus, pedidoId]
+      [nuevoEstatus, pedidoId, req.tenant?.tenant_id]
     );
 
     const pedidoActualizado = updateResult.rows[0];
@@ -968,6 +969,7 @@ const obtenerComisionesDelAgente = async (req, res) => {
 const getCxCAgente = async (req, res) => {
   try {
     const agenteId = resolveAuthenticatedAgenteId(req.user);
+    const { tenant_id } = req.tenant;
 
     if (!agenteId) {
       return res.status(403).json({
@@ -977,7 +979,7 @@ const getCxCAgente = async (req, res) => {
     }
 
     const cxcQuery = `
-      SELECT 
+      SELECT
         c.clienteid,
         c.nombre,
         c.apellido,
@@ -985,15 +987,16 @@ const getCxCAgente = async (req, res) => {
         COALESCE(SUM(p.saldo_pendiente), 0) AS deuda_total,
         COUNT(p.pedidoid) FILTER (WHERE p.saldo_pendiente > 0 AND p.estatus != 'Cancelado') AS pedidos_pendientes
       FROM clientes c
-      LEFT JOIN pedidos p ON c.clienteid = p.clienteid
+      LEFT JOIN pedidos p ON c.clienteid = p.clienteid AND p.tenant_id = $2
       WHERE c.agenteid = $1
+        AND c.tenant_id = $2
         AND c.activo = TRUE
       GROUP BY c.clienteid, c.nombre, c.apellido, c.telefono
       HAVING COALESCE(SUM(p.saldo_pendiente), 0) > 0
       ORDER BY deuda_total DESC
     `;
 
-    const cxcResult = await db.query(cxcQuery, [agenteId]);
+    const cxcResult = await db.query(cxcQuery, [agenteId, tenant_id]);
 
     const totalCartera = cxcResult.rows.reduce(
       (sum, row) => sum + parseFloat(row.deuda_total || 0),

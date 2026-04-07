@@ -139,8 +139,8 @@ const pagarComision = async (req, res) => {
 
     if (allowDirect) {
       const updateRes = await db.query(
-        "UPDATE comisiones SET estatus = $1 WHERE comisionid = $2 RETURNING comisionid, pedidoid, agenteid, montocomision, fechacalculo, estatus",
-        ["Pagada", comisionId]
+        "UPDATE comisiones SET estatus = $1 WHERE comisionid = $2 AND tenant_id = $3 RETURNING comisionid, pedidoid, agenteid, montocomision, fechacalculo, estatus",
+        ["Pagada", comisionId, req.tenant?.tenant_id]
       );
 
       if (!updateRes.rows.length) {

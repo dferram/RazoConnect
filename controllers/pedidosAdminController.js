@@ -702,8 +702,9 @@ const confirmarPedido = async (req, res) => {
        FROM DetallesDelPedido dp
        INNER JOIN Producto_Variantes pv ON pv.VarianteID = dp.VarianteID
        INNER JOIN Productos pr ON pr.ProductoID = pv.ProductoID
-       WHERE dp.PedidoID = $1`,
-      [pedidoId]
+       INNER JOIN Pedidos p ON p.pedidoid = dp.pedidoid
+       WHERE dp.PedidoID = $1 AND p.tenant_id = $2`,
+      [pedidoId, tenant_id]
     );
 
     if (!itemsResult.rows.length) {
@@ -715,8 +716,8 @@ const confirmarPedido = async (req, res) => {
     }
 
     await client.query(
-      "UPDATE Pedidos SET Estatus = 'Confirmado', fecha_confirmacion = NOW() WHERE PedidoID = $1",
-      [pedidoId]
+      "UPDATE Pedidos SET Estatus = 'Confirmado', fecha_confirmacion = NOW() WHERE PedidoID = $1 AND tenant_id = $2",
+      [pedidoId, tenant_id]
     );
 
     await client.query("COMMIT");

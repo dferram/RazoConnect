@@ -25,16 +25,17 @@ const getCurrentUser = async (req, res) => {
     switch (userRole) {
       case "super_admin":
       case "admin":
+        const { tenant_id: admin_tenant_id } = req.tenant;
         const adminQuery = `
-          SELECT 
+          SELECT
             AdminID,
             Nombre,
             Email,
             Rol
           FROM administradores
-          WHERE AdminID = $1
+          WHERE AdminID = $1 AND tenant_id = $2
         `;
-        const adminResult = await db.query(adminQuery, [efectiveUserId]);
+        const adminResult = await db.query(adminQuery, [efectiveUserId, admin_tenant_id]);
 
         if (adminResult.rows.length === 0) {
           return res.status(404).json({
@@ -54,17 +55,18 @@ const getCurrentUser = async (req, res) => {
         break;
 
       case "agente":
+        const { tenant_id: agente_tenant_id } = req.tenant;
         const agenteQuery = `
-          SELECT 
+          SELECT
             AgenteID,
             Nombre,
             Apellido,
             Email,
             CodigoAgente
           FROM agentesdeventas
-          WHERE AgenteID = $1
+          WHERE AgenteID = $1 AND tenant_id = $2
         `;
-        const agenteResult = await db.query(agenteQuery, [efectiveUserId]);
+        const agenteResult = await db.query(agenteQuery, [efectiveUserId, agente_tenant_id]);
 
         if (agenteResult.rows.length === 0) {
           return res.status(404).json({

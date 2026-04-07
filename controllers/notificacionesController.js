@@ -8,10 +8,11 @@ const logger = require('../utils/logger');
 const obtenerNotificaciones = async (req, res) => {
   try {
     const clienteId = req.user.userId;
+    const tenant_id = req.tenant?.tenant_id || 1;
     const { leidas, tipo, limit = 50, offset = 0 } = req.query;
 
     let query = `
-      SELECT 
+      SELECT
         notificacionid,
         tipo,
         titulo,
@@ -22,11 +23,11 @@ const obtenerNotificaciones = async (req, res) => {
         url,
         prioridad
       FROM notificaciones
-      WHERE clienteid = $1
+      WHERE clienteid = $1 AND tenant_id = $2
     `;
 
-    const params = [clienteId];
-    let paramIndex = 2;
+    const params = [clienteId, tenant_id];
+    let paramIndex = 3;
 
     // Filtro por leídas/no leídas
     if (leidas !== undefined) {
@@ -62,9 +63,9 @@ const obtenerNotificaciones = async (req, res) => {
     const countQuery = `
       SELECT COUNT(*) as total_no_leidas
       FROM notificaciones
-      WHERE clienteid = $1 AND leida = FALSE
+      WHERE clienteid = $1 AND leida = FALSE AND tenant_id = $2
     `;
-    const countResult = await db.query(countQuery, [clienteId]);
+    const countResult = await db.query(countQuery, [clienteId, tenant_id]);
 
     res.json({
       success: true,
@@ -203,9 +204,10 @@ const obtenerConteoNoLeidasStaff = async (req, res) => {
       FROM notificaciones
       WHERE ${column} = $1
         AND leida = FALSE
+        AND tenant_id = $2
     `;
 
-    const result = await db.query(countQuery, [staffId]);
+    const result = await db.query(countQuery, [staffId, req.tenant?.tenant_id]);
     const count = Number(result.rows?.[0]?.count || 0);
 
     return res.json({
@@ -282,11 +284,12 @@ const obtenerNotificacionesStaff = async (req, res) => {
         clienteid
       FROM notificaciones
       WHERE ${column} = $1
+        AND tenant_id = $2
       ORDER BY leida ASC, fechacreacion DESC
-      LIMIT $2 OFFSET $3
+      LIMIT $3 OFFSET $4
     `;
 
-    const result = await db.query(query, [staffId, parseInt(limit), parseInt(offset)]);
+    const result = await db.query(query, [staffId, req.tenant?.tenant_id, parseInt(limit), parseInt(offset)]);
 
     return res.json({
       success: true,

@@ -47,10 +47,11 @@ async function obtenerNotificacionesCliente(req, res) {
 async function obtenerConteoNotificacionesNoLeidas(req, res) {
   try {
     const clienteId = req.user.userId;
+    const tenant_id = req.tenant?.tenant_id || 1;
 
     const result = await db.query(
-      "SELECT COUNT(*) as total FROM notificaciones WHERE clienteid = $1 AND leida = false",
-      [clienteId]
+      "SELECT COUNT(*) as total FROM notificaciones WHERE clienteid = $1 AND leida = false AND tenant_id = $2",
+      [clienteId, tenant_id]
     );
 
     const totalRaw = result.rows?.[0]?.total;

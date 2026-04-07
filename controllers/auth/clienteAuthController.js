@@ -575,7 +575,7 @@ const resetPassword = async (req, res) => {
 
   try {
     const tokenResult = await db.query(
-      `SELECT TokenID, ClienteID, AgenteID, ExpiraEn
+      `SELECT TokenID, ClienteID, AgenteID, ExpiraEn, tenant_id
        FROM passwordresettokens
        WHERE Token = $1`,
       [token]
@@ -604,13 +604,13 @@ const resetPassword = async (req, res) => {
 
     if (tokenRow.clienteid) {
       await db.query(
-        "UPDATE clientes SET passwordhash = $1 WHERE clienteid = $2",
-        [hashedPassword, tokenRow.clienteid]
+        "UPDATE clientes SET passwordhash = $1 WHERE clienteid = $2 AND tenant_id = $3",
+        [hashedPassword, tokenRow.clienteid, tokenRow.tenant_id]
       );
     } else if (tokenRow.agenteid) {
       await db.query(
-        "UPDATE agentesdeventas SET PasswordHash = $1 WHERE AgenteID = $2",
-        [hashedPassword, tokenRow.agenteid]
+        "UPDATE agentesdeventas SET PasswordHash = $1 WHERE AgenteID = $2 AND tenant_id = $3",
+        [hashedPassword, tokenRow.agenteid, tokenRow.tenant_id]
       );
     }
 

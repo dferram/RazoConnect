@@ -246,8 +246,8 @@ async function gestionarPago(req, res) {
             }
 
             await client.query(
-                'UPDATE pagos_clientes SET estatus = \'APROBADO\', fecha_validacion = CURRENT_TIMESTAMP, validado_por = $1 WHERE pago_id = $2',
-                [adminId, id]
+                'UPDATE pagos_clientes SET estatus = \'APROBADO\', fecha_validacion = CURRENT_TIMESTAMP, validado_por = $1 WHERE pago_id = $2 AND tenant_id = $3',
+                [adminId, id, req.tenant?.tenant_id]
             );
 
             // ========== LÓGICA FIFO: DISTRIBUCIÓN DE PAGO A PEDIDOS INDIVIDUALES ==========
@@ -302,8 +302,8 @@ async function gestionarPago(req, res) {
 
         } else if (accion === 'rechazar') {
             await client.query(
-                'UPDATE pagos_clientes SET estatus = \'RECHAZADO\', fecha_validacion = CURRENT_TIMESTAMP, validado_por = $1, notas = $2 WHERE pago_id = $3',
-                [adminId, motivo || 'Comprobante no válido', id]
+                'UPDATE pagos_clientes SET estatus = \'RECHAZADO\', fecha_validacion = CURRENT_TIMESTAMP, validado_por = $1, notas = $2 WHERE pago_id = $3 AND tenant_id = $4',
+                [adminId, motivo || 'Comprobante no válido', id, req.tenant?.tenant_id]
             );
 
             await client.query('COMMIT');

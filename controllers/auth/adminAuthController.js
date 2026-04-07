@@ -287,8 +287,8 @@ const crearAdmin = async (req, res) => {
         const adminResult = await db.query(
           `SELECT AdminID, Nombre, Apellido, Email, Rol
            FROM administradores
-           WHERE Email = $1`,
-          [email]
+           WHERE Email = $1 AND tenant_id = $2`,
+          [email, tenant_id]
         );
 
         const nuevoAdmin = adminResult.rows[0] || null;

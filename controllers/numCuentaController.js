@@ -276,16 +276,17 @@ async function actualizarCuentaAdmin(req, res) {
   const client = await db.pool.connect();
   try {
     const adminId = req.user.userId;
+    const { tenant_id } = req.tenant;
     const { banco, numero_cuenta, clabe, titular } = req.body;
 
     await client.query("BEGIN");
 
     const result = await client.query(
-      `UPDATE administradores 
+      `UPDATE administradores
        SET banco = $1, numero_cuenta = $2, clabe = $3, titular = $4
-       WHERE adminid = $5
+       WHERE adminid = $5 AND tenant_id = $6
        RETURNING banco, numero_cuenta, clabe, titular`,
-      [banco, numero_cuenta, clabe, titular, adminId]
+      [banco, numero_cuenta, clabe, titular, adminId, tenant_id]
     );
 
     if (result.rows.length === 0) {
@@ -351,16 +352,17 @@ async function actualizarCuentaAgente(req, res) {
   const client = await db.pool.connect();
   try {
     const agenteId = req.user.userId;
+    const { tenant_id } = req.tenant;
     const { banco, numero_cuenta, clabe, titular } = req.body;
 
     await client.query("BEGIN");
 
     const result = await client.query(
-      `UPDATE agentesdeventas 
+      `UPDATE agentesdeventas
        SET banco = $1, numero_cuenta = $2, clabe = $3, titular = $4
-       WHERE agenteid = $5
+       WHERE agenteid = $5 AND tenant_id = $6
        RETURNING banco, numero_cuenta, clabe, titular`,
-      [banco, numero_cuenta, clabe, titular, agenteId]
+      [banco, numero_cuenta, clabe, titular, agenteId, tenant_id]
     );
 
     if (result.rows.length === 0) {

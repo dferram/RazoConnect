@@ -493,16 +493,16 @@ async function rechazarCambios(req, res) {
           // Verificar dependencias críticas antes de borrar el agente
           const [clientesDep, pedidosDep, comisionesDep] = await Promise.all([
             client.query(
-              "SELECT COUNT(*)::int AS count FROM Clientes WHERE AgenteID = $1",
-              [entidadId]
+              "SELECT COUNT(*)::int AS count FROM Clientes WHERE AgenteID = $1 AND tenant_id = $2",
+              [entidadId, cambio.tenant_id]
             ),
             client.query(
-              "SELECT COUNT(*)::int AS count FROM Pedidos WHERE AgenteID = $1",
-              [entidadId]
+              "SELECT COUNT(*)::int AS count FROM Pedidos WHERE AgenteID = $1 AND tenant_id = $2",
+              [entidadId, cambio.tenant_id]
             ),
             client.query(
-              "SELECT COUNT(*)::int AS count FROM Comisiones WHERE AgenteID = $1",
-              [entidadId]
+              "SELECT COUNT(*)::int AS count FROM Comisiones WHERE AgenteID = $1 AND tenant_id = $2",
+              [entidadId, cambio.tenant_id]
             ),
           ]);
 
@@ -517,8 +517,8 @@ async function rechazarCambios(req, res) {
           }
 
           const deleteResult = await client.query(
-            "DELETE FROM AgentesDeVentas WHERE AgenteID = $1",
-            [entidadId]
+            "DELETE FROM AgentesDeVentas WHERE AgenteID = $1 AND tenant_id = $2",
+            [entidadId, cambio.tenant_id]
           );
 
           if (deleteResult.rowCount === 0) {

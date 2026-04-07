@@ -82,8 +82,8 @@ const refreshAccessToken = async (req, res) => {
       userExists = result.rows.length > 0;
     } else if (rol === 'agente') {
       const result = await db.query(
-        'SELECT agenteid FROM agentesdeventas WHERE agenteid = $1 AND activo = TRUE',
-        [id]
+        'SELECT agenteid FROM agentesdeventas WHERE agenteid = $1 AND tenant_id = $2 AND activo = TRUE',
+        [id, tenant_id]
       );
       userExists = result.rows.length > 0;
     } else if (rol === 'admin' || rol === 'super_admin') {

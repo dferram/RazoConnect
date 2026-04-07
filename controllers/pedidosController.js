@@ -245,8 +245,8 @@ const crearPedido = async (req, res) => {
         if (estadoResult.rows.length > 0) {
           const estadoId = estadoResult.rows[0].estadoid;
           await client.query(
-            "UPDATE clientes SET estado_id = $1 WHERE clienteid = $2",
-            [estadoId, clienteId]
+            "UPDATE clientes SET estado_id = $1 WHERE clienteid = $2 AND tenant_id = $3",
+            [estadoId, clienteId, tenant_id]
           );
         }
       } catch (error) {
@@ -1463,8 +1463,8 @@ const crearPedido = async (req, res) => {
 
     if (estadoNormalizado !== pedidoEstatus) {
       const updatePedidoResult = await client.query(
-        "UPDATE Pedidos SET Estatus = $1 WHERE PedidoID = $2 RETURNING Estatus",
-        [estadoNormalizado, pedidoId]
+        "UPDATE Pedidos SET Estatus = $1 WHERE PedidoID = $2 AND tenant_id = $3 RETURNING Estatus",
+        [estadoNormalizado, pedidoId, tenant_id]
       );
       if (updatePedidoResult.rows.length > 0) {
         pedido.estatus = updatePedidoResult.rows[0].estatus;
@@ -1480,8 +1480,8 @@ const crearPedido = async (req, res) => {
     if (agenteId) {
       // Obtener el porcentaje de comisión del agente desde la base de datos
       const agenteResult = await client.query(
-        `SELECT porcentaje_comision FROM agentesdeventas WHERE agenteid = $1`,
-        [agenteId]
+        `SELECT porcentaje_comision FROM agentesdeventas WHERE agenteid = $1 AND tenant_id = $2`,
+        [agenteId, tenant_id]
       );
       
       // Usar el porcentaje configurado o default 5% si no existe

@@ -24,11 +24,11 @@ const favoritosController = {
 
       if (existeResult.rows.length > 0) {
         const deleteQuery = `
-          DELETE FROM clientes_favoritos 
-          WHERE favorito_id = $1
+          DELETE FROM clientes_favoritos
+          WHERE favorito_id = $1 AND tenant_id = $2
           RETURNING favorito_id
         `;
-        await client.query(deleteQuery, [existeResult.rows[0].favorito_id]);
+        await client.query(deleteQuery, [existeResult.rows[0].favorito_id, tenant_id]);
         
         await client.query('COMMIT');
         return res.json({ 
