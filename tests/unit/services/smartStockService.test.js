@@ -170,7 +170,10 @@ describe('SmartStockService', () => {
     });
 
     it('debe retornar success: false cuando no hay admins con stock', async () => {
-      db.query.mockResolvedValueOnce({ rows: [] }); // No hay admins con stock
+      // Primera llamada: No hay admins con stock en stock_admin
+      db.query.mockResolvedValueOnce({ rows: [] });
+      // Segunda llamada: Fallback a producto_variantes - tampoco hay stock
+      db.query.mockResolvedValueOnce({ rows: [] });
 
       const result = await SmartStockService.allocateStockAutomatically({
         varianteId: 1,
@@ -180,7 +183,7 @@ describe('SmartStockService', () => {
 
       expect(result.success).toBe(false);
       expect(result.allocations).toHaveLength(0);
-      expect(result.message).toContain('No hay stock disponible');
+      expect(result.message).toContain('Sin stock disponible');
     });
 
     it('debe retornar success: true y totalAsignado === cantidadRequerida cuando hay un admin con stock suficiente', async () => {
