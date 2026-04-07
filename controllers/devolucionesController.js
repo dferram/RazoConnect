@@ -637,15 +637,16 @@ async function aprobarDevolucion(req, res) {
       
       if (reservaActiva > 0) {
         
-        // Liberar reserva residual (no debería ocurrir en flujo normal)
+        // Liberar reserva residual del admin responsable (no debería ocurrir en flujo normal)
         await client.query(
           `UPDATE stock_admin
            SET cantidad_reservada = GREATEST(0, cantidad_reservada - $1),
                updated_at = NOW()
-           WHERE variante_id = $2 
-             AND tenant_id = $3
+           WHERE variante_id = $2
+             AND admin_id = $3
+             AND tenant_id = $4
              AND cantidad_reservada > 0`,
-          [Math.min(piezas_totales, reservaActiva), variante_id, tenant_id]
+          [Math.min(piezas_totales, reservaActiva), variante_id, adminResponsable, tenant_id]
         );
       }
 
