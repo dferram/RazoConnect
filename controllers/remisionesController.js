@@ -1170,6 +1170,12 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
 
     const remision = remisionQuery.rows[0];
 
+    // ⚠️ CRITICAL: Extract admin_id from client's estado (deterministic mapping)
+    // This ensures CXC operations are isolated by admin
+    const estadosHelper = require('../utils/estadosHelper');
+    const adminClienteId = await estadosHelper.getAdminByClienteEstado(remision.clienteid, tenant_id);
+    const adminIdForOperations = adminClienteId || 1;
+
     // BUG FIX 2: Validar estado antes de confirmar
     // Solo permitir confirmación desde PENDIENTE_CONFIRMACION_FINANZAS
     // PENDIENTE_REVISION debe ser corregido por almacén primero
@@ -1396,8 +1402,10 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
         `SELECT credito_id, saldo_deudor, limite_credito
          FROM cliente_creditos
          WHERE cliente_id = $1
+           AND admin_id = $2
+           AND tenant_id = $3
          FOR UPDATE`,
-        [remision.clienteid]
+        [remision.clienteid, adminIdForOperations, tenant_id]
       );
 
       if (creditoQuery.rows.length > 0) {
@@ -1457,8 +1465,9 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
           await client.query(
             `UPDATE cliente_creditos
              SET saldo_deudor = $1, ultima_actualizacion = NOW()
-             WHERE credito_id = $2`,
-            [nuevoSaldo, creditoInfo.credito_id]
+             WHERE credito_id = $2
+               AND admin_id = $3`,
+            [nuevoSaldo, creditoInfo.credito_id, adminIdForOperations]
           );
 
           // Registrar AJUSTE (quitar reserva) - SOLO EN PRIMERA REMISIÓN
@@ -1501,8 +1510,9 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
           await client.query(
             `UPDATE cliente_creditos
              SET saldo_deudor = $1, ultima_actualizacion = NOW()
-             WHERE credito_id = $2`,
-            [nuevoSaldo, creditoInfo.credito_id]
+             WHERE credito_id = $2
+               AND admin_id = $3`,
+            [nuevoSaldo, creditoInfo.credito_id, adminIdForOperations]
           );
 
           // Registrar CARGO (cargo real) - SIN AJUSTE DE RESERVA
@@ -1526,14 +1536,10 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
         // Crear registro en CXC (siempre, en todas las remisiones)
         // 🔒 CRÍTICO: Verificar que NO exista ya un CXC para esta remisión (evita doble inserción)
         // ⚠️ SEPARACIÓN POR ADMIN: Filtrar por admin_id
-        const estadosHelper = require('../utils/estadosHelper');
-        const adminClienteId = await estadosHelper.getAdminByClienteEstado(remision.clienteid, tenant_id);
-        const adminIdForCxc = adminClienteId || 1;
-
         const cxcExistenteQuery = await client.query(
           `SELECT cxc_id FROM cuentas_por_cobrar
            WHERE remision_id = $1 AND pedido_id = $2 AND tenant_id = $3 AND admin_id = $4`,
-          [id, remision.pedidoid, tenant_id, adminIdForCxc]
+          [id, remision.pedidoid, tenant_id, adminIdForOperations]
         );
 
         if (cxcExistenteQuery.rows.length === 0) {
@@ -1549,7 +1555,7 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
               montoRemision.toFixed(2),
               `Remisión ${remision.folio}`,
               tenant_id,
-              adminIdForCxc
+              adminIdForOperations
             ]
           );
           

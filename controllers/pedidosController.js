@@ -782,16 +782,36 @@ const crearPedido = async (req, res) => {
     let creditoInfo = null;
     let diasGracia = 0;
 
+    // ⚠️ CRITICAL: Obtener admin_id del cliente para validar acceso a crédito
+    let adminIdCliente = null;
+    if (metodoPagoEsCredito) {
+      try {
+        const estadosHelper = require("../utils/estadosHelper");
+        adminIdCliente = await estadosHelper.getAdminByClienteEstado(clienteId, tenant_id);
+      } catch (error) {
+        logger.error('Error al obtener admin del cliente para crédito:', { error, clienteId });
+        await client.query("ROLLBACK");
+        transactionStarted = false;
+        removeUploadedComprobante();
+        return res.status(500).json({
+          success: false,
+          message: "Error al validar crédito"
+        });
+      }
+    }
+
     if (metodoPagoEsCredito) {
       const creditoResult = await client.query(
         `
           SELECT credito_id, limite_credito, saldo_deudor, dias_credito
           FROM cliente_creditos
           WHERE cliente_id = $1
+            AND admin_id = $2
+            AND tenant_id = $3
           FOR UPDATE
           LIMIT 1
         `,
-        [clienteId]
+        [clienteId, adminIdCliente, tenant_id]
       );
 
       if (!creditoResult.rows.length) {
@@ -980,8 +1000,10 @@ const crearPedido = async (req, res) => {
       await client.query(
         `UPDATE cliente_creditos
          SET saldo_deudor = $1, ultima_actualizacion = NOW()
-         WHERE credito_id = $2`,
-        [nuevoSaldo, info.creditoId]
+         WHERE credito_id = $2
+           AND admin_id = $3
+           AND tenant_id = $4`,
+        [nuevoSaldo, info.creditoId, adminIdCliente, tenant_id]
       );
 
       // Registrar movimiento de RESERVA (no es cargo aún)
@@ -2644,8 +2666,9 @@ const cancelarPedido = async (req, res) => {
             await client.query(
               `UPDATE cliente_creditos
                SET saldo_deudor = $1, ultima_actualizacion = NOW()
-               WHERE credito_id = $2`,
-              [nuevoSaldo, creditoInfo.credito_id]
+               WHERE credito_id = $2
+                 AND admin_id = $3`,
+              [nuevoSaldo, creditoInfo.credito_id, adminClienteId || 1]
             );
 
             // Registrar movimiento de crédito (ABONO por cancelación)
