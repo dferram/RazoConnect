@@ -713,14 +713,16 @@ async function aprobarDevolucion(req, res) {
         `UPDATE cliente_creditos
          SET saldo_deudor = GREATEST(saldo_deudor - $1, 0),
              ultima_actualizacion = CURRENT_TIMESTAMP
-         WHERE cliente_id = $2`,
-        [montoDevolucion, devolucion.cliente_id]
+         WHERE cliente_id = $2
+           AND admin_id = $3
+           AND tenant_id = $4`,
+        [montoDevolucion, devolucion.cliente_id, adminResponsable, tenant_id]
       );
 
       // Registrar movimiento de crédito
       const creditoQuery = await client.query(
-        `SELECT credito_id, saldo_deudor FROM cliente_creditos WHERE cliente_id = $1`,
-        [devolucion.cliente_id]
+        `SELECT credito_id, saldo_deudor FROM cliente_creditos WHERE cliente_id = $1 AND admin_id = $2 AND tenant_id = $3`,
+        [devolucion.cliente_id, adminResponsable, tenant_id]
       );
 
       if (creditoQuery.rows.length > 0) {

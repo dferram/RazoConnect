@@ -808,22 +808,24 @@ async function gestionarPagoCliente(req, res) {
     try {
         await client.query('BEGIN');
 
-        // Obtener información del pago
+        // Obtener información del pago - ⚠️ CRITICAL: Filter by admin_id
         const { rows: [pago] } = await client.query(`
-            SELECT 
+            SELECT
                 pc.*,
                 c.nombre,
                 c.apellido,
                 cc.credito_id,
-                cc.saldo_deudor
+                cc.saldo_deudor,
+                cc.admin_id
             FROM pagos_clientes pc
             INNER JOIN clientes c ON c.clienteid = pc.cliente_id
-            INNER JOIN cliente_creditos cc ON cc.cliente_id = pc.cliente_id
-            WHERE pc.pago_id = $1 
+            INNER JOIN cliente_creditos cc ON cc.cliente_id = pc.cliente_id AND cc.admin_id = $3
+            WHERE pc.pago_id = $1
                 AND pc.tenant_id = $2
                 AND c.tenant_id = $2
-            FOR UPDATE
-        `, [pagoId, tenant_id]);
+                AND cc.tenant_id = $2
+            FOR UPDATE OF pc, cc
+        `, [pagoId, tenant_id, adminId]);
 
         if (!pago) {
             await client.query('ROLLBACK');
@@ -851,14 +853,14 @@ async function gestionarPagoCliente(req, res) {
                 WHERE pago_id = $2 AND tenant_id = $3
             `, [adminId, pagoId, tenant_id]);
 
-            // Actualizar saldo del cliente (ABONO)
+            // Actualizar saldo del cliente (ABONO) - ⚠️ CRITICAL: Add admin_id filter
             const nuevoSaldo = parseFloat(pago.saldo_deudor) - parseFloat(pago.monto);
             await client.query(`
                 UPDATE cliente_creditos
                 SET saldo_deudor = GREATEST(0, $1),
                     ultimo_movimiento = NOW()
-                WHERE credito_id = $2 AND tenant_id = $3
-            `, [nuevoSaldo, pago.credito_id, tenant_id]);
+                WHERE credito_id = $2 AND tenant_id = $3 AND admin_id = $4
+            `, [nuevoSaldo, pago.credito_id, tenant_id, adminId]);
 
             // Registrar movimiento de crédito
             await client.query(`

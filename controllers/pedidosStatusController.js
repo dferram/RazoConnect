@@ -218,7 +218,12 @@ const updatePedidoEstatus = async (req, res) => {
         }
 
         const pedido = pedidoInfo.rows[0];
-        
+
+        // ⚠️ CRITICAL: Obtener admin_id del cliente para asignar CXC al admin correcto
+        const estadosHelper = require('../../utils/estadosHelper');
+        const adminClienteId = await estadosHelper.getAdminByClienteEstado(pedido.clienteid, tenant_id);
+        const adminIdCxc = adminClienteId || 1;
+
         // Obtener detalles para deducir stock
         const detallesResult = await client.query(
           `SELECT 
@@ -281,34 +286,35 @@ const updatePedidoEstatus = async (req, res) => {
         // ✅ PASO 2: Generar CXC si es a crédito
         if (pedido.es_credito) {
           logger.logOperation('CXC_INICIO', { pedidoId });
-          
+
           const montoTotal = parseFloat(pedido.montototal);
           const clienteId = parseInt(pedido.clienteid);
 
-          // Insertar en cuentas_por_cobrar
+          // Insertar en cuentas_por_cobrar - ⚠️ CRITICAL: Include admin_id
           await client.query(
-            `INSERT INTO cuentas_por_cobrar 
-             (pedido_id, cliente_id, tipo_movimiento, monto, descripcion, tenant_id)
-             VALUES ($1, $2, 'CARGO', $3, $4, $5)`,
+            `INSERT INTO cuentas_por_cobrar
+             (pedido_id, cliente_id, tipo_movimiento, monto, descripcion, tenant_id, admin_id)
+             VALUES ($1, $2, 'CARGO', $3, $4, $5, $6)`,
             [
               pedidoId,
               clienteId,
               montoTotal,
               `Cargo por pedido #${pedidoId} confirmado`,
-              tenant_id
+              tenant_id,
+              adminIdCxc
             ]
           );
 
           logger.logOperation('CXC_INSERTADO', { monto: montoTotal });
 
-          // Actualizar saldo deudor
+          // Actualizar saldo deudor - ⚠️ CRITICAL: Add admin_id filter
           const creditoUpdate = await client.query(
-            `UPDATE cliente_creditos 
+            `UPDATE cliente_creditos
              SET saldo_deudor = saldo_deudor + $1,
                  ultima_actualizacion = NOW()
-             WHERE cliente_id = $2 AND tenant_id = $3
+             WHERE cliente_id = $2 AND tenant_id = $3 AND admin_id = $4
              RETURNING credito_id, saldo_deudor`,
-            [montoTotal, clienteId, tenant_id]
+            [montoTotal, clienteId, tenant_id, adminIdCxc]
           );
 
           if (creditoUpdate.rows.length === 0) {

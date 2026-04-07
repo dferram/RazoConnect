@@ -23,39 +23,41 @@ const { getOrSetCache } = require('../config/redisClient');
 const getFinanzasTotales = async (req, res) => {
   try {
     const userId = req.user.id;
+    const adminId = req.user?.adminId || req.user?.userId;
     const tenantId = req.tenant?.tenant_id || 1;
 
     // Authorization is already handled by authorizeRole middleware at route level
     // No need for redundant checks here
 
-    // Clave de caché única por tenant
-    const cacheKey = `finanzas_totales:tenant_${tenantId}`;
-    
+    // Clave de caché única por tenant (y admin si es admin específico)
+    const cacheKey = `finanzas_totales:tenant_${tenantId}:admin_${adminId}`;
+
     // Intentar obtener desde caché o calcular
     const totales = await getOrSetCache(
       cacheKey,
       async () => {
         console.log('🔄 [FINANZAS] Calculando totales desde PostgreSQL...');
-        
-        // Query 1: Totales de CXC (Cuentas por Cobrar)
+
+        // Query 1: Totales de CXC (Cuentas por Cobrar) - ⚠️ CRITICAL: Filter by admin_id
         const cxcQuery = `
-          SELECT 
+          SELECT
             COALESCE(SUM(saldo_deudor), 0) as total_cxc,
             COUNT(DISTINCT cliente_id) as clientes_con_deuda,
-            COALESCE(SUM(CASE 
+            COALESCE(SUM(CASE
               WHEN EXISTS (
-                SELECT 1 FROM pedidos p 
-                WHERE p.clienteid = cliente_creditos.cliente_id 
-                AND p.fecha_vencimiento < NOW() 
+                SELECT 1 FROM pedidos p
+                WHERE p.clienteid = cliente_creditos.cliente_id
+                AND p.fecha_vencimiento < NOW()
                 AND COALESCE(p.pagado, FALSE) = FALSE
-              ) THEN saldo_deudor 
-              ELSE 0 
+              ) THEN saldo_deudor
+              ELSE 0
             END), 0) as total_vencido
           FROM cliente_creditos
           WHERE saldo_deudor > 0
             AND tenant_id = $1
+            AND admin_id = $2
         `;
-        const cxcResult = await db.query(cxcQuery, [tenantId]);
+        const cxcResult = await db.query(cxcQuery, [tenantId, adminId]);
         const cxcData = cxcResult.rows[0];
 
         // Query 2: Totales de CXP (Cuentas por Pagar)

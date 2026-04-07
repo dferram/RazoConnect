@@ -91,13 +91,16 @@ async function notificarSolicitudAprobada(solicitudRow) {
   }
 }
 
-async function aprobarSolicitudCredito(solicitudId, adminId, client) {
+async function aprobarSolicitudCredito(solicitudId, adminId, tenant_id, client) {
+  // ⚠️ CRITICAL: Obtener admin_id del cliente para asignar crédito correctamente
+  const estadosHelper = require('../../utils/estadosHelper');
+
   const { rows } = await client.query(
-    `SELECT cliente_id, monto_solicitado 
-     FROM solicitudes_credito 
-     WHERE solicitud_id = $1 AND estado = 'PENDIENTE'
+    `SELECT cliente_id, monto_solicitado
+     FROM solicitudes_credito
+     WHERE solicitud_id = $1 AND estado = 'PENDIENTE' AND tenant_id = $2
      FOR UPDATE`,
-    [solicitudId]
+    [solicitudId, tenant_id]
   );
 
   if (!rows.length) {
@@ -106,35 +109,39 @@ async function aprobarSolicitudCredito(solicitudId, adminId, client) {
 
   const { cliente_id, monto_solicitado } = rows[0];
 
-  // Verificar que el cliente no tenga un crédito activo
+  // Obtener admin_id del cliente por su estado
+  const adminClienteId = await estadosHelper.getAdminByClienteEstado(cliente_id, tenant_id);
+  const adminIdForCredit = adminClienteId || 1;
+
+  // Verificar que el cliente no tenga un crédito activo - ⚠️ CRITICAL: Add admin_id filter
   const creditoActivo = await client.query(
-    `SELECT credito_id 
-     FROM cliente_creditos 
-     WHERE cliente_id = $1 AND estado_credito = 'ACTIVO'
+    `SELECT credito_id
+     FROM cliente_creditos
+     WHERE cliente_id = $1 AND admin_id = $2 AND tenant_id = $3 AND estado_credito = 'ACTIVO'
      LIMIT 1`,
-    [cliente_id]
+    [cliente_id, adminIdForCredit, tenant_id]
   );
 
   if (creditoActivo.rows.length > 0) {
     throw new Error(`El cliente #${cliente_id} ya tiene una línea de crédito activa`);
   }
 
-  // Crear línea de crédito
+  // Crear línea de crédito - ⚠️ CRITICAL: Include admin_id and tenant_id
   await client.query(
-    `INSERT INTO cliente_creditos 
-       (cliente_id, limite_credito, saldo_deudor, estado_credito)
-     VALUES 
-       ($1, $2, 0, 'ACTIVO')`,
-    [cliente_id, monto_solicitado]
+    `INSERT INTO cliente_creditos
+       (cliente_id, limite_credito, saldo_deudor, estado_credito, admin_id, tenant_id)
+     VALUES
+       ($1, $2, 0, 'ACTIVO', $3, $4)`,
+    [cliente_id, monto_solicitado, adminIdForCredit, tenant_id]
   );
 
   // Actualizar estado de la solicitud
   await client.query(
-    `UPDATE solicitudes_credito 
-     SET estado = 'APROBADO', 
+    `UPDATE solicitudes_credito
+     SET estado = 'APROBADO',
          comentarios_admin = 'Aprobado por administrador #' || $1
-     WHERE solicitud_id = $2`,
-    [adminId, solicitudId]
+     WHERE solicitud_id = $2 AND tenant_id = $3`,
+    [adminId, solicitudId, tenant_id]
   );
 
   // Crear notificación para el cliente
@@ -149,6 +156,7 @@ async function aprobarSolicitudCredito(solicitudId, adminId, client) {
 
 async function aprobarCambios(req, res) {
   const { ids } = req.body || {};
+  const { tenant_id } = req.tenant;
 
   if (!Array.isArray(ids) || ids.length === 0) {
     return res.status(400).json({
@@ -176,8 +184,8 @@ async function aprobarCambios(req, res) {
     for (const id of ids) {
       // Verificar si es una solicitud de crédito
       const { rows } = await client.query(
-        'SELECT solicitud_id FROM solicitudes_credito WHERE solicitud_id = $1',
-        [id]
+        'SELECT solicitud_id FROM solicitudes_credito WHERE solicitud_id = $1 AND tenant_id = $2',
+        [id, tenant_id]
       );
 
       if (rows.length > 0) {
@@ -189,7 +197,7 @@ async function aprobarCambios(req, res) {
 
     // Procesar solicitudes de crédito
     for (const solicitudId of solicitudesCredito) {
-      await aprobarSolicitudCredito(solicitudId, adminId, client);
+      await aprobarSolicitudCredito(solicitudId, adminId, tenant_id, client);
     }
 
     // Procesar cambios regulares

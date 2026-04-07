@@ -114,15 +114,22 @@ const procesarPagoTarjeta = async (req, res) => {
     await client.query("BEGIN");
     transactionStarted = true;
 
+    // ⚠️ CRITICAL: Obtener admin_id del cliente para validar acceso
+    const estadosHelper = require('../../utils/estadosHelper');
+    const adminClienteId = await estadosHelper.getAdminByClienteEstado(clienteIdMeta, tenant_id);
+    const adminIdValidate = adminClienteId || 1;
+
     const clienteCreditoResult = await client.query(
       `
         SELECT credito_id, saldo_deudor
         FROM cliente_creditos
         WHERE cliente_id = $1
+          AND admin_id = $2
+          AND tenant_id = $3
         ORDER BY credito_id DESC
         LIMIT 1
       `,
-      [clienteIdMeta]
+      [clienteIdMeta, adminIdValidate, tenant_id]
     );
 
     if (!clienteCreditoResult.rows.length) {
@@ -141,8 +148,10 @@ const procesarPagoTarjeta = async (req, res) => {
         UPDATE cliente_creditos
         SET saldo_deudor = $1, ultima_actualizacion = NOW()
         WHERE credito_id = $2
+          AND admin_id = $3
+          AND tenant_id = $4
       `,
-      [nuevoSaldo, creditoId]
+      [nuevoSaldo, creditoId, adminIdValidate, tenant_id]
     );
 
     await client.query(

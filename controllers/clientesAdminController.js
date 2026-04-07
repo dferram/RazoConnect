@@ -280,6 +280,7 @@ const actualizarCreditoCliente = async (req, res) => {
   try {
     const clienteId = parseInt(req.params.id, 10);
     const { limiteCredito, diasGracia, activo } = req.body;
+    const adminId = req.user?.adminId || req.user?.userId;
 
     if (!Number.isInteger(clienteId) || clienteId <= 0) {
       return res.status(400).json({
@@ -303,13 +304,13 @@ const actualizarCreditoCliente = async (req, res) => {
       });
     }
 
-    // Upsert en cliente_creditos
+    // Upsert en cliente_creditos - ⚠️ CRITICAL: Include admin_id
     const estadoCredito = activo !== undefined ? (activo ? 'ACTIVO' : 'INACTIVO') : 'ACTIVO';
     const result = await db.query(
-      `INSERT INTO cliente_creditos (cliente_id, limite_credito, dias_gracia, estado_credito, tenant_id)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (cliente_id, tenant_id)
-       DO UPDATE SET 
+      `INSERT INTO cliente_creditos (cliente_id, limite_credito, dias_gracia, estado_credito, tenant_id, admin_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (cliente_id, tenant_id, admin_id)
+       DO UPDATE SET
          limite_credito = $2,
          dias_gracia = $3,
          estado_credito = $4,
@@ -320,7 +321,8 @@ const actualizarCreditoCliente = async (req, res) => {
         limiteCredito || 0,
         diasGracia || 0,
         estadoCredito,
-        tenant_id
+        tenant_id,
+        adminId
       ]
     );
 

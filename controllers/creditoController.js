@@ -159,18 +159,24 @@ async function aprobarSolicitud(req, res) {
   try {
     await client.query("BEGIN");
     const { solicitud_id, limite_aprobado } = req.body;
+    const { tenant_id } = req.tenant;
     if (!solicitud_id || !limite_aprobado) throw new Error("Faltan datos requeridos");
 
     const { rows: [solicitud] } = await client.query("SELECT cliente_id FROM solicitudes_credito WHERE solicitud_id = $1 AND estado = 'PENDIENTE'", [solicitud_id]);
     if (!solicitud) throw new Error("Solicitud no encontrada o ya procesada");
 
+    // ⚠️ CRITICAL: Obtener admin_id del cliente para asignar crédito al admin correcto
+    const estadosHelper = require('../../utils/estadosHelper');
+    const adminClienteId = await estadosHelper.getAdminByClienteEstado(solicitud.cliente_id, tenant_id);
+    const adminId = adminClienteId || 1;
+
     await client.query("UPDATE solicitudes_credito SET estado = 'APROBADO' WHERE solicitud_id = $1", [solicitud_id]);
 
-    const { rows: [creditoExistente] } = await client.query("SELECT credito_id FROM cliente_creditos WHERE cliente_id = $1", [solicitud.cliente_id]);
+    const { rows: [creditoExistente] } = await client.query("SELECT credito_id FROM cliente_creditos WHERE cliente_id = $1 AND admin_id = $2 AND tenant_id = $3", [solicitud.cliente_id, adminId, tenant_id]);
     if (creditoExistente) {
-      await client.query("UPDATE cliente_creditos SET limite_credito = $1, estado_credito = 'ACTIVO' WHERE credito_id = $2", [limite_aprobado, creditoExistente.credito_id]);
+      await client.query("UPDATE cliente_creditos SET limite_credito = $1, estado_credito = 'ACTIVO' WHERE credito_id = $2 AND admin_id = $3 AND tenant_id = $4", [limite_aprobado, creditoExistente.credito_id, adminId, tenant_id]);
     } else {
-      await client.query("INSERT INTO cliente_creditos (cliente_id, limite_credito, estado_credito) VALUES ($1, $2, 'ACTIVO')", [solicitud.cliente_id, limite_aprobado]);
+      await client.query("INSERT INTO cliente_creditos (cliente_id, limite_credito, estado_credito, admin_id, tenant_id) VALUES ($1, $2, 'ACTIVO', $3, $4)", [solicitud.cliente_id, limite_aprobado, adminId, tenant_id]);
     }
 
     await client.query("COMMIT");

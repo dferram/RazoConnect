@@ -101,9 +101,14 @@ async function gestionarPago(req, res) {
         }
 
         if (accion === 'aprobar') {
+            // ⚠️ CRITICAL: Obtener admin_id del cliente para validar pertenencia
+            const estadosHelper = require('../../../utils/estadosHelper');
+            const adminClienteId = await estadosHelper.getAdminByClienteEstado(pago.cliente_id, req.tenant?.tenant_id);
+            const adminIdValidate = adminClienteId || 1;
+
             const { rows: [credito] } = await client.query(
-                'SELECT credito_id, saldo_deudor FROM cliente_creditos WHERE cliente_id = $1 AND estado_credito = \'ACTIVO\'',
-                [pago.cliente_id]
+                'SELECT credito_id, saldo_deudor FROM cliente_creditos WHERE cliente_id = $1 AND admin_id = $2 AND estado_credito = \'ACTIVO\' AND tenant_id = $3',
+                [pago.cliente_id, adminIdValidate, req.tenant?.tenant_id]
             );
 
             if (!credito) {
@@ -117,8 +122,8 @@ async function gestionarPago(req, res) {
             const nuevoSaldo = Math.max(0, parseFloat(credito.saldo_deudor) - parseFloat(pago.monto));
 
             await client.query(
-                'UPDATE cliente_creditos SET saldo_deudor = $1, ultima_actualizacion = CURRENT_TIMESTAMP WHERE credito_id = $2',
-                [nuevoSaldo, credito.credito_id]
+                'UPDATE cliente_creditos SET saldo_deudor = $1, ultima_actualizacion = CURRENT_TIMESTAMP WHERE credito_id = $2 AND admin_id = $3 AND tenant_id = $4',
+                [nuevoSaldo, credito.credito_id, adminIdValidate, req.tenant?.tenant_id]
             );
 
             // ========== ALGORITMO DE CONCILIACIÓN: HERENCIA DE REFERENCIA ========== 
