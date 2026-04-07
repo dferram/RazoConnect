@@ -696,15 +696,16 @@ async function aprobarDevolucion(req, res) {
       // CASO A: Pedido a crédito - Generar Nota de Crédito
       
       await client.query(
-        `INSERT INTO cuentas_por_cobrar 
-         (pedido_id, cliente_id, tipo_movimiento, monto, descripcion, tenant_id)
-         VALUES ($1, $2, 'ABONO', $3, $4, $5)`,
+        `INSERT INTO cuentas_por_cobrar
+         (pedido_id, cliente_id, tipo_movimiento, monto, descripcion, tenant_id, admin_id)
+         VALUES ($1, $2, 'ABONO', $3, $4, $5, $6)`,
         [
           devolucion.pedido_id,
           devolucion.cliente_id,
           montoDevolucion,
           `Nota de Crédito - Devolución #${devolucionId}`,
-          tenant_id
+          tenant_id,
+          adminResponsable
         ]
       );
 

@@ -309,34 +309,38 @@ async function exportarLoteCxC(req, res) {
 async function getMetricasCobranza(req, res) {
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
-    
+    const adminId = req.user?.adminId || req.user?.userId;
+
     try {
         // Ejecutar consultas en paralelo
         const [porCobrar, enGestion, clientesMora] = await Promise.all([
-            // Saldo total pendiente (foto actual de toda la deuda)
+            // Saldo total pendiente (foto actual de toda la deuda) - ⚠️ CRITICAL: Filter by admin_id
             client.query(`
                 SELECT COALESCE(SUM(saldo_deudor), 0) as total
                 FROM cliente_creditos
                 WHERE saldo_deudor > 0
                     AND tenant_id = $1
-            `, [tenant_id]),
-            
-            // Saldo en gestión (exportado este mes)
+                    AND admin_id = $2
+            `, [tenant_id, adminId]),
+
+            // Saldo en gestión (exportado este mes) - ⚠️ CRITICAL: Filter by admin_id
             client.query(`
                 SELECT COALESCE(SUM(saldo_deudor), 0) as total
                 FROM cliente_creditos
                 WHERE saldo_deudor > 0
                     AND ultima_actualizacion >= date_trunc('month', CURRENT_DATE)
                     AND tenant_id = $1
-            `, [tenant_id]),
-            
-            // Clientes en mora
+                    AND admin_id = $2
+            `, [tenant_id, adminId]),
+
+            // Clientes en mora - ⚠️ CRITICAL: Filter by admin_id
             client.query(`
                 SELECT COUNT(*) as total
                 FROM cliente_creditos
                 WHERE estado_credito = 'SUSPENDIDO'
                     AND tenant_id = $1
-            `, [tenant_id])
+                    AND admin_id = $2
+            `, [tenant_id, adminId])
         ]);
 
         res.json({
@@ -368,22 +372,26 @@ async function getMetricasCobranza(req, res) {
  */
 async function getClientesCredito(req, res) {
     const client = await db.pool.connect();
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const adminId = req.user?.adminId || req.user?.userId;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    
+
     try {
-        // Total de registros
+        // Total de registros - ⚠️ CRITICAL: Filter by admin_id and tenant_id
         const { rows: [count] } = await client.query(`
             SELECT COUNT(*) as total
             FROM cliente_creditos cc
             JOIN clientes c ON c.clienteid = cc.cliente_id
             WHERE cc.saldo_deudor > 0
-        `);
+              AND cc.tenant_id = $1
+              AND cc.admin_id = $2
+        `, [tenant_id, adminId]);
 
-        // Datos paginados
+        // Datos paginados - ⚠️ CRITICAL: Filter by admin_id and tenant_id
         const { rows } = await client.query(`
-            SELECT 
+            SELECT
                 cc.credito_id,
                 cc.cliente_id,
                 cc.limite_credito,
@@ -396,9 +404,11 @@ async function getClientesCredito(req, res) {
             FROM cliente_creditos cc
             JOIN clientes c ON c.clienteid = cc.cliente_id
             WHERE cc.saldo_deudor > 0
+              AND cc.tenant_id = $1
+              AND cc.admin_id = $2
             ORDER BY cc.estado_credito DESC, cc.saldo_deudor DESC
-            LIMIT $1 OFFSET $2
-        `, [limit, offset]);
+            LIMIT $3 OFFSET $4
+        `, [tenant_id, adminId, limit, offset]);
 
         const totalPages = Math.ceil(count.total / limit);
 
@@ -434,11 +444,14 @@ async function getClientesCredito(req, res) {
 // Esta funcionalidad se movió a admin-validar-pagos.html
 
 async function obtenerHistorialMovimientos(req, res) {
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const adminId = req.user?.adminId || req.user?.userId;
     const limit = parseInt(req.query.limit) || 100;
 
     try {
+        // ⚠️ CRITICAL: Filter by admin_id and tenant_id
         const { rows } = await db.query(`
-            SELECT 
+            SELECT
                 cm.movimiento_id,
                 cm.tipo_movimiento,
                 cm.monto,
@@ -452,11 +465,11 @@ async function obtenerHistorialMovimientos(req, res) {
                 c.email,
                 cc.credito_id
             FROM credito_movimientos cm
-            INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id
+            INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id AND cc.admin_id = $2 AND cc.tenant_id = $3
             INNER JOIN clientes c ON c.clienteid = cc.cliente_id
             ORDER BY cm.fecha_movimiento DESC
             LIMIT $1
-        `, [limit]);
+        `, [limit, adminId, tenant_id]);
 
         return res.json({
             success: true,
@@ -482,25 +495,20 @@ async function obtenerHistorialMovimientos(req, res) {
 async function getSummaryAging(req, res) {
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
+    const userAdminId = req.user?.adminId || req.user?.userId; // ⚠️ CRITICAL: Use authenticated user's admin_id
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    const admin_id = req.query.admin_id ? parseInt(req.query.admin_id) : null;
+    // ⚠️ CRITICAL: REMOVED req.query.admin_id - use authenticated user's context only
     const fechaInicio = req.query.fechaInicio;
     const fechaFin = req.query.fechaFin;
 
     try {
         // Construir parámetros de query dinámicamente
-        let queryParams = [tenant_id];
-        let paramIndex = 2;
+        let queryParams = [tenant_id, userAdminId];
+        let paramIndex = 3;
         let additionalFilters = '';
-        
-        // Agregar admin_id si se proporciona
-        if (admin_id) {
-            queryParams.push(admin_id);
-            paramIndex++;
-        }
-        
+
         // Agregar filtros de fecha si se proporcionan
         if (fechaInicio) {
             queryParams.push(fechaInicio);
@@ -512,35 +520,38 @@ async function getSummaryAging(req, res) {
             additionalFilters += ` AND p.fecha_vencimiento <= $${paramIndex}`;
             paramIndex++;
         }
-        
+
         // Agregar limit y offset
         const limitIndex = paramIndex;
         const offsetIndex = paramIndex + 1;
         queryParams.push(limit, offset);
 
-        // Obtener cartera activa con aging
+        // Obtener cartera activa con aging - ⚠️ CRITICAL: Filter by client's admin (from estado)
         const { rows } = await client.query(`
             WITH pedidos_aging AS (
-                SELECT 
+                SELECT
                     p.clienteid,
                     p.pedidoid,
                     p.montototal,
                     p.saldo_pendiente,
                     p.fecha_vencimiento,
                     p.fechapedido,
-                    CASE 
+                    CASE
                         WHEN p.fecha_vencimiento IS NULL THEN 0
                         WHEN p.fecha_vencimiento::date >= CURRENT_DATE THEN 0
                         ELSE CURRENT_DATE - p.fecha_vencimiento::date
                     END as dias_vencido
                 FROM pedidos p
+                INNER JOIN clientes c ON c.clienteid = p.clienteid
+                INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id
                 WHERE p.es_credito = true
                     AND p.saldo_pendiente > 0
                     AND p.estatus NOT IN ('Cancelado', 'Rechazado')
                     AND p.tenant_id = $1
+                    AND ae.admin_id = $2
                     ${additionalFilters}
             )
-            SELECT 
+            SELECT
                 cc.credito_id as "creditoId",
                 c.clienteid as "clienteId",
                 c.nombre as "clienteNombre",
@@ -553,13 +564,13 @@ async function getSummaryAging(req, res) {
                 cc.ultima_actualizacion as "ultimoMovimiento",
                 -- Obtener nombre del admin principal (el que más ha surtido)
                 (
-                    SELECT a.nombre 
+                    SELECT a.nombre
                     FROM pedido_surtido_detalle psd
                     INNER JOIN administradores a ON a.adminid = psd.admin_id
                     WHERE psd.pedido_id IN (
-                        SELECT pedidoid FROM pedidos 
-                        WHERE clienteid = c.clienteid 
-                        AND es_credito = true 
+                        SELECT pedidoid FROM pedidos
+                        WHERE clienteid = c.clienteid
+                        AND es_credito = true
                         AND saldo_pendiente > 0
                         AND tenant_id = $1
                     )
@@ -574,54 +585,30 @@ async function getSummaryAging(req, res) {
                 COALESCE(MAX(pa.dias_vencido), 0) as "maxDiasVencido"
             FROM cliente_creditos cc
             INNER JOIN clientes c ON c.clienteid = cc.cliente_id
+            INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id
             LEFT JOIN pedidos_aging pa ON pa.clienteid = c.clienteid
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-                ${admin_id ? `
-                AND EXISTS (
-                    SELECT 1 FROM pedido_surtido_detalle psd
-                    WHERE psd.pedido_id IN (
-                        SELECT pedidoid FROM pedidos 
-                        WHERE clienteid = c.clienteid 
-                        AND es_credito = true
-                        AND tenant_id = $1
-                    )
-                    AND psd.admin_id = $${paramIndex - 1}
-                )` : ''}
-            GROUP BY cc.credito_id, c.clienteid, c.nombre, c.apellido, c.email, 
+                AND ae.admin_id = $2
+                AND cc.admin_id = $2
+            GROUP BY cc.credito_id, c.clienteid, c.nombre, c.apellido, c.email,
                      cc.limite_credito, cc.saldo_deudor, cc.estado_credito, cc.ultima_actualizacion
             ORDER BY cc.saldo_deudor DESC
             LIMIT $${limitIndex} OFFSET $${offsetIndex}
         `, queryParams);
 
         // Total de registros con filtros aplicados
-        let countQueryParams = [tenant_id];
-        let countParamIndex = 2;
+        let countQueryParams = [tenant_id, userAdminId];
+        let countParamIndex = 3;
         let countFilters = '';
-        let countAdminFilter = '';
-        
-        if (admin_id) {
-            countQueryParams.push(admin_id);
-            countAdminFilter = ` AND EXISTS (
-                SELECT 1 FROM pedido_surtido_detalle psd
-                WHERE psd.pedido_id IN (
-                    SELECT pedidoid FROM pedidos 
-                    WHERE clienteid = c.clienteid 
-                    AND es_credito = true
-                    AND tenant_id = $1
-                )
-                AND psd.admin_id = $${countParamIndex}
-            )`;
-            countParamIndex++;
-        }
-        
+
         if (fechaInicio) {
             countQueryParams.push(fechaInicio);
             countFilters += ` AND EXISTS (
-                SELECT 1 FROM pedidos p 
-                WHERE p.clienteid = c.clienteid 
-                AND p.es_credito = true 
+                SELECT 1 FROM pedidos p
+                WHERE p.clienteid = c.clienteid
+                AND p.es_credito = true
                 AND p.saldo_pendiente > 0
                 AND p.fecha_vencimiento >= $${countParamIndex}
             )`;
@@ -630,8 +617,8 @@ async function getSummaryAging(req, res) {
         if (fechaFin) {
             countQueryParams.push(fechaFin);
             countFilters += ` AND EXISTS (
-                SELECT 1 FROM pedidos p 
-                WHERE p.clienteid = c.clienteid 
+                SELECT 1 FROM pedidos p
+                WHERE p.clienteid = c.clienteid
                 AND p.es_credito = true 
                 AND p.saldo_pendiente > 0
                 AND p.fecha_vencimiento <= $${countParamIndex}
@@ -643,39 +630,26 @@ async function getSummaryAging(req, res) {
             SELECT COUNT(DISTINCT cc.credito_id) as total
             FROM cliente_creditos cc
             INNER JOIN clientes c ON c.clienteid = cc.cliente_id
+            INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-                ${countAdminFilter}
+                AND ae.admin_id = $2
+                AND cc.admin_id = $2
                 ${countFilters}
         `, countQueryParams);
 
-        // Métricas agregadas con filtros aplicados
-        let metricsParams = [tenant_id];
-        let metricsParamIndex = 2;
+        // Métricas agregadas con filtros aplicados - ⚠️ CRITICAL: Use authenticated user's admin_id
+        let metricsParams = [tenant_id, userAdminId];
+        let metricsParamIndex = 3;
         let metricsFilters = '';
-        
-        if (admin_id) {
-            metricsParams.push(admin_id);
-            metricsFilters += ` AND EXISTS (
-                SELECT 1 FROM pedido_surtido_detalle psd
-                WHERE psd.pedido_id IN (
-                    SELECT pedidoid FROM pedidos 
-                    WHERE clienteid = c.clienteid 
-                    AND es_credito = true
-                    AND tenant_id = $1
-                )
-                AND psd.admin_id = $${metricsParamIndex}
-            )`;
-            metricsParamIndex++;
-        }
-        
+
         if (fechaInicio) {
             metricsParams.push(fechaInicio);
             metricsFilters += ` AND EXISTS (
-                SELECT 1 FROM pedidos p 
-                WHERE p.clienteid = c.clienteid 
-                AND p.es_credito = true 
+                SELECT 1 FROM pedidos p
+                WHERE p.clienteid = c.clienteid
+                AND p.es_credito = true
                 AND p.saldo_pendiente > 0
                 AND p.fecha_vencimiento >= $${metricsParamIndex}
             )`;
@@ -684,25 +658,28 @@ async function getSummaryAging(req, res) {
         if (fechaFin) {
             metricsParams.push(fechaFin);
             metricsFilters += ` AND EXISTS (
-                SELECT 1 FROM pedidos p 
-                WHERE p.clienteid = c.clienteid 
-                AND p.es_credito = true 
+                SELECT 1 FROM pedidos p
+                WHERE p.clienteid = c.clienteid
+                AND p.es_credito = true
                 AND p.saldo_pendiente > 0
                 AND p.fecha_vencimiento <= $${metricsParamIndex}
             )`;
             metricsParamIndex++;
         }
-        
+
         const { rows: [metrics] } = await client.query(`
-            SELECT 
+            SELECT
                 COALESCE(SUM(cc.saldo_deudor), 0) as total_cobrar,
                 COALESCE(SUM(CASE WHEN cc.estado_credito = 'SUSPENDIDO' THEN cc.saldo_deudor ELSE 0 END), 0) as total_vencido,
                 COUNT(*) as conteo_clientes
             FROM cliente_creditos cc
             INNER JOIN clientes c ON c.clienteid = cc.cliente_id
+            INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
+                AND ae.admin_id = $2
+                AND cc.admin_id = $2
                 ${metricsFilters}
         `, metricsParams);
 
@@ -742,10 +719,11 @@ async function getSummaryAging(req, res) {
  */
 async function getPagosClientesPendientes(req, res) {
     const tenant_id = req.tenant?.tenant_id || 1;
+    const adminId = req.user?.adminId || req.user?.userId;
 
     try {
         const { rows } = await db.query(`
-            SELECT 
+            SELECT
                 pc.pago_id,
                 pc.cliente_id,
                 pc.monto,
@@ -761,13 +739,15 @@ async function getPagosClientesPendientes(req, res) {
                 c.email,
                 cc.saldo_deudor
             FROM pagos_clientes pc
-            INNER JOIN clientes c ON c.clienteid = pc.cliente_id
+            INNER JOIN clientes c ON c.clienteid = pc.cliente_id AND c.tenant_id = $1
             LEFT JOIN cliente_creditos cc ON cc.cliente_id = pc.cliente_id
+              AND cc.tenant_id = $1
+              AND cc.admin_id = $2
             WHERE pc.estatus = 'PENDIENTE'
                 AND pc.tenant_id = $1
                 AND c.tenant_id = $1
             ORDER BY pc.fecha_pago DESC
-        `, [tenant_id]);
+        `, [tenant_id, adminId]);
 
         res.json({
             success: true,
@@ -950,11 +930,12 @@ async function gestionarPagoCliente(req, res) {
 async function getClienteCXCDetail(req, res) {
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
+    const adminId = req.user?.adminId || req.user?.userId;
     const clienteId = parseInt(req.params.clienteId);
 
     try {
         const { rows } = await client.query(`
-            SELECT 
+            SELECT
                 c.clienteid,
                 c.nombre,
                 c.apellido,
@@ -966,10 +947,11 @@ async function getClienteCXCDetail(req, res) {
                 cc.ultima_actualizacion
             FROM clientes c
             INNER JOIN cliente_creditos cc ON cc.cliente_id = c.clienteid
+              AND cc.tenant_id = $2
+              AND cc.admin_id = $3
             WHERE c.clienteid = $1
                 AND c.tenant_id = $2
-                AND cc.tenant_id = $2
-        `, [clienteId, tenant_id]);
+        `, [clienteId, tenant_id, adminId]);
 
         if (rows.length === 0) {
             return res.status(404).json({
@@ -1005,6 +987,7 @@ async function getClienteCXCDetail(req, res) {
 async function getClienteCXCMovimientos(req, res) {
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
+    const adminId = req.user?.adminId || req.user?.userId;
     const clienteId = parseInt(req.params.clienteId);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 15;
@@ -1013,7 +996,7 @@ async function getClienteCXCMovimientos(req, res) {
     try {
         // Obtener movimientos
         const { rows } = await client.query(`
-            SELECT 
+            SELECT
                 cm.movimiento_id,
                 cm.tipo_movimiento as tipo,
                 cm.monto,
@@ -1023,20 +1006,24 @@ async function getClienteCXCMovimientos(req, res) {
                 cm.referencia_id as referencia
             FROM credito_movimientos cm
             INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id
+              AND cc.admin_id = $3
+              AND cc.tenant_id = $2
             WHERE cc.cliente_id = $1
                 AND cc.tenant_id = $2
             ORDER BY cm.fecha_movimiento DESC
-            LIMIT $3 OFFSET $4
-        `, [clienteId, tenant_id, limit, offset]);
+            LIMIT $4 OFFSET $5
+        `, [clienteId, tenant_id, adminId, limit, offset]);
 
         // Contar total de registros
         const { rows: [count] } = await client.query(`
             SELECT COUNT(*) as total
             FROM credito_movimientos cm
             INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id
+              AND cc.admin_id = $3
+              AND cc.tenant_id = $2
             WHERE cc.cliente_id = $1
                 AND cc.tenant_id = $2
-        `, [clienteId, tenant_id]);
+        `, [clienteId, tenant_id, adminId]);
 
         const totalPages = Math.ceil(parseInt(count.total) / limit);
 
@@ -1073,30 +1060,14 @@ async function generarPDFCxC(req, res) {
     const PDFDocument = require('pdfkit');
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
-    const { fechaInicio, fechaFin, admin_id } = req.query;
-    
+    const userAdminId = req.user?.adminId || req.user?.userId;
+    const { fechaInicio, fechaFin } = req.query;
+
     try {
-        let queryParams = [tenant_id];
-        let paramIndex = 2;
+        let queryParams = [tenant_id, userAdminId];
+        let paramIndex = 3;
         let additionalFilters = '';
-        let adminFilter = '';
-        
-        if (admin_id) {
-            const adminIdNum = parseInt(admin_id, 10);
-            queryParams.push(adminIdNum);
-            adminFilter = ` AND EXISTS (
-                SELECT 1 FROM pedido_surtido_detalle psd
-                WHERE psd.pedido_id IN (
-                    SELECT pedidoid FROM pedidos 
-                    WHERE clienteid = c.clienteid 
-                    AND es_credito = true
-                    AND tenant_id = $1
-                )
-                AND psd.admin_id = $${paramIndex}
-            )`;
-            paramIndex++;
-        }
-        
+
         if (fechaInicio) {
             queryParams.push(fechaInicio);
             additionalFilters += ` AND p.fecha_vencimiento >= $${paramIndex}`;
@@ -1107,14 +1078,14 @@ async function generarPDFCxC(req, res) {
             additionalFilters += ` AND p.fecha_vencimiento <= $${paramIndex}`;
             paramIndex++;
         }
-        
+
         const { rows } = await client.query(`
             WITH pedidos_aging AS (
-                SELECT 
+                SELECT
                     p.clienteid,
                     p.saldo_pendiente,
                     p.fecha_vencimiento,
-                    CASE 
+                    CASE
                         WHEN p.fecha_vencimiento IS NULL THEN 0
                         WHEN p.fecha_vencimiento::date >= CURRENT_DATE THEN 0
                         ELSE CURRENT_DATE - p.fecha_vencimiento::date
@@ -1126,7 +1097,7 @@ async function generarPDFCxC(req, res) {
                     AND p.tenant_id = $1
                     ${additionalFilters}
             )
-            SELECT 
+            SELECT
                 c.clienteid,
                 c.nombre,
                 c.apellido,
@@ -1143,7 +1114,7 @@ async function generarPDFCxC(req, res) {
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-                ${adminFilter}
+                AND cc.admin_id = $2
             GROUP BY c.clienteid, c.nombre, c.apellido, c.email, cc.saldo_deudor, cc.limite_credito, cc.estado_credito
             ORDER BY cc.saldo_deudor DESC
         `, queryParams);

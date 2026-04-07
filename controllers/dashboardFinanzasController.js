@@ -47,6 +47,7 @@ const getFinanzasTotales = async (req, res) => {
               WHEN EXISTS (
                 SELECT 1 FROM pedidos p
                 WHERE p.clienteid = cliente_creditos.cliente_id
+                AND p.tenant_id = $1
                 AND p.fecha_vencimiento < NOW()
                 AND COALESCE(p.pagado, FALSE) = FALSE
               ) THEN saldo_deudor
@@ -60,52 +61,55 @@ const getFinanzasTotales = async (req, res) => {
         const cxcResult = await db.query(cxcQuery, [tenantId, adminId]);
         const cxcData = cxcResult.rows[0];
 
-        // Query 2: Totales de CXP (Cuentas por Pagar)
+        // Query 2: Totales de CXP (Cuentas por Pagar) - ⚠️ CRITICAL: Filter by admin_id + tenant_id
         const cxpQuery = `
-          SELECT 
-            COALESCE(SUM(CASE 
-              WHEN estatus IN ('PENDIENTE', 'PARCIAL') 
-              THEN monto_total - COALESCE(monto_pagado, 0) 
-              ELSE 0 
+          SELECT
+            COALESCE(SUM(CASE
+              WHEN estatus IN ('PENDIENTE', 'PARCIAL')
+              THEN monto_total - COALESCE(monto_pagado, 0)
+              ELSE 0
             END), 0) as total_cxp,
-            COALESCE(SUM(CASE 
-              WHEN estatus IN ('PENDIENTE', 'PARCIAL') 
-              AND fecha_vencimiento < CURRENT_DATE 
-              THEN monto_total - COALESCE(monto_pagado, 0) 
-              ELSE 0 
+            COALESCE(SUM(CASE
+              WHEN estatus IN ('PENDIENTE', 'PARCIAL')
+              AND fecha_vencimiento < CURRENT_DATE
+              THEN monto_total - COALESCE(monto_pagado, 0)
+              ELSE 0
             END), 0) as total_vencido,
-            COUNT(CASE 
-              WHEN estatus IN ('PENDIENTE', 'PARCIAL') 
-              THEN 1 
+            COUNT(CASE
+              WHEN estatus IN ('PENDIENTE', 'PARCIAL')
+              THEN 1
             END) as cuentas_pendientes
           FROM cuentas_por_pagar
           WHERE tenant_id = $1
+            AND admin_id = $2
             AND estatus NOT IN ('CANCELADO')
         `;
-        const cxpResult = await db.query(cxpQuery, [tenantId]);
+        const cxpResult = await db.query(cxpQuery, [tenantId, adminId]);
         const cxpData = cxpResult.rows[0];
 
-        // Query 3: Totales de Comisiones
+        // Query 3: Totales de Comisiones - ⚠️ CRITICAL: Filter by tenant_id (system-wide visibility for finance role)
         const comisionesQuery = `
-          SELECT 
+          SELECT
             COUNT(*) FILTER (WHERE Estatus = 'Pendiente') as total_pendientes,
             COUNT(*) FILTER (WHERE Estatus = 'Pagado') as total_pagadas,
             COALESCE(SUM(MontoComision) FILTER (WHERE Estatus = 'Pendiente'), 0) as monto_pendiente,
             COALESCE(SUM(MontoComision) FILTER (WHERE Estatus = 'Pagado'), 0) as monto_pagado,
             COALESCE(SUM(MontoComision), 0) as monto_total
           FROM Comisiones
+          WHERE tenant_id = $1
         `;
-        const comisionesResult = await db.query(comisionesQuery);
+        const comisionesResult = await db.query(comisionesQuery, [tenantId]);
         const comisionesData = comisionesResult.rows[0];
 
-        // Query 4: Totales de Pagos Pendientes de Validar
+        // Query 4: Totales de Pagos Pendientes de Validar - ⚠️ CRITICAL: Filter by admin_id + tenant_id
         const pagosPendientesQuery = `
           SELECT COUNT(*) as pagos_pendientes
           FROM pagos_clientes
           WHERE estatus = 'pendiente'
             AND tenant_id = $1
+            AND admin_id = $2
         `;
-        const pagosPendientesResult = await db.query(pagosPendientesQuery, [tenantId]);
+        const pagosPendientesResult = await db.query(pagosPendientesQuery, [tenantId, adminId]);
         const pagosPendientesData = pagosPendientesResult.rows[0];
 
         return {

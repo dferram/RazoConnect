@@ -362,13 +362,19 @@ exports.generarRemision = async (req, res) => {
     // El CXC se generará en el endpoint confirmar-finanzas
     // Por ahora solo registramos la remisión en estado PENDIENTE_REVISION
     if (false && emitir_inmediatamente && pedido.es_credito) {
-      // Obtener información de crédito del cliente
+      // Get admin_id for client (deterministic from estado)
+      const estadosHelper = require('../utils/estadosHelper');
+      const adminClienteId = await estadosHelper.getAdminByClienteEstado(pedido.clienteid, tenant_id);
+
+      // Obtener información de crédito del cliente - CON VALIDACIÓN ADMIN
       const creditoQuery = await client.query(
         `SELECT credito_id, saldo_deudor, limite_credito
          FROM cliente_creditos
          WHERE cliente_id = $1
+           AND admin_id = $2
+           AND tenant_id = $3
          FOR UPDATE`,
-        [pedido.clienteid]
+        [pedido.clienteid, adminClienteId, tenant_id]
       );
 
       if (creditoQuery.rows.length > 0) {
@@ -389,8 +395,10 @@ exports.generarRemision = async (req, res) => {
         await client.query(
           `UPDATE cliente_creditos
            SET saldo_deudor = $1, ultima_actualizacion = NOW()
-           WHERE credito_id = $2`,
-          [nuevoSaldo, creditoInfo.credito_id]
+           WHERE credito_id = $2
+             AND admin_id = $3
+             AND tenant_id = $4`,
+          [nuevoSaldo, creditoInfo.credito_id, adminClienteId, tenant_id]
         );
 
 
@@ -440,16 +448,17 @@ exports.generarRemision = async (req, res) => {
 
         // AHORA SÍ: Crear registro en CXC (solo cuando se confirma)
         await client.query(
-          `INSERT INTO cuentas_por_cobrar 
-           (pedido_id, cliente_id, remision_id, tipo_movimiento, monto, descripcion, tenant_id)
-           VALUES ($1, $2, $3, 'CARGO', $4, $5, $6)`,
+          `INSERT INTO cuentas_por_cobrar
+           (pedido_id, cliente_id, remision_id, tipo_movimiento, monto, descripcion, tenant_id, admin_id)
+           VALUES ($1, $2, $3, 'CARGO', $4, $5, $6, $7)`,
           [
             pedido_id,
             pedido.clienteid,
             remision.remision_id,
             montoRemision.toFixed(2),
             `Remisión ${folio} - ${pedido.cliente_nombre} ${pedido.cliente_apellido || ''}`.trim(),
-            tenant_id
+            tenant_id,
+            adminClienteId
           ]
         );
 
@@ -1466,8 +1475,9 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
             `UPDATE cliente_creditos
              SET saldo_deudor = $1, ultima_actualizacion = NOW()
              WHERE credito_id = $2
-               AND admin_id = $3`,
-            [nuevoSaldo, creditoInfo.credito_id, adminIdForOperations]
+               AND admin_id = $3
+               AND tenant_id = $4`,
+            [nuevoSaldo, creditoInfo.credito_id, adminIdForOperations, tenant_id]
           );
 
           // Registrar AJUSTE (quitar reserva) - SOLO EN PRIMERA REMISIÓN
@@ -1511,8 +1521,9 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
             `UPDATE cliente_creditos
              SET saldo_deudor = $1, ultima_actualizacion = NOW()
              WHERE credito_id = $2
-               AND admin_id = $3`,
-            [nuevoSaldo, creditoInfo.credito_id, adminIdForOperations]
+               AND admin_id = $3
+               AND tenant_id = $4`,
+            [nuevoSaldo, creditoInfo.credito_id, adminIdForOperations, tenant_id]
           );
 
           // Registrar CARGO (cargo real) - SIN AJUSTE DE RESERVA

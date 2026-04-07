@@ -1,5 +1,6 @@
 const db = require('../db');
 const logger = require('../utils/logger');
+const estadosHelper = require('../utils/estadosHelper');
 
 /**
  * Obtiene resumen de CxC con desglose de antigüedad (Aging Report)
@@ -10,15 +11,20 @@ async function getCxcSummaryWithAging(req, res) {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
 
+    const userAdminId = req.user?.adminId || req.user?.userId;
+    const tenantId = req.tenant?.tenant_id || 1;
+
     const client = await db.pool.connect();
-    
+
     try {
         // Contar total de clientes con deuda
         const { rows: [countResult] } = await client.query(`
             SELECT COUNT(DISTINCT cc.cliente_id) as total
             FROM cliente_creditos cc
             WHERE cc.saldo_deudor > 0
-        `);
+              AND cc.admin_id = $1
+              AND cc.tenant_id = $2
+        `, [userAdminId, tenantId]);
 
         const totalRecords = parseInt(countResult.total);
         const totalPages = Math.ceil(totalRecords / limit);
@@ -26,7 +32,7 @@ async function getCxcSummaryWithAging(req, res) {
         // Consulta principal con desglose de antigüedad
         const { rows } = await client.query(`
             WITH pedidos_aging AS (
-                SELECT 
+                SELECT
                     p.clienteid,
                     p.pedidoid,
                     p.montototal,
@@ -34,19 +40,20 @@ async function getCxcSummaryWithAging(req, res) {
                     p.fecha_vencimiento,
                     p.fechapedido,
                     p.estatus_deuda,
-                    CASE 
+                    CASE
                         WHEN p.fecha_vencimiento IS NULL THEN 0
                         WHEN p.fecha_vencimiento::date > CURRENT_DATE THEN 0
                         ELSE CURRENT_DATE - p.fecha_vencimiento::date
                     END as dias_vencido
                 FROM pedidos p
-                WHERE p.es_credito = true 
+                WHERE p.es_credito = true
                   AND p.pagado = false
                   AND COALESCE(p.saldo_pendiente, p.montototal) > 0
                   AND p.estatus NOT IN ('Cancelado', 'Rechazado')
+                  AND p.tenant_id = $3
             ),
             aging_buckets AS (
-                SELECT 
+                SELECT
                     clienteid,
                     SUM(saldo_pedido) as saldo_total,
                     SUM(CASE WHEN dias_vencido = 0 THEN saldo_pedido ELSE 0 END) as al_corriente,
@@ -56,7 +63,7 @@ async function getCxcSummaryWithAging(req, res) {
                 FROM pedidos_aging
                 GROUP BY clienteid
             )
-            SELECT 
+            SELECT
                 cc.credito_id as "creditoId",
                 cc.cliente_id as "clienteId",
                 c.nombre as "clienteNombre",
@@ -73,52 +80,58 @@ async function getCxcSummaryWithAging(req, res) {
                 cc.dias_gracia as "diasCreditoPersonalizado",
                 cc.ultima_actualizacion as "ultimoMovimiento",
                 (
-                    SELECT cm.descripcion 
-                    FROM credito_movimientos cm 
-                    WHERE cm.credito_id = cc.credito_id 
-                    ORDER BY cm.fecha_movimiento DESC 
+                    SELECT cm.descripcion
+                    FROM credito_movimientos cm
+                    WHERE cm.credito_id = cc.credito_id
+                      AND cm.admin_id = $1
+                    ORDER BY cm.fecha_movimiento DESC
                     LIMIT 1
                 ) as "ultimoMovimientoDescripcion"
             FROM cliente_creditos cc
             INNER JOIN clientes c ON c.clienteid = cc.cliente_id
             LEFT JOIN aging_buckets ab ON ab.clienteid = cc.cliente_id
             WHERE cc.saldo_deudor > 0
-            ORDER BY 
-                CASE 
+              AND cc.admin_id = $1
+              AND cc.tenant_id = $3
+            ORDER BY
+                CASE
                     WHEN cc.estado_credito = 'SUSPENDIDO' THEN 1
                     WHEN COALESCE(ab.vencido_mas_30, 0) > 0 THEN 2
                     WHEN COALESCE(ab.vencido_1_30, 0) > 0 THEN 3
                     ELSE 4
                 END,
                 cc.saldo_deudor DESC
-            LIMIT $1 OFFSET $2
-        `, [limit, offset]);
+            LIMIT $2 OFFSET $4
+        `, [userAdminId, limit, tenantId, offset]);
 
         // Calcular KPIs globales
         const { rows: [kpis] } = await client.query(`
             WITH pedidos_aging AS (
-                SELECT 
+                SELECT
                     p.clienteid,
                     COALESCE(p.saldo_pendiente, p.montototal) as saldo_pedido,
-                    CASE 
+                    CASE
                         WHEN p.fecha_vencimiento IS NULL THEN 0
                         WHEN p.fecha_vencimiento::date > CURRENT_DATE THEN 0
                         ELSE CURRENT_DATE - p.fecha_vencimiento::date
                     END as dias_vencido
                 FROM pedidos p
-                WHERE p.es_credito = true 
+                WHERE p.es_credito = true
                   AND p.pagado = false
                   AND COALESCE(p.saldo_pendiente, p.montototal) > 0
                   AND p.estatus NOT IN ('Cancelado', 'Rechazado')
+                  AND p.tenant_id = $2
             )
-            SELECT 
+            SELECT
                 COALESCE(SUM(cc.saldo_deudor), 0) as total_cobrar,
                 COALESCE(SUM(CASE WHEN pa.dias_vencido > 0 THEN pa.saldo_pedido ELSE 0 END), 0) as total_vencido,
                 COUNT(DISTINCT cc.cliente_id) as conteo_clientes
             FROM cliente_creditos cc
             LEFT JOIN pedidos_aging pa ON pa.clienteid = cc.cliente_id
             WHERE cc.saldo_deudor > 0
-        `);
+              AND cc.admin_id = $1
+              AND cc.tenant_id = $2
+        `, [userAdminId, tenantId]);
 
         return res.json({
             success: true,
@@ -154,6 +167,8 @@ async function getCxcSummaryWithAging(req, res) {
  */
 async function getEstadoCuentaCliente(req, res) {
     const { clienteId } = req.params;
+    const userAdminId = req.user?.adminId || req.user?.userId;
+    const tenantId = req.tenant?.tenant_id || 1;
 
     if (!clienteId) {
         return res.status(400).json({
@@ -163,11 +178,11 @@ async function getEstadoCuentaCliente(req, res) {
     }
 
     const client = await db.pool.connect();
-    
+
     try {
         // Información del cliente y crédito
         const { rows: [clienteInfo] } = await client.query(`
-            SELECT 
+            SELECT
                 c.clienteid,
                 c.nombre,
                 c.apellido,
@@ -182,18 +197,20 @@ async function getEstadoCuentaCliente(req, res) {
             FROM clientes c
             INNER JOIN cliente_creditos cc ON cc.cliente_id = c.clienteid
             WHERE c.clienteid = $1
-        `, [clienteId]);
+              AND cc.admin_id = $2
+              AND cc.tenant_id = $3
+        `, [clienteId, userAdminId, tenantId]);
 
         if (!clienteInfo) {
             return res.status(404).json({
                 success: false,
-                message: 'Cliente no encontrado'
+                message: 'Cliente no encontrado o sin acceso'
             });
         }
 
         // Pedidos pendientes con desglose de antigüedad
         const { rows: pedidos } = await client.query(`
-            SELECT 
+            SELECT
                 p.pedidoid,
                 p.fechapedido,
                 p.montototal,
@@ -201,12 +218,12 @@ async function getEstadoCuentaCliente(req, res) {
                 p.fecha_vencimiento,
                 p.estatus,
                 p.estatus_deuda,
-                CASE 
+                CASE
                     WHEN p.fecha_vencimiento IS NULL THEN 0
                     WHEN p.fecha_vencimiento::date > CURRENT_DATE THEN 0
                     ELSE CURRENT_DATE - p.fecha_vencimiento::date
                 END as dias_vencido,
-                CASE 
+                CASE
                     WHEN p.fecha_vencimiento IS NULL THEN 'Sin vencimiento'
                     WHEN p.fecha_vencimiento::date > CURRENT_DATE THEN 'Al corriente'
                     WHEN CURRENT_DATE - p.fecha_vencimiento::date <= 30 THEN 'Vencido 1-30 días'
@@ -218,12 +235,13 @@ async function getEstadoCuentaCliente(req, res) {
               AND p.pagado = false
               AND COALESCE(p.saldo_pendiente, p.montototal) > 0
               AND p.estatus NOT IN ('Cancelado', 'Rechazado')
+              AND p.tenant_id = $2
             ORDER BY p.fecha_vencimiento ASC NULLS LAST, p.fechapedido ASC
-        `, [clienteId]);
+        `, [clienteId, tenantId]);
 
         // Últimos 5 abonos/movimientos
         const { rows: abonos } = await client.query(`
-            SELECT 
+            SELECT
                 cm.movimiento_id,
                 cm.tipo_movimiento,
                 cm.monto,
@@ -235,10 +253,11 @@ async function getEstadoCuentaCliente(req, res) {
             FROM credito_movimientos cm
             LEFT JOIN administradores a ON a.adminid = cm.admin_id
             WHERE cm.credito_id = $1
+              AND cm.admin_id = $2
               AND cm.tipo_movimiento IN ('ABONO', 'PAGO')
             ORDER BY cm.fecha_movimiento DESC
             LIMIT 5
-        `, [clienteInfo.credito_id]);
+        `, [clienteInfo.credito_id, userAdminId]);
 
         return res.json({
             success: true,
@@ -266,7 +285,7 @@ async function getEstadoCuentaCliente(req, res) {
 
 /**
  * Registra un pago manual con transacción atómica
- * Pasos: 1) INSERT pagos_clientes, 2) UPDATE cliente_creditos, 
+ * Pasos: 1) INSERT pagos_clientes, 2) UPDATE cliente_creditos,
  *        3) INSERT credito_movimientos, 4) INSERT log_movimientos
  */
 async function registrarPagoManual(req, res) {
@@ -274,6 +293,7 @@ async function registrarPagoManual(req, res) {
     const adminId = req.user?.adminId || req.user?.userId;
     const adminNombre = req.user?.nombre || 'Admin';
     const adminRol = req.user?.rol || 'admin';
+    const tenantId = req.tenant?.tenant_id || 1;
 
     // Validaciones
     if (!creditoId || !monto || !metodoPago) {
@@ -300,13 +320,13 @@ async function registrarPagoManual(req, res) {
     }
 
     const client = await db.pool.connect();
-    
+
     try {
         await client.query('BEGIN');
 
-        // Obtener información del crédito
+        // Obtener información del crédito - CON VALIDACIÓN DE ADMIN
         const { rows: [credito] } = await client.query(`
-            SELECT 
+            SELECT
                 cc.credito_id,
                 cc.cliente_id,
                 cc.saldo_deudor,
@@ -317,13 +337,15 @@ async function registrarPagoManual(req, res) {
             FROM cliente_creditos cc
             INNER JOIN clientes c ON c.clienteid = cc.cliente_id
             WHERE cc.credito_id = $1
-        `, [creditoId]);
+              AND cc.admin_id = $2
+              AND cc.tenant_id = $3
+        `, [creditoId, adminId, tenantId]);
 
         if (!credito) {
             await client.query('ROLLBACK');
             return res.status(404).json({
                 success: false,
-                message: 'Crédito no encontrado'
+                message: 'Crédito no encontrado o no tiene permiso para modificarlo'
             });
         }
 
@@ -360,15 +382,17 @@ async function registrarPagoManual(req, res) {
 
         const pagoId = pagoCreado.pago_id;
 
-        // PASO 2: UPDATE en cliente_creditos (Resta el monto al saldo_deudor)
+        // PASO 2: UPDATE en cliente_creditos CON VALIDACIÓN DE ADMIN
         const nuevoSaldo = Math.max(0, parseFloat(credito.saldo_deudor) - montoNumerico);
-        
+
         await client.query(`
-            UPDATE cliente_creditos 
+            UPDATE cliente_creditos
             SET saldo_deudor = $1,
                 ultima_actualizacion = CURRENT_TIMESTAMP
             WHERE credito_id = $2
-        `, [nuevoSaldo, creditoId]);
+              AND admin_id = $3
+              AND tenant_id = $4
+        `, [nuevoSaldo, creditoId, adminId, tenantId]);
 
         // PASO 3: INSERT en credito_movimientos (Tipo: 'ABONO', para el historial)
         await client.query(`
@@ -392,7 +416,6 @@ async function registrarPagoManual(req, res) {
         ]);
 
         // PASO 4: INSERT en log_movimientos (BITÁCORA DE SEGURIDAD)
-        const tenant_id = req.tenant?.tenant_id || 1;
         await client.query(`
             INSERT INTO log_movimientos (
                 usuarioid,
@@ -421,13 +444,14 @@ async function registrarPagoManual(req, res) {
                 saldoNuevo: nuevoSaldo,
                 creditoId: creditoId
             }),
-            req.ip || req.connection?.remoteAddress || 'unknown'
+            req.ip || req.connection?.remoteAddress || 'unknown',
+            tenantId
         ]);
 
         // ========== LÓGICA FIFO: DISTRIBUCIÓN DE PAGO A PEDIDOS INDIVIDUALES ==========
         const { rows: pedidosConDeuda } = await client.query(`
-            SELECT 
-                pedidoid, 
+            SELECT
+                pedidoid,
                 COALESCE(saldo_pendiente, montototal) as saldo_pendiente,
                 montototal
             FROM pedidos
@@ -435,11 +459,12 @@ async function registrarPagoManual(req, res) {
               AND es_credito = true
               AND pagado = false
               AND COALESCE(saldo_pendiente, montototal) > 0
+              AND tenant_id = $2
             ORDER BY fechapedido ASC
-        `, [credito.cliente_id]);
+        `, [credito.cliente_id, tenantId]);
 
         let remanente = montoNumerico;
-        
+
         for (const pedido of pedidosConDeuda) {
             if (remanente <= 0) break;
 
@@ -453,7 +478,8 @@ async function registrarPagoManual(req, res) {
                 SET saldo_pendiente = $1,
                     pagado = $2
                 WHERE pedidoid = $3
-            `, [nuevoSaldoPedido, pedidoLiquidado, pedido.pedidoid]);
+                  AND tenant_id = $4
+            `, [nuevoSaldoPedido, pedidoLiquidado, pedido.pedidoid, tenantId]);
 
             remanente -= montoAplicar;
         }

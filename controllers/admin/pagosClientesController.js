@@ -18,8 +18,11 @@ const logger = require('../../utils/logger');
  */
 async function obtenerPagosPendientes(req, res) {
     try {
+        const tenant_id = req.tenant?.tenant_id || 1;
+        const adminId = req.user?.adminId || req.user?.userId;
+
         const { rows } = await db.query(`
-            SELECT 
+            SELECT
                 pc.pago_id,
                 pc.cliente_id,
                 pc.monto,
@@ -35,11 +38,16 @@ async function obtenerPagosPendientes(req, res) {
                 cc.credito_id,
                 cc.saldo_deudor
             FROM pagos_clientes pc
-            INNER JOIN clientes c ON c.clienteid = pc.cliente_id
-            LEFT JOIN cliente_creditos cc ON cc.cliente_id = pc.cliente_id AND cc.estado_credito = 'ACTIVO'
+            INNER JOIN clientes c ON c.clienteid = pc.cliente_id AND c.tenant_id = $1
+            LEFT JOIN cliente_creditos cc ON cc.cliente_id = pc.cliente_id
+              AND cc.estado_credito = 'ACTIVO'
+              AND cc.tenant_id = $1
+              AND cc.admin_id = $2
             WHERE pc.estatus = 'PENDIENTE'
+              AND pc.tenant_id = $1
+              AND pc.admin_id = $2
             ORDER BY pc.fecha_pago DESC
-        `);
+        `, [tenant_id, adminId]);
 
         return res.json({
             success: true,

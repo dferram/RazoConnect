@@ -93,8 +93,12 @@ const getClienteDetalle = async (req, res) => {
 
     const { tenant_id } = req.tenant;
 
+    // Get deterministic admin_id for this client based on their estado
+    const estadosHelper = require('../utils/estadosHelper');
+    const adminIdForClient = await estadosHelper.getAdminByClienteEstado(clienteId, tenant_id);
+
     const clienteResult = await db.query(
-      `SELECT 
+      `SELECT
         c.*,
         COUNT(DISTINCT p.pedidoid) as total_pedidos,
         COALESCE(SUM(p.montototal), 0) as monto_total_compras,
@@ -103,11 +107,13 @@ const getClienteDetalle = async (req, res) => {
         cc.dias_gracia,
         cc.estado_credito
       FROM clientes c
-      LEFT JOIN pedidos p ON c.clienteid = p.clienteid
+      LEFT JOIN pedidos p ON c.clienteid = p.clienteid AND p.tenant_id = $2
       LEFT JOIN cliente_creditos cc ON c.clienteid = cc.cliente_id
+        AND cc.tenant_id = $2
+        AND cc.admin_id = $3
       WHERE c.clienteid = $1 AND c.tenant_id = $2
       GROUP BY c.clienteid, cc.limite_credito, cc.saldo_deudor, cc.dias_gracia, cc.estado_credito`,
-      [clienteId, tenant_id]
+      [clienteId, tenant_id, adminIdForClient]
     );
 
     if (clienteResult.rows.length === 0) {
@@ -360,6 +366,8 @@ const actualizarCreditoCliente = async (req, res) => {
 const getClienteCreditoInfo = async (req, res) => {
   try {
     const clienteId = parseInt(req.params.id, 10);
+    const { tenant_id } = req.tenant;
+    const estadosHelper = require('../utils/estadosHelper');
 
     if (!Number.isInteger(clienteId) || clienteId <= 0) {
       return res.status(400).json({
@@ -368,18 +376,19 @@ const getClienteCreditoInfo = async (req, res) => {
       });
     }
 
-    const { tenant_id } = req.tenant;
+    // Get admin_id for this client
+    const adminIdForClient = await estadosHelper.getAdminByClienteEstado(clienteId, tenant_id);
 
     const result = await db.query(
-      `SELECT 
+      `SELECT
         cc.*,
         c.nombre,
         c.apellido,
         c.email
       FROM cliente_creditos cc
       INNER JOIN clientes c ON cc.cliente_id = c.clienteid
-      WHERE cc.cliente_id = $1 AND cc.tenant_id = $2`,
-      [clienteId, tenant_id]
+      WHERE cc.cliente_id = $1 AND cc.tenant_id = $2 AND cc.admin_id = $3`,
+      [clienteId, tenant_id, adminIdForClient]
     );
 
     if (result.rows.length === 0) {

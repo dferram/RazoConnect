@@ -10,15 +10,21 @@ const fs = require('fs').promises;
  * Formato: [Fecha] | [Cliente] | [Tipo (Cargo/Abono)] | [Referencia] | [Monto] | [Saldo Acumulado]
  */
 async function exportarCxCDetallado(req, res) {
+    const userAdminId = req.user?.adminId || req.user?.userId;
+    const tenantId = req.tenant?.tenant_id || 1;
     const client = await db.pool.connect();
-    
+
     try {
         const { fechaDesde, fechaHasta, clienteId, estado } = req.query;
 
         // Construir condiciones WHERE dinámicamente
         const conditions = [];
-        const params = [];
-        let paramIndex = 1;
+        const params = [userAdminId, tenantId]; // MANDATORY admin and tenant filters
+        let paramIndex = 3;
+
+        // Agregar filtros mandatorios de seguridad
+        conditions.push(`cc.admin_id = $1`);
+        conditions.push(`cc.tenant_id = $2`);
 
         // Filtro de fecha
         if (fechaDesde) {
@@ -32,7 +38,7 @@ async function exportarCxCDetallado(req, res) {
             paramIndex++;
         }
 
-        // Filtro de cliente específico
+        // Filtro de cliente específico - VALIDATE USER OWNS THIS CLIENT
         if (clienteId && clienteId !== '') {
             conditions.push(`cc.cliente_id = $${paramIndex}::integer`);
             params.push(clienteId);
@@ -50,7 +56,7 @@ async function exportarCxCDetallado(req, res) {
 
         // Consulta principal: obtener todos los movimientos con información del cliente
         const query = `
-            SELECT 
+            SELECT
                 cm.movimiento_id,
                 cm.fecha_movimiento,
                 cm.tipo_movimiento,
@@ -320,11 +326,12 @@ async function exportarCxCDetallado(req, res) {
  * Obtiene lista de clientes con crédito activo para el selector de filtros
  */
 async function obtenerClientesConCredito(req, res) {
-    const tenant_id = req.tenant?.tenant_id || 1;
-    
+    const userAdminId = req.user?.adminId || req.user?.userId;
+    const tenantId = req.tenant?.tenant_id || 1;
+
     try {
         const { rows } = await db.query(`
-            SELECT 
+            SELECT
                 c.clienteid,
                 c.nombre,
                 c.apellido,
@@ -333,9 +340,10 @@ async function obtenerClientesConCredito(req, res) {
             INNER JOIN clientes c ON c.clienteid = cc.cliente_id
             WHERE cc.estado_credito = 'ACTIVO'
                 AND cc.tenant_id = $1
+                AND cc.admin_id = $2
                 AND c.tenant_id = $1
             ORDER BY c.nombre, c.apellido
-        `, [tenant_id]);
+        `, [tenantId, userAdminId]);
 
         return res.json({
             success: true,

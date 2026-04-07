@@ -12,16 +12,22 @@ const isCliente = (req) =>
   (req.user?.rol || "").toString().trim().toLowerCase() === "cliente";
 
 const fetchCreditoActivo = async (clienteId, tenantId = null) => {
+  const estadosHelper = require('../../utils/estadosHelper');
+
+  // Get admin_id for this client based on their estado (deterministic mapping)
+  const adminIdForClient = await estadosHelper.getAdminByClienteEstado(clienteId, tenantId || 1);
+
   const query = `
     SELECT credito_id, limite_credito, saldo_deudor, estado_credito, dias_gracia, fecha_creacion, ultima_actualizacion
     FROM cliente_creditos
     WHERE cliente_id = $1
       AND estado_credito = 'ACTIVO'
-      ${tenantId ? 'AND tenant_id = $2' : ''}
+      AND admin_id = $2
+      ${tenantId ? 'AND tenant_id = $3' : ''}
     LIMIT 1
   `;
 
-  const params = tenantId ? [clienteId, tenantId] : [clienteId];
+  const params = tenantId ? [clienteId, adminIdForClient, tenantId] : [clienteId, adminIdForClient];
   const { rows } = await db.query(query, params);
   return rows.length ? rows[0] : null;
 };
@@ -348,7 +354,8 @@ const obtenerMovimientosCredito = async (req, res) => {
     const offset = (page - 1) * limit;
 
     // Verificar que el cliente tenga crédito activo
-    const creditoActivo = await fetchCreditoActivo(clienteId);
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const creditoActivo = await fetchCreditoActivo(clienteId, tenant_id);
     if (!creditoActivo) {
       return res.json({
         success: true,
@@ -366,8 +373,6 @@ const obtenerMovimientosCredito = async (req, res) => {
 
     const creditoId = creditoActivo.credito_id;
 
-    const tenant_id = req.tenant?.tenant_id || 1;
-    
     // Obtener el total de movimientos
     const countResult = await db.query(
       `SELECT COUNT(*) as total
@@ -723,17 +728,22 @@ const obtenerEstadoCuentaMensual = async (req, res) => {
       : saldoInicial;
 
     // Obtener información del cliente
+    const adminIdForInfo = await require('../../utils/estadosHelper').getAdminByClienteEstado(clienteId, tenant_id);
+
     const clienteQuery = `
-      SELECT 
+      SELECT
         c.nombre,
         c.email,
         c.telefono,
         cc.limite_credito
       FROM clientes c
       LEFT JOIN cliente_creditos cc ON c.clienteid = cc.cliente_id
+        AND cc.admin_id = $3
+        AND cc.tenant_id = $2
+        AND cc.estado_credito = 'ACTIVO'
       WHERE c.clienteid = $1 AND c.tenant_id = $2
     `;
-    const clienteResult = await db.query(clienteQuery, [clienteId, tenant_id]);
+    const clienteResult = await db.query(clienteQuery, [clienteId, tenant_id, adminIdForInfo]);
     const clienteInfo = clienteResult.rows[0] || {};
 
     return res.json({

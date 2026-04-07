@@ -890,6 +890,7 @@ async function generarPDFEstadoCuenta(req, res) {
     const { mes, anio } = req.params;
     const { tenant_id } = req.tenant;
     const clienteId = req.user?.userId ?? req.user?.id ?? req.user?.clienteId ?? req.user?.clienteid;
+    const estadosHelper = require('../utils/estadosHelper');
 
     try {
         const mesNum = parseInt(mes, 10);
@@ -899,12 +900,18 @@ async function generarPDFEstadoCuenta(req, res) {
             return res.status(400).json({ error: 'Mes o año inválido' });
         }
 
+        // Get admin_id for this client (deterministic from estado)
+        const adminIdForClient = await estadosHelper.getAdminByClienteEstado(clienteId, tenant_id);
+
         const creditoQuery = await db.query(
-            `SELECT credito_id, limite_credito, saldo_deudor 
-             FROM cliente_creditos 
-             WHERE cliente_id = $1 AND tenant_id = $2 AND estado_credito = 'ACTIVO'
+            `SELECT credito_id, limite_credito, saldo_deudor
+             FROM cliente_creditos
+             WHERE cliente_id = $1
+               AND tenant_id = $2
+               AND admin_id = $3
+               AND estado_credito = 'ACTIVO'
              LIMIT 1`,
-            [clienteId, tenant_id]
+            [clienteId, tenant_id, adminIdForClient]
         );
 
         if (creditoQuery.rows.length === 0) {

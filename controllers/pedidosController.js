@@ -2647,14 +2647,15 @@ const cancelarPedido = async (req, res) => {
         if (totalCargado > 0) {
           montoRevertido = totalCargado;
 
-          // Obtener información de crédito del cliente (con filtro admin)
+          // Obtener información de crédito del cliente (con filtro admin + tenant)
           const creditoQuery = await client.query(
             `SELECT credito_id, saldo_deudor, admin_id
              FROM cliente_creditos
              WHERE cliente_id = $1
                AND admin_id = $2
+               AND tenant_id = $3
              FOR UPDATE`,
-            [pedido.clienteid, adminClienteId || 1]
+            [pedido.clienteid, adminClienteId || 1, tenant_id]
           );
 
           if (creditoQuery.rows.length > 0) {
@@ -2662,13 +2663,14 @@ const cancelarPedido = async (req, res) => {
             const saldoActual = parseFloat(creditoInfo.saldo_deudor || 0);
             const nuevoSaldo = parseFloat((saldoActual - totalCargado).toFixed(2));
 
-            // Actualizar saldo deudor (restar el cargo)
+            // Actualizar saldo deudor (restar el cargo) - CON tenant_id
             await client.query(
               `UPDATE cliente_creditos
                SET saldo_deudor = $1, ultima_actualizacion = NOW()
                WHERE credito_id = $2
-                 AND admin_id = $3`,
-              [nuevoSaldo, creditoInfo.credito_id, adminClienteId || 1]
+                 AND admin_id = $3
+                 AND tenant_id = $4`,
+              [nuevoSaldo, creditoInfo.credito_id, adminClienteId || 1, tenant_id]
             );
 
             // Registrar movimiento de crédito (ABONO por cancelación)
@@ -2698,8 +2700,8 @@ const cancelarPedido = async (req, res) => {
           await client.query(
             `UPDATE cuentas_por_cobrar
              SET descripcion = descripcion || ' (CANCELADO)'
-             WHERE remision_id = ANY($1) AND tenant_id = $2`,
-            [remisionIds, tenant_id]
+             WHERE remision_id = ANY($1) AND tenant_id = $2 AND admin_id = $3`,
+            [remisionIds, tenant_id, adminClienteId || 1]
           );
         }
       }

@@ -246,8 +246,9 @@ const registrarAbonoCxC = async (req, res) => {
       `UPDATE cliente_creditos
        SET saldo_deudor = $1, ultima_actualizacion = NOW()
        WHERE credito_id = $2
-         AND admin_id = $3`,
-      [nuevoSaldo, creditoRow.credito_id, adminId]
+         AND admin_id = $3
+         AND tenant_id = $4`,
+      [nuevoSaldo, creditoRow.credito_id, adminId, tenantId]
     );
 
     const descripcion = notas || `Abono de $${montoNormalizado.toFixed(2)} - ${metodoPago}`;

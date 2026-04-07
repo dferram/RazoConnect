@@ -11,9 +11,28 @@ const NIVEL_RIESGO = {
 async function obtenerSolicitudesPendientes(req, res) {
   try {
     const { tenant_id } = req.tenant;
+    const userAdminId = req.user?.adminId || req.user?.userId;
+    const estadosHelper = require('../utils/estadosHelper');
+
+    // Get estados assigned to this admin to filter clients
+    const adminEstados = await estadosHelper.getEstadosByAdmin(userAdminId);
+    const estadoIds = adminEstados.map(e => e.estado_id);
+
+    if (estadoIds.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          solicitudes: [],
+          stats: {
+            total_pendientes: 0,
+            monto_total_pendiente: 0
+          }
+        }
+      });
+    }
 
     const { rows } = await db.query(
-      `SELECT 
+      `SELECT
         s.solicitud_id,
         s.cliente_id,
         s.monto_solicitado,
@@ -25,8 +44,9 @@ async function obtenerSolicitudesPendientes(req, res) {
       INNER JOIN clientes c ON c.clienteid = s.cliente_id AND c.tenant_id = s.tenant_id
       WHERE s.estado = 'PENDIENTE'
         AND s.tenant_id = $1
+        AND c.estado_id = ANY($2::integer[])
       ORDER BY s.fecha_solicitud DESC`,
-      [tenant_id]
+      [tenant_id, estadoIds]
     );
 
     // Calcular monto total solicitado
@@ -58,6 +78,8 @@ async function obtenerSolicitudesPendientes(req, res) {
 async function obtenerAnalisisSolicitud(req, res) {
   try {
     const { tenant_id } = req.tenant;
+    const userAdminId = req.user?.adminId || req.user?.userId;
+    const estadosHelper = require('../utils/estadosHelper');
     const solicitudId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(solicitudId)) {
       return res.status(400).json({
@@ -66,9 +88,13 @@ async function obtenerAnalisisSolicitud(req, res) {
       });
     }
 
-    // 1. Obtener datos de la solicitud y cliente
+    // Get estados assigned to this admin
+    const adminEstados = await estadosHelper.getEstadosByAdmin(userAdminId);
+    const estadoIds = adminEstados.map(e => e.estado_id);
+
+    // 1. Obtener datos de la solicitud y cliente with authorization check
     const { rows: [solicitud] } = await db.query(
-      `SELECT 
+      `SELECT
         s.solicitud_id,
         s.cliente_id,
         s.monto_solicitado,
@@ -80,29 +106,30 @@ async function obtenerAnalisisSolicitud(req, res) {
       FROM solicitudes_credito s
       INNER JOIN clientes c ON c.clienteid = s.cliente_id AND c.tenant_id = s.tenant_id
       WHERE s.solicitud_id = $1
-        AND s.tenant_id = $2`,
-      [solicitudId, tenant_id]
+        AND s.tenant_id = $2
+        AND c.estado_id = ANY($3::integer[])`,
+      [solicitudId, tenant_id, estadoIds]
     );
 
     if (!solicitud) {
       return res.status(404).json({
         success: false,
-        message: "Solicitud no encontrada"
+        message: "Solicitud no encontrada o no tiene acceso"
       });
     }
 
     // 2. Obtener métricas de pedidos
     const { rows: [metricas] } = await db.query(
-      `SELECT 
+      `SELECT
         COUNT(*)::integer as pedidos_totales,
         COALESCE(SUM(montototal), 0) as total_comprado,
         COALESCE(MAX(montototal), 0) as compra_maxima,
         COALESCE(AVG(montototal), 0) as promedio_compra,
         MAX(fecha) as ultima_compra
-      FROM pedidos 
-      WHERE clienteid = $1 
+      FROM pedidos
+      WHERE clienteid = $1
         AND tenant_id = $2
-        AND estatus = 'COMPLETADO' 
+        AND estatus = 'COMPLETADO'
         AND pagado = true`,
       [solicitud.cliente_id, tenant_id]
     );
@@ -110,8 +137,8 @@ async function obtenerAnalisisSolicitud(req, res) {
     // 3. Verificar pagos vencidos
     const { rows: [{ pagos_vencidos }] } = await db.query(
       `SELECT COUNT(*)::integer as pagos_vencidos
-       FROM pedidos 
-       WHERE clienteid = $1 
+       FROM pedidos
+       WHERE clienteid = $1
          AND tenant_id = $2
          AND es_credito = true
          AND pagado = false
@@ -182,6 +209,8 @@ async function aprobarSolicitud(req, res) {
   const client = await db.pool.connect();
   try {
     const { tenant_id } = req.tenant;
+    const userAdminId = req.user?.adminId || req.user?.userId;
+    const estadosHelper = require('../utils/estadosHelper');
     const solicitudId = Number.parseInt(req.params.id, 10);
     if (!Number.isInteger(solicitudId)) {
       return res.status(400).json({
@@ -190,36 +219,46 @@ async function aprobarSolicitud(req, res) {
       });
     }
 
+    // Get estados assigned to this admin
+    const adminEstados = await estadosHelper.getEstadosByAdmin(userAdminId);
+    const estadoIds = adminEstados.map(e => e.estado_id);
+
     await client.query('BEGIN');
 
-    // 1. Obtener datos de la solicitud
+    // 1. Obtener datos de la solicitud WITH authorization check
     const { rows: [solicitud] } = await client.query(
-      `SELECT cliente_id, monto_solicitado 
-       FROM solicitudes_credito 
-       WHERE solicitud_id = $1 
-         AND tenant_id = $2
-         AND estado = 'PENDIENTE'
+      `SELECT s.solicitud_id, s.cliente_id, s.monto_solicitado, c.estado_id
+       FROM solicitudes_credito s
+       INNER JOIN clientes c ON c.clienteid = s.cliente_id
+       WHERE s.solicitud_id = $1
+         AND s.tenant_id = $2
+         AND s.estado = 'PENDIENTE'
+         AND c.estado_id = ANY($3::integer[])
        FOR UPDATE`,
-      [solicitudId, tenant_id]
+      [solicitudId, tenant_id, estadoIds]
     );
 
     if (!solicitud) {
       await client.query('ROLLBACK');
       return res.status(404).json({
         success: false,
-        message: "Solicitud no encontrada o ya procesada"
+        message: "Solicitud no encontrada o ya procesada, o sin acceso"
       });
     }
 
+    // Get deterministic admin for this client's estado
+    const adminIdForCredit = await estadosHelper.getAdminByClienteEstado(solicitud.cliente_id);
+
     // 2. Verificar que no tenga crédito activo
     const { rows: [creditoActivo] } = await client.query(
-      `SELECT credito_id 
-       FROM cliente_creditos 
-       WHERE cliente_id = $1 
+      `SELECT credito_id
+       FROM cliente_creditos
+       WHERE cliente_id = $1
          AND tenant_id = $2
+         AND admin_id = $3
          AND estado_credito = 'ACTIVO'
        LIMIT 1`,
-      [solicitud.cliente_id, tenant_id]
+      [solicitud.cliente_id, tenant_id, adminIdForCredit]
     );
 
     if (creditoActivo) {
@@ -230,22 +269,22 @@ async function aprobarSolicitud(req, res) {
       });
     }
 
-    // 3. Crear línea de crédito
+    // 3. Crear línea de crédito CON admin_id
     await client.query(
-      `INSERT INTO cliente_creditos 
-         (cliente_id, limite_credito, saldo_deudor, estado_credito, tenant_id)
-       VALUES 
-         ($1, $2, 0, 'ACTIVO', $3)`,
-      [solicitud.cliente_id, solicitud.monto_solicitado, tenant_id]
+      `INSERT INTO cliente_creditos
+         (cliente_id, limite_credito, saldo_deudor, estado_credito, tenant_id, admin_id)
+       VALUES
+         ($1, $2, 0, 'ACTIVO', $3, $4)`,
+      [solicitud.cliente_id, solicitud.monto_solicitado, tenant_id, adminIdForCredit]
     );
 
     // 4. Actualizar estado de la solicitud
     await client.query(
-      `UPDATE solicitudes_credito 
+      `UPDATE solicitudes_credito
        SET estado = 'APROBADO',
            comentarios_admin = $1
        WHERE solicitud_id = $2`,
-      [`Aprobado por administrador ${req.user.id}`, solicitudId]
+      [`Aprobado por administrador ${userAdminId}`, solicitudId]
     );
 
     // 5. Obtener datos del cliente para notificaciones
@@ -256,9 +295,9 @@ async function aprobarSolicitud(req, res) {
 
     // 6. Crear notificación in-app para el cliente
     await client.query(
-      `INSERT INTO notificaciones 
+      `INSERT INTO notificaciones
          (clienteid, tipo, titulo, mensaje, prioridad, url, tenant_id)
-       VALUES 
+       VALUES
          ($1, 'sistema', '¡Crédito Aprobado!', 'Tu solicitud de crédito ha sido aprobada. Ya puedes realizar compras a crédito por un monto de $' || $2 || '.', 'alta', '/perfil/creditos', $3)`,
       [solicitud.cliente_id, solicitud.monto_solicitado, tenant_id]
     );
@@ -269,7 +308,7 @@ async function aprobarSolicitud(req, res) {
     if (cliente && cliente.email) {
       const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://razo.com.mx';
       const nombreCompleto = `${cliente.nombre} ${cliente.apellido}`;
-      
+
       sendTemplatedEmail(
         cliente.email,
         '¡Felicidades! Tu Crédito Razo ha sido Aprobado',
@@ -312,6 +351,8 @@ async function rechazarSolicitud(req, res) {
   const client = await db.pool.connect();
   try {
     const { tenant_id } = req.tenant;
+    const userAdminId = req.user?.adminId || req.user?.userId;
+    const estadosHelper = require('../utils/estadosHelper');
     const solicitudId = Number.parseInt(req.params.id, 10);
     const { motivo } = req.body;
 
@@ -322,24 +363,30 @@ async function rechazarSolicitud(req, res) {
       });
     }
 
+    // Get estados assigned to this admin
+    const adminEstados = await estadosHelper.getEstadosByAdmin(userAdminId);
+    const estadoIds = adminEstados.map(e => e.estado_id);
+
     await client.query('BEGIN');
 
-    // 1. Obtener datos de la solicitud
+    // 1. Obtener datos de la solicitud WITH authorization check
     const { rows: [solicitud] } = await client.query(
-      `SELECT cliente_id 
-       FROM solicitudes_credito 
-       WHERE solicitud_id = $1 
-         AND tenant_id = $2
-         AND estado = 'PENDIENTE'
+      `SELECT s.solicitud_id, s.cliente_id
+       FROM solicitudes_credito s
+       INNER JOIN clientes c ON c.clienteid = s.cliente_id
+       WHERE s.solicitud_id = $1
+         AND s.tenant_id = $2
+         AND s.estado = 'PENDIENTE'
+         AND c.estado_id = ANY($3::integer[])
        FOR UPDATE`,
-      [solicitudId, tenant_id]
+      [solicitudId, tenant_id, estadoIds]
     );
 
     if (!solicitud) {
       await client.query('ROLLBACK');
       return res.status(404).json({
         success: false,
-        message: "Solicitud no encontrada o ya procesada"
+        message: "Solicitud no encontrada o ya procesada, o sin acceso"
       });
     }
 
@@ -350,9 +397,9 @@ async function rechazarSolicitud(req, res) {
     );
 
     // 3. Actualizar estado de la solicitud
-    const motivoRechazo = motivo || `Rechazado por administrador ${req.user.id}`;
+    const motivoRechazo = motivo || `Rechazado por administrador ${userAdminId}`;
     await client.query(
-      `UPDATE solicitudes_credito 
+      `UPDATE solicitudes_credito
        SET estado = 'RECHAZADO',
            comentarios_admin = $1
        WHERE solicitud_id = $2`,
@@ -360,14 +407,14 @@ async function rechazarSolicitud(req, res) {
     );
 
     // 4. Crear notificación in-app para el cliente
-    const mensajeNotificacion = motivo 
-      ? `Tu solicitud de crédito ha sido rechazada. Motivo: ${motivo}` 
+    const mensajeNotificacion = motivo
+      ? `Tu solicitud de crédito ha sido rechazada. Motivo: ${motivo}`
       : 'Tu solicitud de crédito ha sido rechazada. Contacta a tu agente para más información.';
-    
+
     await client.query(
-      `INSERT INTO notificaciones 
+      `INSERT INTO notificaciones
          (clienteid, tipo, titulo, mensaje, prioridad, url, tenant_id)
-       VALUES 
+       VALUES
          ($1, 'sistema', 'Actualización de Solicitud de Crédito', $2, 'alta', '/contacto', $3)`,
       [solicitud.cliente_id, mensajeNotificacion, tenant_id]
     );
@@ -378,11 +425,11 @@ async function rechazarSolicitud(req, res) {
     if (cliente && cliente.email) {
       const frontendUrl = process.env.FRONTEND_BASE_URL || 'https://razo.com.mx';
       const nombreCompleto = `${cliente.nombre} ${cliente.apellido}`;
-      
+
       const mensajeEmail = motivo
         ? `Hemos revisado tu solicitud de crédito. Lamentamos informarte que en esta ocasión no ha sido posible aprobarla.<br><br><strong>Motivo:</strong> ${motivo}`
         : 'Hemos revisado tu solicitud de crédito. Lamentamos informarte que en esta ocasión no ha sido posible aprobarla.';
-      
+
       sendTemplatedEmail(
         cliente.email,
         'Actualización sobre tu Solicitud de Crédito',
