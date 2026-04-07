@@ -730,7 +730,8 @@ async function obtenerInventarioParaPDF(req, res) {
                     varianteIds,
                     userId,
                     userRole: userRoles,
-                    tenantId: tenant_id
+                    tenantId: tenant_id,
+                    estadoId: req.user?.estadoId || null
                 });
                 logger.info('Stock obtenido para variantes', {
                     count: varianteIds.length,

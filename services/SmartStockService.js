@@ -23,9 +23,10 @@ const db = require("../db");
  * @param {number} params.userId - ID del usuario actual
  * @param {string|string[]} params.userRole - Rol(es) del usuario
  * @param {number} params.tenantId - ID del tenant
+ * @param {number} params.estadoId - (Opcional) ID del estado del cliente (si está disponible en token)
  * @returns {Promise<Object>} { isSuperAdmin, isAdmin, adminId, clienteAdminId }
  */
-async function determineUserContext({ userId, userRole, tenantId }) {
+async function determineUserContext({ userId, userRole, tenantId, estadoId }) {
   const roles = Array.isArray(userRole) ? userRole : [userRole];
   
   const isSuperAdmin = roles.some(r => 
@@ -39,12 +40,13 @@ async function determineUserContext({ userId, userRole, tenantId }) {
   const isCliente = roles.includes('cliente');
   
   // Roles que necesitan admin_responsable_id (todos excepto super_admin, admin, cliente)
+  // IMPORTANTE: Estos roles SIEMPRE operan sobre el stock de un admin específico
   const rolesConAdminResponsable = [
-    'finanzas', 'gerente_finanzas',
-    'inventarios', 'gerente_operaciones', 'jefe_almacen',
-    'catalogo',
-    'compras',
-    'agente'
+    'finanzas',      // Confirma surtidos del admin asignado
+    'inventarios',   // Gestiona inventario del admin asignado
+    'compras',       // Realiza compras para el admin asignado
+    'agente'         // Crea pedidos para admin asignado
+    // 'catalogo' NO necesita - solo ve/edita productos, no toca stock
   ];
   
   const necesitaAdminResponsable = roles.some(r => rolesConAdminResponsable.includes(r));
@@ -70,28 +72,19 @@ async function determineUserContext({ userId, userRole, tenantId }) {
     try {
       // Primero intentar desde tabla administradores
       const { rows } = await db.query(
-        `SELECT admin_responsable_id 
-         FROM administradores 
+        `SELECT admin_responsable_id
+         FROM administradores
          WHERE adminid = $1 AND tenant_id = $2 AND activo = true`,
         [userId, tenantId]
       );
-      
+
       if (rows.length > 0 && rows[0].admin_responsable_id) {
         adminId = rows[0].admin_responsable_id;
-      } else if (roles.includes('agente')) {
-        // Fallback para agentes: buscar en agentesdeventas
-        const agenteResult = await db.query(
-          `SELECT admin_responsable_id 
-           FROM agentesdeventas 
-           WHERE agenteid = $1 AND tenant_id = $2 AND activo = true`,
-          [userId, tenantId]
-        );
-        
-        if (agenteResult.rows.length > 0 && agenteResult.rows[0].admin_responsable_id) {
-          adminId = agenteResult.rows[0].admin_responsable_id;
-        }
+      } else {
+        // Si no tiene admin_responsable_id asignado, usar su propio ID como fallback
+        adminId = userId;
       }
-      
+
       // Si no tiene admin asignado, usar su propio ID (fallback)
       if (!adminId) {
         adminId = userId;
@@ -102,13 +95,13 @@ async function determineUserContext({ userId, userRole, tenantId }) {
       adminId = userId;
     }
 
-    return { 
-      isSuperAdmin: false, 
+    return {
+      isSuperAdmin: false,
       isAdmin: true, // Tratarlos como admin para acceso a stock_admin
       isAgente: roles.includes('agente'),
       isCliente: false,
-      adminId, 
-      clienteAdminId: null 
+      adminId,
+      clienteAdminId: null
     };
   }
 
@@ -125,31 +118,47 @@ async function determineUserContext({ userId, userRole, tenantId }) {
     };
   }
 
-  // CASO 4: Cliente - Buscar su admin asignado
+  // CASO 4: Cliente - Buscar su admin asignado POR ESTADO
   if (isCliente) {
     try {
-      const { rows } = await db.query(
-        `SELECT admin_id 
-         FROM clientes 
-         WHERE clienteid = $1 AND tenant_id = $2`,
-        [userId, tenantId]
-      );
-      
-      if (rows.length > 0 && rows[0].admin_id) {
-        clienteAdminId = rows[0].admin_id;
-        adminId = clienteAdminId;
+      const estadosHelper = require("../utils/estadosHelper");
+
+      // Preferir usar estadoId del token si está disponible
+      let estadoIdCliente = estadoId;
+
+      // Si no está en el token, obtener del cliente
+      if (!estadoIdCliente) {
+        const clienteEstado = await estadosHelper.getClienteEstado(userId, tenantId);
+        estadoIdCliente = clienteEstado ? clienteEstado.estado_id : null;
+      }
+
+      if (estadoIdCliente) {
+        // Obtener el admin responsable de ese estado
+        adminId = await estadosHelper.getAdminByClienteEstado(userId, tenantId);
+
+        if (adminId) {
+          return {
+            isSuperAdmin: false,
+            isAdmin: false,
+            isAgente: false,
+            isCliente: true,
+            adminId,  // Admin del estado del cliente
+            clienteAdminId: adminId
+          };
+        }
       }
     } catch (error) {
-      console.error('[SmartStockService] Error al obtener admin del cliente:', error);
+      console.error('[SmartStockService] Error al obtener admin por estado:', error);
     }
 
-    return { 
-      isSuperAdmin: false, 
-      isAdmin: false, 
+    // Fallback: Sin asignación de estado o sin admin del estado → stock global
+    return {
+      isSuperAdmin: false,
+      isAdmin: false,
       isAgente: false,
       isCliente: true,
-      adminId, 
-      clienteAdminId 
+      adminId: null,  // NULL = ver stock global
+      clienteAdminId: null
     };
   }
 
@@ -171,15 +180,16 @@ async function determineUserContext({ userId, userRole, tenantId }) {
  * @param {number} params.userId - ID del usuario actual
  * @param {string|string[]} params.userRole - Rol(es) del usuario
  * @param {number} params.tenantId - ID del tenant
+ * @param {number} params.estadoId - (Opcional) ID del estado del cliente (si está disponible en token)
  * @returns {Promise<number>} Cantidad de stock disponible
  */
-async function getStock({ varianteId, userId, userRole, tenantId }) {
+async function getStock({ varianteId, userId, userRole, tenantId, estadoId }) {
   if (!varianteId || !userId || !tenantId) {
     console.error('[SmartStockService] getStock: Parámetros inválidos', { varianteId, userId, tenantId });
     return 0;
   }
 
-  const context = await determineUserContext({ userId, userRole, tenantId });
+  const context = await determineUserContext({ userId, userRole, tenantId, estadoId });
 
   // CASO A: Super Admin - Lee stock global
   if (context.isSuperAdmin) {
@@ -247,14 +257,15 @@ async function getStock({ varianteId, userId, userRole, tenantId }) {
  * @param {number} params.userId - ID del usuario actual
  * @param {string|string[]} params.userRole - Rol(es) del usuario
  * @param {number} params.tenantId - ID del tenant
+ * @param {number} params.estadoId - (Opcional) ID del estado del cliente (si está disponible en token)
  * @returns {Promise<Map<number, number>>} Map de varianteId -> stock
  */
-async function getBulkStock({ varianteIds, userId, userRole, tenantId }) {
+async function getBulkStock({ varianteIds, userId, userRole, tenantId, estadoId }) {
   if (!varianteIds || varianteIds.length === 0) {
     return new Map();
   }
 
-  const context = await determineUserContext({ userId, userRole, tenantId });
+  const context = await determineUserContext({ userId, userRole, tenantId, estadoId });
   const stockMap = new Map();
 
   // CASO A: Super Admin - Lee stock global
@@ -461,37 +472,20 @@ async function adjustStock({
           newStock = parseInt(rows[0].cantidad, 10);
           console.log('✅ [SmartStock] Registro creado:', { newStock });
         } else {
-          // FALLBACK: Si no existe stock_admin y es decremento, usar stock global
-          console.log('🔄 [SmartStock] Fallback a stock global para decremento');
-          const { rows: globalRows } = await dbClient.query(
-            `SELECT COALESCE(stock, 0) as stock 
-             FROM producto_variantes 
-             WHERE varianteid = $1 AND tenant_id = $2`,
-            [varianteId, tenantId]
-          );
-          
-          const stockGlobal = globalRows.length > 0 ? parseInt(globalRows[0].stock, 10) : 0;
-          console.log('🔍 [SmartStock] Stock global disponible:', { stockGlobal, cantidadNecesaria: Math.abs(cantidad) });
-          
-          if (stockGlobal + cantidad < 0) {
-            console.log('❌ [SmartStock] Stock global insuficiente');
-            return { 
-              success: false, 
-              newStock: 0, 
-              message: 'No hay stock disponible para decrementar' 
-            };
-          }
-          
-          // Reducir del stock global
-          const { rows: updateRows } = await dbClient.query(
-            `UPDATE producto_variantes 
-             SET stock = GREATEST(stock + $1, 0)
-             WHERE varianteid = $2 AND tenant_id = $3
-             RETURNING stock`,
-            [cantidad, varianteId, tenantId]
-          );
-          newStock = updateRows.length > 0 ? parseInt(updateRows[0].stock, 10) : 0;
-          console.log('✅ [SmartStock] Stock global reducido (fallback):', { newStock });
+          // ❌ NO FALLBACK A STOCK GLOBAL - Es inseguro para inventario distribuido
+          // Si el admin no tiene stock de esta variante, NO debe poder decrementar
+          // Primero debe recibir inventario (OC, devolución, ajuste manual)
+          console.error('❌ [SmartStock] Intento de decrementar stock_admin inexistente para admin:', {
+            adminId: context.adminId,
+            varianteId,
+            tenantId
+          });
+          return {
+            success: false,
+            newStock: 0,
+            message: `El admin ${context.adminId} no tiene inventario de esta variante. Recibe inventario primero antes de reducir.`,
+            code: 'NO_STOCK_ASSIGNED'
+          };
         }
       }
 
@@ -808,9 +802,9 @@ async function calculateAllocationStatus({
  *   message: string
  * }
  */
-async function allocateStockAutomatically({ 
-  varianteId, 
-  cantidadRequerida, 
+async function allocateStockAutomatically({
+  varianteId,
+  cantidadRequerida,
   tenantId,
   estrategia = 'DESC' // DESC = admin con más stock primero (evita fragmentación)
 }) {
@@ -841,13 +835,13 @@ async function allocateStockAutomatically({
     // PASO 1: Obtener todos los admins con stock disponible
     const ordenamiento = estrategia === 'DESC' ? 'DESC' : 'ASC';
     const query = `
-      SELECT 
+      SELECT
         sa.admin_id,
         sa.cantidad as stock_disponible,
         COALESCE(a.nombre || ' ' || a.apellido, 'Admin ID ' || sa.admin_id) as admin_nombre
       FROM stock_admin sa
       LEFT JOIN administradores a ON a.adminid = sa.admin_id AND a.tenant_id = sa.tenant_id
-      WHERE sa.variante_id = $1 
+      WHERE sa.variante_id = $1
         AND sa.tenant_id = $2
         AND sa.cantidad > 0
       ORDER BY sa.cantidad ${ordenamiento}, sa.admin_id ASC
@@ -855,44 +849,64 @@ async function allocateStockAutomatically({
 
     const { rows: adminsConStock } = await db.query(query, [varianteId, tenantId]);
 
-
-    if (adminsConStock.length === 0) {
-      return {
-        success: false,
-        totalAsignado: 0,
-        faltante: cantidadReq,
-        allocations: [],
-        message: 'No hay stock disponible en ningún administrador'
-      };
-    }
-
-    // PASO 2: Algoritmo de Asignación - Llenar desde los admins disponibles
+    // PASO 1B: Si no hay stock en stock_admin, hacer FALLBACK a producto_variantes.stock
     let cantidadRestante = cantidadReq;
     const allocations = [];
+    let totalAsignado = 0;
 
-    for (const admin of adminsConStock) {
-      if (cantidadRestante <= 0) break;
-
-      const cantidadDeEsteAdmin = Math.min(
-        parseInt(admin.stock_disponible, 10), 
-        cantidadRestante
+    if (adminsConStock.length === 0) {
+      // FALLBACK: Intentar asignar desde producto_variantes.stock
+      const { rows: varianteRows } = await db.query(
+        `SELECT stock FROM producto_variantes WHERE varianteid = $1 AND tenant_id = $2`,
+        [varianteId, tenantId]
       );
 
-      allocations.push({
-        adminId: parseInt(admin.admin_id, 10),
-        adminNombre: admin.admin_nombre,
-        cantidad: cantidadDeEsteAdmin,
-        stockDisponible: parseInt(admin.stock_disponible, 10)
-      });
+      if (varianteRows.length > 0) {
+        const stockVariante = parseInt(varianteRows[0].stock, 10) || 0;
 
-      cantidadRestante -= cantidadDeEsteAdmin;
+        if (stockVariante > 0) {
+          // ✅ Hay stock disponible en producto_variantes - permitir surtir parcialmente
+          totalAsignado = Math.min(stockVariante, cantidadReq);
+          cantidadRestante = cantidadReq - totalAsignado;
 
+          // Registrar como "Stock General" sin admin específico
+          if (totalAsignado > 0) {
+            allocations.push({
+              adminId: null,
+              adminNombre: 'Stock General (Variante)',
+              cantidad: totalAsignado,
+              stockDisponible: stockVariante,
+              esStockGeneral: true
+            });
+          }
+        }
+      }
+    } else {
+      // PASO 2: Algoritmo de Asignación - Llenar desde los admins disponibles
+      for (const admin of adminsConStock) {
+        if (cantidadRestante <= 0) break;
+
+        const cantidadDeEsteAdmin = Math.min(
+          parseInt(admin.stock_disponible, 10),
+          cantidadRestante
+        );
+
+        allocations.push({
+          adminId: parseInt(admin.admin_id, 10),
+          adminNombre: admin.admin_nombre,
+          cantidad: cantidadDeEsteAdmin,
+          stockDisponible: parseInt(admin.stock_disponible, 10)
+        });
+
+        cantidadRestante -= cantidadDeEsteAdmin;
+      }
+
+      totalAsignado = allocations.reduce((sum, a) => sum + a.cantidad, 0);
     }
 
-    // PASO 3: Verificar si se pudo cumplir la demanda
-    const totalAsignado = allocations.reduce((sum, a) => sum + a.cantidad, 0);
-    const success = totalAsignado >= cantidadReq;
-    const faltante = Math.max(cantidadReq - totalAsignado, 0);
+    // PASO 3: Permitir que exista faltante (backorder) - NO fallar si hay algo asignado
+    const faltante = Math.max(cantidadRestante, 0);
+    const success = totalAsignado > 0; // ✅ Éxito si se asignó algo, aunque sea parcial
 
 
     return {
@@ -900,9 +914,11 @@ async function allocateStockAutomatically({
       totalAsignado,
       faltante,
       allocations,
-      message: success 
-        ? `Stock asignado desde ${allocations.length} administrador(es)` 
-        : `Stock insuficiente: solo ${totalAsignado}/${cantidadReq} disponibles`
+      message: totalAsignado > 0
+        ? (faltante > 0
+          ? `📦 Split: ${totalAsignado} surtidas + ${faltante} en backorder`
+          : `✅ Stock completo asignado desde ${allocations.length} ubicación(es)`)
+        : `⚠️ Sin stock disponible - Backorder de ${cantidadReq}`
     };
 
   } catch (error) {

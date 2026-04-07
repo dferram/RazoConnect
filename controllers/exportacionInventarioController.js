@@ -141,7 +141,8 @@ const exportarInventarioPDF = async (req, res) => {
           varianteIds,
           userId,
           userRole: userRoles,
-          tenantId: tenant_id
+          tenantId: tenant_id,
+          estadoId: req.user?.estadoId || null
         });
       } catch (error) {
         logger.error('[exportarInventarioPDF] Error al obtener stock:', {

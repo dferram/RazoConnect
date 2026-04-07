@@ -106,6 +106,19 @@
           </div>
 
           <div class="form-group">
+            <label class="form-label" for="estado">Estado/Región *</label>
+            <select
+              id="estado"
+              name="estado"
+              class="form-input"
+              required
+            >
+              <option value="">Selecciona tu estado</option>
+            </select>
+            <div class="form-error" id="estadoError"></div>
+          </div>
+
+          <div class="form-group">
             <label class="form-label" for="password">Contraseña</label>
             <div class="registro-password-container">
               <input
@@ -189,6 +202,7 @@
       const apellidoInput = document.getElementById("apellido");
       const emailInput = document.getElementById("email");
       const telefonoInput = document.getElementById("telefono");
+      const estadoInput = document.getElementById("estado");
       const passwordInput = document.getElementById("password");
       const confirmPasswordInput = document.getElementById("confirmPassword");
       const submitBtn = document.getElementById("submitBtn");
@@ -197,6 +211,36 @@
       const alertDiv = document.getElementById("alert");
       const togglePasswordBtn = document.getElementById("togglePassword");
       const toggleConfirmPasswordBtn = document.getElementById("toggleConfirmPassword");
+
+      // Cargar estados en el select
+      async function loadEstados() {
+        try {
+          const response = await fetch('/api/public/estados-all', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.data && Array.isArray(data.data)) {
+              estadoInput.innerHTML = '<option value="">Selecciona tu estado</option>';
+              data.data.forEach(estado => {
+                const option = document.createElement('option');
+                option.value = estado.estadoid;
+                option.textContent = estado.nombre;
+                estadoInput.appendChild(option);
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error al cargar estados:', error);
+        }
+      }
+
+      // Cargar estados cuando carga la página
+      document.addEventListener('DOMContentLoaded', loadEstados);
 
       // Toggle password visibility
       if (togglePasswordBtn) {
@@ -272,6 +316,7 @@
         const apellido = apellidoInput.value.trim();
         const email = emailInput.value.trim();
         const telefono = telefonoInput.value.trim();
+        const estado_id = estadoInput.value;
         const password = passwordInput.value.trim();
         const confirmPassword = confirmPasswordInput.value.trim();
 
@@ -303,6 +348,15 @@
             confirmButtonText: 'Entendido',
             confirmButtonColor: '#f97316'
           });
+          hasError = true;
+        }
+
+        // Validar estado
+        if (!estado_id) {
+          document.getElementById("estadoError").textContent =
+            "Debes seleccionar tu estado";
+          document.getElementById("estadoError").classList.add("show");
+          estadoInput.classList.add("error");
           hasError = true;
         }
 
@@ -366,6 +420,7 @@
             email: email || null,
             password: password,
             telefono: telefono || null,
+            estado_id: parseInt(estado_id, 10)
           };
 
           console.log('📤 Enviando datos de registro:', { ...formData, password: '***' });

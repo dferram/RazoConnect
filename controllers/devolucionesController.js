@@ -626,26 +626,28 @@ async function aprobarDevolucion(req, res) {
       // Las devoluciones pueden ocurrir DESPUÉS de que se generó la remisión,
       // por lo que la reserva ya fue liberada en ese momento.
       // Solo necesitamos verificar si hay reserva residual por algún error.
+      // ⚠️ CRÍTICO: Filtrar solo por admin responsable, no sumar todos los admins
       const reservaCheck = await client.query(
         `SELECT COALESCE(SUM(cantidad_reservada), 0) as reserva_total
          FROM stock_admin
-         WHERE variante_id = $1 AND tenant_id = $2 AND cantidad_reservada > 0`,
-        [variante_id, tenant_id]
+         WHERE variante_id = $1 AND admin_id = $2 AND tenant_id = $3 AND cantidad_reservada > 0`,
+        [variante_id, adminResponsable, tenant_id]
       );
 
       const reservaActiva = parseInt(reservaCheck.rows[0]?.reserva_total || 0, 10);
       
       if (reservaActiva > 0) {
         
-        // Liberar reserva residual (no debería ocurrir en flujo normal)
+        // Liberar reserva residual del admin responsable (no debería ocurrir en flujo normal)
         await client.query(
           `UPDATE stock_admin
            SET cantidad_reservada = GREATEST(0, cantidad_reservada - $1),
                updated_at = NOW()
-           WHERE variante_id = $2 
-             AND tenant_id = $3
+           WHERE variante_id = $2
+             AND admin_id = $3
+             AND tenant_id = $4
              AND cantidad_reservada > 0`,
-          [Math.min(piezas_totales, reservaActiva), variante_id, tenant_id]
+          [Math.min(piezas_totales, reservaActiva), variante_id, adminResponsable, tenant_id]
         );
       }
 

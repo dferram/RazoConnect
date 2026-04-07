@@ -14,7 +14,7 @@ const { validateLogin } = require("../../utils/validator");
  */
 const registroCliente = async (req, res) => {
   try {
-    let { nombre, apellido, email, password, telefono, numero_cliente } = req.body;
+    let { nombre, apellido, email, password, telefono, numero_cliente, estado_id } = req.body;
 
     const { tenant_id } = req.tenant;
 
@@ -24,6 +24,28 @@ const registroCliente = async (req, res) => {
         message: "Debes proporcionar al menos un correo electrónico o número de teléfono.",
       });
     }
+
+    if (!estado_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Debes seleccionar un estado.",
+      });
+    }
+
+    // Validar que el estado existe (directamente de la tabla estados)
+    const estadoCheck = await db.query(
+      "SELECT estadoid, nombre FROM estados WHERE estadoid = $1",
+      [estado_id]
+    );
+
+    if (estadoCheck.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Estado seleccionado no existe en el sistema.",
+      });
+    }
+
+    const estadoNombre = estadoCheck.rows[0].nombre;
 
     if (numero_cliente && numero_cliente.trim() !== "") {
       const numeroClienteCheck = await db.query(
@@ -80,10 +102,10 @@ const registroCliente = async (req, res) => {
     const telefonoFinal = telefono && telefono.trim() !== "" ? telefono.trim() : null;
 
     const result = await db.query(
-      `INSERT INTO clientes (nombre, apellido, email, passwordhash, telefono, tenant_id, numero_cliente)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING clienteid, nombre, apellido, email, telefono, fechaderegistro, numero_cliente`,
-      [nombre.trim(), apellido.trim(), emailFinal, PasswordHash, telefonoFinal, tenant_id, numeroClienteFinal]
+      `INSERT INTO clientes (nombre, apellido, email, passwordhash, telefono, tenant_id, numero_cliente, estado_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING clienteid, nombre, apellido, email, telefono, fechaderegistro, numero_cliente, estado_id`,
+      [nombre.trim(), apellido.trim(), emailFinal, PasswordHash, telefonoFinal, tenant_id, numeroClienteFinal, estado_id]
     );
 
     const nuevoCliente = result.rows[0];
@@ -218,7 +240,7 @@ const login = async (req, res) => {
     const { tenant_id } = req.tenant;
 
     const clienteResult = await db.query(
-      "SELECT clienteid, nombre, apellido, email, passwordhash, telefono FROM clientes WHERE (email = $1 OR telefono = $1) AND tenant_id = $2",
+      "SELECT clienteid, nombre, apellido, email, passwordhash, telefono, estado_id FROM clientes WHERE (email = $1 OR telefono = $1) AND tenant_id = $2",
       [identifier, tenant_id]
     );
 
@@ -240,6 +262,7 @@ const login = async (req, res) => {
         rol: "cliente",
         email: cliente.email || null,
         tenant_id: tenant_id,
+        estadoId: cliente.estado_id || null,
       });
 
       const refreshToken = generateRefreshToken({
@@ -247,6 +270,7 @@ const login = async (req, res) => {
         rol: "cliente",
         email: cliente.email || null,
         tenant_id: tenant_id,
+        estadoId: cliente.estado_id || null,
       });
 
       // Guardar refresh token en Redis (30 días)
@@ -263,6 +287,7 @@ const login = async (req, res) => {
             apellido: cliente.apellido,
             email: cliente.email,
             telefono: cliente.telefono,
+            estadoId: cliente.estado_id,
           },
           accessToken,
           refreshToken,

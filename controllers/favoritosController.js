@@ -38,12 +38,19 @@ const favoritosController = {
         });
       }
 
+      // ⚠️ CRÍTICO: Obtener stock SOLO del admin del cliente, no suma de todos
+      const estadosHelper = require('../utils/estadosHelper');
+      const adminClienteId = await estadosHelper.getAdminByClienteEstado(clienteId, tenant_id);
+
       const stockQuery = `
         SELECT COALESCE(SUM(cantidad), 0) as stock_total
         FROM stock_admin
-        WHERE variante_id = $1 AND tenant_id = $2
+        WHERE variante_id = $1 AND tenant_id = $2 ${adminClienteId ? 'AND admin_id = $3' : ''}
       `;
-      const stockResult = await client.query(stockQuery, [varianteId, tenant_id]);
+      const stockResult = await client.query(
+        stockQuery,
+        adminClienteId ? [varianteId, tenant_id, adminClienteId] : [varianteId, tenant_id]
+      );
       const stockTotal = parseInt(stockResult.rows[0].stock_total) || 0;
 
       const alertaActiva = stockTotal <= 0;
@@ -84,6 +91,10 @@ const favoritosController = {
       const clienteId = req.user.id;
       const { tenant_id } = req.tenant;
 
+      // ⚠️ CRÍTICO: Obtener el admin del cliente para filtrar stock
+      const estadosHelper = require('../utils/estadosHelper');
+      const adminClienteId = await estadosHelper.getAdminByClienteEstado(clienteId, tenant_id);
+
       const query = `
         SELECT 
           cf.favorito_id,
@@ -118,7 +129,7 @@ const favoritosController = {
         FROM clientes_favoritos cf
         INNER JOIN producto_variantes pv ON cf.variante_id = pv.varianteid
         INNER JOIN productos p ON pv.productoid = p.productoid
-        LEFT JOIN stock_admin sa ON pv.varianteid = sa.variante_id AND sa.tenant_id = cf.tenant_id
+        LEFT JOIN stock_admin sa ON pv.varianteid = sa.variante_id AND sa.tenant_id = cf.tenant_id AND sa.admin_id = $3
         WHERE cf.cliente_id = $1 AND cf.tenant_id = $2
         GROUP BY 
           cf.favorito_id, cf.variante_id, cf.alerta_restock_activa, cf.fecha_agregado,
@@ -128,7 +139,7 @@ const favoritosController = {
         ORDER BY cf.fecha_agregado DESC
       `;
 
-      const result = await db.pool.query(query, [clienteId, tenant_id]);
+      const result = await db.pool.query(query, [clienteId, tenant_id, adminClienteId]);
 
       const favoritos = result.rows.map(row => ({
         favoritoId: row.favorito_id,

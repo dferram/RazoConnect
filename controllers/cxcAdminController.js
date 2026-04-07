@@ -15,9 +15,22 @@ const logger = require('../utils/logger');
 /**
  * Obtener resumen de cuentas por cobrar
  * @route GET /api/admin/cxc-summary
+ *
+ * SEPARACIÓN POR ADMIN:
+ * - Admin: Ve SOLO su CxC (admin_id = su ID)
+ * - Super Admin: Ve TODO (sin filtro)
+ * - Staff: Ve CxC del admin asignado (admin_responsable_id)
  */
 const getCxcSummary = async (req, res) => {
   try {
+    const estadosHelper = require('../utils/estadosHelper');
+    const { adminId, shouldFilter } = estadosHelper.getAdminIdFromContext(req.user);
+    const tenantId = req.tenant?.tenant_id || 1;
+
+    // ⚠️ CRÍTICO: Filtro admin_id obligatorio si no es super_admin
+    const adminFilter = shouldFilter ? 'AND cred.admin_id = $2' : '';
+    const params = shouldFilter ? [tenantId, adminId] : [tenantId];
+
     const result = await db.query(
       `SELECT
          c.clienteid,
@@ -31,6 +44,7 @@ const getCxcSummary = async (req, res) => {
          cred.dias_gracia,
          cred.estado_credito,
          cred.ultima_actualizacion,
+         cred.admin_id,
          mov.fecha_movimiento AS ultima_fecha_movimiento,
          mov.descripcion AS ultima_descripcion,
          mov.tipo_movimiento AS ultima_tipo_movimiento,
@@ -59,7 +73,10 @@ const getCxcSummary = async (req, res) => {
          LIMIT 1
        ) vencido ON TRUE
        WHERE cred.saldo_deudor > 0
-       ORDER BY cred.saldo_deudor DESC`
+         AND cred.tenant_id = $1
+         ${adminFilter}
+       ORDER BY cred.saldo_deudor DESC`,
+      params
     );
 
     const cartera = (result.rows || []).map((row) => {
@@ -165,30 +182,49 @@ const registrarAbonoCxC = async (req, res) => {
 
     await client.query("BEGIN");
 
+    // ⚠️ SEPARACIÓN POR ADMIN: Get admin_id from user context
+    const estadosHelper = require('../utils/estadosHelper');
+    const { adminId, shouldFilter } = estadosHelper.getAdminIdFromContext(req.user);
+    const tenantId = req.tenant?.tenant_id || 1;
+
     let creditoRow;
     if (Number.isInteger(creditoIdBody) && creditoIdBody > 0) {
+      const adminFilter = shouldFilter ? 'AND admin_id = $2' : '';
+      const params = shouldFilter ? [creditoIdBody, adminId, tenantId] : [creditoIdBody, tenantId];
+
       const creditoResult = await client.query(
-        "SELECT credito_id, cliente_id, saldo_deudor, tenant_id FROM cliente_creditos WHERE credito_id = $1",
-        [creditoIdBody]
+        `SELECT credito_id, cliente_id, saldo_deudor, tenant_id, admin_id
+         FROM cliente_creditos
+         WHERE credito_id = $1
+           AND tenant_id = ${shouldFilter ? '$3' : '$2'}
+           ${adminFilter}`,
+        params
       );
       if (creditoResult.rows.length === 0) {
         await client.query("ROLLBACK");
         return res.status(404).json({
           success: false,
-          message: "Crédito no encontrado",
+          message: "Crédito no encontrado o no tienes acceso",
         });
       }
       creditoRow = creditoResult.rows[0];
     } else {
+      const adminFilter = shouldFilter ? 'AND admin_id = $2' : '';
+      const params = shouldFilter ? [clienteIdBody, adminId, tenantId] : [clienteIdBody, tenantId];
+
       const creditoResult = await client.query(
-        "SELECT credito_id, cliente_id, saldo_deudor, tenant_id FROM cliente_creditos WHERE cliente_id = $1",
-        [clienteIdBody]
+        `SELECT credito_id, cliente_id, saldo_deudor, tenant_id, admin_id
+         FROM cliente_creditos
+         WHERE cliente_id = $1
+           AND tenant_id = ${shouldFilter ? '$3' : '$2'}
+           ${adminFilter}`,
+        params
       );
       if (creditoResult.rows.length === 0) {
         await client.query("ROLLBACK");
         return res.status(404).json({
           success: false,
-          message: "Cliente no tiene crédito configurado",
+          message: "Cliente no tiene crédito configurado o no tienes acceso",
         });
       }
       creditoRow = creditoResult.rows[0];
@@ -404,10 +440,21 @@ const validarNumeroFactura = async (req, res) => {
     }
 
     // Validar que no exista este número de factura
+    const estadosHelper = require('../utils/estadosHelper');
+    const { adminId, shouldFilter } = estadosHelper.getAdminIdFromContext(req.user);
+    const tenantId = req.tenant?.tenant_id || 1;
+
+    const adminFilter = shouldFilter ? 'AND admin_id = $3' : '';
+    const params = shouldFilter
+      ? [numero_factura.toString().trim(), tenantId, adminId]
+      : [numero_factura.toString().trim(), tenantId];
+
     const existResult = await db.query(
-      `SELECT cxc_id FROM cuentas_por_cobrar 
-       WHERE numero_factura = $1 AND tenant_id = $2`,
-      [numero_factura.toString().trim(), tenant_id]
+      `SELECT cxc_id FROM cuentas_por_cobrar
+       WHERE numero_factura = $1
+         AND tenant_id = $2
+         ${adminFilter}`,
+      params
     );
 
     if (existResult.rows.length > 0) {

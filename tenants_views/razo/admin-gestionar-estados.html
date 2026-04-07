@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Administrar Estados - RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
+
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Core Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/auth-guard-admin.js"></script>
+
+    <link rel="stylesheet" href="css/styles.css" />
+    <link rel="stylesheet" href="css/admin.css" />
+    <link rel="stylesheet" href="css/mobile-responsive.css" />
+  </head>
+  <body data-sidebar="admin" data-page-title="Gestionar Estados">
+    <div class="admin-layout">
+      <!-- Sidebar -->
+      <div id="admin-sidebar-container"></div>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <div id="admin-header-container"></div>
+
+        <div class="admin-content">
+          <!-- Instructional Banner -->
+          <div id="instructionalBanner" class="instructional-banner">
+            <p>
+              ⚙️ <strong>Gestionar Asignaciones de Estados:</strong> Aquí puedes asignar o reasignar estados a los administradores. Un estado puede ser manejado por múltiples administradores, y los clientes de ese estado verán el stock del primero disponible.
+            </p>
+            <button class="instructional-banner-close" title="Cerrar">
+              ×
+            </button>
+          </div>
+
+          <!-- Alert Container -->
+          <div id="alertContainer" style="margin-bottom: 1rem"></div>
+
+          <!-- Tabs -->
+          <div class="admin-table-container" style="margin-bottom: 1rem;">
+            <div style="display: flex; gap: 1rem; padding: 1rem; border-bottom: 1px solid #e5e7eb;">
+              <button class="btn btn-primary" id="tabAdmins" style="flex: 1;">
+                📋 Administradores
+              </button>
+              <button class="btn btn-secondary" id="tabEstados" style="flex: 1;">
+                🗺️ Estados
+              </button>
+              <button class="btn btn-secondary" id="tabClientes" style="flex: 1;">
+                👥 Clientes por Estado
+              </button>
+            </div>
+          </div>
+
+          <!-- TAB 1: Administradores -->
+          <div id="adminTab" class="admin-table-container">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Administradores</h2>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="admin-table" id="adminTable">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Estados Asignados</th>
+                    <th>Cantidad</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="adminTableBody">
+                  <tr>
+                    <td colspan="5" style="text-align: center; color: #9ca3af;">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 2: Estados -->
+          <div id="estadosTab" class="admin-table-container" style="display: none;">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Estados y Administradores Responsables</h2>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="admin-table" id="estadosTable">
+                <thead>
+                  <tr>
+                    <th>Estado</th>
+                    <th>Región</th>
+                    <th>Administradores Responsables</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="estadosTableBody">
+                  <tr>
+                    <td colspan="4" style="text-align: center; color: #9ca3af;">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- TAB 3: Clientes -->
+          <div id="clientesTab" class="admin-table-container" style="display: none;">
+            <div class="admin-table-header">
+              <h2 class="admin-table-title">Clientes por Estado</h2>
+            </div>
+            <div style="overflow-x: auto;">
+              <table class="admin-table" id="clientesTable">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Estado</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Admin Asignado</th>
+                  </tr>
+                </thead>
+                <tbody id="clientesTableBody">
+                  <tr>
+                    <td colspan="5" style="text-align: center; color: #9ca3af;">Cargando...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Modal para editar estados -->
+          <div id="editModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000;">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 0.5rem; min-width: 400px; max-width: 500px;">
+              <h3 style="margin-bottom: 1rem;">Editar Estados del Administrador</h3>
+              <div id="modalContent">
+                <p style="color: #6b7280;">Cargando...</p>
+              </div>
+              <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveEstados()">Guardar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/token-validator.js"></script>
+    <script src="js/auth-manager.js"></script>
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/admin-sidebar-loader.js"></script>
+    <script src="js/instructional-banner.js"></script>
+    <script src="js/admin-gestionar-estados.js"></script>
+  </body>
+</html>

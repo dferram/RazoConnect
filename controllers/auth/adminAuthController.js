@@ -138,7 +138,8 @@ const registroAdmin = async (req, res) => {
  */
 const crearAdmin = async (req, res) => {
   try {
-    const { nombre, email, password, rol } = req.body;
+    const { nombre, email, password, rol, estadoIds } = req.body;
+    const { tenant_id } = req.tenant;
 
     const errors = [];
     if (!nombre || !nombre.trim()) errors.push("El nombre es requerido");
@@ -151,6 +152,11 @@ const crearAdmin = async (req, res) => {
     if (rol && !esRolValido(rol)) {
       const rolesValidos = getRolesValidos();
       errors.push(`El rol debe ser uno de los siguientes: ${rolesValidos.join(', ')}`);
+    }
+
+    // Validar estadoIds
+    if (!Array.isArray(estadoIds) || estadoIds.length === 0) {
+      errors.push("Debes asignar al menos un estado");
     }
 
     if (errors.length > 0) {
@@ -198,6 +204,26 @@ const crearAdmin = async (req, res) => {
 
       const row = insertRes.rows[0];
 
+      // Insertar asignaciones de estados
+      if (Array.isArray(estadoIds) && estadoIds.length > 0) {
+        for (const estadoId of estadoIds) {
+          try {
+            await db.query(
+              `INSERT INTO administrador_estados (admin_id, estado_id, tenant_id, activo)
+               VALUES ($1, $2, $3, TRUE)
+               ON CONFLICT (admin_id, estado_id, tenant_id) DO NOTHING`,
+              [row.adminid, estadoId, tenant_id]
+            );
+          } catch (estadoError) {
+            logger.error('Error al asignar estado al admin:', {
+              estadoId,
+              adminId: row.adminid,
+              error: estadoError.message
+            });
+          }
+        }
+      }
+
       await auditService.registrarCambioPasivo(
         req,
         "admins",
@@ -211,6 +237,7 @@ const crearAdmin = async (req, res) => {
           email: row.email,
           rol: row.rol,
           activo: row.activo,
+          estadoIds: estadoIds
         }
       );
 
@@ -224,6 +251,7 @@ const crearAdmin = async (req, res) => {
             apellido: row.apellido,
             email: row.email,
             rol: row.rol,
+            estadoIds: estadoIds
           },
           solicitudId: null,
         },
@@ -271,6 +299,26 @@ const crearAdmin = async (req, res) => {
           );
         }
 
+        // Insertar asignaciones de estados
+        if (Array.isArray(estadoIds) && estadoIds.length > 0) {
+          for (const estadoId of estadoIds) {
+            try {
+              await db.query(
+                `INSERT INTO administrador_estados (admin_id, estado_id, tenant_id, activo)
+                 VALUES ($1, $2, $3, TRUE)
+                 ON CONFLICT (admin_id, estado_id, tenant_id) DO NOTHING`,
+                [nuevoAdmin.adminid, estadoId, tenant_id]
+              );
+            } catch (estadoError) {
+              logger.error('Error al asignar estado al admin:', {
+                estadoId,
+                adminId: nuevoAdmin.adminid,
+                error: estadoError.message
+              });
+            }
+          }
+        }
+
         res.status(201).json({
           success: true,
           message: "Administrador creado correctamente (auto-aprobado)",
@@ -281,6 +329,7 @@ const crearAdmin = async (req, res) => {
               apellido: nuevoAdmin.apellido,
               email: nuevoAdmin.email,
               rol: nuevoAdmin.rol,
+              estadoIds: estadoIds
             },
             solicitudId: resultado.solicitudId,
           },

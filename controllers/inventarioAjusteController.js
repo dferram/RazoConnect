@@ -62,7 +62,8 @@ const registrarAjusteInventario = async (req, res) => {
                 varianteId,
                 userId,
                 userRole: userRoles,
-                tenantId: tenant_id
+                tenantId: tenant_id,
+                estadoId: req.user?.estadoId || null
             });
         } catch (stockError) {
             logger.error('[InventarioAjusteController] Error al obtener stock:', {

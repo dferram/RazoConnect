@@ -1257,7 +1257,13 @@ async function generarPDFVerificacion(req, res) {
             INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
             INNER JOIN productos p ON pv.productoid = p.productoid AND p.tenant_id = $2
             LEFT JOIN cat_tamanopaquetes t ON dp.tamanoid = t.tamanoid AND t.tenant_id = $2
-            LEFT JOIN stock_admin sa ON sa.variante_id = pv.varianteid AND sa.tenant_id = $2
+            LEFT JOIN stock_admin sa ON sa.variante_id = pv.varianteid AND sa.tenant_id = $2 AND sa.admin_id = (
+              SELECT DISTINCT ame.admin_id
+              FROM clientes c
+              LEFT JOIN administrador_estados ame ON c.estado_id = ame.estado_id AND c.tenant_id = ame.tenant_id
+              WHERE c.clienteid = (SELECT clienteid FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2)
+              LIMIT 1
+            )
             WHERE dp.pedidoid = $1
             ORDER BY dp.detalleid`,
             [pedidoId, tenant_id]

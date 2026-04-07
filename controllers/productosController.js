@@ -564,7 +564,8 @@ const obtenerProductos = async (req, res) => {
           varianteIds,
           userId: req.user.id,
           userRole: req.user.roles || ['cliente'],
-          tenantId: req.tenant.tenant_id
+          tenantId: req.tenant.tenant_id,
+          estadoId: req.user.estadoId || null  // Pasar estado del cliente si está disponible
         });
       } catch (stockError) {
         logger.error('Error al obtener stock dinámico', {
@@ -1049,7 +1050,8 @@ const obtenerProductoPorId = async (req, res) => {
           varianteIds: varianteIdsDetalle,
           userId: req.user.id,
           userRole: req.user.roles || ['cliente'],
-          tenantId: req.tenant.tenant_id
+          tenantId: req.tenant.tenant_id,
+          estadoId: req.user.estadoId || null
         });
       } catch (stockError) {
         logger.error('Error al obtener stock detalle', {
@@ -1534,6 +1536,19 @@ const obtenerVariantesProducto = async (req, res) => {
       });
     }
 
+    // ⚠️ CRÍTICO: Si hay usuario autenticado, filtrar por su admin
+    let adminIdFilter = '';
+    let params = [productoId, tenant_id];
+
+    if (req.user && req.user.id) {
+      const estadosHelper = require('../utils/estadosHelper');
+      const adminClienteId = await estadosHelper.getAdminByClienteEstado(req.user.id, tenant_id);
+      if (adminClienteId) {
+        adminIdFilter = ' AND sa.admin_id = $3';
+        params.push(adminClienteId);
+      }
+    }
+
     const query = `
       SELECT 
         pv.varianteid,
@@ -1546,7 +1561,7 @@ const obtenerVariantesProducto = async (req, res) => {
         pv.piezasporpaquete,
         COALESCE(SUM(sa.cantidad), 0) as stock_disponible
       FROM producto_variantes pv
-      LEFT JOIN stock_admin sa ON pv.varianteid = sa.variante_id AND sa.tenant_id = $2
+      LEFT JOIN stock_admin sa ON pv.varianteid = sa.variante_id AND sa.tenant_id = $2${adminIdFilter}
       WHERE pv.productoid = $1
         AND pv.activo = true
       GROUP BY 
@@ -1555,7 +1570,7 @@ const obtenerVariantesProducto = async (req, res) => {
       ORDER BY pv.dimensiones, pv.color_nombre
     `;
 
-    const result = await db.query(query, [productoId, tenant_id]);
+    const result = await db.query(query, params);
 
     return res.json({
       success: true,

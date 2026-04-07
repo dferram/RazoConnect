@@ -29,40 +29,79 @@ const {
 async function calcularEstadoPedidoCorrect(client, pedidoId) {
   try {
     // 1. Obtener detalles CON stock actual en tiempo real
-    // CRÍTICO: Verificar stock ACTUAL en stock_admin, NO usar esbackorder fijo
+    // CRÍTICO: Considerar stock de TODOS los admins + stock global de producto_variantes
     const detallesResult = await client.query(`
-      SELECT 
+      SELECT
         d.detalleid,
         d.varianteid,
         d.piezastotales,
         d.estado_producto,
         COALESCE(d.cantidadsurtida, 0) as cantidadsurtida,
-        -- Stock ACTUAL disponible (sin reservar)
-        COALESCE(sa.cantidad - sa.cantidad_reservada, 0) as stock_disponible_actual,
+        -- Stock TOTAL disponible: suma de stock_admin + stock global de variante
+        COALESCE(SUM(sa.cantidad - sa.cantidad_reservada), 0) as stock_en_admin,
+        COALESCE(pv.stock, 0) as stock_global,
+        (COALESCE(SUM(sa.cantidad - sa.cantidad_reservada), 0) + COALESCE(pv.stock, 0)) as stock_disponible_actual,
         -- Flag original (para auditoría)
         d.esbackorder as esbackorder_original
       FROM detallesdelpedido d
-      LEFT JOIN stock_admin sa ON d.varianteid = sa.variante_id
+      LEFT JOIN stock_admin sa ON d.varianteid = sa.variante_id AND d.tenant_id = sa.tenant_id
+      LEFT JOIN producto_variantes pv ON d.varianteid = pv.varianteid AND d.tenant_id = pv.tenant_id
       WHERE d.pedidoid = $1
+      GROUP BY d.detalleid, d.varianteid, d.piezastotales, d.estado_producto, d.cantidadsurtida, d.esbackorder, d.tenant_id, pv.stock
       ORDER BY d.detalleid
     `, [pedidoId]);
 
     const detalles = detallesResult.rows;
     if (detalles.length === 0) {
-      return ESTADOS_PEDIDO.PENDIENTE;
+      // ❌ Crítico: Pedido sin detalles - esto NO debería pasar
+      console.error(`[ESTADO] Pedido ${pedidoId} sin detalles - retornando BAJO_PEDIDO como fallback`);
+      return ESTADOS_PEDIDO.BAJO_PEDIDO;
     }
 
     const totalProductos = detalles.length;
-    
+
+    // ============================================================
+    // PRIORIDAD CERO: Si TODOS tienen estado_producto = NULL
+    // Significa que el pedido acaba de crearse y no ha sido procesado por Finanzas
+    // En este caso, IGNORAR estado_producto y calcular SOLO basado en stock disponible
+    // ============================================================
+    const todosEstadoNulo = detalles.every(d => d.estado_producto === null);
+
+    if (todosEstadoNulo) {
+      // 🔄 Recién creado - calcular basado SOLO en stock disponible
+      let productosConStockActual = 0;
+      let productosBackorderActual = 0;
+
+      detalles.forEach(d => {
+        const tieneStockDisponible = d.stock_disponible_actual >= d.piezastotales;
+        if (tieneStockDisponible) {
+          productosConStockActual++;
+        } else {
+          productosBackorderActual++;
+        }
+      });
+
+      // Aplicar lógica de disponibilidad
+      if (productosBackorderActual === totalProductos && productosConStockActual === 0) {
+        return ESTADOS_PEDIDO.BAJO_PEDIDO; // 🔴 Todos sin stock
+      }
+      if (productosConStockActual === totalProductos && productosBackorderActual === 0) {
+        return ESTADOS_PEDIDO.COMPLETO; // 🟡 Todos con stock
+      }
+      if (productosBackorderActual > 0 && productosConStockActual > 0) {
+        return ESTADOS_PEDIDO.COMBINADO; // 🟠 Mix de stock/backorder
+      }
+    }
+
     // ============================================================
     // PRIORIDAD 1: Verificar si TODOS están facturados
     // ============================================================
     const productosFacturados = detalles.filter(d => d.estado_producto === 'Facturado').length;
-    
+
     if (productosFacturados === totalProductos && productosFacturados > 0) {
       return ESTADOS_PEDIDO.SURTIDO_COMPLETO; // 🟢 - Ciclo completado
     }
-    
+
     // ============================================================
     // PRIORIDAD 2: Si hay productos facturados pero NO todos
     // NUEVO FLUJO: Recalcular estado basado SOLO en NO FACTURADOS
@@ -71,11 +110,11 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
       // Filtrar solo los productos NO FACTURADOS para recalcular estado
       const productosNoFacturados = detalles.filter(d => d.estado_producto !== 'Facturado');
       const totalNoFacturados = productosNoFacturados.length;
-      
+
       // Calcular stock disponible SOLO para no facturados
       let conStockActual = 0;
       let backorderActual = 0;
-      
+
       productosNoFacturados.forEach(d => {
         const tieneStock = d.stock_disponible_actual >= d.piezastotales;
         if (tieneStock) {
@@ -84,7 +123,7 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
           backorderActual++;
         }
       });
-      
+
       // Retornar al estado original según stock de lo NO facturado
       if (backorderActual === totalNoFacturados && conStockActual === 0) {
         return ESTADOS_PEDIDO.BAJO_PEDIDO;      // 🔴 Todos sin stock
@@ -96,12 +135,18 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
         return ESTADOS_PEDIDO.COMBINADO;         // 🟠 Mix de stock/backorder
       }
     }
-    
+
     // ============================================================
     // PRIORIDAD 3: Hay surtidos pero NINGUNO facturado
+    // ⚠️ CRÍTICO: SOLO si estado_producto no es NULL
+    // Si es NULL, significa que aún no fue procesado por finanzas
     // ============================================================
-    const productosSurtidos = detalles.filter(d => d.estado_producto === 'Surtido').length;
+    const productosSurtidos = detalles.filter(d =>
+      d.estado_producto === 'Surtido' && d.estado_producto !== null
+    ).length;
+
     if (productosSurtidos > 0 && productosFacturados === 0) {
+      // ✅ Hay productos marcados como 'Surtido' por finanzas
       return ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR; // 🔵 Waiting finanzas confirmation
     }
 
@@ -111,7 +156,7 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
     // ============================================================
     let productosConStockActual = 0;
     let productosBackorderActual = 0;
-    
+
     detalles.forEach(d => {
       const tieneStockDisponible = d.stock_disponible_actual >= d.piezastotales;
       if (tieneStockDisponible) {
@@ -120,26 +165,34 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
         productosBackorderActual++;
       }
     });
-    
+
     // 🔴 BAJO PEDIDO: Todos sin stock disponible
     if (productosBackorderActual === totalProductos && productosConStockActual === 0) {
       return ESTADOS_PEDIDO.BAJO_PEDIDO;
     }
-    
+
     // 🟡 COMPLETO: Todos con stock disponible
     if (productosConStockActual === totalProductos && productosBackorderActual === 0) {
       return ESTADOS_PEDIDO.COMPLETO;
     }
-    
+
     // 🟠 COMBINADO: Mix de stock y backorder
     if (productosBackorderActual > 0 && productosConStockActual > 0) {
       return ESTADOS_PEDIDO.COMBINADO;
     }
 
-    return ESTADOS_PEDIDO.PENDIENTE;
+    // ❌ Crítico: No debería llegar aquí - alguna condición falta
+    console.error(`[ESTADO] Pedido ${pedidoId} sin condición coincidente - retornando BAJO_PEDIDO como fallback`, {
+      totalProductos,
+      productosConStockActual,
+      productosBackorderActual,
+      productosFacturados
+    });
+    return ESTADOS_PEDIDO.BAJO_PEDIDO;
   } catch (error) {
-    console.error('Error calculating order state:', error.message);
-    return ESTADOS_PEDIDO.PENDIENTE;
+    console.error('❌ Error calculating order state:', error.message, { pedidoId });
+    // Fallback seguro: BAJO_PEDIDO (conservador - asume sin stock)
+    return ESTADOS_PEDIDO.BAJO_PEDIDO;
   }
 }
 

@@ -315,7 +315,8 @@ const obtenerCarrito = async (req, res) => {
             varianteIds: masterVarianteIds,
             userId: req.user.id,
             userRole: req.user.roles || ['cliente'],
-            tenantId: tenant_id
+            tenantId: tenant_id,
+            estadoId: req.user.estadoId || null
           });
           console.log(`✅ [CarritoController] Stock bulk obtenido para ${masterVarianteIds.length} variantes maestras`);
         } catch (stockError) {

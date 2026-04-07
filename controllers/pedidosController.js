@@ -13,6 +13,7 @@ const { calcularTotalPedido, validarConsistenciaTotales } = require("../utils/ca
 const SmartStockService = require("../services/SmartStockService");
 const { calcularEstadoPedidoCorrect } = require("../utils/pedidoStatus");
 const { normalizarEstado, ESTADOS_PEDIDO } = require("../utils/pedidoEstados");
+const { getClienteEstado, asignarEstadoCliente } = require("../utils/estadosHelper");
 
 const TAMANO_VALUE_KEYS = [
   "valor",
@@ -229,6 +230,31 @@ const crearPedido = async (req, res) => {
       });
     }
 
+    // 1.5 NUEVO: Asegurar que el cliente tenga estado_id asignado
+    // Si no lo tiene, asignar el estado de la dirección de envío o el primero disponible
+    const clienteEstado = await getClienteEstado(clienteId, tenant_id);
+
+    if (!clienteEstado || !clienteEstado.estado_id) {
+      // El cliente no tiene estado asignado, asignar el primero disponible (Querétaro por defecto)
+      try {
+        // Obtener primer estado (o puedes usar un default como Querétaro)
+        const estadoResult = await client.query(
+          "SELECT estadoid FROM estados ORDER BY estadoid LIMIT 1"
+        );
+
+        if (estadoResult.rows.length > 0) {
+          const estadoId = estadoResult.rows[0].estadoid;
+          await client.query(
+            "UPDATE clientes SET estado_id = $1 WHERE clienteid = $2",
+            [estadoId, clienteId]
+          );
+        }
+      } catch (error) {
+        logger.error('Error al asignar estado al cliente:', { error, clienteId });
+        // No es fatal, continuar sin estado
+      }
+    }
+
     // 2. Obtener el carrito del cliente
     const carritoResult = await client.query(
       "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1 AND tenant_id = $2",
@@ -381,7 +407,8 @@ const crearPedido = async (req, res) => {
             varianteIds: masterVarianteIds,
             userId: req.user.id || clienteId,
             userRole: req.user.roles || ['cliente'],
-            tenantId: tenant_id
+            tenantId: tenant_id,
+            estadoId: req.user.estadoId || null
           });
         } catch (stockError) {
           logger.error('Error al obtener stock dinámico', {
@@ -867,7 +894,7 @@ const crearPedido = async (req, res) => {
       pedidoComprobanteUrl = null;
     }
 
-    async function registrarPedido() {
+    async function registrarPedido(adminIdAsignado, estadoIdAsignado) {
       const pedidoResult = await client.query(
         `INSERT INTO Pedidos (
            ClienteID,
@@ -886,7 +913,9 @@ const crearPedido = async (req, res) => {
            Saldo_Pendiente,
            monto_surtido,
            monto_backorder,
-           tenant_id
+           tenant_id,
+           estado_id,
+           admin_asignado_id
          )
          VALUES (
            $1,
@@ -908,7 +937,9 @@ const crearPedido = async (req, res) => {
            $14,
            0,
            $4,
-           $15
+           $15,
+           $16,
+           $17
          )
          RETURNING PedidoID, FechaPedido, MontoTotal, Estatus, Fecha_Vencimiento, Es_Credito, Pagado, Metodo_Pago, Transaccion_ID, Comprobante_URL, Cupon_ID, Monto_Descuento, Saldo_Pendiente`,
         [
@@ -927,6 +958,8 @@ const crearPedido = async (req, res) => {
           montoDescuento,
           metodoPagoEsCredito ? montoTotalFinal : 0,
           tenant_id,
+          estadoIdAsignado || null,
+          adminIdAsignado || null,
         ]
       );
       pedido = pedidoResult.rows[0];
@@ -984,7 +1017,23 @@ const crearPedido = async (req, res) => {
       };
     }
 
-    await registrarPedido();
+    // NUEVO: Obtener estado_id y admin responsable del cliente para asignarlos al pedido
+    let estadoIdPedido = null;
+    let adminIdPedido = null;
+
+    try {
+      const estadosHelper = require("../utils/estadosHelper");
+      const clienteEstadoInfo = await estadosHelper.getClienteEstado(clienteId, tenant_id);
+
+      if (clienteEstadoInfo && clienteEstadoInfo.estado_id) {
+        estadoIdPedido = clienteEstadoInfo.estado_id;
+        adminIdPedido = await estadosHelper.getAdminByClienteEstado(clienteId, tenant_id);
+      }
+    } catch (error) {
+      logger.warn('Error al obtener estado/admin del cliente para pedido:', { error, clienteId });
+    }
+
+    await registrarPedido(adminIdPedido, estadoIdPedido);
 
     // 7. Crear los detalles del pedido y actualizar inventario
     const detallesPedido = [];
@@ -1211,55 +1260,69 @@ const crearPedido = async (req, res) => {
             );
           } else {
             // CASO 2: Cliente sin admin - usar allocation automática
-            
+
             const allocationResult = await SmartStockService.allocateStockAutomatically({
               varianteId: item.varianteid,
               cantidadRequerida: piezasRealmenteSurtidas,
               tenantId: tenant_id,
               estrategia: 'DESC'
             });
-            
-            if (!allocationResult.success) {
-              throw new Error(`Stock insuficiente para ${item.nombreproducto}: ${allocationResult.message}`);
-            }
-            
-            // Aplicar reservas en cada admin asignado
-            for (const allocation of allocationResult.allocations) {
-              const reservaResult = await client.query(
-                `UPDATE stock_admin
-                 SET cantidad_reservada = cantidad_reservada + $1,
-                     updated_at = NOW()
-                 WHERE variante_id = $2 
-                   AND admin_id = $3 
-                   AND tenant_id = $4
-                 RETURNING stockadminid, cantidad_reservada`,
-                [allocation.cantidad, item.varianteid, allocation.adminId, tenant_id]
-              );
-              
-              if (reservaResult.rows.length > 0) {
-                const stockInfo = reservaResult.rows[0];
-                
-                // Registrar en log
-                await client.query(
-                  `INSERT INTO inventario_reservas_log (
-                     stockadminid, variante_id, admin_id, pedido_id, detalle_id,
-                     cantidad_reservada, accion, cantidad_antes, cantidad_despues,
-                     usuario_id, tenant_id
-                   )
-                   VALUES ($1, $2, $3, $4, $5, $6, 'RESERVAR', $7, $8, $9, $10)`,
-                  [
-                    stockInfo.stockadminid,
-                    item.varianteid,
-                    allocation.adminId,
-                    pedidoId,
-                    detalleIdSurtido,
-                    allocation.cantidad,
-                    stockInfo.cantidad_reservada - allocation.cantidad,
-                    stockInfo.cantidad_reservada,
-                    clienteId,
-                    tenant_id
-                  ]
+
+            // ✅ NUEVO: Permitir parcial (con backorder) si hay algo asignado
+            // Si totalAsignado = 0 completamente, aún se genera automático backorder abajo
+            if (allocationResult.totalAsignado === 0 && allocationResult.faltante > 0) {
+              // Sin stock en ningún lado - permitir crear con backorder automático
+              logger.warn(`📦 Backorder automático: ${item.nombreproducto} (${allocationResult.message})`, {
+                varianteId: item.varianteid,
+                cantidadRequerida: piezasRealmenteSurtidas,
+                requestId: req.requestId,
+                tenantId: tenant_id
+              });
+            } else if (allocationResult.totalAsignado > 0) {
+              // ✅ Hay stock disponible - reservar en cada admin asignado
+              for (const allocation of allocationResult.allocations) {
+                // ⚠️ Omitir si es stock general (fallback from producto_variantes)
+                if (allocation.esStockGeneral) {
+                  logger.debug(`📦 Usando stock general (fallback) para ${item.nombreproducto}: ${allocation.cantidad} piezas`);
+                  continue; // No reservar en stock_admin si es stock general
+                }
+
+                const reservaResult = await client.query(
+                  `UPDATE stock_admin
+                   SET cantidad_reservada = cantidad_reservada + $1,
+                       updated_at = NOW()
+                   WHERE variante_id = $2
+                     AND admin_id = $3
+                     AND tenant_id = $4
+                   RETURNING stockadminid, cantidad_reservada`,
+                  [allocation.cantidad, item.varianteid, allocation.adminId, tenant_id]
                 );
+
+                if (reservaResult.rows.length > 0) {
+                  const stockInfo = reservaResult.rows[0];
+
+                  // Registrar en log
+                  await client.query(
+                    `INSERT INTO inventario_reservas_log (
+                       stockadminid, variante_id, admin_id, pedido_id, detalle_id,
+                       cantidad_reservada, accion, cantidad_antes, cantidad_despues,
+                       usuario_id, tenant_id
+                     )
+                     VALUES ($1, $2, $3, $4, $5, $6, 'RESERVAR', $7, $8, $9, $10)`,
+                    [
+                      stockInfo.stockadminid,
+                      item.varianteid,
+                      allocation.adminId,
+                      pedidoId,
+                      detalleIdSurtido,
+                      allocation.cantidad,
+                      stockInfo.cantidad_reservada - allocation.cantidad,
+                      stockInfo.cantidad_reservada,
+                      clienteId,
+                      tenant_id
+                    ]
+                  );
+                }
               }
             }
           }
@@ -1371,10 +1434,9 @@ const crearPedido = async (req, res) => {
     }
 
     // NUEVO: Calcular estado correcto basado en los detalles del pedido
-    // El estado será: Bajo pedido, Combinado, Completo, Listo para remisionar, Surtido parcial, o Surtido completo
+    // El estado será: Bajo pedido, Combinado, Completo, Listo para remisionar, Surtido completo
     // Usar calcularEstadoPedidoCorrect que accede a BD para estado_producto
-    const estadoResult = await calcularEstadoPedidoCorrect(client, pedidoId);
-    const estadoCalculado = estadoResult.nuevoEstado || estadoResult.estado;
+    const estadoCalculado = await calcularEstadoPedidoCorrect(client, pedidoId);
     const estadoNormalizado = normalizarEstado(estadoCalculado);
 
     if (estadoNormalizado !== pedidoEstatus) {
@@ -1616,7 +1678,7 @@ const crearPedido = async (req, res) => {
         logger.error('No se pudo enviar notificación de nuevo pedido al agente', {
           error: err.message,
           pedidoId: pedido.pedidoid,
-          agenteId: agente.agenteid
+          agenteId: agenteId
         });
       });
     }
@@ -2265,9 +2327,10 @@ const cancelarPedido = async (req, res) => {
     await client.query('BEGIN');
 
     // Verificar que el pedido existe y pertenece al cliente
+    // IMPORTANTE: Obtener estado_id del cliente para saber cuál admin tiene el stock
     const pedidoQuery = await client.query(
       `SELECT p.pedidoid, p.clienteid, p.estatus, p.es_credito, p.montototal, p.agenteid,
-              c.nombre as cliente_nombre, c.email as cliente_email
+              c.nombre as cliente_nombre, c.email as cliente_email, c.estado_id
        FROM pedidos p
        JOIN clientes c ON p.clienteid = c.clienteid
        WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
@@ -2329,6 +2392,22 @@ const cancelarPedido = async (req, res) => {
     let piezasRestauradas = 0;
     let backordersCancelados = 0;
 
+    // 🔍 CRÍTICO: Obtener el admin del cliente (por su estado)
+    // Para liberar stock SOLO del admin correcto, no de todos
+    let adminClienteId = null;
+    try {
+      const estadosHelper = require('../utils/estadosHelper');
+      adminClienteId = await estadosHelper.getAdminByClienteEstado(clienteId, tenant_id);
+
+      if (!adminClienteId) {
+        logger.warn('⚠️ No se encontró admin para cliente al cancelar pedido', {
+          clienteId,
+          estadoId: pedido.estado_id
+        });
+      }
+    } catch (error) {
+      logger.error('Error al obtener admin del cliente:', error);
+    }
 
     // ============================================
     // HARD-RESERVE: Liberar reservas al cancelar
@@ -2346,19 +2425,29 @@ const cancelarPedido = async (req, res) => {
       // Solo liberar si NO es backorder y NO ha sido surtido en remisiones
       if (!detalle.esbackorder && (detalle.cantidad_surtida_remisiones || 0) === 0) {
         const piezasALiberar = parseInt(detalle.piezastotales, 10);
-        
-        
-        // Liberar de stock_admin
-        const liberarResult = await client.query(
-          `UPDATE stock_admin
-           SET cantidad_reservada = GREATEST(0, cantidad_reservada - $1),
-               updated_at = NOW()
-           WHERE variante_id = $2 
-             AND tenant_id = $3
-             AND cantidad_reservada > 0
-           RETURNING stockadminid, admin_id, cantidad_reservada`,
-          [piezasALiberar, detalle.varianteid, tenant_id]
-        );
+
+
+        // ✅ Liberar de stock_admin SOLO del admin del cliente
+        let liberarQuery = `
+          UPDATE stock_admin
+          SET cantidad_reservada = GREATEST(0, cantidad_reservada - $1),
+              updated_at = NOW()
+          WHERE variante_id = $2
+            AND tenant_id = $3
+            AND cantidad_reservada > 0
+        `;
+
+        const liberarParams = [piezasALiberar, detalle.varianteid, tenant_id];
+
+        // Si tenemos admin_id del cliente, filtrar solo a él
+        if (adminClienteId) {
+          liberarQuery += ` AND admin_id = $4`;
+          liberarParams.push(adminClienteId);
+        }
+
+        liberarQuery += ` RETURNING stockadminid, admin_id, cantidad_reservada`;
+
+        const liberarResult = await client.query(liberarQuery, liberarParams);
         
         // Registrar en log de auditoría
         for (const row of liberarResult.rows) {
@@ -2517,26 +2606,33 @@ const cancelarPedido = async (req, res) => {
       if (remisionesQuery.rows.length > 0) {
         const remisionIds = remisionesQuery.rows.map(r => r.remision_id);
 
-        // Verificar si hay CXC asociados a las remisiones
+        // ⚠️ SEPARACIÓN POR ADMIN: Obtener admin_id del cliente (por estado)
+        const estadosHelper = require('../utils/estadosHelper');
+        const adminClienteId = await estadosHelper.getAdminByClienteEstado(pedido.clienteid, tenant_id);
+
+        // Verificar si hay CXC asociados a las remisiones (solo del admin responsable)
         const cxcQuery = await client.query(
           `SELECT SUM(monto) as total_cargado
            FROM cuentas_por_cobrar
-           WHERE remision_id = ANY($1) AND tenant_id = $2`,
-          [remisionIds, tenant_id]
+           WHERE remision_id = ANY($1)
+             AND tenant_id = $2
+             AND admin_id = $3`,
+          [remisionIds, tenant_id, adminClienteId || 1]
         );
 
         const totalCargado = parseFloat(cxcQuery.rows[0]?.total_cargado || 0);
 
         if (totalCargado > 0) {
           montoRevertido = totalCargado;
-          
-          // Obtener información de crédito del cliente
+
+          // Obtener información de crédito del cliente (con filtro admin)
           const creditoQuery = await client.query(
-            `SELECT credito_id, saldo_deudor
+            `SELECT credito_id, saldo_deudor, admin_id
              FROM cliente_creditos
              WHERE cliente_id = $1
+               AND admin_id = $2
              FOR UPDATE`,
-            [pedido.clienteid]
+            [pedido.clienteid, adminClienteId || 1]
           );
 
           if (creditoQuery.rows.length > 0) {
