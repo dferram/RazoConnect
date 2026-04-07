@@ -250,11 +250,11 @@ async function gestionarPago(req, res) {
                 [adminId, id]
             );
 
-            // ========== LÓGICA FIFO: DISTRIBUCIÓN DE PAGO A PEDIDOS INDIVIDUALES ========== 
+            // ========== LÓGICA FIFO: DISTRIBUCIÓN DE PAGO A PEDIDOS INDIVIDUALES ==========
             // Obtener pedidos a crédito del cliente con deuda pendiente, ordenados por fecha (FIFO)
             const { rows: pedidosConDeuda } = await client.query(`
-                SELECT 
-                    pedidoid, 
+                SELECT
+                    pedidoid,
                     COALESCE(saldo_pendiente, montototal) as saldo_pendiente,
                     montototal
                 FROM pedidos
@@ -262,8 +262,9 @@ async function gestionarPago(req, res) {
                   AND es_credito = true
                   AND pagado = false
                   AND COALESCE(saldo_pendiente, montototal) > 0
+                  AND tenant_id = $2
                 ORDER BY fechapedido ASC
-            `, [pago.cliente_id]);
+            `, [pago.cliente_id, req.tenant?.tenant_id]);
 
             // Distribuir el monto del pago entre los pedidos más antiguos primero
             let remanente = parseFloat(pago.monto);

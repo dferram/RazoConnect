@@ -9,13 +9,14 @@ const SmartStockService = require('../services/SmartStockService');
  */
 async function exportarEntradasAlmacen(req, res) {
     const client = await db.getClient();
-    
+    const tenant_id = req.tenant?.tenant_id || 1;
+
     try {
         await client.query('BEGIN');
 
         // 1. Obtener órdenes pendientes de exportar
         const { rows } = await client.query(`
-            SELECT 
+            SELECT
                 oc.ordenid,
                 oc.fecha_recepcion,
                 doc.sku,
@@ -27,10 +28,11 @@ async function exportarEntradasAlmacen(req, res) {
             FROM ordenesdecompra oc
             INNER JOIN detallesordencompra doc ON doc.ordenid = oc.ordenid
             INNER JOIN productos p ON p.sku = doc.sku
-            WHERE oc.estatus = 'RECIBIDO' 
+            WHERE oc.estatus = 'RECIBIDO'
             AND oc.exportado_en IS NULL
+            AND oc.tenant_id = $1
             ORDER BY oc.ordenid, doc.sku
-        `);
+        `, [tenant_id]);
 
         if (rows.length === 0) {
             return res.status(404).json({
@@ -88,16 +90,18 @@ async function exportarEntradasAlmacen(req, res) {
 
         // 7. Marcar órdenes como exportadas
         await client.query(`
-            UPDATE ordenesdecompra 
+            UPDATE ordenesdecompra
             SET exportado_en = NOW(),
                 reporte_id = $1
             WHERE ordenid IN (
-                SELECT DISTINCT ordenid 
+                SELECT DISTINCT ordenid
                 FROM ordenesdecompra oc
-                WHERE oc.estatus = 'RECIBIDO' 
+                WHERE oc.estatus = 'RECIBIDO'
                 AND oc.exportado_en IS NULL
+                AND oc.tenant_id = $2
             )
-        `, [reporteId]);
+            AND tenant_id = $2
+        `, [reporteId, tenant_id]);
 
         // 8. Commit y generar archivo
         await client.query('COMMIT');
@@ -130,20 +134,22 @@ async function getOrdenesPendientes(req, res) {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
+    const tenant_id = req.tenant?.tenant_id || 1;
 
-    const client = await pool.connect();
-    
+    const client = await db.getClient();
+
     try {
         // Total de registros
         const { rows: [count] } = await client.query(`
-            SELECT COUNT(*) as total 
-            FROM ordenesdecompra 
+            SELECT COUNT(*) as total
+            FROM ordenesdecompra
             WHERE estatus = 'PENDIENTE'
-        `);
+            AND tenant_id = $1
+        `, [tenant_id]);
 
         // Datos paginados
         const { rows: ordenes } = await client.query(`
-            SELECT 
+            SELECT
                 oc.ordenid,
                 oc.fecha_creacion,
                 oc.fecha_recepcion,
@@ -156,10 +162,11 @@ async function getOrdenesPendientes(req, res) {
             INNER JOIN proveedores p ON p.proveedorid = oc.proveedorid
             LEFT JOIN detallesordencompra doc ON doc.ordenid = oc.ordenid
             WHERE oc.estatus = 'PENDIENTE'
+            AND oc.tenant_id = $1
             GROUP BY oc.ordenid, p.nombre
             ORDER BY oc.fecha_creacion DESC
-            LIMIT $1 OFFSET $2
-        `, [limit, offset]);
+            LIMIT $2 OFFSET $3
+        `, [tenant_id, limit, offset]);
 
         const totalPages = Math.ceil(count.total / limit);
 

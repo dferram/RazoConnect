@@ -21,18 +21,19 @@ const getComprasPendientes = async (req, res) => {
   try {
     const userRole = req.user.rol;
     const userId = req.user.id;
+    const tenant_id = req.tenant?.tenant_id || 1;
 
-    let whereConditions = ["oc.estatus IN ('Pendiente', 'Parcial')"];
-    let queryParams = [];
-    let paramIndex = 1;
+    let whereConditions = ["oc.estatus IN ('Pendiente', 'Parcial')", "oc.tenant_id = $1"];
+    let queryParams = [tenant_id];
+    let paramIndex = 2;
 
-    // REGLA DE VISIBILIDAD: Admin solo ve sus órdenes, SuperAdmin ve todas
+    // REGLA DE VISIBILIDAD: Admin solo ve sus órdenes, SuperAdmin ve todas del tenant
     if (userRole === 'admin') {
       queryParams.push(userId);
       whereConditions.push(`oc.usuario_creador_id = $${paramIndex}`);
       paramIndex++;
     }
-    // Si es superadmin, ve todas las órdenes pendientes/parciales
+    // Si es superadmin, ve todas las órdenes pendientes/parciales del tenant
 
     const whereClause = whereConditions.join(' AND ');
 
@@ -89,6 +90,8 @@ const getComprasPendientes = async (req, res) => {
 const getCompraDetalleCiego = async (req, res) => {
   try {
     const ordenCompraId = Number.parseInt(req.params.id, 10);
+    const tenant_id = req.tenant?.tenant_id || 1;
+
     if (!Number.isInteger(ordenCompraId) || ordenCompraId <= 0) {
       return res.status(400).json({
         success: false,
@@ -106,8 +109,9 @@ const getCompraDetalleCiego = async (req, res) => {
          p.nombreempresa AS proveedornombre
        FROM ordenesdecompra oc
        INNER JOIN proveedores p ON oc.proveedorid = p.proveedorid
-       WHERE oc.ordencompraid = $1`,
-      [ordenCompraId]
+       WHERE oc.ordencompraid = $1
+       AND oc.tenant_id = $2`,
+      [ordenCompraId, tenant_id]
     );
 
     if (!ordenResult.rows.length) {
@@ -132,9 +136,11 @@ const getCompraDetalleCiego = async (req, res) => {
        INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
        INNER JOIN productos pr ON pv.productoid = pr.productoid
        LEFT JOIN producto_imagenes pi ON pi.productoid = pr.productoid AND pi.orden = 1
+       INNER JOIN ordenesdecompra oc ON doc.ordencompraid = oc.ordencompraid
        WHERE doc.ordencompraid = $1
+       AND oc.tenant_id = $2
        ORDER BY pr.nombreproducto ASC`,
-      [ordenCompraId]
+      [ordenCompraId, tenant_id]
     );
 
     return res.json({

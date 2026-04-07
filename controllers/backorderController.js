@@ -19,14 +19,16 @@ const logger = require('../utils/logger');
 const confirmarOrdenBackorder = async (req, res) => {
   try {
     const ordenCompraId = parseInt(req.params.id);
+    const tenant_id = req.tenant?.tenant_id || 1;
 
     // Verificar que la orden existe y está pendiente
     const ordenResult = await db.query(
       `SELECT oc.*, p.nombreempresa
        FROM ordenesdecompra oc
        INNER JOIN proveedores p ON oc.proveedorid = p.proveedorid
-       WHERE oc.ordencompraid = $1`,
-      [ordenCompraId]
+       WHERE oc.ordencompraid = $1
+       AND oc.tenant_id = $2`,
+      [ordenCompraId, tenant_id]
     );
 
     if (ordenResult.rows.length === 0) {
@@ -40,21 +42,22 @@ const confirmarOrdenBackorder = async (req, res) => {
 
     // Actualizar estatus a confirmado
     await db.query(
-      `UPDATE ordenesdecompra 
+      `UPDATE ordenesdecompra
        SET estatus = 'Confirmada'
        WHERE ordencompraid = $1 AND tenant_id = $2`,
-      [ordenCompraId, req.tenant.tenant_id]
+      [ordenCompraId, tenant_id]
     );
 
     // Obtener clientes afectados por productos en backorder
     const clientesQuery = await db.query(
       `SELECT DISTINCT p.clienteid
        FROM pedidos p
-       INNER JOIN detallespedido dp ON p.pedidoid = dp.pedidoid
+       INNER JOIN detallesdelpedido dp ON p.pedidoid = dp.pedidoid
        INNER JOIN detallesordencompra doc ON dp.varianteid = doc.varianteid
        WHERE doc.ordencompraid = $1
-       AND p.estatus = 'Backorder'`,
-      [ordenCompraId]
+       AND p.estatus = 'Backorder'
+       AND p.tenant_id = $2`,
+      [ordenCompraId, tenant_id]
     );
 
     // Notificar a cada cliente

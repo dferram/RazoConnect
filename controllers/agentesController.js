@@ -489,6 +489,7 @@ const obtenerPedidosDelAgente = async (req, res) => {
 const obtenerPedidoDetalleAgente = async (req, res) => {
   try {
     const agenteId = resolveAuthenticatedAgenteId(req.user);
+    const tenant_id = req.tenant?.tenant_id || 1;
 
     if (!agenteId) {
       return res.status(403).json({
@@ -508,7 +509,7 @@ const obtenerPedidoDetalleAgente = async (req, res) => {
 
     // Verificar que el pedido pertenece a un cliente del agente
     const pedidoResult = await db.query(
-      `SELECT 
+      `SELECT
         p.pedidoid,
         LPAD(p.pedidoid::text, 6, '0') AS numeropedido,
         p.fechapedido,
@@ -532,8 +533,8 @@ const obtenerPedidoDetalleAgente = async (req, res) => {
       INNER JOIN Clientes c ON c.clienteid = p.clienteid
       LEFT JOIN Cliente_Direcciones d ON p.direccionenvioid = d.direccionid
       LEFT JOIN Estados e ON d.estadoid = e.estadoid
-      WHERE p.pedidoid = $1 AND c.agenteid = $2`,
-      [pedidoId, agenteId]
+      WHERE p.pedidoid = $1 AND c.agenteid = $2 AND p.tenant_id = $3`,
+      [pedidoId, agenteId, tenant_id]
     );
 
     if (pedidoResult.rows.length === 0) {
@@ -557,18 +558,20 @@ const obtenerPedidoDetalleAgente = async (req, res) => {
         pv.dimensiones,
         pr.nombreproducto,
         row_to_json(ct) AS tamano_info,
-        (SELECT pi.url_imagen 
-         FROM producto_imagenes pi 
-         WHERE pi.productoid = pv.productoid 
-         ORDER BY pi.orden ASC NULLS LAST 
+        (SELECT pi.url_imagen
+         FROM producto_imagenes pi
+         WHERE pi.productoid = pv.productoid
+         ORDER BY pi.orden ASC NULLS LAST
          LIMIT 1) AS imagenurl
       FROM detallesdelpedido dp
       INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
       INNER JOIN productos pr ON pv.productoid = pr.productoid
       LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid AND ct.tenant_id = dp.tenant_id
+      INNER JOIN pedidos p ON dp.pedidoid = p.pedidoid
       WHERE dp.pedidoid = $1
+      AND p.tenant_id = $2
       ORDER BY dp.detalleid ASC`,
-      [pedidoId]
+      [pedidoId, tenant_id]
     );
 
     const items = detallesResult.rows.map((row) => {

@@ -521,14 +521,16 @@ async function ajustarPedido(req, res) {
     transactionStarted = false;
 
     const pedidoActualizadoResult = await client.query(
-      `SELECT 
+      `SELECT
         p.*,
         c.nombre AS cliente_nombre,
         c.email AS cliente_email
       FROM pedidos p
       INNER JOIN clientes c ON c.clienteid = p.clienteid
-      WHERE p.pedidoid = $1`,
-      [pedidoId]
+      WHERE p.pedidoid = $1
+      AND p.tenant_id = $2
+      AND c.tenant_id = $2`,
+      [pedidoId, tenant_id]
     );
 
     client.release();
