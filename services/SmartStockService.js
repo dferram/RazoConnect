@@ -40,12 +40,13 @@ async function determineUserContext({ userId, userRole, tenantId, estadoId }) {
   const isCliente = roles.includes('cliente');
   
   // Roles que necesitan admin_responsable_id (todos excepto super_admin, admin, cliente)
+  // IMPORTANTE: Estos roles SIEMPRE operan sobre el stock de un admin específico
   const rolesConAdminResponsable = [
-    'finanzas', 'gerente_finanzas',
-    'inventarios', 'gerente_operaciones', 'jefe_almacen',
-    'catalogo',
-    'compras',
-    'agente'
+    'finanzas',      // Confirma surtidos del admin asignado
+    'inventarios',   // Gestiona inventario del admin asignado
+    'compras',       // Realiza compras para el admin asignado
+    'agente'         // Crea pedidos para admin asignado
+    // 'catalogo' NO necesita - solo ve/edita productos, no toca stock
   ];
   
   const necesitaAdminResponsable = roles.some(r => rolesConAdminResponsable.includes(r));
