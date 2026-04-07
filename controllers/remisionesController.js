@@ -881,10 +881,13 @@ exports.cancelarRemision = async (req, res) => {
     );
 
     // Eliminar movimiento de CXC si existe
+    // ⚠️ SEPARACIÓN POR ADMIN: Filtrar por admin_id de la remisión
     await client.query(
-      `DELETE FROM cuentas_por_cobrar 
-       WHERE remision_id = $1 AND tenant_id = $2`,
-      [id, tenant_id]
+      `DELETE FROM cuentas_por_cobrar
+       WHERE remision_id = $1
+         AND tenant_id = $2
+         AND admin_id = $3`,
+      [id, tenant_id, adminIdStock]
     );
 
     // Recalcular estado del pedido
@@ -1522,25 +1525,31 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
 
         // Crear registro en CXC (siempre, en todas las remisiones)
         // 🔒 CRÍTICO: Verificar que NO exista ya un CXC para esta remisión (evita doble inserción)
+        // ⚠️ SEPARACIÓN POR ADMIN: Filtrar por admin_id
+        const estadosHelper = require('../utils/estadosHelper');
+        const adminClienteId = await estadosHelper.getAdminByClienteEstado(remision.clienteid, tenant_id);
+        const adminIdForCxc = adminClienteId || 1;
+
         const cxcExistenteQuery = await client.query(
-          `SELECT cxc_id FROM cuentas_por_cobrar 
-           WHERE remision_id = $1 AND pedido_id = $2 AND tenant_id = $3`,
-          [id, remision.pedidoid, tenant_id]
+          `SELECT cxc_id FROM cuentas_por_cobrar
+           WHERE remision_id = $1 AND pedido_id = $2 AND tenant_id = $3 AND admin_id = $4`,
+          [id, remision.pedidoid, tenant_id, adminIdForCxc]
         );
-        
+
         if (cxcExistenteQuery.rows.length === 0) {
           // No existe CXC previo → crear uno nuevo
           await client.query(
-            `INSERT INTO cuentas_por_cobrar 
-             (pedido_id, cliente_id, remision_id, tipo_movimiento, monto, descripcion, tenant_id)
-             VALUES ($1, $2, $3, 'CARGO', $4, $5, $6)`,
+            `INSERT INTO cuentas_por_cobrar
+             (pedido_id, cliente_id, remision_id, tipo_movimiento, monto, descripcion, tenant_id, admin_id)
+             VALUES ($1, $2, $3, 'CARGO', $4, $5, $6, $7)`,
             [
               remision.pedidoid,
               remision.clienteid,
               id,
               montoRemision.toFixed(2),
               `Remisión ${remision.folio}`,
-              tenant_id
+              tenant_id,
+              adminIdForCxc
             ]
           );
           

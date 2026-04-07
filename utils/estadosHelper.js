@@ -92,9 +92,48 @@ async function getAdminesByEstado(estadoId, tenantId) {
   }
 }
 
+/**
+ * Obtiene el admin_id desde el contexto del usuario
+ * Usa para filtrar CxC y otras operaciones separadas por admin
+ *
+ * @param {Object} user - req.user
+ * @returns {Object} { adminId: number|null, shouldFilter: boolean }
+ *   - adminId: el ID del admin a filtrar (null = no filtrar = ver todo)
+ *   - shouldFilter: true si debe agregarse filtro WHERE admin_id = X
+ *
+ * Lógica:
+ *   - Super Admin (rol=super_admin): adminId=null, shouldFilter=false (VE TODO)
+ *   - Admin (rol=admin): adminId=su adminid, shouldFilter=true
+ *   - Staff (admin_responsable_id): adminId=admin_responsable_id, shouldFilter=true
+ */
+function getAdminIdFromContext(user) {
+  if (!user) {
+    return { adminId: 1, shouldFilter: true };
+  }
+
+  // Super Admin ve TODO
+  if (user.rol === 'super_admin') {
+    return { adminId: null, shouldFilter: false };
+  }
+
+  // Admin ve su stock
+  if (user.rol === 'admin') {
+    return { adminId: user.adminid, shouldFilter: true };
+  }
+
+  // Staff (finanzas, inventarios, etc) ve admin asignado
+  if (user.admin_responsable_id) {
+    return { adminId: user.admin_responsable_id, shouldFilter: true };
+  }
+
+  // Default: mostrar admin 1
+  return { adminId: 1, shouldFilter: true };
+}
+
 module.exports = {
   getAdminByClienteEstado,
   getClienteEstado,
   asignarEstadoCliente,
-  getAdminesByEstado
+  getAdminesByEstado,
+  getAdminIdFromContext
 };

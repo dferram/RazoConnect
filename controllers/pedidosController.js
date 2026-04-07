@@ -2606,26 +2606,33 @@ const cancelarPedido = async (req, res) => {
       if (remisionesQuery.rows.length > 0) {
         const remisionIds = remisionesQuery.rows.map(r => r.remision_id);
 
-        // Verificar si hay CXC asociados a las remisiones
+        // ⚠️ SEPARACIÓN POR ADMIN: Obtener admin_id del cliente (por estado)
+        const estadosHelper = require('../utils/estadosHelper');
+        const adminClienteId = await estadosHelper.getAdminByClienteEstado(pedido.clienteid, tenant_id);
+
+        // Verificar si hay CXC asociados a las remisiones (solo del admin responsable)
         const cxcQuery = await client.query(
           `SELECT SUM(monto) as total_cargado
            FROM cuentas_por_cobrar
-           WHERE remision_id = ANY($1) AND tenant_id = $2`,
-          [remisionIds, tenant_id]
+           WHERE remision_id = ANY($1)
+             AND tenant_id = $2
+             AND admin_id = $3`,
+          [remisionIds, tenant_id, adminClienteId || 1]
         );
 
         const totalCargado = parseFloat(cxcQuery.rows[0]?.total_cargado || 0);
 
         if (totalCargado > 0) {
           montoRevertido = totalCargado;
-          
-          // Obtener información de crédito del cliente
+
+          // Obtener información de crédito del cliente (con filtro admin)
           const creditoQuery = await client.query(
-            `SELECT credito_id, saldo_deudor
+            `SELECT credito_id, saldo_deudor, admin_id
              FROM cliente_creditos
              WHERE cliente_id = $1
+               AND admin_id = $2
              FOR UPDATE`,
-            [pedido.clienteid]
+            [pedido.clienteid, adminClienteId || 1]
           );
 
           if (creditoQuery.rows.length > 0) {
