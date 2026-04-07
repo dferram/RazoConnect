@@ -252,6 +252,7 @@ const subirImagenesProductoMultiple = async (req, res) => {
 const eliminarImagenProducto = async (req, res) => {
   const { id } = req.params;
   const imagenId = Number.parseInt(id, 10);
+  const tenant_id = req.tenant?.tenant_id || 1;
 
   if (!Number.isInteger(imagenId) || imagenId <= 0) {
     return res.status(400).json({
@@ -264,8 +265,8 @@ const eliminarImagenProducto = async (req, res) => {
     const imagenResult = await db.query(
       `SELECT imagenid, productoid, url_imagen
        FROM producto_imagenes
-       WHERE imagenid = $1`,
-      [imagenId]
+       WHERE imagenid = $1 AND tenant_id = $2`,
+      [imagenId, tenant_id]
     );
 
     if (!imagenResult.rows.length) {
@@ -291,8 +292,8 @@ const eliminarImagenProducto = async (req, res) => {
     }
 
     await db.query(
-      `DELETE FROM producto_imagenes WHERE imagenid = $1`,
-      [imagenId]
+      `DELETE FROM producto_imagenes WHERE imagenid = $1 AND tenant_id = $2`,
+      [imagenId, tenant_id]
     );
 
     res.json({
@@ -445,8 +446,8 @@ const subirImagenesVarianteMultiple = async (req, res) => {
     const ordenResult = await db.query(
       `SELECT COALESCE(MAX(orden), 0) AS max_orden
        FROM producto_variante_imagenes
-       WHERE varianteid = $1`,
-      [varianteId]
+       WHERE varianteid = $1 AND tenant_id = $2`,
+      [varianteId, req.tenant?.tenant_id]
     );
 
     let nextOrden = Number.parseInt(ordenResult.rows[0]?.max_orden, 10);
@@ -463,10 +464,10 @@ const subirImagenesVarianteMultiple = async (req, res) => {
       nextOrden += 1;
 
       const insertResult = await db.query(
-        `INSERT INTO producto_variante_imagenes (varianteid, url_imagen, textoalternativo, orden)
-         VALUES ($1, $2, NULL, $3)
+        `INSERT INTO producto_variante_imagenes (varianteid, url_imagen, textoalternativo, orden, tenant_id)
+         VALUES ($1, $2, NULL, $3, $4)
          RETURNING imagenid, url_imagen, textoalternativo, orden`,
-        [varianteId, rutaImagen, nextOrden]
+        [varianteId, rutaImagen, nextOrden, req.tenant?.tenant_id]
       );
 
       imagenesGuardadas.push(insertResult.rows[0]);
@@ -511,9 +512,9 @@ const subirImagenesVarianteMultiple = async (req, res) => {
           for (const hermana of variantesHermanas) {
             for (const img of imagenesGuardadas) {
               await db.query(
-                `INSERT INTO producto_variante_imagenes (varianteid, url_imagen, textoalternativo, orden)
-                 VALUES ($1, $2, $3, $4)`,
-                [hermana.varianteid, img.url_imagen, img.textoalternativo, img.orden]
+                `INSERT INTO producto_variante_imagenes (varianteid, url_imagen, textoalternativo, orden, tenant_id)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [hermana.varianteid, img.url_imagen, img.textoalternativo, img.orden, req.tenant?.tenant_id]
               );
             }
           }

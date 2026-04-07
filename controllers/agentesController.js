@@ -352,16 +352,18 @@ const obtenerDashboardStats = async (req, res) => {
       `SELECT COALESCE(SUM(montocomision), 0) AS total
        FROM Comisiones
        WHERE agenteid = $1
+         AND tenant_id = $2
          AND estatus IN ('Pendiente', 'Pagada')`,
-      [agenteId]
+      [agenteId, tenant_id]
     );
 
     const clientesActivosQuery = await db.query(
       `SELECT COUNT(*) AS total
        FROM Clientes
        WHERE agenteid = $1
+         AND tenant_id = $2
          AND COALESCE(activo, TRUE) = TRUE`,
-      [agenteId]
+      [agenteId, tenant_id]
     );
 
     const pedidosRecientesQuery = await db.query(
@@ -373,11 +375,11 @@ const obtenerDashboardStats = async (req, res) => {
             ,c.nombre AS clienteNombre
             ,c.apellido AS clienteApellido
        FROM Pedidos p
-       INNER JOIN Clientes c ON c.clienteid = p.clienteid
-       WHERE c.agenteid = $1
+       INNER JOIN Clientes c ON c.clienteid = p.clienteid AND c.tenant_id = $2 AND p.tenant_id = $2
+       WHERE c.agenteid = $1 AND c.tenant_id = $2 AND p.tenant_id = $2
        ORDER BY p.fechapedido DESC
        LIMIT 5`,
-      [agenteId]
+      [agenteId, tenant_id]
     );
 
     res.json({

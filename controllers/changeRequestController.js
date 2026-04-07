@@ -75,18 +75,18 @@ async function notificarSolicitudAprobada(solicitudRow) {
 
   if (tipo === "admin") {
     await db.query(
-      `INSERT INTO notificaciones (clienteid, administrador_id, agente_id, tipo, titulo, mensaje)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [null, id, null, "sistema", titulo, mensaje]
+      `INSERT INTO notificaciones (clienteid, administrador_id, agente_id, tipo, titulo, mensaje, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [null, id, null, "sistema", titulo, mensaje, tenant_id]
     );
     return;
   }
 
   if (tipo === "agente") {
     await db.query(
-      `INSERT INTO notificaciones (clienteid, administrador_id, agente_id, tipo, titulo, mensaje)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [null, null, id, "sistema", titulo, mensaje]
+      `INSERT INTO notificaciones (clienteid, administrador_id, agente_id, tipo, titulo, mensaje, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [null, null, id, "sistema", titulo, mensaje, tenant_id]
     );
   }
 }
@@ -146,11 +146,11 @@ async function aprobarSolicitudCredito(solicitudId, adminId, tenant_id, client) 
 
   // Crear notificación para el cliente
   await client.query(
-    `INSERT INTO notificaciones 
-       (clienteid, tipo, titulo, mensaje, prioridad)
-     VALUES 
-       ($1, 'sistema', '¡Crédito Aprobado!', 'Tu solicitud de crédito ha sido aprobada. Ya puedes realizar compras a crédito.', 'alta')`,
-    [cliente_id]
+    `INSERT INTO notificaciones
+       (clienteid, tipo, titulo, mensaje, prioridad, tenant_id)
+     VALUES
+       ($1, 'sistema', '¡Crédito Aprobado!', 'Tu solicitud de crédito ha sido aprobada. Ya puedes realizar compras a crédito.', 'alta', $2)`,
+    [cliente_id, tenant_id]
   );
 }
 
@@ -409,18 +409,18 @@ async function rechazarCambios(req, res) {
         const { rows } = await client.query(
           `SELECT c.clienteid, c.nombre || ' ' || c.apellido AS nombre_completo
            FROM solicitudes_credito s
-           INNER JOIN clientes c ON c.clienteid = s.cliente_id
-           WHERE s.solicitud_id = $1`,
-          [solicitudId]
+           INNER JOIN clientes c ON c.clienteid = s.cliente_id AND c.tenant_id = $2
+           WHERE s.solicitud_id = $1 AND s.tenant_id = $2`,
+          [solicitudId, tenant_id]
         );
 
         if (rows.length > 0) {
           await client.query(
-            `INSERT INTO notificaciones 
-               (clienteid, tipo, titulo, mensaje, prioridad)
-             VALUES 
-               ($1, 'sistema', 'Solicitud de Crédito Rechazada', 'Tu solicitud de crédito ha sido rechazada. Contacta a tu agente para más información.', 'alta')`,
-            [rows[0].clienteid]
+            `INSERT INTO notificaciones
+               (clienteid, tipo, titulo, mensaje, prioridad, tenant_id)
+             VALUES
+               ($1, 'sistema', 'Solicitud de Crédito Rechazada', 'Tu solicitud de crédito ha sido rechazada. Contacta a tu agente para más información.', 'alta', $2)`,
+            [rows[0].clienteid, tenant_id]
           );
         }
 

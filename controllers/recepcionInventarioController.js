@@ -49,17 +49,18 @@ async function upsertCuentaPorPagarForOC(client, ordenCompraId, usuarioId) {
 /**
  * Helper: Notificar a super admins sobre discrepancias
  */
-async function notifySuperAdmins(client, { titulo, mensaje, url, metadata }) {
+async function notifySuperAdmins(client, { titulo, mensaje, url, metadata, tenant_id }) {
   try {
     const superAdmins = await client.query(
-      `SELECT adminid FROM administradores WHERE rol = 'superadmin' AND activo = true`
+      `SELECT adminid FROM administradores WHERE rol = 'superadmin' AND activo = true AND tenant_id = $1`,
+      [tenant_id]
     );
 
     for (const admin of superAdmins.rows) {
       await client.query(
-        `INSERT INTO notificaciones (admin_id, titulo, mensaje, url, metadata, created_at)
-         VALUES ($1, $2, $3, $4, $5, NOW())`,
-        [admin.adminid, titulo, mensaje, url, JSON.stringify(metadata)]
+        `INSERT INTO notificaciones (admin_id, titulo, mensaje, url, metadata, created_at, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, NOW(), $6)`,
+        [admin.adminid, titulo, mensaje, url, JSON.stringify(metadata), tenant_id]
       );
     }
   } catch (error) {
@@ -414,6 +415,7 @@ const recibirInventario = async (req, res) => {
             nuevoEstatus,
             alertas: alertasSeguridad,
           },
+          tenant_id,
         });
         logger.logOperation('NOTIFICACIONES_ENVIADAS', { alertasCount: alertasSeguridad.length });
       }

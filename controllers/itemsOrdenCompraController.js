@@ -191,6 +191,7 @@ const addItemToOrder = async (req, res) => {
  */
 const removeItemFromOrder = async (req, res) => {
   const client = await db.pool.connect();
+  const { tenant_id } = req.tenant;
 
   try {
     const ordenCompraId = parseInt(req.params.id, 10);
@@ -215,8 +216,8 @@ const removeItemFromOrder = async (req, res) => {
     const ordenCheck = await client.query(
       `SELECT OrdenCompraID, Estatus, usuario_creador_id
        FROM OrdenesDeCompra
-       WHERE OrdenCompraID = $1`,
-      [ordenCompraId]
+       WHERE OrdenCompraID = $1 AND tenant_id = $2`,
+      [ordenCompraId, tenant_id]
     );
 
     if (ordenCheck.rows.length === 0) {
@@ -246,10 +247,10 @@ const removeItemFromOrder = async (req, res) => {
     }
 
     const deleteResult = await client.query(
-      `DELETE FROM DetallesOrdenCompra 
-       WHERE DetalleOC_ID = $1 AND OrdenCompraID = $2
+      `DELETE FROM DetallesOrdenCompra
+       WHERE DetalleOC_ID = $1 AND OrdenCompraID = $2 AND tenant_id = $3
        RETURNING DetalleOC_ID`,
-      [detalleId, ordenCompraId]
+      [detalleId, ordenCompraId, tenant_id]
     );
 
     if (deleteResult.rows.length === 0) {
@@ -263,8 +264,8 @@ const removeItemFromOrder = async (req, res) => {
     const totalResult = await client.query(
       `SELECT COALESCE(SUM(CantidadSolicitada * CostoUnitario), 0) as total
        FROM DetallesOrdenCompra
-       WHERE OrdenCompraID = $1`,
-      [ordenCompraId]
+       WHERE OrdenCompraID = $1 AND tenant_id = $2`,
+      [ordenCompraId, tenant_id]
     );
 
     const nuevoTotal = parseFloat(totalResult.rows[0].total);

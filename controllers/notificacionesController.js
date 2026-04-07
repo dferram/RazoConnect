@@ -319,13 +319,14 @@ const marcarComoLeida = async (req, res) => {
   try {
     const clienteId = req.user.userId;
     const notificacionId = parseInt(req.params.id);
+    const tenant_id = req.tenant?.tenant_id || 1;
 
     const result = await db.query(
-      `UPDATE notificaciones 
-       SET leida = TRUE 
-       WHERE notificacionid = $1 AND clienteid = $2
+      `UPDATE notificaciones
+       SET leida = TRUE
+       WHERE notificacionid = $1 AND clienteid = $2 AND tenant_id = $3
        RETURNING *`,
-      [notificacionId, clienteId]
+      [notificacionId, clienteId, tenant_id]
     );
 
     if (result.rows.length === 0) {
@@ -360,13 +361,14 @@ const marcarComoLeida = async (req, res) => {
 const marcarTodasLeidas = async (req, res) => {
   try {
     const clienteId = req.user.userId;
+    const tenant_id = req.tenant?.tenant_id || 1;
 
     const result = await db.query(
-      `UPDATE notificaciones 
-       SET leida = TRUE 
-       WHERE clienteid = $1 AND leida = FALSE
+      `UPDATE notificaciones
+       SET leida = TRUE
+       WHERE clienteid = $1 AND leida = FALSE AND tenant_id = $2
        RETURNING notificacionid`,
-      [clienteId]
+      [clienteId, tenant_id]
     );
 
     res.json({
@@ -397,12 +399,13 @@ const eliminarNotificacion = async (req, res) => {
   try {
     const clienteId = req.user.userId;
     const notificacionId = parseInt(req.params.id);
+    const tenant_id = req.tenant?.tenant_id || 1;
 
     const result = await db.query(
-      `DELETE FROM notificaciones 
-       WHERE notificacionid = $1 AND clienteid = $2
+      `DELETE FROM notificaciones
+       WHERE notificacionid = $1 AND clienteid = $2 AND tenant_id = $3
        RETURNING notificacionid`,
-      [notificacionId, clienteId]
+      [notificacionId, clienteId, tenant_id]
     );
 
     if (result.rows.length === 0) {

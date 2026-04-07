@@ -22,7 +22,7 @@ const getAllAgentes = async (req, res) => {
     const { tenant_id } = req.tenant;
 
     const result = await db.query(
-      `SELECT 
+      `SELECT
         a.agenteid,
         a.nombre,
         a.apellido,
@@ -34,8 +34,8 @@ const getAllAgentes = async (req, res) => {
         COUNT(DISTINCT c.clienteid) as total_clientes,
         COALESCE(SUM(p.montototal), 0) as ventas_totales
       FROM agentesdeventas a
-      LEFT JOIN clientes c ON c.agenteid = a.agenteid
-      LEFT JOIN pedidos p ON p.agenteid = a.agenteid
+      LEFT JOIN clientes c ON c.agenteid = a.agenteid AND c.tenant_id = $1
+      LEFT JOIN pedidos p ON p.agenteid = a.agenteid AND p.tenant_id = $1
       WHERE a.tenant_id = $1
       GROUP BY a.agenteid
       ORDER BY a.agenteid DESC`,
@@ -89,14 +89,14 @@ const getAgenteDetalle = async (req, res) => {
     }
 
     const result = await db.query(
-      `SELECT 
+      `SELECT
         a.*,
         COUNT(DISTINCT c.clienteid) as total_clientes,
         COALESCE(SUM(p.montototal), 0) as ventas_totales,
         COUNT(DISTINCT p.pedidoid) as total_pedidos
       FROM agentesdeventas a
-      LEFT JOIN clientes c ON c.agenteid = a.agenteid
-      LEFT JOIN pedidos p ON p.agenteid = a.agenteid
+      LEFT JOIN clientes c ON c.agenteid = a.agenteid AND c.tenant_id = $2
+      LEFT JOIN pedidos p ON p.agenteid = a.agenteid AND p.tenant_id = $2
       WHERE a.agenteid = $1 AND a.tenant_id = $2
       GROUP BY a.agenteid`,
       [agenteId, tenant_id]

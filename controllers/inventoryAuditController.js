@@ -60,8 +60,8 @@ const crearSesion = async (req, res) => {
 
         await db.query(
           `INSERT INTO notificaciones
-            (clienteid, administrador_id, agente_id, tipo, titulo, mensaje, url, prioridad, metadata)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            (clienteid, administrador_id, agente_id, tipo, titulo, mensaje, url, prioridad, metadata, tenant_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
           [
             null,
             null,
@@ -72,6 +72,7 @@ const crearSesion = async (req, res) => {
             url,
             "alta",
             null,
+            tenant_id
           ]
         );
       }

@@ -57,6 +57,7 @@ const applyGaleriaVarianteAtomic = async ({
   galeria,
   uploadedFiles,
   baseUrl,
+  tenant_id,
 }) => {
   const files = Array.isArray(uploadedFiles) ? uploadedFiles : [];
   const galeriaArr = Array.isArray(galeria) ? galeria : null;
@@ -81,8 +82,8 @@ const applyGaleriaVarianteAtomic = async ({
   const existingDb = await client.query(
     `SELECT imagenid, url_imagen, textoalternativo, orden
      FROM producto_variante_imagenes
-     WHERE varianteid = $1`,
-    [varianteId]
+     WHERE varianteid = $1 AND tenant_id = $2`,
+    [varianteId, tenant_id]
   );
   const existingDbIds = (existingDb.rows || [])
     .map((r) => Number.parseInt(r.imagenid, 10))
@@ -95,8 +96,9 @@ const applyGaleriaVarianteAtomic = async ({
     await client.query(
       `DELETE FROM producto_variante_imagenes
        WHERE varianteid = $1
-         AND imagenid = ANY($2::int[])`,
-      [varianteId, toDelete]
+         AND imagenid = ANY($2::int[])
+         AND tenant_id = $3`,
+      [varianteId, toDelete, tenant_id]
     );
   }
 
@@ -112,8 +114,8 @@ const applyGaleriaVarianteAtomic = async ({
       await client.query(
         `UPDATE producto_variante_imagenes
          SET orden = $1
-         WHERE varianteid = $2 AND imagenid = $3`,
-        [orden, varianteId, imagenId]
+         WHERE varianteid = $2 AND imagenid = $3 AND tenant_id = $4`,
+        [orden, varianteId, imagenId, tenant_id]
       );
       continue;
     }
@@ -154,9 +156,9 @@ const applyGaleriaVarianteAtomic = async ({
               })()
             : null;
       await client.query(
-        `INSERT INTO producto_variante_imagenes (url_imagen, textoalternativo, orden, varianteid)
-         VALUES ($1, $2, $3, $4)`,
-        [rutaImagen, alt, orden, varianteId]
+        `INSERT INTO producto_variante_imagenes (url_imagen, textoalternativo, orden, varianteid, tenant_id)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [rutaImagen, alt, orden, varianteId, tenant_id]
       );
       continue;
     }
@@ -165,10 +167,10 @@ const applyGaleriaVarianteAtomic = async ({
   const portadaRes = await client.query(
     `SELECT url_imagen
      FROM producto_variante_imagenes
-     WHERE varianteid = $1
+     WHERE varianteid = $1 AND tenant_id = $2
      ORDER BY orden ASC NULLS LAST, imagenid ASC
      LIMIT 1`,
-    [varianteId]
+    [varianteId, tenant_id]
   );
 
   const portadaRuta = portadaRes.rows?.[0]?.url_imagen || null;
@@ -176,9 +178,9 @@ const applyGaleriaVarianteAtomic = async ({
   const imagenesFinalRes = await client.query(
     `SELECT imagenid, url_imagen, textoalternativo, orden
      FROM producto_variante_imagenes
-     WHERE varianteid = $1
+     WHERE varianteid = $1 AND tenant_id = $2
      ORDER BY orden ASC NULLS LAST, imagenid ASC`,
-    [varianteId]
+    [varianteId, tenant_id]
   );
 
   const imagenes = (imagenesFinalRes.rows || []).map((row) => ({
@@ -438,6 +440,7 @@ const crearVariante = async (req, res) => {
         galeria: galeriaParsed || [],
         uploadedFiles,
         baseUrl,
+        tenant_id: req.tenant?.tenant_id,
       });
 
       const usedUploadIndexes = new Set(
@@ -1014,6 +1017,7 @@ const actualizarVariante = async (req, res) => {
         galeria: galeriaParsed || [],
         uploadedFiles,
         baseUrl,
+        tenant_id: req.tenant?.tenant_id,
       });
 
       const usedUploadIndexes = new Set(

@@ -182,8 +182,8 @@ async function ajustarPedido(req, res) {
       }
 
       await client.query(
-        `DELETE FROM detallesdelpedido WHERE detalleid = $1`,
-        [detalleId]
+        `DELETE FROM detallesdelpedido WHERE detalleid = $1 AND tenant_id = $2`,
+        [detalleId, tenant_id]
       );
     }
 

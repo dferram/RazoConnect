@@ -195,17 +195,18 @@ async function gestionarPago(req, res) {
                     
                     // Insertar ABONO con el MISMO referencia_id del cargo original (CLAVE DE LA CONCILIACIÓN)
                     await client.query(`
-                        INSERT INTO credito_movimientos 
-                            (credito_id, tipo_movimiento, monto, referencia_id, descripcion, saldo_despues_movimiento, registrado_por, admin_id)
-                        VALUES 
-                            ($1, 'ABONO', $2, $3, $4, $5, $6, $6)
+                        INSERT INTO credito_movimientos
+                            (credito_id, tipo_movimiento, monto, referencia_id, descripcion, saldo_despues_movimiento, registrado_por, admin_id, tenant_id)
+                        VALUES
+                            ($1, 'ABONO', $2, $3, $4, $5, $6, $6, $7)
                     `, [
                         credito.credito_id,
                         montoAbono,
                         cargo.referencia_id, // ← HERENCIA DE REFERENCIA: Usar el mismo ID del cargo (ej: "PED-9")
                         `Abono a ${cargo.referencia_id} (Pago PAGO-${pago.pago_id}, Ref: ${pago.referencia_bancaria || pago.transaccion_id || 'N/A'})`,
                         nuevoSaldo,
-                        adminId
+                        adminId,
+                        req.tenant?.tenant_id
                     ]);
 
                     montoRestante -= montoAbono;
@@ -214,34 +215,36 @@ async function gestionarPago(req, res) {
                 // Si sobra dinero (pago mayor a deuda), crear un abono genérico
                 if (montoRestante > 0.01) {
                     await client.query(`
-                        INSERT INTO credito_movimientos 
-                            (credito_id, tipo_movimiento, monto, referencia_id, descripcion, saldo_despues_movimiento, registrado_por, admin_id)
-                        VALUES 
-                            ($1, 'ABONO', $2, $3, $4, $5, $6, $6)
+                        INSERT INTO credito_movimientos
+                            (credito_id, tipo_movimiento, monto, referencia_id, descripcion, saldo_despues_movimiento, registrado_por, admin_id, tenant_id)
+                        VALUES
+                            ($1, 'ABONO', $2, $3, $4, $5, $6, $6, $7)
                     `, [
                         credito.credito_id,
                         montoRestante,
                         `PAGO-${pago.pago_id}`,
                         `Saldo a favor por pago excedente (Ref: ${pago.referencia_bancaria || pago.transaccion_id || 'N/A'})`,
                         nuevoSaldo,
-                        adminId
+                        adminId,
+                        req.tenant?.tenant_id
                     ]);
                 }
 
             } else {
                 // Si no hay movimientos aplicados, crear un abono genérico (pago sin asignación específica)
                 await client.query(`
-                    INSERT INTO credito_movimientos 
-                        (credito_id, tipo_movimiento, monto, referencia_id, descripcion, saldo_despues_movimiento, registrado_por, admin_id)
-                    VALUES 
-                        ($1, 'ABONO', $2, $3, $4, $5, $6, $6)
+                    INSERT INTO credito_movimientos
+                        (credito_id, tipo_movimiento, monto, referencia_id, descripcion, saldo_despues_movimiento, registrado_por, admin_id, tenant_id)
+                    VALUES
+                        ($1, 'ABONO', $2, $3, $4, $5, $6, $6, $7)
                 `, [
                     credito.credito_id,
                     pago.monto,
                     `PAGO-${pago.pago_id}`,
                     `Pago genérico sin asignación específica (Ref: ${pago.referencia_bancaria || pago.transaccion_id || 'N/A'})`,
                     nuevoSaldo,
-                    adminId
+                    adminId,
+                    req.tenant?.tenant_id
                 ]);
             }
 

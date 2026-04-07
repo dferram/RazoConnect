@@ -400,9 +400,9 @@ const getEstadoCuentaProveedorMovimientos = async (req, res) => {
          comprobante_pago,
          notas
        FROM cuentas_por_pagar
-       WHERE proveedor_id = $1
+       WHERE proveedor_id = $1 AND tenant_id = $2
        ORDER BY fecha_emision DESC`,
-      [proveedorId]
+      [proveedorId, tenant_id]
     );
 
     const resumenResult = await db.query(
@@ -410,8 +410,8 @@ const getEstadoCuentaProveedorMovimientos = async (req, res) => {
          COALESCE(SUM(monto_total), 0) AS total,
          COALESCE(SUM(monto_pagado), 0) AS pagado
        FROM cuentas_por_pagar
-       WHERE proveedor_id = $1`,
-      [proveedorId]
+       WHERE proveedor_id = $1 AND tenant_id = $2`,
+      [proveedorId, tenant_id]
     );
 
     const total = Number.parseFloat(resumenResult.rows[0]?.total ?? 0) || 0;
@@ -432,7 +432,7 @@ const getEstadoCuentaProveedorMovimientos = async (req, res) => {
           cxp.comprobante_pago AS comprobante_url,
           NULL::int AS pago_id
         FROM cuentas_por_pagar cxp
-        WHERE cxp.proveedor_id = $1
+        WHERE cxp.proveedor_id = $1 AND cxp.tenant_id = $2
 
         UNION ALL
 
@@ -449,10 +449,10 @@ const getEstadoCuentaProveedorMovimientos = async (req, res) => {
           pc.pago_id
         FROM pagos_cxp pc
         INNER JOIN cuentas_por_pagar cxp ON cxp.cxp_id = pc.cxp_id
-        WHERE cxp.proveedor_id = $1
+        WHERE cxp.proveedor_id = $1 AND cxp.tenant_id = $2
       ) t
       ORDER BY fecha DESC`,
-      [proveedorId]
+      [proveedorId, tenant_id]
     );
 
     const cuentas = (cuentasResult.rows || []).map((row) => {
