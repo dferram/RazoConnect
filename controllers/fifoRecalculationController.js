@@ -401,7 +401,7 @@ const obtenerConflictosAllocation = async (req, res) => {
           AND d.esbackorder = false
       ),
       stock_actual AS (
-        SELECT 
+        SELECT
           variante_id,
           SUM(cantidad) as stock_total
         FROM stock_admin
