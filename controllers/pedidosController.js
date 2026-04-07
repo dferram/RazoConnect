@@ -2327,9 +2327,10 @@ const cancelarPedido = async (req, res) => {
     await client.query('BEGIN');
 
     // Verificar que el pedido existe y pertenece al cliente
+    // IMPORTANTE: Obtener estado_id del cliente para saber cuál admin tiene el stock
     const pedidoQuery = await client.query(
       `SELECT p.pedidoid, p.clienteid, p.estatus, p.es_credito, p.montototal, p.agenteid,
-              c.nombre as cliente_nombre, c.email as cliente_email
+              c.nombre as cliente_nombre, c.email as cliente_email, c.estado_id
        FROM pedidos p
        JOIN clientes c ON p.clienteid = c.clienteid
        WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
@@ -2391,6 +2392,22 @@ const cancelarPedido = async (req, res) => {
     let piezasRestauradas = 0;
     let backordersCancelados = 0;
 
+    // 🔍 CRÍTICO: Obtener el admin del cliente (por su estado)
+    // Para liberar stock SOLO del admin correcto, no de todos
+    let adminClienteId = null;
+    try {
+      const estadosHelper = require('../utils/estadosHelper');
+      adminClienteId = await estadosHelper.getAdminByClienteEstado(clienteId, tenant_id);
+
+      if (!adminClienteId) {
+        logger.warn('⚠️ No se encontró admin para cliente al cancelar pedido', {
+          clienteId,
+          estadoId: pedido.estado_id
+        });
+      }
+    } catch (error) {
+      logger.error('Error al obtener admin del cliente:', error);
+    }
 
     // ============================================
     // HARD-RESERVE: Liberar reservas al cancelar
@@ -2408,19 +2425,29 @@ const cancelarPedido = async (req, res) => {
       // Solo liberar si NO es backorder y NO ha sido surtido en remisiones
       if (!detalle.esbackorder && (detalle.cantidad_surtida_remisiones || 0) === 0) {
         const piezasALiberar = parseInt(detalle.piezastotales, 10);
-        
-        
-        // Liberar de stock_admin
-        const liberarResult = await client.query(
-          `UPDATE stock_admin
-           SET cantidad_reservada = GREATEST(0, cantidad_reservada - $1),
-               updated_at = NOW()
-           WHERE variante_id = $2 
-             AND tenant_id = $3
-             AND cantidad_reservada > 0
-           RETURNING stockadminid, admin_id, cantidad_reservada`,
-          [piezasALiberar, detalle.varianteid, tenant_id]
-        );
+
+
+        // ✅ Liberar de stock_admin SOLO del admin del cliente
+        let liberarQuery = `
+          UPDATE stock_admin
+          SET cantidad_reservada = GREATEST(0, cantidad_reservada - $1),
+              updated_at = NOW()
+          WHERE variante_id = $2
+            AND tenant_id = $3
+            AND cantidad_reservada > 0
+        `;
+
+        const liberarParams = [piezasALiberar, detalle.varianteid, tenant_id];
+
+        // Si tenemos admin_id del cliente, filtrar solo a él
+        if (adminClienteId) {
+          liberarQuery += ` AND admin_id = $4`;
+          liberarParams.push(adminClienteId);
+        }
+
+        liberarQuery += ` RETURNING stockadminid, admin_id, cantidad_reservada`;
+
+        const liberarResult = await client.query(liberarQuery, liberarParams);
         
         // Registrar en log de auditoría
         for (const row of liberarResult.rows) {

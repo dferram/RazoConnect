@@ -473,10 +473,19 @@ async function adjustStock({
           console.log('✅ [SmartStock] Registro creado:', { newStock });
         } else {
           // ❌ NO FALLBACK A STOCK GLOBAL - Es inseguro para inventario distribuido
-          console.error('❌ [SmartStock] Intento de decrementar stock_admin inexistente para admin:', { adminId: context.adminId, varianteId, tenantId });
-          throw new Error(
-            `No hay inventario del admin para esta variante. Admin: ${context.adminId}, Variante: ${varianteId}`
-          );
+          // Si el admin no tiene stock de esta variante, NO debe poder decrementar
+          // Primero debe recibir inventario (OC, devolución, ajuste manual)
+          console.error('❌ [SmartStock] Intento de decrementar stock_admin inexistente para admin:', {
+            adminId: context.adminId,
+            varianteId,
+            tenantId
+          });
+          return {
+            success: false,
+            newStock: 0,
+            message: `El admin ${context.adminId} no tiene inventario de esta variante. Recibe inventario primero antes de reducir.`,
+            code: 'NO_STOCK_ASSIGNED'
+          };
         }
       }
 
