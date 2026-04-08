@@ -105,14 +105,16 @@ const getClienteDetalle = async (req, res) => {
         cc.limite_credito,
         cc.saldo_deudor,
         cc.dias_gracia,
-        cc.estado_credito
+        cc.estado_credito,
+        e.nombre as estado_nombre
       FROM clientes c
       LEFT JOIN pedidos p ON c.clienteid = p.clienteid AND p.tenant_id = $2
       LEFT JOIN cliente_creditos cc ON c.clienteid = cc.cliente_id
         AND cc.tenant_id = $2
         AND cc.admin_id = $3
+      LEFT JOIN estados e ON c.estado_id = e.estadoid
       WHERE c.clienteid = $1 AND c.tenant_id = $2
-      GROUP BY c.clienteid, cc.limite_credito, cc.saldo_deudor, cc.dias_gracia, cc.estado_credito`,
+      GROUP BY c.clienteid, cc.limite_credito, cc.saldo_deudor, cc.dias_gracia, cc.estado_credito, e.nombre`,
       [clienteId, tenant_id, adminIdForClient]
     );
 
@@ -167,6 +169,8 @@ const getClienteDetalle = async (req, res) => {
         email: cliente.email,
         telefono: cliente.telefono,
         activo: cliente.activo,
+        estado_id: cliente.estado_id,
+        estado_nombre: cliente.estado_nombre,
         fechaRegistro: cliente.fechaderegistro,
         totalPedidos: parseInt(cliente.total_pedidos),
         montoTotalCompras: parseFloat(cliente.monto_total_compras),

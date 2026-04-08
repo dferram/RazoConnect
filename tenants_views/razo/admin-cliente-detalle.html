@@ -124,6 +124,14 @@
                     -
                   </p>
                 </div>
+                  <div>
+                    <h3 class="admin-info-label">
+                      🗺️ Estado Asignado
+                    </h3>
+                  <p class="admin-info-text" id="clienteEstado" style="font-weight: 600; color: var(--razo-orange);">
+                    -
+                  </p>
+                </div>
               </div>
             </section>
 
@@ -449,6 +457,9 @@
                 day: "numeric",
               })
             : "Sin registro";
+
+        document.getElementById("clienteEstado").textContent =
+          cliente.estado_nombre || (cliente.estado_id ? `Estado #${cliente.estado_id}` : "Sin asignar");
 
         document.getElementById("estadoBadge").innerHTML = cliente.activo
           ? '<span class="admin-badge success">Cliente activo</span>'
