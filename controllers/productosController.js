@@ -522,6 +522,13 @@ const obtenerProductos = async (req, res) => {
 
     const productRows = result.rows;
     const productoIds = productRows.map((row) => row.productoid);
+    const isClienteScope = Boolean(
+      req.user &&
+      (
+        req.user.rol === 'cliente' ||
+        (Array.isArray(req.user.roles) && req.user.roles.includes('cliente'))
+      )
+    );
 
     const piezasPorVarianteMap = new Map();
     const stockMaestroMap = new Map();
@@ -737,21 +744,25 @@ const obtenerProductos = async (req, res) => {
             stockVariante = stockReal;
           }
         } else {
-          // Fallback: usar stock de BD si no hay SmartStock
-          stockVariante =
-            piezasInfo?.stockFisico ??
-            (row.stock_precio_min !== null
-              ? Math.max(parseInt(row.stock_precio_min, 10), 0)
-              : null);
+          if (isClienteScope) {
+            stockVariante = 0;
+          } else {
+            // Fallback legacy para contextos no-cliente
+            stockVariante =
+              piezasInfo?.stockFisico ??
+              (row.stock_precio_min !== null
+                ? Math.max(parseInt(row.stock_precio_min, 10), 0)
+                : null);
 
-          if (
-            piezasPorPaquete &&
-            piezasPorPaquete > 1 &&
-            stockMaestroMap.has(productId)
-          ) {
-            stockVariante = Math.floor(
-              stockMaestroMap.get(productId) / piezasPorPaquete
-            );
+            if (
+              piezasPorPaquete &&
+              piezasPorPaquete > 1 &&
+              stockMaestroMap.has(productId)
+            ) {
+              stockVariante = Math.floor(
+                stockMaestroMap.get(productId) / piezasPorPaquete
+              );
+            }
           }
         }
 
@@ -811,6 +822,10 @@ const obtenerProductos = async (req, res) => {
         : null;
       const hasActiveOffer = Boolean(hasActiveOfferMap.get(productId));
 
+      const scopedVariantesConStock = isClienteScope
+        ? (varianteDestacada && typeof varianteDestacada.stock === 'number' && varianteDestacada.stock > 0 ? 1 : 0)
+        : variantesConStock;
+
       return {
         productoId: productId,
         nombreProducto: row.nombreproducto,
@@ -848,7 +863,7 @@ const obtenerProductos = async (req, res) => {
         imagenUrl: row.url_imagen || null,
         imagenAlt: row.textoalternativo || null,
         totalVariantes,
-        variantesConStock,
+        variantesConStock: scopedVariantesConStock,
         coloresUnicos,
         medidasUnicas,
         varianteDestacada,
@@ -1062,6 +1077,14 @@ const obtenerProductoPorId = async (req, res) => {
       }
     }
 
+    const isClienteScope = Boolean(
+      req.user &&
+      (
+        req.user.rol === 'cliente' ||
+        (Array.isArray(req.user.roles) && req.user.roles.includes('cliente'))
+      )
+    );
+
     const variantes = variantesRaw.map((row) => {
       const precioUnitario =
         row.preciounitario !== null ? parseFloat(row.preciounitario) : null;
@@ -1086,15 +1109,19 @@ const obtenerProductoPorId = async (req, res) => {
           stockCalculado = stockReal;
         }
       } else {
-        // Fallback: usar stock de BD
-        stockCalculado =
-          row.stock !== null ? Math.max(parseInt(row.stock, 10), 0) : null;
-        if (
-          piezasPorPaquete &&
-          piezasPorPaquete > 1 &&
-          typeof stockMaestro === "number"
-        ) {
-          stockCalculado = Math.floor(stockMaestro / piezasPorPaquete);
+        if (isClienteScope) {
+          stockCalculado = 0;
+        } else {
+          // Fallback legacy para contextos no-cliente
+          stockCalculado =
+            row.stock !== null ? Math.max(parseInt(row.stock, 10), 0) : null;
+          if (
+            piezasPorPaquete &&
+            piezasPorPaquete > 1 &&
+            typeof stockMaestro === "number"
+          ) {
+            stockCalculado = Math.floor(stockMaestro / piezasPorPaquete);
+          }
         }
       }
 

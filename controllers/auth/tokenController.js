@@ -52,7 +52,7 @@ const refreshAccessToken = async (req, res) => {
       });
     }
 
-    const { id, rol, tenant_id, email } = decoded;
+    const { id, rol, tenant_id, email, estadoId } = decoded;
 
     if (!id || !rol) {
       return res.status(401).json({
@@ -73,13 +73,17 @@ const refreshAccessToken = async (req, res) => {
 
     // 3. Verificar que el usuario aún existe y está activo
     let userExists = false;
+    let estadoIdForToken = estadoId || null;
 
     if (rol === 'cliente') {
       const result = await db.query(
-        'SELECT clienteid FROM clientes WHERE clienteid = $1 AND tenant_id = $2 AND activo = TRUE',
+        'SELECT clienteid, estado_id FROM clientes WHERE clienteid = $1 AND tenant_id = $2 AND activo = TRUE',
         [id, tenant_id]
       );
       userExists = result.rows.length > 0;
+      if (userExists) {
+        estadoIdForToken = result.rows[0].estado_id || null;
+      }
     } else if (rol === 'agente') {
       const result = await db.query(
         'SELECT agenteid FROM agentesdeventas WHERE agenteid = $1 AND tenant_id = $2 AND activo = TRUE',
@@ -109,6 +113,7 @@ const refreshAccessToken = async (req, res) => {
       rol,
       tenant_id,
       email,
+      estadoId: estadoIdForToken,
     });
 
     return res.json({
