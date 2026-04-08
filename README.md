@@ -76,7 +76,7 @@ flowchart LR
       API -->|Product and asset upload| Cloudinary
 ```
 
-Deep architecture details are maintained in [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md).
+Deep architecture details are maintained in [docs/MULTITENANCY.md](docs/MULTITENANCY.md).
 
 ## Multi-tenancy and Data Isolation
 
@@ -95,7 +95,7 @@ Enforcement model:
 
 Reference documentation:
 
-- [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md)
+- [docs/MULTITENANCY.md](docs/MULTITENANCY.md)
 - [docs/COMPLETE_ADMIN_SEPARATION.md](docs/COMPLETE_ADMIN_SEPARATION.md)
 
 ## Security and Compliance
@@ -121,8 +121,8 @@ The platform uses role-based governance with operational specialization (admin, 
 
 Role reference:
 
-- [docs/ROLES_SISTEMA.md](docs/ROLES_SISTEMA.md)
-- [docs/FLUJO_FINANZAS_ALMACEN.md](docs/FLUJO_FINANZAS_ALMACEN.md)
+- [docs/SYSTEM_ROLES.md](docs/SYSTEM_ROLES.md)
+- [docs/FINANCE_WAREHOUSE.md](docs/FINANCE_WAREHOUSE.md)
 
 ## Core Business Flows
 
@@ -136,7 +136,7 @@ Key enterprise flows:
 
 Reference documents:
 
-- [docs/FLUJO_FINANZAS_ALMACEN.md](docs/FLUJO_FINANZAS_ALMACEN.md)
+- [docs/FINANCE_WAREHOUSE.md](docs/FINANCE_WAREHOUSE.md)
 - [docs/FIFO_CASOS_DE_USO.md](docs/FIFO_CASOS_DE_USO.md)
 - [docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md](docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md)
 - [docs/AUDITORIA_MENSUAL_INVENTARIO.md](docs/AUDITORIA_MENSUAL_INVENTARIO.md)
@@ -154,7 +154,7 @@ Current state:
 Starting points:
 
 - [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
-- [docs/GUIA_FUNCIONAL.md](docs/GUIA_FUNCIONAL.md)
+- [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md)
 
 ## Operations and SRE
 
@@ -167,7 +167,7 @@ Operational concerns covered in documentation:
 
 Operational references:
 
-- [docs/DESPLIEGUE_Y_TROUBLESHOOTING.md](docs/DESPLIEGUE_Y_TROUBLESHOOTING.md)
+- [docs/DEPLOYMENT_AND_TROUBLESHOOTING.md](docs/DEPLOYMENT_AND_TROUBLESHOOTING.md)
 - [docs/MAINTENANCE_CHECKLIST.md](docs/MAINTENANCE_CHECKLIST.md)
 - [docs/REDIS_SMART_FALLBACK.md](docs/REDIS_SMART_FALLBACK.md)
 
@@ -209,13 +209,13 @@ Use this map to jump to the right documentation quickly.
 
 | Audience | Read First | Then Deep Dive |
 |---|---|---|
-| Finance and Operations | [docs/FLUJO_FINANZAS_ALMACEN.md](docs/FLUJO_FINANZAS_ALMACEN.md) | [docs/GUIA_FUNCIONAL.md](docs/GUIA_FUNCIONAL.md), [docs/SISTEMA_6_ESTADOS.md](docs/SISTEMA_6_ESTADOS.md) |
-| Inventory and Purchasing | [docs/INVENTARIO_EXPLICACION.md](docs/INVENTARIO_EXPLICACION.md) | [docs/FIFO_CASOS_DE_USO.md](docs/FIFO_CASOS_DE_USO.md), [docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md](docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md), [docs/AUDITORIA_MENSUAL_INVENTARIO.md](docs/AUDITORIA_MENSUAL_INVENTARIO.md) |
-| DevOps and Platform | [docs/DESPLIEGUE_Y_TROUBLESHOOTING.md](docs/DESPLIEGUE_Y_TROUBLESHOOTING.md) | [docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md), [docs/MAINTENANCE_CHECKLIST.md](docs/MAINTENANCE_CHECKLIST.md), [docs/REDIS_SMART_FALLBACK.md](docs/REDIS_SMART_FALLBACK.md) |
-| Security Auditors | [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) | [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md), [docs/COMPLETE_ADMIN_SEPARATION.md](docs/COMPLETE_ADMIN_SEPARATION.md), [docs/SECURITY.md](docs/SECURITY.md) |
-| Backend Engineers | [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) | [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md), [docs/CONCILIACION_INVENTARIO_REFACTOR.md](docs/CONCILIACION_INVENTARIO_REFACTOR.md), [docs/INVENTORY_INTEGRITY_FIX.md](docs/INVENTORY_INTEGRITY_FIX.md) |
-| Product and Business Stakeholders | [docs/GUIA_FUNCIONAL.md](docs/GUIA_FUNCIONAL.md) | [docs/FLUJO_FINANZAS_ALMACEN.md](docs/FLUJO_FINANZAS_ALMACEN.md), [docs/PRIORITY_SYSTEM_USER_GUIDE.md](docs/PRIORITY_SYSTEM_USER_GUIDE.md), [docs/RMA_SYSTEM.md](docs/RMA_SYSTEM.md) |
-| New Developers and Onboarding | [docs/Learning route.md](docs/Learning%20route.md) | [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md), [docs/GUIA_FUNCIONAL.md](docs/GUIA_FUNCIONAL.md) |
+| Finance and Operations | [docs/FINANCE_WAREHOUSE.md](docs/FINANCE_WAREHOUSE.md) | [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md), [docs/SISTEMA_6_ESTADOS.md](docs/SISTEMA_6_ESTADOS.md) |
+| Inventory and Purchasing | [docs/INVENTORY_MODEL_OVERVIEW.md](docs/INVENTORY_MODEL_OVERVIEW.md) | [docs/FIFO_CASOS_DE_USO.md](docs/FIFO_CASOS_DE_USO.md), [docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md](docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md), [docs/AUDITORIA_MENSUAL_INVENTARIO.md](docs/AUDITORIA_MENSUAL_INVENTARIO.md) |
+| DevOps and Platform | [docs/DEPLOYMENT_AND_TROUBLESHOOTING.md](docs/DEPLOYMENT_AND_TROUBLESHOOTING.md) | [docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md), [docs/MAINTENANCE_CHECKLIST.md](docs/MAINTENANCE_CHECKLIST.md), [docs/REDIS_SMART_FALLBACK.md](docs/REDIS_SMART_FALLBACK.md) |
+| Security Auditors | [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) | [docs/MULTITENANCY.md](docs/MULTITENANCY.md), [docs/COMPLETE_ADMIN_SEPARATION.md](docs/COMPLETE_ADMIN_SEPARATION.md), [docs/SECURITY.md](docs/SECURITY.md) |
+| Backend Engineers | [docs/MULTITENANCY.md](docs/MULTITENANCY.md) | [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md), [docs/CONCILIACION_INVENTARIO_REFACTOR.md](docs/CONCILIACION_INVENTARIO_REFACTOR.md), [docs/INVENTORY_INTEGRITY_FIX.md](docs/INVENTORY_INTEGRITY_FIX.md) |
+| Product and Business Stakeholders | [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md) | [docs/FINANCE_WAREHOUSE.md](docs/FINANCE_WAREHOUSE.md), [docs/PRIORITY_SYSTEM_USER_GUIDE.md](docs/PRIORITY_SYSTEM_USER_GUIDE.md), [docs/RMA_SYSTEM.md](docs/RMA_SYSTEM.md) |
+| New Developers and Onboarding | [docs/LEARNING_ROUTE.md](docs/LEARNING_ROUTE.md) | [docs/MULTITENANCY.md](docs/MULTITENANCY.md), [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md) |
 
 ## Changelog and ADRs
 
@@ -237,7 +237,7 @@ Baseline standards:
 Developer workflow references:
 
 - [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
-- [docs/Learning route.md](docs/Learning%20route.md)
+- [docs/LEARNING_ROUTE.md](docs/LEARNING_ROUTE.md)
 
 ## Ownership and Review Cadence
 

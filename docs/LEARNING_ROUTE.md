@@ -675,7 +675,7 @@ La más importante es **Branches** — puedes tener 100% de statements y aun as�
 **CI/CD** (Continuous Integration / Continuous Deployment) es automatizar el proceso de verificar y desplegar código. Cada vez que haces push a `main`, una pipeline automática corre los tests y despliega a Azure si todo pasa.
 
 ### Dónde está en tu código
-```yaml name=.github/workflows/main_razoconnect-api.yml url=https://github.com/dferram/RazoConnect/blob/c15f0c5afb85dddae426b092e15a32f3e139f019/docs/DESPLIEGUE_Y_TROUBLESHOOTING.md#L579-L616
+```yaml name=.github/workflows/main_razoconnect-api.yml url=https://github.com/dferram/RazoConnect/blob/c15f0c5afb85dddae426b092e15a32f3e139f019/docs/DEPLOYMENT_AND_TROUBLESHOOTING.md#L579-L616
 # En cada push a main:
 # 1. checkout del código
 # 2. setup Node 18

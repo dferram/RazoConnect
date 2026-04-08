@@ -35,7 +35,7 @@
   - Updated `confirmarSurtidoFinanzas()` warning message to clarify stock/CxC impact
 
 #### Documentation
-- **`docs/FLUJO_FINANZAS_ALMACEN.md`**: Complete workflow documentation with:
+- **`docs/FINANCE_WAREHOUSE.md`**: Complete workflow documentation with:
   - State transition diagrams
   - Detailed endpoint documentation
   - Role-based permission matrix
