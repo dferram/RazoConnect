@@ -25,7 +25,7 @@ The banner is intentionally temporary: it closes for the current view, but it re
   <p>
     <strong>Page title:</strong> Short explanation of what the page does.
   </p>
-  <button class="instructional-banner-close" title="Close">×</button>
+  <button class="instructional-banner-close" title="Close">x</button>
 </div>
 ```
 
