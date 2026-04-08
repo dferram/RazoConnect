@@ -32,6 +32,11 @@ Security scheme:
 - /api/inventario/*
 - /api/public/*
 - /api/pagos/*
+- /api/cupones/*
+- /api/favoritos/*
+- /api/notificaciones/*
+- /api/staff/*
+- /api/admin/reportes/*
 
 ## Versioning and Change Policy
 
@@ -51,3 +56,10 @@ Common response envelopes:
 - index.js
 - routes/
 - controllers/
+- docs/AUTHENTICATION_AND_SESSIONS.md
+- docs/PUBLIC_ENDPOINTS.md
+- docs/PAYMENTS_AND_BANK_TRANSFER.md
+- docs/COUPONS_AND_FAVORITES.md
+- docs/NOTIFICATIONS_MODEL.md
+- docs/REPORTING_ENDPOINTS.md
+- docs/INTERNAL_OR_INACTIVE_MODULES.md
