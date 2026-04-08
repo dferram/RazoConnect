@@ -470,6 +470,23 @@
                 />
               </div>
             </div>
+
+            <!-- Estado/Región -->
+            <div style="background: #FFF7ED; border-left: 4px solid #F97316; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
+              <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
+                <i class="bi bi-info-circle-fill" style="color: #F97316; margin-right: 0.5rem; font-size: 1.1rem;"></i>
+                <strong style="color: #333;">ℹ️ Estado/Región</strong>
+              </div>
+              <p style="color: #666; font-size: 0.9rem; margin: 0 0 1rem 0;">
+                Tu estado/región determina qué productos disponibles verás en tu catálogo.
+              </p>
+              <div class="form-group">
+                <label class="form-label" for="editEstado">Estado/Región *</label>
+                <select id="editEstado" class="form-input" required style="background-image: none; appearance: auto;">
+                  <option value="">-- Selecciona tu estado --</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <!-- Cambio de Contraseña -->
@@ -1624,20 +1641,43 @@
       const btnGuardarPerfilSpinner = document.getElementById("btnGuardarPerfilSpinner");
 
       // Abrir modal de editar perfil
-      btnEditarPerfil.addEventListener("click", () => {
+      btnEditarPerfil.addEventListener("click", async () => {
         const userData = getUserData() || {};
-        
+
         // Cargar datos actuales en el formulario
         document.getElementById("editNombre").value = userData.nombre || "";
         document.getElementById("editApellido").value = userData.apellido || "";
         document.getElementById("editEmail").value = userData.email || "";
         document.getElementById("editTelefono").value = userData.telefono || "";
-        
+
         // Limpiar campos de contraseña
         document.getElementById("passwordActual").value = "";
         document.getElementById("passwordNueva").value = "";
         document.getElementById("passwordConfirmar").value = "";
-        
+
+        // Cargar estados
+        try {
+          const response = await fetch('/api/public/estados-all');
+          if (response.ok) {
+            const data = await response.json();
+            const estados = data.data || [];
+            const selectEstado = document.getElementById("editEstado");
+
+            selectEstado.innerHTML = '<option value="">-- Selecciona tu estado --</option>';
+            estados.forEach(estado => {
+              const option = document.createElement('option');
+              option.value = estado.estadoid;
+              option.textContent = estado.nombre;
+              if (userData.estadoId === estado.estadoid) {
+                option.selected = true;
+              }
+              selectEstado.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Error cargando estados:', error);
+        }
+
         modalEditarPerfil.classList.add("show");
       });
 
@@ -1746,6 +1786,26 @@
 
             if (!passwordResponse.ok || !passwordResponse.data.success) {
               throw new Error(passwordResponse.data.message || "Error al cambiar contraseña");
+            }
+          }
+
+          // 3. Cambiar estado si se proporcionó
+          const estadoId = document.getElementById("editEstado").value;
+          if (estadoId) {
+            try {
+              const estadoResponse = await API.apiCall("/cliente/asignar-estado", {
+                method: "POST",
+                body: JSON.stringify({ estadoId: parseInt(estadoId, 10) }),
+              });
+
+              if (!estadoResponse.ok || !estadoResponse.data.success) {
+                console.warn("⚠️ Estado pendiente de revisión administrativa:", estadoResponse.data.message);
+              } else {
+                console.log("✅ Estado actualizado");
+              }
+            } catch (error) {
+              console.warn("⚠️ Error al actualizar estado:", error);
+              // No lanzar error, el estado se solicitó pero podría estar pendiente
             }
           }
 
