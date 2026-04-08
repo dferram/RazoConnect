@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 🔒 Guardia de estado - ejecutar PRIMERO -->
+    <script src="js/auth-guard-estado.js"></script>
     <title>Mi Cuenta - RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
@@ -792,10 +794,10 @@
         const apellido = userData.apellido || "";
         const email = userData.email || "N/A";
         const telefono = userData.telefono || "No especificado";
-        const estado = userData.estado_nombre || userData.estado || "Sin asignar";
+        const estado = userData.estadoNombre || userData.estado_id || userData.estado || "Sin asignar";
         const fechaRegistro =
           userData.fechaDeRegistro || userData.fechaderegistro || null;
-        const fechaFormateada = formatDateSafe(fechaRegistro) !== "—" 
+        const fechaFormateada = formatDateSafe(fechaRegistro) !== "—"
           ? formatDateSafe(fechaRegistro)
           : "N/A";
 
@@ -2150,6 +2152,7 @@
         })
         .catch(error => console.error('Error loading cancelacion info modal:', error));
     </script>
+
     <script src="js/instructional-banner.js"></script>
   </body>
 </html>

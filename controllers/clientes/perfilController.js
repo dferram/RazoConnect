@@ -206,7 +206,78 @@ async function cambiarPassword(req, res) {
   }
 }
 
+/**
+ * Asignar estado al cliente (para clientes sin estado asignado)
+ * POST /api/cliente/asignar-estado
+ */
+async function asignarEstado(req, res) {
+  try {
+    const clienteId = req.user.userId;
+    const { estadoId } = req.body;
+    const { tenant_id } = req.tenant;
+
+    if (!estadoId) {
+      return res.status(400).json({
+        success: false,
+        message: "Estado es requerido",
+      });
+    }
+
+    // Validar que el estado existe
+    const estadoCheck = await pool.query(
+      "SELECT estadoid, nombre FROM estados WHERE estadoid = $1",
+      [estadoId]
+    );
+
+    if (estadoCheck.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Estado no válido",
+      });
+    }
+
+    const estadoNombre = estadoCheck.rows[0].nombre;
+
+    // Actualizar estado del cliente
+    const updateResult = await pool.query(
+      "UPDATE clientes SET estado_id = $1 WHERE clienteid = $2 AND tenant_id = $3 RETURNING clienteid, estado_id",
+      [estadoId, clienteId, tenant_id]
+    );
+
+    if (updateResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Cliente no encontrado",
+      });
+    }
+
+    logger.info(`✅ Estado asignado a cliente ${clienteId}: ${estadoNombre}`, {
+      clienteId,
+      estadoId,
+      estadoNombre,
+      tenant_id
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Estado asignado exitosamente",
+      data: {
+        clienteId,
+        estadoId,
+        estadoNombre,
+      },
+    });
+  } catch (error) {
+    logger.error("Error al asignar estado:", { error });
+    return res.status(500).json({
+      success: false,
+      message: "Error al asignar estado",
+    });
+  }
+}
+
 module.exports = {
   actualizarPerfil,
   cambiarPassword,
+  asignarEstado,
 };
