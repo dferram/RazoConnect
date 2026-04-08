@@ -36,6 +36,7 @@ const normalizePayload = (data) => {
     rol: data.rol,
     tenant_id: data.tenant_id || null,
     email: data.email || null,
+    estadoId: data.estadoId || null,
   };
 };
 

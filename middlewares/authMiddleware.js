@@ -140,7 +140,7 @@ const authenticate = async (req, res, next) => {
       }
 
       const clienteResult = await db.query(
-        "SELECT clienteid, activo, email, tenant_id FROM clientes WHERE clienteid = $1 AND tenant_id = $2 AND activo = TRUE LIMIT 1",
+        "SELECT clienteid, activo, email, tenant_id, estado_id FROM clientes WHERE clienteid = $1 AND tenant_id = $2 AND activo = TRUE LIMIT 1",
         [userId, tenantIdFromToken]
       );
 
@@ -164,6 +164,7 @@ const authenticate = async (req, res, next) => {
         roles: ["cliente"], // Legacy compatibility
         email: decoded?.email || clienteResult.rows[0].email || null,
         tenant_id: clienteResult.rows[0].tenant_id,
+        estadoId: clienteResult.rows[0].estado_id || null,
       };
 
       return tenantSessionGuard(req, res, next);
