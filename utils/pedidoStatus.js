@@ -83,6 +83,39 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
     const totalProductos = detalles.length;
 
     // ============================================================
+    // PRIORIDAD TIENDA: Si NO hay productos Facturados
+    // En la tienda, calcular SIEMPRE basado en esbackorder/stock
+    // Saltarse los estados administrativos (Surtido, Listo para remisionar)
+    // ============================================================
+    const productosFacturadosCount = detalles.filter(d => d.estado_producto === 'Facturado').length;
+
+    if (productosFacturadosCount === 0) {
+      // 🛍️ TIENDA: Ningún producto facturado aún - calcular basado en esbackorder/stock disponible
+      let productosConStockActual = 0;
+      let productosBackorderActual = 0;
+
+      detalles.forEach(d => {
+        const tieneStockDisponible = d.stock_disponible_actual >= d.piezastotales;
+        if (tieneStockDisponible) {
+          productosConStockActual++;
+        } else {
+          productosBackorderActual++;
+        }
+      });
+
+      // Aplicar lógica de disponibilidad (TIENDA)
+      if (productosBackorderActual === totalProductos && productosConStockActual === 0) {
+        return ESTADOS_PEDIDO.BAJO_PEDIDO; // 🔴 Todos sin stock
+      }
+      if (productosConStockActual === totalProductos && productosBackorderActual === 0) {
+        return ESTADOS_PEDIDO.COMPLETO; // 🟡 Todos con stock
+      }
+      if (productosBackorderActual > 0 && productosConStockActual > 0) {
+        return ESTADOS_PEDIDO.COMBINADO; // 🟠 Mix de stock/backorder
+      }
+    }
+
+    // ============================================================
     // PRIORIDAD CERO: Si TODOS tienen estado_producto = NULL
     // Significa que el pedido acaba de crearse y no ha sido procesado por Finanzas
     // En este caso, IGNORAR estado_producto y calcular SOLO basado en stock disponible
