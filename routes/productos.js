@@ -1,6 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const productosController = require("../controllers/productosController");
+const { authenticate } = require("../middlewares/authMiddleware");
+
+const optionalAuthenticate = (req, res, next) => {
+  if (!req.headers.authorization) {
+    return next();
+  }
+  return authenticate(req, res, next);
+};
 
 /**
  * @swagger
@@ -188,7 +196,7 @@ router.get(
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get("/productos", productosController.obtenerProductos);
+router.get("/productos", optionalAuthenticate, productosController.obtenerProductos);
 
 /**
  * @swagger
@@ -332,7 +340,7 @@ router.get("/productos/search", productosController.buscarProductosAutocomplete)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get("/productos/:id", productosController.obtenerProductoPorId);
+router.get("/productos/:id", optionalAuthenticate, productosController.obtenerProductoPorId);
 
 /**
  * @swagger
@@ -377,6 +385,6 @@ router.get("/productos/:id", productosController.obtenerProductoPorId);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get("/productos/:id/variantes", productosController.obtenerVariantesProducto);
+router.get("/productos/:id/variantes", optionalAuthenticate, productosController.obtenerVariantesProducto);
 
 module.exports = router;

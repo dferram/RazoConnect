@@ -137,6 +137,7 @@ async function determineUserContext({ userId, userRole, tenantId, estadoId }) {
         adminId = await estadosHelper.getAdminByClienteEstado(userId, tenantId);
 
         if (adminId) {
+          console.log(`[STOCK_SCOPE] admin_id=${adminId}`);
           return {
             isSuperAdmin: false,
             isAdmin: false,
@@ -152,6 +153,7 @@ async function determineUserContext({ userId, userRole, tenantId, estadoId }) {
     }
 
     // Fallback: Sin asignación de estado o sin admin del estado → stock global
+    console.log('[STOCK_SCOPE] admin_id=null');
     return {
       isSuperAdmin: false,
       isAdmin: false,
