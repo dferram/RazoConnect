@@ -16,10 +16,9 @@ Enterprise-grade B2B SaaS platform for multi-tenant commerce, inventory, finance
 10. [Deployment Environments](#deployment-environments)
 11. [Testing and Quality Gates](#testing-and-quality-gates)
 12. [Documentation Map by Audience](#documentation-map-by-audience)
-13. [Changelog and ADRs](#changelog-and-adrs)
-14. [Contribution Standards](#contribution-standards)
-15. [Ownership and Review Cadence](#ownership-and-review-cadence)
-16. [License](#license)
+13. [Contribution Standards](#contribution-standards)
+14. [Ownership and Review Cadence](#ownership-and-review-cadence)
+15. [License](#license)
 
 ## Executive Summary
 
@@ -133,10 +132,10 @@ Key enterprise flows:
 Reference documents:
 
 - [docs/FINANCE_WAREHOUSE.md](docs/FINANCE_WAREHOUSE.md)
-- [docs/FIFO_CASOS_DE_USO.md](docs/FIFO_CASOS_DE_USO.md)
+- [docs/FIFO_USE_CASES.md](docs/FIFO_USE_CASES.md)
 - [docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md](docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md)
-- [docs/AUDITORIA_MENSUAL_INVENTARIO.md](docs/AUDITORIA_MENSUAL_INVENTARIO.md)
-- [docs/CANCELACION_PEDIDOS_BACKORDERS.md](docs/CANCELACION_PEDIDOS_BACKORDERS.md)
+- [docs/MONTHLY_INVENTORY_AUDIT.md](docs/MONTHLY_INVENTORY_AUDIT.md)
+- [docs/ORDER_CANCELLATION_BACKORDER_CASCADE.md](docs/ORDER_CANCELLATION_BACKORDER_CASCADE.md)
 
 ## API and Integration Contracts
 
@@ -145,12 +144,14 @@ The system exposes REST endpoints for admin, operational, and customer domains.
 Current state:
 
 - API behavior is documented in module-specific docs
-- OpenAPI/Swagger standardization is planned for centralized API contracts
+- Swagger UI is available in non-production at `/api/docs`
+- OpenAPI JSON spec is available at `/api/docs.json`
 
 Starting points:
 
 - [docs/MULTITENANCY.md](docs/MULTITENANCY.md)
 - [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md)
+- [docs/API_CONTRACTS.md](docs/API_CONTRACTS.md)
 
 ## Operations and SRE
 
@@ -166,6 +167,7 @@ Operational references:
 - [docs/DEPLOYMENT_AND_TROUBLESHOOTING.md](docs/DEPLOYMENT_AND_TROUBLESHOOTING.md)
 - [docs/MAINTENANCE_CHECKLIST.md](docs/MAINTENANCE_CHECKLIST.md)
 - [docs/REDIS_SMART_FALLBACK.md](docs/REDIS_SMART_FALLBACK.md)
+- [docs/OPERATIONS_RUNBOOK.md](docs/OPERATIONS_RUNBOOK.md)
 
 ## Deployment Environments
 
@@ -203,11 +205,11 @@ Use this map to jump to the right documentation quickly.
 
 | Audience | Read First | Then Deep Dive |
 |---|---|---|
-| Finance and Operations | [docs/FINANCE_WAREHOUSE.md](docs/FINANCE_WAREHOUSE.md) | [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md), [docs/SISTEMA_6_ESTADOS.md](docs/SISTEMA_6_ESTADOS.md) |
-| Inventory and Purchasing | [docs/INVENTORY_MODEL_OVERVIEW.md](docs/INVENTORY_MODEL_OVERVIEW.md) | [docs/FIFO_CASOS_DE_USO.md](docs/FIFO_CASOS_DE_USO.md), [docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md](docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md), [docs/AUDITORIA_MENSUAL_INVENTARIO.md](docs/AUDITORIA_MENSUAL_INVENTARIO.md) |
+| Finance and Operations | [docs/FINANCE_WAREHOUSE.md](docs/FINANCE_WAREHOUSE.md) | [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md), [docs/ORDER_STATE_LIFECYCLE.md](docs/ORDER_STATE_LIFECYCLE.md) |
+| Inventory and Purchasing | [docs/INVENTORY_MODEL_OVERVIEW.md](docs/INVENTORY_MODEL_OVERVIEW.md) | [docs/FIFO_USE_CASES.md](docs/FIFO_USE_CASES.md), [docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md](docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md), [docs/MONTHLY_INVENTORY_AUDIT.md](docs/MONTHLY_INVENTORY_AUDIT.md) |
 | DevOps and Platform | [docs/DEPLOYMENT_AND_TROUBLESHOOTING.md](docs/DEPLOYMENT_AND_TROUBLESHOOTING.md) | [docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md), [docs/MAINTENANCE_CHECKLIST.md](docs/MAINTENANCE_CHECKLIST.md), [docs/REDIS_SMART_FALLBACK.md](docs/REDIS_SMART_FALLBACK.md) |
 | Security Auditors | [docs/SECURITY.md](docs/SECURITY.md) | [docs/MULTITENANCY.md](docs/MULTITENANCY.md), [docs/COMPLETE_ADMIN_SEPARATION.md](docs/COMPLETE_ADMIN_SEPARATION.md) |
-| Backend Engineers | [docs/MULTITENANCY.md](docs/MULTITENANCY.md) | [docs/CONCILIACION_INVENTARIO_REFACTOR.md](docs/CONCILIACION_INVENTARIO_REFACTOR.md), [docs/INVENTORY_INTEGRITY_FIX.md](docs/INVENTORY_INTEGRITY_FIX.md), [docs/FIFO_CASOS_DE_USO.md](docs/FIFO_CASOS_DE_USO.md) |
+| Backend Engineers | [docs/MULTITENANCY.md](docs/MULTITENANCY.md) | [docs/INVENTORY_RECONCILIATION_REFACTOR.md](docs/INVENTORY_RECONCILIATION_REFACTOR.md), [docs/INVENTORY_INTEGRITY_FIX.md](docs/INVENTORY_INTEGRITY_FIX.md), [docs/FIFO_USE_CASES.md](docs/FIFO_USE_CASES.md) |
 | Product and Business Stakeholders | [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md) | [docs/FINANCE_WAREHOUSE.md](docs/FINANCE_WAREHOUSE.md), [docs/PRIORITY_QUEUE_SYSTEM.md](docs/PRIORITY_QUEUE_SYSTEM.md), [docs/RMA_SYSTEM.md](docs/RMA_SYSTEM.md) |
 | New Developers and Onboarding | [docs/LEARNING_ROUTE.md](docs/LEARNING_ROUTE.md) | [docs/MULTITENANCY.md](docs/MULTITENANCY.md), [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md) |
 

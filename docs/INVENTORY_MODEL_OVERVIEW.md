@@ -56,10 +56,10 @@ General behavior:
 
 ## Where to Read Next
 
-- FIFO allocation and backorders: docs/FIFO_CASOS_DE_USO.md
+- FIFO allocation and backorders: docs/FIFO_USE_CASES.md
 - Finance and warehouse confirmation: docs/FINANCE_WAREHOUSE.md
-- Monthly inventory audit: docs/AUDITORIA_MENSUAL_INVENTARIO.md
-- Inventory reconciliation details: docs/CONCILIACION_INVENTARIO_REFACTOR.md
+- Monthly inventory audit: docs/MONTHLY_INVENTORY_AUDIT.md
+- Inventory reconciliation details: docs/INVENTORY_RECONCILIATION_REFACTOR.md
 
 ## Notes
 
