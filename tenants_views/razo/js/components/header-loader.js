@@ -64,16 +64,20 @@
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
-          // Guardar los datos del usuario en localStorage usando AuthManager si está disponible
-          if (typeof window.AuthManager !== 'undefined' && AuthManager.saveTokens) {
-            // AuthManager ya debería tener los tokens, solo guardamos los datos del usuario
-            localStorage.setItem('razoconnect_user', JSON.stringify(data.data));
-          } else {
-            // Fallback: guardar directamente
-            localStorage.setItem('razoconnect_user', JSON.stringify(data.data));
-          }
-          console.log('[Header Loader] Datos de usuario actualizados desde backend:', data.data);
-          return data.data;
+          // IMPORTANTE: Hacer merge en lugar de reemplazar localStorage
+          const currentUser = JSON.parse(localStorage.getItem('razoconnect_user') || '{}');
+          Object.assign(currentUser, data.data);
+
+          // Guardar datos mergeados en localStorage
+          localStorage.setItem('razoconnect_user', JSON.stringify(currentUser));
+
+          console.log('[Header Loader] Datos de usuario actualizados desde backend:', currentUser);
+          console.log('[Header Loader] estadoNombre:', currentUser.estadoNombre);
+
+          // Disparar evento para que otras partes de la app se actualicen
+          window.dispatchEvent(new CustomEvent('storageUpdated', { detail: currentUser }));
+
+          return currentUser;
         }
       } else {
         console.error('[Header Loader] Error en respuesta del backend:', response.status);
@@ -314,8 +318,8 @@
     
     // Obtener rol del usuario
     const rolRaw = usuario?.rol || usuario?.Rol || usuario?.role || usuario?.Role;
-    const rol = (rolRaw || "").toString().trim();
-    
+    const rol = (rolRaw || "").toString().trim().toLowerCase();
+
     console.log('🔍 [Header Loader] Nombre extraído:', nombre);
     console.log('🔍 [Header Loader] Rol extraído:', rol);
 
@@ -332,12 +336,12 @@
       loginElements.forEach(el => el.style.display = 'none');
       dashboardElements.forEach(el => el.style.display = 'list-item');
       logoutElements.forEach(el => el.style.display = 'list-item');
-      
+
       if (nombreEl) {
         if (nombre) {
           // Mostrar nombre y rol si ambos están disponibles
           if (rol && rol !== 'cliente') {
-            nombreEl.textContent = `${nombre.split(" ")[0]} (${rol})`;
+            nombreEl.textContent = `${nombre.split(" ")[0]} (${rol.charAt(0).toUpperCase() + rol.slice(1)})`;
             console.log('✅ [Header Loader] Mostrando nombre y rol:', nombreEl.textContent);
           } else {
             nombreEl.textContent = `Hola, ${nombre.split(" ")[0]}`;

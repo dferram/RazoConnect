@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ðŸ”’ Guardia de estado - ejecutar PRIMERO -->
+    <script src="js/auth-guard-estado.js"></script>
     <title>Mis Devoluciones - RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png">
     
     <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- Core Scripts - ORDEN CRÍTICO: api.js debe cargarse primero -->
+    <!-- Core Scripts - ORDEN CRï¿½TICO: api.js debe cargarse primero -->
     <script src="js/api.js"></script>
     <script src="js/auth-guard-client.js"></script>
     
@@ -33,7 +35,7 @@
 
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle"></i> 
-                    <strong>Política de Devoluciones:</strong> Puedes solicitar la devolución de tus productos dentro de los 30 días posteriores a la compra.
+                    <strong>Polï¿½tica de Devoluciones:</strong> Puedes solicitar la devoluciï¿½n de tus productos dentro de los 30 dï¿½as posteriores a la compra.
                 </div>
 
                 <div class="card shadow-sm">
@@ -50,7 +52,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Detalle de Devolución</h5>
+                    <h5 class="modal-title">Detalle de Devoluciï¿½n</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body" id="detalle-content"></div>
