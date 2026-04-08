@@ -13,7 +13,7 @@ const { calcularTotalPedido, validarConsistenciaTotales } = require("../utils/ca
 const SmartStockService = require("../services/SmartStockService");
 const { calcularEstadoPedidoCorrect } = require("../utils/pedidoStatus");
 const { normalizarEstado, ESTADOS_PEDIDO } = require("../utils/pedidoEstados");
-const { getClienteEstado, asignarEstadoCliente } = require("../utils/estadosHelper");
+const { getClienteEstado, asignarEstadoCliente, getAdminByClienteEstado } = require("../utils/estadosHelper");
 
 const TAMANO_VALUE_KEYS = [
   "valor",
@@ -255,6 +255,13 @@ const crearPedido = async (req, res) => {
       }
     }
 
+    // 1.6 CRÍTICO: Obtener el adminId asignado al estado del cliente
+    // Este es el único admin del cual debe consumir stock este cliente
+    const clienteAdminId = await getAdminByClienteEstado(clienteId, tenant_id);
+    if (!clienteAdminId) {
+      logger.warn(`⚠️ Cliente ${clienteId} no tiene admin asignado a su estado. Usar adminId del contexto.`);
+    }
+
     // 2. Obtener el carrito del cliente
     const carritoResult = await client.query(
       "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1 AND tenant_id = $2",
@@ -494,7 +501,7 @@ const crearPedido = async (req, res) => {
         varianteId: item.varianteid,
         cantidadRequerida: item.cantidad,
         orderDate: orderDate,
-        adminId: req.user?.adminId || null,
+        adminId: req.user?.adminId || clienteAdminId,
         tenantId: tenant_id,
         pedidoId: null,
         piezasPorPaquete: tamanoValor
@@ -1281,13 +1288,14 @@ const crearPedido = async (req, res) => {
               ]
             );
           } else {
-            // CASO 2: Cliente sin admin - usar allocation automática
+            // CASO 2: Cliente - usar allocation automática con su admin asignado
 
             const allocationResult = await SmartStockService.allocateStockAutomatically({
               varianteId: item.varianteid,
               cantidadRequerida: piezasRealmenteSurtidas,
               tenantId: tenant_id,
-              estrategia: 'DESC'
+              estrategia: 'DESC',
+              adminId: clienteAdminId
             });
 
             // ✅ NUEVO: Permitir parcial (con backorder) si hay algo asignado

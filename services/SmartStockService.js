@@ -638,7 +638,7 @@ async function calculateAllocationStatus({
     
     if (adminId) {
       queryParams.push(adminId);
-      adminFilter = `AND p.admin_responsable_id = $${queryParams.length}`;
+      adminFilter = `AND p.admin_asignado_id = $${queryParams.length}`;
     }
 
     // Excluir el pedido actual si se proporciona su ID
@@ -773,7 +773,8 @@ async function allocateStockAutomatically({
   varianteId,
   cantidadRequerida,
   tenantId,
-  estrategia = 'DESC' // DESC = admin con más stock primero (evita fragmentación)
+  estrategia = 'DESC', // DESC = admin con más stock primero (evita fragmentación)
+  adminId = null // 🔒 CRÍTICO: Si se pasa, SOLO buscar stock de este admin (aislamiento)
 }) {
   try {
 
@@ -799,8 +800,13 @@ async function allocateStockAutomatically({
       };
     }
 
-    // PASO 1: Obtener todos los admins con stock disponible
+    // PASO 1: Obtener admins con stock disponible (filtrado por adminId si se proporciona)
     const ordenamiento = estrategia === 'DESC' ? 'DESC' : 'ASC';
+
+    // 🔒 CRÍTICO: Si adminId se proporciona, SOLO buscar ese admin (aislamiento por cliente/estado)
+    const whereAdminFilter = adminId ? 'AND sa.admin_id = $3' : '';
+    const queryParams = adminId ? [varianteId, tenantId, adminId] : [varianteId, tenantId];
+
     const query = `
       SELECT
         sa.admin_id,
@@ -810,44 +816,29 @@ async function allocateStockAutomatically({
       LEFT JOIN administradores a ON a.adminid = sa.admin_id AND a.tenant_id = sa.tenant_id
       WHERE sa.variante_id = $1
         AND sa.tenant_id = $2
+        ${whereAdminFilter}
         AND sa.cantidad > 0
       ORDER BY sa.cantidad ${ordenamiento}, sa.admin_id ASC
     `;
 
-    const { rows: adminsConStock } = await db.query(query, [varianteId, tenantId]);
+    const { rows: adminsConStock } = await db.query(query, queryParams);
 
-    // PASO 1B: Si no hay stock en stock_admin, hacer FALLBACK a producto_variantes.stock
+    // PASO 1B: Asignar stock desde los admins disponibles
     let cantidadRestante = cantidadReq;
     const allocations = [];
     let totalAsignado = 0;
 
     if (adminsConStock.length === 0) {
-      // FALLBACK: Intentar asignar desde producto_variantes.stock
-      const { rows: varianteRows } = await db.query(
-        `SELECT stock FROM producto_variantes WHERE varianteid = $1 AND tenant_id = $2`,
-        [varianteId, tenantId]
-      );
-
-      if (varianteRows.length > 0) {
-        const stockVariante = parseInt(varianteRows[0].stock, 10) || 0;
-
-        if (stockVariante > 0) {
-          // ✅ Hay stock disponible en producto_variantes - permitir surtir parcialmente
-          totalAsignado = Math.min(stockVariante, cantidadReq);
-          cantidadRestante = cantidadReq - totalAsignado;
-
-          // Registrar como "Stock General" sin admin específico
-          if (totalAsignado > 0) {
-            allocations.push({
-              adminId: null,
-              adminNombre: 'Stock General (Variante)',
-              cantidad: totalAsignado,
-              stockDisponible: stockVariante,
-              esStockGeneral: true
-            });
-          }
-        }
-      }
+      // ❌ SIN FALLBACK: Si no hay stock del admin asignado, generar backorder
+      // NO consumir stock global (producto_variantes.stock)
+      // El cliente solo debe poder consumir stock de su admin
+      const contextoAdmin = adminId ? `admin ${adminId}` : 'tenant';
+      logger.warn(`⚠️ No hay stock disponible en ${contextoAdmin} para variante ${varianteId}. Generará backorder.`, {
+        varianteId,
+        tenantId,
+        adminId,
+        cantidadRequerida: cantidadReq
+      });
     } else {
       // PASO 2: Algoritmo de Asignación - Llenar desde los admins disponibles
       for (const admin of adminsConStock) {
