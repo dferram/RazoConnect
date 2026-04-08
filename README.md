@@ -107,10 +107,6 @@ Security posture (high level):
 - Input validation and defensive middleware layers
 - Tenant isolation and role-scoped access controls
 
-Current canonical security implementation notes are in:
-
-- [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md)
-
 Legal/proprietary notice is in:
 
 - [docs/SECURITY.md](docs/SECURITY.md)
@@ -153,7 +149,7 @@ Current state:
 
 Starting points:
 
-- [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
+- [docs/MULTITENANCY.md](docs/MULTITENANCY.md)
 - [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md)
 
 ## Operations and SRE
@@ -182,7 +178,6 @@ Production profile:
 
 Container and local setup references:
 
-- [docs/DOCKER_SETUP.md](docs/DOCKER_SETUP.md)
 - [docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md)
 
 ## Testing and Quality Gates
@@ -200,7 +195,6 @@ Execution baseline:
 
 Testing references:
 
-- [docs/TESTING_REDIS_FALLBACK.md](docs/TESTING_REDIS_FALLBACK.md)
 - [tests/redis/README.md](tests/redis/README.md)
 
 ## Documentation Map by Audience
@@ -212,19 +206,10 @@ Use this map to jump to the right documentation quickly.
 | Finance and Operations | [docs/FINANCE_WAREHOUSE.md](docs/FINANCE_WAREHOUSE.md) | [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md), [docs/SISTEMA_6_ESTADOS.md](docs/SISTEMA_6_ESTADOS.md) |
 | Inventory and Purchasing | [docs/INVENTORY_MODEL_OVERVIEW.md](docs/INVENTORY_MODEL_OVERVIEW.md) | [docs/FIFO_CASOS_DE_USO.md](docs/FIFO_CASOS_DE_USO.md), [docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md](docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md), [docs/AUDITORIA_MENSUAL_INVENTARIO.md](docs/AUDITORIA_MENSUAL_INVENTARIO.md) |
 | DevOps and Platform | [docs/DEPLOYMENT_AND_TROUBLESHOOTING.md](docs/DEPLOYMENT_AND_TROUBLESHOOTING.md) | [docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md), [docs/MAINTENANCE_CHECKLIST.md](docs/MAINTENANCE_CHECKLIST.md), [docs/REDIS_SMART_FALLBACK.md](docs/REDIS_SMART_FALLBACK.md) |
-| Security Auditors | [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) | [docs/MULTITENANCY.md](docs/MULTITENANCY.md), [docs/COMPLETE_ADMIN_SEPARATION.md](docs/COMPLETE_ADMIN_SEPARATION.md), [docs/SECURITY.md](docs/SECURITY.md) |
-| Backend Engineers | [docs/MULTITENANCY.md](docs/MULTITENANCY.md) | [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md), [docs/CONCILIACION_INVENTARIO_REFACTOR.md](docs/CONCILIACION_INVENTARIO_REFACTOR.md), [docs/INVENTORY_INTEGRITY_FIX.md](docs/INVENTORY_INTEGRITY_FIX.md) |
-| Product and Business Stakeholders | [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md) | [docs/FINANCE_WAREHOUSE.md](docs/FINANCE_WAREHOUSE.md), [docs/PRIORITY_SYSTEM_USER_GUIDE.md](docs/PRIORITY_SYSTEM_USER_GUIDE.md), [docs/RMA_SYSTEM.md](docs/RMA_SYSTEM.md) |
+| Security Auditors | [docs/SECURITY.md](docs/SECURITY.md) | [docs/MULTITENANCY.md](docs/MULTITENANCY.md), [docs/COMPLETE_ADMIN_SEPARATION.md](docs/COMPLETE_ADMIN_SEPARATION.md) |
+| Backend Engineers | [docs/MULTITENANCY.md](docs/MULTITENANCY.md) | [docs/CONCILIACION_INVENTARIO_REFACTOR.md](docs/CONCILIACION_INVENTARIO_REFACTOR.md), [docs/INVENTORY_INTEGRITY_FIX.md](docs/INVENTORY_INTEGRITY_FIX.md), [docs/FIFO_CASOS_DE_USO.md](docs/FIFO_CASOS_DE_USO.md) |
+| Product and Business Stakeholders | [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md) | [docs/FINANCE_WAREHOUSE.md](docs/FINANCE_WAREHOUSE.md), [docs/PRIORITY_QUEUE_SYSTEM.md](docs/PRIORITY_QUEUE_SYSTEM.md), [docs/RMA_SYSTEM.md](docs/RMA_SYSTEM.md) |
 | New Developers and Onboarding | [docs/LEARNING_ROUTE.md](docs/LEARNING_ROUTE.md) | [docs/MULTITENANCY.md](docs/MULTITENANCY.md), [docs/FUNCTIONAL_GUIDE.md](docs/FUNCTIONAL_GUIDE.md) |
-
-## Changelog and ADRs
-
-Recent implementation notes and change histories are distributed in docs files prefixed by CHANGELOG or implementation summaries.
-
-Examples:
-
-- [docs/CHANGELOG_FINANCE_WAREHOUSE.md](docs/CHANGELOG_FINANCE_WAREHOUSE.md)
-- [docs/CHANGELOG_REDIS_SMART_FALLBACK.md](docs/CHANGELOG_REDIS_SMART_FALLBACK.md)
 
 ## Contribution Standards
 
@@ -236,7 +221,6 @@ Baseline standards:
 
 Developer workflow references:
 
-- [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
 - [docs/LEARNING_ROUTE.md](docs/LEARNING_ROUTE.md)
 
 ## Ownership and Review Cadence

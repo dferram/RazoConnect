@@ -1,222 +1,86 @@
-# Módulo de Auditoría Mensual de Inventario
+# Monthly Inventory Audit
 
-## 📋 Descripción General
+## Purpose
 
-Sistema completo de auditoría mensual de inventario con conciliación automática entre stock físico y stock teórico. Implementa un flujo de trabajo de **conteo ciego** con sistema de alertas por semáforo y sincronización controlada del inventario.
+This module supports monthly stock reconciliation between what the system expects and what the warehouse physically counts.
 
----
+The process is designed to be objective, auditable, and hard to manipulate.
 
-## 🎯 Características Principales
+## How It Works
 
-### 1. **Cálculo Automático de Stock Teórico**
-El sistema calcula el stock teórico de cada producto usando la fórmula:
+### 1. Theoretical stock calculation
 
-```
-Stock Teórico = Inventario Inicial + Entradas OC + Backorders Completados - Ventas Confirmadas - Mermas
-```
+The system calculates expected stock using this formula:
 
-**Componentes del cálculo:**
-- **Inventario Inicial**: Stock registrado al inicio del período
-- **Entradas OC**: Piezas recibidas de órdenes de compra (`detallesordencompra.piezasrecibidas`)
-- **Backorders Completados**: Productos surtidos de pedidos en backorder (`detallesdelpedido.cantidadsurtida`)
-- **Ventas Confirmadas**: Piezas vendidas en remisiones emitidas (`detalle_remisiones.cantidad_piezas`)
-- **Mermas**: Ajustes de inventario tipo MERMA (`ajustes_inventario`)
+`Theoretical Stock = Opening Stock + Purchase Order Receipts + Completed Backorders - Confirmed Sales - Shrinkage`
 
-### 2. **Conteo Ciego (Blind Counting)**
-- El personal ingresa **SKU** y **cantidad física** sin ver el stock teórico
-- Previene sesgos en el conteo físico
-- Garantiza objetividad en la auditoría
+### 2. Blind counting
 
-### 3. **Sistema de Semáforo Automático**
+Warehouse staff enter:
+- SKU
+- physical count
 
-| Color | Condición | Acción Requerida |
-|-------|-----------|------------------|
-| 🟢 **Verde** | Diferencia = 0 | Ninguna |
-| 🟡 **Amarillo** | Diferencia ≤ 2 unidades | Opcional |
-| 🔴 **Rojo** | Diferencia > 2 unidades | **Comentario obligatorio** |
+They do not see the theoretical stock while counting.
 
-### 4. **Impacto Económico**
-Calcula automáticamente el impacto económico de cada diferencia:
-```
-Impacto = (Cantidad Física - Stock Teórico) × Costo Unitario
-```
+### 3. Traffic-light review
 
-### 5. **Cierre y Sincronización (Solo Super Admin)**
-- Actualiza el stock real del sistema (`inventarios_admin.cantidad`)
-- Genera ajustes de inventario automáticos
-- Marca la sesión como CERRADA (irreversible)
+| Color | Meaning | Action |
+|---|---|---|
+| Green | No difference | No action |
+| Yellow | Small difference | Optional comment |
+| Red | Significant difference | Comment required |
 
----
+### 4. Economic impact
 
-## 🗂️ Estructura de Archivos
+The module estimates the value of every discrepancy so finance and inventory teams can prioritize the largest gaps first.
 
-### Backend
+### 5. Controlled close
 
-```
-services/
-  └── inventoryAuditService.js         # Lógica de negocio de auditoría
+Only a super admin can close and synchronize a completed audit session.
 
-controllers/
-  └── auditController.js               # Endpoints de auditoría
+That close action:
+- writes the final inventory adjustments
+- updates the real stock record
+- marks the session as closed and irreversible
 
-routes/
-  └── admin.js                          # Rutas de auditoría (líneas 1280-1352)
+## Data Model
 
-migrations/
-  └── 20250120_audit_tables.sql        # Tablas de auditoría
-```
+The workflow uses these tables:
+- `toma_inventario_sesiones`: audit session header
+- `toma_inventario_conteos`: individual counts
+- `auditoria_comentarios`: justification comments
+- `ajustes_inventario`: historical stock adjustments
 
-### Frontend
+## Main Endpoints
 
-```
-tenants_views/razo/
-  ├── admin-auditoria-mensual.html     # Interfaz principal
-  └── js/
-      └── admin-auditoria-mensual.js   # Lógica cliente
-```
+Session management:
+- `POST /api/admin/auditoria/sesiones`
+- `GET /api/admin/auditoria/sesiones`
+- `GET /api/admin/auditoria/sesiones/:sesionId`
 
----
+Audit actions:
+- create a blind count
+- add a comment for a significant difference
+- review reconciliation results
+- close the session
 
-## 🗄️ Estructura de Base de Datos
+## Operational Rules
 
-### Tablas Principales
+- Differences above the red threshold require a comment.
+- The final close should only happen after review.
+- Closed sessions should not be edited.
+- Every adjustment must remain traceable to a session and user.
 
-#### `toma_inventario_sesiones`
-Cabecera de sesiones de auditoría (ya existente en DB).
+## Related Files
 
-```sql
-CREATE TABLE toma_inventario_sesiones (
-    sesionid SERIAL PRIMARY KEY,
-    nombre VARCHAR(150) NOT NULL,
-    fechainicio TIMESTAMP DEFAULT NOW(),
-    fechacierre TIMESTAMP,
-    estatus estatus_sesion_enum DEFAULT 'ABIERTA',
-    usuario_creador_id INTEGER,
-    tenant_id INTEGER DEFAULT 1
-);
-```
+- Service layer: `services/inventoryAuditService.js`
+- Controller: `controllers/auditController.js`
+- Routes: `routes/admin.js`
+- Frontend: `tenants_views/razo/admin-auditoria-mensual.html`
 
-#### `toma_inventario_conteos`
-Registros individuales de conteo (ya existente en DB).
+## Notes
 
-```sql
-CREATE TABLE toma_inventario_conteos (
-    conteoid SERIAL PRIMARY KEY,
-    sesionid INTEGER NOT NULL,
-    varianteid INTEGER NOT NULL,
-    conteo_a INTEGER,
-    usuario_a_id INTEGER,
-    cantidad_final INTEGER,
-    estatus_aplicacion estatus_aplicacion_enum DEFAULT 'PENDIENTE',
-    tenant_id INTEGER DEFAULT 1
-);
-```
-
-#### `auditoria_comentarios` (NUEVA)
-Comentarios de justificación para diferencias significativas.
-
-```sql
-CREATE TABLE auditoria_comentarios (
-    comentario_id SERIAL PRIMARY KEY,
-    conteo_id INTEGER NOT NULL UNIQUE,
-    comentario TEXT NOT NULL,
-    usuario_id INTEGER NOT NULL,
-    tenant_id INTEGER DEFAULT 1,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-#### `ajustes_inventario` (NUEVA)
-Registro histórico de ajustes de inventario.
-
-```sql
-CREATE TABLE ajustes_inventario (
-    ajuste_id SERIAL PRIMARY KEY,
-    variante_id INTEGER NOT NULL,
-    admin_id INTEGER NOT NULL,
-    cantidad INTEGER NOT NULL,
-    tipo_ajuste VARCHAR(20) CHECK (tipo_ajuste IN ('ENTRADA', 'SALIDA', 'MERMA', 'AJUSTE')),
-    motivo TEXT,
-    usuario_id INTEGER NOT NULL,
-    tenant_id INTEGER DEFAULT 1,
-    fecha_ajuste TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    sesion_auditoria_id INTEGER
-);
-```
-
----
-
-## 🔌 API Endpoints
-
-### Gestión de Sesiones
-
-#### `POST /api/admin/auditoria/sesiones`
-Crear nueva sesión de auditoría.
-
-**Request:**
-```json
-{
-  "nombre": "Auditoría Enero 2025"
-}
-```
-
-**Response:**
-```json
-{
-  "mensaje": "Sesión de auditoría creada exitosamente",
-  "sesion": {
-    "sesionid": 1,
-    "nombre": "Auditoría Enero 2025",
-    "fechainicio": "2025-01-20T17:00:00.000Z",
-    "estatus": "ABIERTA"
-  }
-}
-```
-
----
-
-#### `GET /api/admin/auditoria/sesiones`
-Obtener lista de sesiones de auditoría.
-
-**Response:**
-```json
-{
-  "sesiones": [
-    {
-      "sesionid": 1,
-      "nombre": "Auditoría Enero 2025",
-      "fechainicio": "2025-01-20T17:00:00.000Z",
-      "fechacierre": null,
-      "estatus": "ABIERTA",
-      "usuario_creador_nombre": "Admin Principal",
-      "total_conteos": 15,
-      "conteos_aplicados": 0
-    }
-  ]
-}
-```
-
----
-
-#### `GET /api/admin/auditoria/sesiones/:sesionId`
-Obtener detalle de una sesión específica.
-
-**Response:**
-```json
-{
-  "sesion": {
-    "sesionid": 1,
-    "nombre": "Auditoría Enero 2025",
-    "fechainicio": "2025-01-20T17:00:00.000Z",
-    "estatus": "ABIERTA"
-  },
-  "conteos": [...]
-}
-```
-
----
-
-### Conteo Ciego
+This document is a readable business overview. Keep implementation details in code and migrations, not duplicated here.
 
 #### `POST /api/admin/auditoria/sesiones/:sesionId/conteos`
 Registrar conteo físico de un producto.

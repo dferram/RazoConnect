@@ -1,243 +1,71 @@
-# Sistema de Consolidación de Backorders por Proveedor
+# Backorder Consolidation by Supplier
 
-## Resumen Ejecutivo
+## Purpose
 
-Sistema implementado para optimizar las órdenes de compra mediante la consolidación automática de backorders del mismo proveedor hasta que la mercancía llegue físicamente al almacén.
+This workflow reduces purchase-order noise by grouping open backorders from the same supplier into a single purchase order until goods are physically received.
 
-## 🎯 Objetivos Alcanzados
+The goal is simple:
+- keep supplier backorders consolidated
+- preserve traceability to the original customer order
+- keep reports readable for operations and purchasing
 
-1. ✅ **Consolidación Automática**: Los backorders del mismo proveedor se agrupan en una sola orden de compra
-2. ✅ **Trazabilidad Completa**: Cada línea de detalle mantiene referencia al pedido de cliente original
-3. ✅ **Reportes Agrupados**: PDF/Excel muestran productos agrupados por pedido de origen
-4. ✅ **UI Mejorada**: Indicadores visuales para órdenes consolidadas
-5. ✅ **Control de Flujo**: Prevención de inserción después de recepción en almacén
+## What Changed
 
----
+### Database
 
-## 📊 Cambios en Base de Datos
+A new `pedido_original_id` column was added to `detallesordencompra` so each purchase-order line can be traced back to the original customer order.
 
-### Migration: `add_pedido_original_id_to_detalles.sql`
+### Backend
 
-```sql
--- Agregar columna para trazabilidad
-ALTER TABLE public.detallesordencompra 
-ADD COLUMN IF NOT EXISTS pedido_original_id INTEGER;
+`services/ordenesService.js` now follows this rule:
+- reuse an open purchase order for the same supplier when possible
+- create a new purchase order only when no open one exists
+- merge repeated lines when the same variant and original order already exist
 
--- Foreign key constraint
-ALTER TABLE public.detallesordencompra
-ADD CONSTRAINT fk_detallesoc_pedido_original 
-FOREIGN KEY (pedido_original_id) 
-REFERENCES public.pedidos(pedidoid) 
-ON DELETE SET NULL;
+The service returns whether the result was a new order or a consolidation.
 
--- Índice para performance
-CREATE INDEX IF NOT EXISTS idx_detallesoc_pedido_original 
-ON public.detallesordencompra(pedido_original_id) 
-WHERE pedido_original_id IS NOT NULL;
-```
+### PDF output
 
-**Propósito**: Permite rastrear qué pedido de cliente originó cada línea de producto en la orden de compra.
+`controllers/ordenCompraPDFController.js` groups lines by `pedido_original_id` and renders supplier documents in a more readable format.
 
----
+The PDF now:
+- shows which customer order originated each group
+- keeps quantities in packages, not pieces
+- calculates subtotals per group and a final total
 
-## 🔧 Cambios en Backend
+### Admin route
 
-### 1. `services/ordenesService.js`
+The admin panel now exposes a PDF endpoint for purchase orders:
 
-#### Función: `generarBackorderProveedor()`
+- `GET /api/admin/ordenes-compra/:id/pdf`
 
-**Antes**: Creaba una nueva orden de compra para cada backorder (Trazabilidad 1:1)
+## How It Works
 
-**Después**: Busca órdenes abiertas existentes y consolida
+1. A customer order runs out of stock and becomes a backorder.
+2. The system checks whether the supplier already has an open purchase order.
+3. If yes, the backorder is added to that order.
+4. If no, a new purchase order is created.
+5. Each line keeps `pedido_original_id` for traceability.
 
-```javascript
-// PASO 2: BUSCAR ORDEN DE COMPRA ABIERTA PARA CONSOLIDACIÓN
-const ordenAbiertalResult = await client.query(
-  `SELECT ordencompraid 
-   FROM ordenesdecompra 
-   WHERE proveedorid = $1 
-     AND estatus NOT IN ('RECIBIDA_ALMACEN', 'CANCELADA', 'COMPLETADA')
-     AND tenant_id = $2
-   ORDER BY fechacreacion ASC
-   LIMIT 1`,
-  [proveedorID, tenantId]
-);
+## Operational Rules
 
-if (ordenAbiertalResult.rows.length > 0) {
-  // Consolidar en orden existente
-  ordenCompraID = ordenAbiertalResult.rows[0].ordencompraid;
-} else {
-  // Crear nueva orden
-  esOrdenNueva = true;
-  // ... INSERT INTO OrdenesDeCompra
-}
-```
+- Consolidation only applies while the purchase order is still open.
+- Once the order is received, closed, or canceled, new lines must not be appended.
+- Reports must always keep the original order reference visible.
 
-**Lógica de Inserción de Detalles**:
-```javascript
-// Verificar si ya existe detalle para esta variante Y pedido original
-const detalleExistenteResult = await client.query(
-  `SELECT detalleoc_id, cantidadsolicitada
-   FROM detallesordencompra
-   WHERE ordencompraid = $1 
-     AND varianteid = $2 
-     AND pedido_original_id = $3
-   LIMIT 1`,
-  [ordenCompraID, varianteIdNumero, pedidoOrigenId]
-);
+## Why This Matters
 
-if (detalleExistenteResult.rows.length > 0) {
-  // Actualizar cantidad existente
-  UPDATE detallesordencompra
-  SET cantidadsolicitada = cantidadsolicitada + $1
-  WHERE detalleoc_id = $2
-} else {
-  // Insertar nuevo detalle con pedido_original_id
-  INSERT INTO DetallesOrdenCompra 
-  (OrdenCompraID, VarianteID, CantidadSolicitada, CantidadRecibida, pedido_original_id)
-  VALUES ($1, $2, $3, 0, $4)
-}
-```
+Without consolidation, the platform creates too many small purchase orders for the same supplier. That increases manual work and makes reporting harder. This workflow keeps operations grouped without losing traceability.
 
-**Logging Mejorado**:
-```javascript
-console.log(`🔄 [CONSOLIDACIÓN] Backorder consolidado en OC #${ordenCompraID} existente`);
-console.log(`✨ [NUEVA OC] Orden de compra #${ordenCompraID} creada para proveedor ${proveedorID}`);
-console.log(`📦 [ACTUALIZADO] Detalle #${detalleOrdenID} actualizado (+${cantidadNormalizada} piezas)`);
-console.log(`➕ [NUEVO DETALLE] Detalle #${detalleOrdenID} creado (Pedido #${pedidoOrigenId})`);
-```
+## Related Docs
 
-#### Función: `generarBackordersAgrupados()`
+- Purchase and warehouse approval flow: docs/FINANCE_WAREHOUSE.md
+- Inventory model: docs/INVENTORY_MODEL_OVERVIEW.md
+- FIFO allocation: docs/FIFO_CASOS_DE_USO.md
 
-Misma lógica de consolidación aplicada para múltiples productos.
+## Notes
 
-**Retorno Mejorado**:
-```javascript
-return {
-  success: true,
-  ordenCompraID,
-  proveedorID,
-  esOrdenNueva,
-  consolidada: !esOrdenNueva,  // ← NUEVO
-  mensaje: esOrdenNueva
-    ? `Orden de compra ${ordenCompraID} creada...`
-    : `Backorder consolidado en OC #${ordenCompraID} existente...`
-};
-```
-
----
-
-### 2. `controllers/ordenCompraPDFController.js` (NUEVO)
-
-Generador de PDF con soporte para consolidación.
-
-**Características**:
-- Detecta automáticamente si la orden es consolidada
-- Agrupa productos por `pedido_original_id`
-- Muestra badges visuales para órdenes consolidadas
-- Inserta encabezados de grupo: "📦 Proveniente del Pedido: #123 - Cliente: Juan Pérez"
-- Calcula totales por grupo y total general
-- **Usa cantidades por PAQUETE** (no por pieza) según especificación del usuario
-
-**Query Principal**:
-```javascript
-const detallesQuery = await db.query(
-  `SELECT 
-      doc.detalleoc_id,
-      doc.varianteid,
-      doc.cantidadsolicitada,  -- EN PAQUETES
-      doc.piezasporpaquete,
-      doc.costounitario,
-      doc.pedido_original_id,  -- ← CRÍTICO
-      pv.sku,
-      p.nombreproducto,
-      COALESCE(ped.pedidoid, 0) AS pedido_id,
-      COALESCE(c.nombre || ' ' || c.apellido, 'N/A') AS cliente_nombre
-  FROM detallesordencompra doc
-  INNER JOIN producto_variantes pv ON doc.varianteid = pv.varianteid
-  INNER JOIN productos p ON pv.productoid = p.productoid
-  LEFT JOIN pedidos ped ON doc.pedido_original_id = ped.pedidoid
-  LEFT JOIN clientes c ON ped.clienteid = c.clienteid
-  WHERE doc.ordencompraid = $1
-  ORDER BY doc.pedido_original_id NULLS FIRST, doc.detalleoc_id`,
-  [ordenCompraId]
-);
-```
-
-**Agrupación por Pedido**:
-```javascript
-const agruparPorPedido = (detalles) => {
-  const grupos = new Map();
-  
-  detalles.forEach(detalle => {
-    const key = detalle.pedido_original_id || 'MANUAL';
-    if (!grupos.has(key)) {
-      grupos.set(key, []);
-    }
-    grupos.get(key).push(detalle);
-  });
-
-  return grupos;
-};
-```
-
-**Renderizado de Encabezados de Grupo**:
-```javascript
-const renderPedidoHeader = (pedidoId, clienteNombre, yPos) => {
-  // Caja con borde punteado azul
-  doc.save();
-  doc.strokeColor('#3B82F6')
-     .lineWidth(1)
-     .dash(5, { space: 3 })
-     .rect(50, yPos, 512, 30)
-     .stroke();
-  doc.restore();
-
-  doc.fontSize(10)
-     .font('Helvetica-Bold')
-     .fillColor('#3B82F6')
-     .text('📦 Proveniente del Pedido:', 60, yPos + 8);
-
-  doc.fontSize(10)
-     .font('Helvetica')
-     .fillColor('#333333')
-     .text(`#${pedidoId} - Cliente: ${clienteNombre}`, 220, yPos + 8);
-
-  return yPos + 40;
-};
-```
-
----
-
-### 3. `routes/admin.js`
-
-**Nueva Ruta Agregada**:
-```javascript
-const ordenCompraPDFController = require("../controllers/ordenCompraPDFController");
-
-router.get(
-  "/ordenes-compra/:id/pdf",
-  authenticate,
-  authorizeAdmin,
-  ordenCompraPDFController.generarPDFOrdenCompra
-);
-```
-
-**Uso**: `GET /api/admin/ordenes-compra/:id/pdf`
-
----
-
-## 🎨 Cambios en Frontend (Pendiente de Implementación)
-
-### Indicadores UI Requeridos
-
-#### 1. Badge de "Orden Consolidada" en Tabla Principal
-
-```javascript
-// En la función que renderiza la tabla de órdenes
-function renderOrdenesTable(ordenes) {
-  ordenes.forEach(orden => {
-    // Verificar si es consolidada
+This document describes the business behavior and service rules only. The exact SQL and rendering implementation should stay in the codebase, not duplicated here.
     const esConsolidada = orden.total_pedidos_origen > 1;
     
     const badgeHTML = esConsolidada 

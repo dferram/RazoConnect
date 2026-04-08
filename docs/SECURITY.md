@@ -142,5 +142,4 @@ Control objective:
 ## Security Governance Notes
 
 - This document defines implemented security controls at architecture and middleware level.
-- Detailed hardening change history is maintained in docs/SECURITY_AUDIT.md.
 - Security control reviews should be performed after major authentication, tenancy, or middleware changes.

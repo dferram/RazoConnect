@@ -1,223 +1,83 @@
-# ADMIN SEPARATION ARCHITECTURE - COMPLETE SYSTEM
+# Admin Separation Architecture
 
-## Executive Summary
+## Purpose
 
-RazoConnect implementó separación de datos multinivel para **STOCK** y **CXC** (Cuentas por Cobrar). Cada administrador ve SOLO sus datos. El sistema es determinístico, seguro y auditado.
+This system keeps inventory and receivables separated by administrator scope so each admin only sees the data they are responsible for.
 
-```
-SEPARACIÓN EN DOS NIVELES:
+The separation has two layers:
+- stock separation
+- receivables separation
 
-1️⃣ STOCK SEPARATION (Inventario)
-   Cada admin ve SOLO el stock que posee
+Both layers are derived from the customer state mapping.
 
-2️⃣ CXC SEPARATION (Cartera)
-   Cada admin ve SOLO los créditos de sus clientes
+## Core Idea
 
-CONEXIÓN: Cliente → Estado → Admin
-          ↓
-        Determina qué stock ve
-        + qué CxC puede cobrar
-```
+Customer state determines the responsible admin.
 
----
+That mapping then controls:
+- which stock the customer can see
+- which receivables the admin can collect
 
-# ARQUITECTURA COMPLETA
+## Data Mapping
 
-## Part 1: NIVEL 1 - Configuración (Mapeo Fundamental)
+### `administrador_estados`
 
-### Tabla: administrador_estados
+This table is the source of truth for the state-to-admin assignment.
 
-```
-La "verdad" del sistema - Define qué admin maneja qué estado
+Each `(admin_id, estado_id, tenant_id)` combination must be unique, so one state always belongs to one admin.
 
-┌────────────────────────────────────────────────────┐
-│ administrador_estados                              │
-├────────┬──────────┬────────────┬───────────────────┤
-│ admin_id│ estado_id│ tenant_id  │ descripción       │
-├────────┼──────────┼────────────┼───────────────────┤
-│ 4      │ 7        │ 1          │ Alejandra → Jalisco
-│ 4      │ 1        │ 1          │ Alejandra → Aguascalientes
-│ 5      │ 6        │ 1          │ Lupita → CDMX
-│ 5      │ 15       │ 1          │ Lupita → Guanajuato
-│ 7      │ 19       │ 1          │ Maricela → Nuevo León
-└────────┴──────────┴────────────┴───────────────────┘
+### `clientes`
 
-UNIQUE (admin_id, estado_id, tenant_id)
-→ Cada estado a EXACTAMENTE un admin
-→ Imposible: Jalisco → Admin 4 Y Admin 5
-```
+Each customer stores a `estado_id`.
 
----
+At runtime, the system looks up the matching admin from `administrador_estados` and uses that admin scope everywhere else.
 
-## Part 2: NIVEL 2 - Datos de Base (Cliente/Stock)
+## Stock Separation
 
-### Tabla: clientes
+### `stock_admin`
 
-```
-Cliente registra con su estado - Esto define SU admin para todo
+Inventory is stored per admin, per variant, and per tenant.
 
-┌──────────┬──────────────┬───────────┬─────────────┐
-│ clienteid│ nombre       │ estado_id │ tenant_id   │
-├──────────┼──────────────┼───────────┼─────────────┤
-│ 101      │ Juan García  │ 7         │ 1           │ ← Jalisco
-│ 102      │ María López  │ 7         │ 1           │ ← Jalisco
-│ 103      │ Pedro Díaz   │ 6         │ 1           │ ← CDMX
-│ 104      │ Ana García   │ 19        │ 1           │ ← Nuevo León
-└──────────┴──────────────┴───────────┴─────────────┘
+That means:
+- Admins only see their own stock rows
+- Customers only see the stock tied to their mapped admin
+- Global mixing is not allowed in the operational flow
 
-sistema BUSCA automáticamente:
-SELECT admin_id FROM administrador_estados
-WHERE estado_id = 7 → admin_id = 4
+## Receivables Separation
 
-Resultado: Juan y María → Admin 4 (Alejandra)
-           Pedro → Admin 5 (Lupita)
-           Ana → Admin 7 (Maricela)
-```
+### `cliente_creditos`
 
----
+When a customer credit record is created, it inherits the admin from the customer's state mapping.
 
-## Part 3: SEPARACIÓN DE STOCK
+That admin assignment is treated as immutable.
 
-### Tabla: stock_admin
+### `cuentas_por_cobrar`
 
-```
-Inventario POR administrador - Cada admin tiene su stock separado
+Receivables inherit the admin from the customer credit record, so collections stay inside the same scope.
 
-┌─────────────────────────────────────────────────────────┐
-│ stock_admin                                             │
-├────────────────┬──────────────┬────────────────────┐    │
-│ admin_id       │ variante_id  │ cantidad          │    │
-├────────────────┼──────────────┼────────────────────┤    │
-│ 4              │ 1            │ 100               │    │ Alejandra
-│ 4              │ 2            │ 50                │    │ Nike Stock
-│ 5              │ 1            │ 150               │    │ Lupita
-│ 5              │ 2            │ 80                │    │ Nike Stock
-│ 7              │ 1            │ 75                │    │ Maricela
-│ 7              │ 2            │ 45                │    │ Nike Stock
-└────────────────┴──────────────┴────────────────────┘    │
-                                                           │
-UNIQUE INDEX: (admin_id, variante_id, tenant_id)          │
-→ Cada admin SOLO TE TIENE UN REGISTRO por variante      │
-```
+## Access Rules
 
-### ¿Cómo Cliente VE el Stock?
+- A customer sees only the stock and receivables linked to their state admin.
+- An admin sees only their own scoped inventory and receivables.
+- The tenant boundary still applies on top of the admin boundary.
 
-```
-CLIENTE JUAN (estado = 7, Jalisco)
-inicia sesión
-     │
-     ▼
-Sistema ejecuta: estadosHelper.getAdminByClienteEstado(101, 1)
-     │
-     ├─ SELECT estado_id FROM clientes WHERE clienteid = 101
-     │  → estado_id = 7
-     │
-     ├─ SELECT admin_id FROM administrador_estados WHERE estado_id = 7
-     │  → admin_id = 4 (Alejandra)
-     │
-     ▼
-Juan ve SOLO stock de Admin 4 (Alejandra)
-     │
-     ├─ SELECT COALESCE(SUM(cantidad), 0) as stock
-     │  FROM stock_admin
-     │  WHERE variante_id = 1
-     │    AND admin_id = 4  ◄─ FILTRO AUTOMÁTICO
-     │    AND tenant_id = 1
-     │
-     ▼
-Juan ve: Nike stock = 100 (solo lo de Alejandra)
-❌ NO ve: 150 de Lupita
-❌ NO ve: 75 de Maricela
-```
+## Why This Design Works
 
-### ¿Cómo Admin VE su Stock?
+This model keeps the platform predictable:
+- customer scope is derived once
+- inventory scope stays stable
+- receivables scope stays stable
+- cross-admin leakage is blocked by design
 
-```
-ADMIN 4 (Alejandra) - Dashboard
+## Related Files
 
-GET /api/admin/inventario
+- Role model: docs/SYSTEM_ROLES.md
+- Inventory model: docs/INVENTORY_MODEL_OVERVIEW.md
+- Security architecture: docs/SECURITY.md
 
-     │
-     ▼
-Sistema ejecuta: getAdminIdFromContext(req.user)
-     │
-     ├─ user.adminid = 4
-     ├─ user.rol = 'admin'
-     │
-     ├─ Returns: { adminId: 4, shouldFilter: true }
-     │
-     ▼
-Query:
-SELECT variante_id, cantidad, cantidad_reservada
-FROM stock_admin
-WHERE admin_id = 4  ◄─ SU STOCK
-  AND tenant_id = 1
+## Notes
 
-     │
-     ▼
-Alejandra ve:
-• Nike: 100 unidades (suyo)
-• Adidas: 50 unidades (suyo)
-❌ NO ve stock de Lupita
-❌ NO ve stock de Maricela
-```
-
----
-
-## Part 4: SEPARACIÓN DE CXC (CUENTAS POR COBRAR)
-
-### Tabla: cliente_creditos
-
-```
-Crédito de cliente - ASIGNADO automáticamente al admin del estado
-
-┌──────────────┬──────────────┬────────────────┬──────────┐
-│ credito_id   │ cliente_id   │ saldo_deudor   │ admin_id │
-├──────────────┼──────────────┼────────────────┼──────────┤
-│ 1001         │ 101 (Juan)   │ 5000           │ 4        │ Jalisco
-│ 1002         │ 102 (María)  │ 3200           │ 4        │ Jalisco
-│ 1003         │ 103 (Pedro)  │ 2800           │ 5        │ CDMX
-│ 1004         │ 104 (Ana)    │ 1500           │ 7        │ Nuevo León
-└──────────────┴──────────────┴────────────────┴──────────┘
-
-admin_id se COPIA de:
-• cliente.estado_id
-• administrador_estados mapping
-• PERMANECE INMUTABLE una vez creado
-```
-
-### Tabla: cuentas_por_cobrar
-
-```
-Movimiento de CxC - Hereda admin_id del cliente_creditos
-
-┌────────┬──────────┬──────────┬────────────┬──────────┐
-│ cxcid  │ pedido_id│ cliente_id│ monto      │ admin_id │
-├────────┼──────────┼──────────┼────────────┼──────────┤
-│ 5001   │ P-1001   │ 101      │ 1000       │ 4        │ Alejandra
-│ 5002   │ P-1002   │ 101      │ 800        │ 4        │ Alejandra
-│ 5003   │ P-1003   │ 103      │ 500        │ 5        │ Lupita
-│ 5004   │ NULL     │ 102      │ 1200       │ 4        │ Alejandra
-└────────┴──────────┴──────────┴────────────┴──────────┘
-
-¿Cómo se asigna?
-INSERT INTO cuentas_por_cobrar (..., admin_id)
-SELECT ..., cc.admin_id  ◄─ From cliente_creditos
-FROM cliente_creditos cc
-WHERE cc.cliente_id = ?
-```
-
-### ¿Cómo Admin VE su CxC?
-
-```
-ADMIN 4 (Alejandra) - Dashboard CxC
-
-GET /api/admin/cxc-summary
-
-     │
-     ▼
-getAdminIdFromContext(req.user)
-→ { adminId: 4, shouldFilter: true }
+This is the canonical business explanation of admin separation. The code and SQL queries should remain the implementation source of truth.
 
      │
      ▼

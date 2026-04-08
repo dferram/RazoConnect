@@ -1,243 +1,91 @@
-# Sistema de Cancelación de Pedidos con Backorders en Cascada
+# Order Cancellation with Backorder Cascade
 
-## Resumen Ejecutivo
+## Purpose
 
-Se implementó un sistema robusto de cancelación de pedidos que maneja correctamente los backorders asociados, restaura el inventario de forma inteligente y notifica automáticamente a los administradores.
+This flow lets a customer cancel an order while safely restoring stock, clearing backorders, and reversing financial impact when needed.
 
-## Arquitectura de Backorders
+The main rule is simple: cancellation must leave inventory, credit, and notifications in a consistent state.
 
-### Modelo de Datos
+## Data Model
 
-El sistema NO utiliza una tabla separada de backorders. Los backorders se rastrean directamente en `detallesdelpedido`:
+RazoConnect does not use a separate backorder table. Backorders are tracked directly in `detallesdelpedido`.
 
-```sql
-CREATE TABLE public.detallesdelpedido (
-    detalleid integer NOT NULL,
-    pedidoid integer NOT NULL,
-    varianteid integer NOT NULL,
-    cantidadpaquetes integer NOT NULL,
-    piezastotales integer NOT NULL,
-    esbackorder boolean DEFAULT false,           -- Marca si el ítem es backorder
-    cantidadsurtida integer DEFAULT 0,           -- Piezas ya entregadas
-    cantidadbackorder integer DEFAULT 0,         -- Piezas pendientes en backorder
-    cantidad_surtida_remisiones integer DEFAULT 0
-);
-```
+Important fields:
+- `esbackorder`: marks the line as backordered
+- `cantidadsurtida`: how many pieces were already shipped
+- `cantidadbackorder`: how many pieces are still pending
 
-### Estados de un Ítem en Pedido
+## Cancellation Endpoint
 
-1. **Stock Normal**: `esbackorder = false`
-   - Todo el inventario estaba disponible al crear el pedido
-   - `piezastotales` se descuentan del stock inmediatamente
+- `PUT /api/pedidos/:id/cancelar`
 
-2. **Backorder Completo**: `esbackorder = true`, `cantidadsurtida = 0`
-   - No había stock disponible al crear el pedido
-   - `cantidadbackorder = piezastotales`
-   - No se descuenta stock (no hay qué descontar)
+Only the owning customer can cancel the order.
 
-3. **Backorder Parcial**: `esbackorder = true`, `cantidadsurtida > 0`
-   - Se surtió parcialmente mediante remisiones
-   - `cantidadsurtida` = piezas ya entregadas
-   - `cantidadbackorder` = piezas aún pendientes
+## Which Orders Can Be Canceled
 
-## Endpoint de Cancelación
+Cancelable states:
+- `Pendiente`
+- `Aprobado`
+- `Parcialmente Surtido`
 
-### Ruta
-```
-PUT /api/pedidos/:id/cancelar
-```
+Not cancelable:
+- `Confirmado`
+- `Completado`
+- `Cancelado`
+- `Entregado`
 
-### Autenticación
-- Requiere autenticación de cliente
-- Solo el cliente propietario puede cancelar su pedido
+## What Happens on Cancel
 
-### Restricciones de Cancelación
+1. The system verifies ownership, tenant, and current status.
+2. Each order line is reviewed one by one.
+3. Normal stock lines restore the full quantity to inventory.
+4. Backorder lines restore only the quantity that was already shipped.
+5. The order status changes to `Cancelado`.
+6. If the order affected credit, receivables and balances are reversed.
+7. Administrators receive a high-priority notification.
 
-**Estatus NO Cancelables:**
-- `Confirmado` - Ya fue procesado por el admin
-- `Completado` - Ya fue entregado completamente
-- `Cancelado` - Ya está cancelado
-- `Entregado` - Ya fue entregado físicamente
+## Inventory Behavior
 
-**Estatus Cancelables:**
-- `Pendiente` - Aún no confirmado
-- `Aprobado` - Aprobado pero no confirmado
-- `Parcialmente Surtido` - Con remisiones parciales
+- Normal line: restore full quantity
+- Partial backorder line: restore shipped quantity only
+- Pure backorder line: no stock is restored because nothing was deducted yet
 
-## Lógica de Cancelación en Cascada
+## Credit Behavior
 
-### 1. Validación Inicial
-```javascript
-// Verificar pertenencia y permisos
-SELECT p.pedidoid, p.clienteid, p.estatus, p.es_credito, p.montototal,
-       c.nombre as cliente_nombre, c.email as cliente_email
-FROM pedidos p
-JOIN clientes c ON p.clienteid = c.clienteid
-WHERE p.pedidoid = $1 AND p.tenant_id = $2
-```
+If the canceled order already created receivables, the system:
+- finds the linked remissions
+- reverses the customer debt
+- writes a credit movement for traceability
+- marks related receivable records as canceled in the description
 
-### 2. Análisis de Ítems
+## Admin Notification
 
-Para cada ítem en `detallesdelpedido`:
+Admins receive a summary with:
+- order ID
+- customer name and email
+- number of stock lines and backorder lines
+- pieces restored to inventory
+- credit reversed, if applicable
 
-#### Caso A: Ítem en Stock Normal
-```javascript
-if (!esbackorder) {
-  // Restaurar todas las piezas al inventario
-  UPDATE producto_variantes
-  SET stock = stock + piezastotales
-  WHERE varianteid = $1
-  
-  itemsEnStock++;
-  piezasRestauradas += piezastotales;
-}
-```
+## Response Shape
 
-#### Caso B: Ítem en Backorder
-```javascript
-if (esbackorder) {
-  // Calcular piezas pendientes
-  const piezasBackorderPendientes = piezastotales - cantidadsurtida;
-  
-  if (piezasBackorderPendientes > 0) {
-    backordersCancelados++;
-  }
-  
-  // Si había piezas surtidas, restaurarlas
-  if (cantidadsurtida > 0) {
-    UPDATE producto_variantes
-    SET stock = stock + cantidadsurtida
-    WHERE varianteid = $1
-    
-    piezasRestauradas += cantidadsurtida;
-  }
-  
-  // Limpiar flags de backorder
-  UPDATE detallesdelpedido
-  SET cantidadbackorder = 0,
-      esbackorder = false
-  WHERE detalleid = $1
-  
-  itemsEnBackorder++;
-}
-```
+Successful cancellation returns a summary payload with the order ID and the main restoration counters.
 
-### 3. Actualización del Pedido
-```sql
-UPDATE pedidos
-SET estatus = 'Cancelado',
-    completamente_surtido = false,
-    monto_backorder = 0
-WHERE pedidoid = $1 AND tenant_id = $2
-```
+## Operational Rules
 
-### 4. Reversión de Crédito (Si Aplica)
+- Never cancel an order by directly editing inventory rows.
+- Always process cancellation inside a transaction.
+- Always preserve traceability for stock and credit changes.
 
-Si el pedido era a crédito Y ya tenía remisiones emitidas:
+## Related Docs
 
-```javascript
-// Buscar remisiones asociadas
-SELECT remision_id FROM remisiones
-WHERE pedido_id = $1 AND tenant_id = $2
+- Inventory model: docs/INVENTORY_MODEL_OVERVIEW.md
+- Finance and warehouse flow: docs/FINANCE_WAREHOUSE.md
+- Backorder allocation: docs/FIFO_CASOS_DE_USO.md
 
-// Calcular total cargado
-SELECT SUM(monto) as total_cargado
-FROM cuentas_por_cobrar
-WHERE remision_id = ANY($1)
+## Notes
 
-// Revertir saldo deudor
-UPDATE cliente_creditos
-SET saldo_deudor = saldo_deudor - total_cargado
-WHERE cliente_id = $1
-
-// Registrar movimiento
-INSERT INTO credito_movimientos (
-  credito_id, tipo_movimiento, monto, referencia_id,
-  descripcion, saldo_despues_movimiento
-) VALUES (
-  $1, 'ABONO', $2, 'PED-{id}',
-  'Abono por cancelación de pedido #{id}', $3
-)
-
-// Marcar CXC como cancelados
-UPDATE cuentas_por_cobrar
-SET descripcion = descripcion || ' (CANCELADO)'
-WHERE remision_id = ANY($1)
-```
-
-### 5. Notificación a Administradores
-
-Se crea una notificación de **prioridad ALTA** para todos los administradores del tenant:
-
-```javascript
-INSERT INTO notificaciones (
-  administrador_id,
-  tipo,
-  titulo,
-  mensaje,
-  prioridad,
-  metadata,
-  tenant_id
-) VALUES (
-  $1,
-  'pedido',
-  'Pedido #{id} cancelado por cliente',
-  'El cliente {nombre} ({email}) ha cancelado el pedido #{id}...',
-  'alta',
-  {
-    pedido_id: id,
-    cliente_id: clienteId,
-    monto_total: montoTotal,
-    items_stock: itemsEnStock,
-    items_backorder: itemsEnBackorder,
-    backorders_cancelados: backordersCancelados,
-    piezas_restauradas: piezasRestauradas,
-    monto_revertido: montoRevertido,
-    accion: 'cancelacion_pedido'
-  },
-  $2
-)
-```
-
-#### Contenido de la Notificación
-```
-Título: Pedido #123 cancelado por cliente
-
-Mensaje:
-El cliente Juan Pérez (juan@example.com) ha cancelado el pedido #123.
-
-📊 Resumen de cancelación:
-• Ítems en stock: 3
-• Ítems en backorder: 2
-• Backorders cancelados: 2
-• Piezas restauradas al inventario: 150
-• Crédito revertido: $1,250.00
-
-Estatus anterior: Parcialmente Surtido
-```
-
-## Respuesta del Endpoint
-
-### Éxito (200 OK)
-```json
-{
-  "success": true,
-  "message": "Pedido y backorders asociados cancelados correctamente",
-  "detalles": {
-    "pedido_id": 123,
-    "items_en_stock": 3,
-    "items_en_backorder": 2,
-    "backorders_cancelados": 2,
-    "piezas_restauradas": 150,
-    "credito_revertido": "$1,250.00"
-  }
-}
-```
-
-### Error: Pedido No Cancelable (400 Bad Request)
-```json
-{
-  "success": false,
+This document explains the business behavior. The exact SQL and controller code should stay in the implementation files.
   "error": "No se puede cancelar un pedido con estatus \"Confirmado\""
 }
 ```

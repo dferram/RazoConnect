@@ -183,4 +183,3 @@ Planned scale controls:
 ## Governance Notes
 
 This document is the canonical architecture baseline for multi-tenant controls.
-Detailed implementation audits and modernization recommendations are documented in docs/ARCHITECTURE_AUDIT.md.
