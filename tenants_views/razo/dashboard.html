@@ -792,6 +792,7 @@
         const apellido = userData.apellido || "";
         const email = userData.email || "N/A";
         const telefono = userData.telefono || "No especificado";
+        const estado = userData.estado_nombre || userData.estado || "Sin asignar";
         const fechaRegistro =
           userData.fechaDeRegistro || userData.fechaderegistro || null;
         const fechaFormateada = formatDateSafe(fechaRegistro) !== "—" 
@@ -811,6 +812,10 @@
           <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
             <strong>Teléfono:</strong>
             <span>${telefono}</span>
+          </div>
+          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+            <strong>🗺️ Estado:</strong>
+            <span style="font-weight: 600; color: var(--razo-orange);">${estado}</span>
           </div>
           <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem;">
             <strong>Miembro desde:</strong>
