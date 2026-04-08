@@ -1,507 +1,255 @@
-<div align="center">
-
 # RazoConnect
 
-![Node.js](https://img.shields.io/badge/Node.js-v18+-339933?style=flat-square&logo=node.js&logoColor=white)
-![Express](https://img.shields.io/badge/Express-4.18-000000?style=flat-square&logo=express&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-v17+-4169E1?style=flat-square&logo=postgresql&logoColor=white)
-![Azure](https://img.shields.io/badge/Azure-App_Service-0078D4?style=flat-square&logo=microsoftazure&logoColor=white)
-![License](https://img.shields.io/badge/License-Proprietary-red?style=flat-square)
+Enterprise-grade B2B SaaS platform for multi-tenant commerce, inventory, finance, and operations workflows.
 
-B2B SaaS platform for multi-tenant e-commerce and inventory management. Built and maintained by [xCore](https://xcore.mx).
+## Table of Contents
 
-</div>
+1. [Executive Summary](#executive-summary)
+2. [Product Scope and Personas](#product-scope-and-personas)
+3. [System Architecture](#system-architecture)
+4. [Multi-tenancy and Data Isolation](#multi-tenancy-and-data-isolation)
+5. [Security and Compliance](#security-and-compliance)
+6. [RBAC and Access Governance](#rbac-and-access-governance)
+7. [Core Business Flows](#core-business-flows)
+8. [API and Integration Contracts](#api-and-integration-contracts)
+9. [Operations and SRE](#operations-and-sre)
+10. [Deployment Environments](#deployment-environments)
+11. [Testing and Quality Gates](#testing-and-quality-gates)
+12. [Documentation Map by Audience](#documentation-map-by-audience)
+13. [Changelog and ADRs](#changelog-and-adrs)
+14. [Contribution Standards](#contribution-standards)
+15. [Ownership and Review Cadence](#ownership-and-review-cadence)
+16. [License](#license)
 
----
+## Executive Summary
 
-## Overview
+RazoConnect is a single-platform, multi-tenant SaaS solution that supports B2B commerce operations end to end:
 
-RazoConnect is a multi-tenant SaaS platform that enables B2B commerce operations — catalog management, order processing, inventory control, credit lines, and agent commissions — from a single application instance. Each tenant operates in complete data isolation through a shared PostgreSQL database partitioned by `tenant_id`, with dedicated frontend views served per domain.
+- Catalog and order management
+- Inventory allocation and reconciliation
+- Credit and collections workflows
+- Agent commissions and operational controls
 
-The system is deployed on Azure App Service and serves production traffic for multiple businesses simultaneously.
+Design goal: one platform serving multiple business tenants with strict data isolation and role-based operational governance.
 
-### Recent Updates (March 2026)
+## Product Scope and Personas
 
-**Finance-Warehouse Confirmation Workflow**: Implemented a new approval flow where warehouse staff prepare orders and Finance department confirms before stock deduction and CxC generation. See [`docs/FLUJO_FINANZAS_ALMACEN.md`](docs/FLUJO_FINANZAS_ALMACEN.md) for complete documentation.
+Primary capabilities:
 
-**CI/CD Optimization**: 
-- Automated daily cleanup of GitHub Actions artifacts (2 AM UTC)
-- Fixed artifact storage quota issues by excluding node_modules
-- Improved test suite stability and reduced build times
-- Enhanced gitignore rules for better repository hygiene
+- Sales and order lifecycle
+- Warehouse and finance confirmation flows
+- Backorder and FIFO allocation
+- Credit/CxC operations
+- Purchase and inventory audit workflows
 
-**Health Monitoring**: 
-- Added comprehensive health check endpoints for monitoring
-- `/health` - Full system health with database connectivity
-- `/health/simple` - Basic status check
-- `/health/ready` - Kubernetes readiness probe
-- `/health/live` - Kubernetes liveness probe
+Primary personas:
 
----
+- Platform owner and super admin
+- Tenant admin
+- Finance and operations teams
+- Inventory and purchasing teams
+- Sales agents
+- End customers
 
-## Architecture
+## System Architecture
 
-### System Layers
+RazoConnect follows a layered architecture on Node.js and Express, with PostgreSQL as the system of record and Redis for distributed caching/session patterns.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     CLIENT LAYER                            │
-│          Vanilla JS · Bootstrap 5 · Per-tenant views        │
-│            razo.com.mx          fashion.com.mx              │
-└───────────────────────┬─────────────────────────────────────┘
-                        │ HTTPS
-┌───────────────────────▼─────────────────────────────────────┐
-│                  MIDDLEWARE PIPELINE                        │
-│  Helmet · CORS · Rate Limit (Redis) · Session · TenantGuard │
-│              JWT Auth · Input Sanitization                  │
-└───────────────────────┬─────────────────────────────────────┘
-                        │
-┌───────────────────────▼─────────────────────────────────────┐
-│                    ROUTE LAYER                              │
-│         routes/admin.js · routes/clientes.js               │
-│         routes/auth.js · routes/developer.js               │
-└──────────┬──────────────────────────┬───────────────────────┘
-           │                          │
-┌──────────▼──────────┐  ┌────────────▼──────────────────────┐
-│   CONTROLLER LAYER  │  │          SERVICE LAYER            │
-│                     │  │                                   │
-│  authAdminCtrl      │  │  SmartStockService   (FIFO alloc) │
-│  pedidosAdminCtrl   │  │  KardexService       (movements)  │
-│  clientesAdminCtrl  │  │  FIFOAllocationService            │
-│  inventarioCtrl     │  │  OptimizationService              │
-│  comisionesCtrl     │  │  creditAnalysisService            │
-│  cxcAdminCtrl       │  │  inventoryAuditService            │
-│  cxpController      │  │  emailService                     │
-│  dashboardCtrl      │  │  loggerService                    │
-│  bitacoraCtrl       │  │  notificacionesService            │
-│  ...30+ controllers │  └───────────────┬───────────────────┘
-└──────────┬──────────┘                  │
-           └──────────────┬─────────────┘
-                          │
-┌─────────────────────────▼───────────────────────────────────┐
-│                    DATA LAYER                               │
-│         PostgreSQL (Azure) · Redis (sessions/cache)         │
-│              pg pool · Parameterized queries                │
-└─────────────────────────────────────────────────────────────┘
+### C4 Context Diagram (Mermaid)
+
+```mermaid
+flowchart LR
+      subgraph Internet
+            Tenant["Tenant User / Client Organization"]
+      end
+
+      subgraph Azure["RazoConnect Platform"]
+            API["RazoConnect API\nNode.js + Express"]
+            PG[("PostgreSQL\nSystem of Record")]
+            Redis[("Redis\nHybrid Cache and Session Layer")]
+            Cloudinary["Cloudinary\nMedia Storage"]
+      end
+
+      Tenant -->|HTTPS| API
+      API -->|Tenant-scoped SQL| PG
+      API -->|Session, tokens, rate limit, fallback strategy| Redis
+      API -->|Product and asset upload| Cloudinary
 ```
 
-### Multi-Tenant Model
-
-```
-Incoming Request
-       │
-       ▼
-┌─────────────────┐
-│  TenantGuard    │  Resolves tenant from domain or FORCE_TENANT_ID
-│  Middleware     │  Attaches req.tenant = { tenant_id, dominio, ... }
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  All queries    │  WHERE tenant_id = $1 enforced at controller level
-│  filtered by    │  Cross-tenant access blocked at middleware + query
-│  tenant_id      │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────────────────────────────┐
-│           PostgreSQL                    │
-│                                         │
-│  ┌────────────┐    ┌────────────┐       │
-│  │  Tenant A  │    │  Tenant B  │  ...  │
-│  │  (razo)    │    │ (fashion)  │       │
-│  │            │    │            │       │
-│  │ pedidos    │    │ pedidos    │       │
-│  │ clientes   │    │ clientes   │       │
-│  │ productos  │    │ productos  │       │
-│  └────────────┘    └────────────┘       │
-│         Shared tables, isolated rows    │
-└─────────────────────────────────────────┘
-```
-
-### Request Authentication Flow
-
-```
-POST /api/admin/login
-         │
-         ▼
-┌────────────────────┐
-│   TenantGuard      │  Validates domain → assigns tenant_id
-└────────┬───────────┘
-         │
-         ▼
-┌────────────────────┐
-│  authAdminCtrl     │  Queries Administradores WHERE email=$1 AND tenant_id=$2
-│  loginAdmin()      │  bcryptjs.compare(password, hash)
-└────────┬───────────┘
-         │
-         ├── Invalid → 401
-         │
-         ▼
-┌────────────────────┐
-│  JWT Generation    │  generateAccessToken({ id, rol, tenant_id })
-│                    │  generateRefreshToken → stored in Redis
-└────────┬───────────┘
-         │
-         ▼
-   Access Token (15min) + Refresh Token (30d) returned to client
-
-─────────────────────────────────────────────────────
-Subsequent requests:
-
-Authorization: Bearer <access_token>
-         │
-         ▼
-┌────────────────────┐
-│  verifyToken       │  Decode JWT → attach req.user
-│  middleware        │  validateUserTenant → check user.tenant_id === req.tenant.tenant_id
-└────────┬───────────┘
-         │
-         ▼
-   Controller receives req.user + req.tenant (fully validated)
-```
-
-### FIFO Inventory Allocation
-
-```
-New order arrives for Variant X (qty: 10)
-         │
-         ▼
-┌────────────────────────────────────┐
-│  SmartStockService                 │
-│  calculateAllocationStatus()       │
-│                                    │
-│  1. Get physical stock for variant │
-│  2. Get "debt" from prior orders   │
-│     (older orders already claim    │
-│      stock in FIFO order)          │
-│  3. Subtract hard reserves         │
-│  4. Remaining = available for this │
-│     order                          │
-└───────────────┬────────────────────┘
-                │
-        ┌───────┴────────┐
-        │                │
-        ▼                ▼
-  available >= 10    available < 10
-  estatus: surtido   estatus: backorder
-                     cantidadBackorder = 10 - available
-                          │
-                          ▼
-               Order stored with backorder flag.
-               FIFOAllocationService hooks on:
-                - onPedidoCancelado()  → stock freed → recalculate queue
-                - onPedidoEntregado()  → stock freed → recalculate queue
-```
-
----
-
-## Stack
-
-<div align="center">
-
-| Layer | Technology |
-|---|---|
-| Runtime | Node.js v18+ |
-| Framework | Express.js 4.18 |
-| Database | PostgreSQL v17 (Azure Database) |
-| Cache / Sessions | Redis (rate limiting, refresh tokens) + **Smart Fallback** (mock en desarrollo) |
-| Authentication | JWT (access + refresh) + Passport.js (Google OAuth) |
-| File Storage | Cloudinary |
-| Payments | MercadoPago SDK |
-| Email | Nodemailer (SMTP) |
-| PDF Generation | PDFKit |
-| Excel Export | ExcelJS |
-| Scheduled Jobs | node-cron |
-| Hosting | Azure App Service |
-| Testing | Jest + Supertest |
-
-</div>
-
----
-
-## Project Structure
-
-```
-RazoConnect/
-├── config/
-│   ├── cloudinary.js          # Cloudinary SDK configuration
-│   ├── domainMapper.js        # Domain → tenant_id resolution
-│   └── passport.js            # Google OAuth strategy
-│
-├── controllers/
-│   ├── admin/
-│   │   ├── pagosController.js
-│   │   └── pagosClientesController.js
-│   ├── auth/
-│   │   └── tokenController.js
-│   ├── authAdminController.js
-│   ├── pedidosAdminController.js
-│   ├── clientesAdminController.js
-│   ├── inventarioResumenController.js
-│   ├── comisionesAdminController.js
-│   ├── cxcAdminController.js
-│   ├── cxpController.js
-│   ├── dashboardAdminController.js
-│   ├── bitacoraController.js
-│   ├── fifoRecalculationController.js
-│   └── ...30+ specialized controllers
-│
-├── services/
-│   ├── SmartStockService.js       # FIFO stock allocation per admin
-│   ├── FIFOAllocationService.js   # Backorder recalculation hooks
-│   ├── KardexService.js           # Inventory movement ledger
-│   ├── OptimizationService.js     # Purchase order consolidation
-│   ├── inventoryAuditService.js   # Physical count reconciliation
-│   ├── creditAnalysisService.js   # Credit risk scoring
-│   ├── auditService.js            # Change request audit trail
-│   ├── loggerService.js           # Action log (bitácora)
-│   ├── emailService.js            # Templated email dispatch
-│   └── notificacionesService.js   # In-app notifications
-│
-├── middlewares/
-│   ├── tenantGuard.js             # Domain → tenant resolution
-│   ├── authMiddleware.js          # JWT verification
-│   ├── validateUserTenant.js      # Cross-tenant access prevention
-│   ├── inputValidator.js          # XSS + prototype pollution sanitization
-│   ├── rateLimiter.js             # Redis-backed distributed rate limiting
-│   └── errorHandler.js
-│
-├── routes/
-│   ├── admin.js
-│   ├── clientes.js
-│   ├── auth.js│   └── developer.js
-│
-├── tenants_views/
-│   ├── razo/                      # Tenant A frontend (HTML/CSS/JS)
-│   └── fashion/                   # Tenant B frontend (HTML/CSS/JS)
-│
-├── cron/                          # Scheduled jobs (sessions, alerts)
-├── utils/                         # jwtHelper, validator, skuGenerator, etc.
-├── docs/                          # Technical documentation
-├── tests/                         # Jest test suites
-├── db.js                          # PostgreSQL pool configuration
-├── index.js                       # Application entry point
-└── package.json
-```
-
----
-
-## Modules
-
-### Sales
-
-- Product catalog with variants (size, color, dimensions)
-- Configurable pack system (unit, 6, 12, 24, etc.)
-- Real-time stock validation at cart and checkout
-- Coupon system (percentage and fixed discount, expiry, usage limits)
-- Multi-address shipping per customer
-- Order lifecycle: Pending → Surtido → Shipped → Delivered
-
-### Inventory
-
-- Purchase orders to suppliers with packaging rule enforcement
-- Inventory reception and FIFO allocation to admin-level stock
-- KardexService: immutable ledger of every stock movement
-- Physical count reconciliation with traffic-light discrepancy system
-- FIFOAllocationService: automatic backorder queue recalculation on cancellation or delivery
-
-### Credit
-
-- Configurable credit lines per customer
-- Automatic credit limit validation at checkout
-- Accounts receivable (CXC) with due-date tracking
-- Credit risk scoring based on purchase history and payment behavior
-- Overdue alerts via in-app notifications and email
-
-### Agent Commissions
-
-- Automatic commission calculation on order delivery
-- Configurable commission rates per agent
-- Agent dashboard with portfolio and sales metrics
-- Commission approval and payment workflow
-
-### Audit and Compliance
-
-- `loggerService`: full audit trail of all administrative actions
-- `auditService`: change request system with before/after snapshots
-- `bitacoraController`: filterable log query API for compliance review
-- Developer panel: cross-tenant platform administration
-
----
-
-## Security
-
-<div align="center">
-
-| Layer | Mechanism |
-|---|---|
-| Transport | HTTPS enforced, Azure SSL certificates |
-| Database connection | SSL with certificate validation (`DB_SSL=true`) |
-| SQL injection | 100% parameterized queries (`$1, $2, ...`) |
-| XSS | `sanitizeInputs` middleware strips dangerous patterns |
-| Prototype pollution | `sanitizeObject` removes `__proto__` and `constructor` keys |
-| Rate limiting | Redis-backed distributed limiter via `express-rate-limit` |
-| Authentication | JWT access token (short-lived) + refresh token in Redis |
-| Cross-tenant isolation | `validateUserTenant` middleware compares `req.user.tenant_id` to `req.tenant.tenant_id` |
-| Headers | Helmet (CSP, HSTS, X-Frame-Options, X-Content-Type-Options) |
-| CORS | Allowlist-based, configurable per environment |
-
-</div>
-
----
-
-## Environment Variables
-
-```env
-# Database
-DB_USER=
-DB_HOST=
-DB_NAME=
-DB_PASSWORD=
-DB_PORT=5432
-DB_SSL=true
-
-# JWT
-JWT_SECRET=
-JWT_REFRESH_SECRET=
-JWT_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=30d
-
-# Redis
-REDIS_URL=
-
-# Session
-SESSION_SECRET=
-
-# Cloudinary
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-
-# MercadoPago
-MERCADOPAGO_ACCESS_TOKEN=
-
-# Google OAuth
-GOOGLE_CLIENT_ID=
-GOOGLE_CLIENT_SECRET=
-GOOGLE_CALLBACK_URL=
-
-# Email (SMTP)
-SMTP_HOST=
-SMTP_PORT=
-SMTP_USER=
-SMTP_PASS=
-
-# Application
-NODE_ENV=production
-FRONTEND_BASE_URL=https://yourdomain.com
-PORT=3000
-
-# Development only
-FORCE_TENANT_ID=1
-```
-
----
-
-## Running Tests
-
-```bash
-# Run all tests
-npm test
-
-# Watch mode
-npm run test:watch
-
-# Coverage report
-npm run test:coverage
-```
-
-Test structure:
-
-```
-tests/
-├── redis/                           # Redis Smart Fallback tests (82 tests)
-│   ├── mock-client.test.js         # Mock client functionality (23 tests)
-│   ├── fallback-system.test.js     # Fallback system integration (25 tests)
-│   ├── rate-limiter.test.js        # Rate limiter with mock/real (16 tests)
-│   ├── auth-integration.test.js    # Auth system integration (18 tests)
-│   ├── jest.config.js              # Redis-specific Jest config
-│   ├── setup.js                    # Test environment setup
-│   └── README.md                   # Redis tests documentation
-├── helpers/
-│   ├── mockAuth.js                 # Token generation utilities
-│   └── mockDb.js                   # Database mock factory
-├── integration/
-│   └── routes/
-│       ├── auth.test.js
-│       └── cupones.test.js
-├── unit/
-│   ├── middlewares/
-│   │   ├── inputValidator.test.js
-│   │   └── validateUserTenant.test.js
-│   └── utils/
-│       ├── jwtHelper.test.js
-│       ├── validator.test.js
-│       ├── skuGenerator.test.js
-│       └── emailTemplates.test.js
-└── setup.js
-```
-
-Current status: **168+ tests passing across 12+ suites.**
-
-### Redis Smart Fallback Tests
-
-```bash
-# Run Redis tests specifically
-npm test -- tests/redis/
-
-# With coverage
-npm test -- tests/redis/ --coverage
-```
-
----
-
-## Local Development
-
-1. Clone the repository and install dependencies:
-
-```bash
-npm install
-```
-
-2. Copy `.env.example` to `.env` and fill in the required values. Set `FORCE_TENANT_ID=1` to bypass domain detection locally.
-
-3. Ensure PostgreSQL and Redis are running and accessible.
-
-4. Start the development server:
-
-```bash
-npm run dev
-```
-
-The application serves each tenant's frontend from `tenants_views/{tenant_folder}/` based on the resolved `tenant_id`.
-
----
-
-## Documentation
-
-Technical documentation is maintained in `docs/`:
-
-| File | Contents |
-|---|---|
-| `ARQUITECTURA.md` | System architecture, middleware pipeline, data model |
-| `ARCHITECTURE_AUDIT.md` | Engineering audit and refactoring decisions |
-| `REDIS_SMART_FALLBACK.md` | **Redis Smart Fallback system - mock en desarrollo** |
-| `TESTING_REDIS_FALLBACK.md` | **Guía completa de testing para Redis** |
-| `FIFO_CASOS_DE_USO.md` | FIFO allocation logic and edge cases |
-| `INVENTARIO_EXPLICACION.md` | Inventory system design |
-| `AUDITORIA_MENSUAL_INVENTARIO.md` | Physical count reconciliation process |
-| `CONCILIACION_INVENTARIO_REFACTOR.md` | Inventory reconciliation refactor notes |
-| `SECURITY.md` | Security controls and threat model |
-
----
+Deep architecture details are maintained in [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md).
+
+## Multi-tenancy and Data Isolation
+
+Isolation model:
+
+- Shared application instance
+- Shared PostgreSQL schema
+- Row-level tenant partitioning through tenant_id
+- Domain-driven tenant resolution in request processing
+
+Enforcement model:
+
+- Tenant context resolved at middleware level
+- Queries and business operations constrained by tenant context
+- Cross-tenant access checks for authenticated users
+
+Reference documentation:
+
+- [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md)
+- [docs/COMPLETE_ADMIN_SEPARATION.md](docs/COMPLETE_ADMIN_SEPARATION.md)
+
+## Security and Compliance
+
+Security posture (high level):
+
+- Secure transport and hardened headers
+- Token-based authentication with session controls
+- Input validation and defensive middleware layers
+- Tenant isolation and role-scoped access controls
+
+Current canonical security implementation notes are in:
+
+- [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md)
+
+Legal/proprietary notice is in:
+
+- [docs/SECURITY.md](docs/SECURITY.md)
+
+## RBAC and Access Governance
+
+The platform uses role-based governance with operational specialization (admin, finance, inventory, purchasing, agent, and related roles).
+
+Role reference:
+
+- [docs/ROLES_SISTEMA.md](docs/ROLES_SISTEMA.md)
+- [docs/FLUJO_FINANZAS_ALMACEN.md](docs/FLUJO_FINANZAS_ALMACEN.md)
+
+## Core Business Flows
+
+Key enterprise flows:
+
+- Order preparation and finance confirmation
+- FIFO-based allocation and backorder recalculation
+- Purchase order consolidation by supplier
+- Inventory reconciliation and monthly audit
+- Cancellation with cascade handling and traceability
+
+Reference documents:
+
+- [docs/FLUJO_FINANZAS_ALMACEN.md](docs/FLUJO_FINANZAS_ALMACEN.md)
+- [docs/FIFO_CASOS_DE_USO.md](docs/FIFO_CASOS_DE_USO.md)
+- [docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md](docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md)
+- [docs/AUDITORIA_MENSUAL_INVENTARIO.md](docs/AUDITORIA_MENSUAL_INVENTARIO.md)
+- [docs/CANCELACION_PEDIDOS_BACKORDERS.md](docs/CANCELACION_PEDIDOS_BACKORDERS.md)
+
+## API and Integration Contracts
+
+The system exposes REST endpoints for admin, operational, and customer domains.
+
+Current state:
+
+- API behavior is documented in module-specific docs
+- OpenAPI/Swagger standardization is planned for centralized API contracts
+
+Starting points:
+
+- [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
+- [docs/GUIA_FUNCIONAL.md](docs/GUIA_FUNCIONAL.md)
+
+## Operations and SRE
+
+Operational concerns covered in documentation:
+
+- Deployment troubleshooting and rollback guidance
+- Maintenance routines
+- Health monitoring endpoints and checks
+- Redis fallback behavior in development and production contexts
+
+Operational references:
+
+- [docs/DESPLIEGUE_Y_TROUBLESHOOTING.md](docs/DESPLIEGUE_Y_TROUBLESHOOTING.md)
+- [docs/MAINTENANCE_CHECKLIST.md](docs/MAINTENANCE_CHECKLIST.md)
+- [docs/REDIS_SMART_FALLBACK.md](docs/REDIS_SMART_FALLBACK.md)
+
+## Deployment Environments
+
+Production profile:
+
+- Azure App Service
+- Azure Database for PostgreSQL
+- Redis-compatible session/cache strategy
+- Cloudinary for media assets
+
+Container and local setup references:
+
+- [docs/DOCKER_SETUP.md](docs/DOCKER_SETUP.md)
+- [docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md)
+
+## Testing and Quality Gates
+
+Quality strategy includes:
+
+- Unit and integration test suites
+- Redis fallback validation suites
+- Domain-specific regression tests for inventory and workflow safety
+
+Execution baseline:
+
+- npm test
+- npm run test:coverage
+
+Testing references:
+
+- [docs/TESTING_REDIS_FALLBACK.md](docs/TESTING_REDIS_FALLBACK.md)
+- [tests/redis/README.md](tests/redis/README.md)
+
+## Documentation Map by Audience
+
+Use this map to jump to the right documentation quickly.
+
+| Audience | Read First | Then Deep Dive |
+|---|---|---|
+| Finance and Operations | [docs/FLUJO_FINANZAS_ALMACEN.md](docs/FLUJO_FINANZAS_ALMACEN.md) | [docs/GUIA_FUNCIONAL.md](docs/GUIA_FUNCIONAL.md), [docs/SISTEMA_6_ESTADOS.md](docs/SISTEMA_6_ESTADOS.md) |
+| Inventory and Purchasing | [docs/INVENTARIO_EXPLICACION.md](docs/INVENTARIO_EXPLICACION.md) | [docs/FIFO_CASOS_DE_USO.md](docs/FIFO_CASOS_DE_USO.md), [docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md](docs/BACKORDER_CONSOLIDATION_IMPLEMENTATION.md), [docs/AUDITORIA_MENSUAL_INVENTARIO.md](docs/AUDITORIA_MENSUAL_INVENTARIO.md) |
+| DevOps and Platform | [docs/DESPLIEGUE_Y_TROUBLESHOOTING.md](docs/DESPLIEGUE_Y_TROUBLESHOOTING.md) | [docs/DOCKER_DEPLOYMENT.md](docs/DOCKER_DEPLOYMENT.md), [docs/MAINTENANCE_CHECKLIST.md](docs/MAINTENANCE_CHECKLIST.md), [docs/REDIS_SMART_FALLBACK.md](docs/REDIS_SMART_FALLBACK.md) |
+| Security Auditors | [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) | [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md), [docs/COMPLETE_ADMIN_SEPARATION.md](docs/COMPLETE_ADMIN_SEPARATION.md), [docs/SECURITY.md](docs/SECURITY.md) |
+| Backend Engineers | [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) | [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md), [docs/CONCILIACION_INVENTARIO_REFACTOR.md](docs/CONCILIACION_INVENTARIO_REFACTOR.md), [docs/INVENTORY_INTEGRITY_FIX.md](docs/INVENTORY_INTEGRITY_FIX.md) |
+| Product and Business Stakeholders | [docs/GUIA_FUNCIONAL.md](docs/GUIA_FUNCIONAL.md) | [docs/FLUJO_FINANZAS_ALMACEN.md](docs/FLUJO_FINANZAS_ALMACEN.md), [docs/PRIORITY_SYSTEM_USER_GUIDE.md](docs/PRIORITY_SYSTEM_USER_GUIDE.md), [docs/RMA_SYSTEM.md](docs/RMA_SYSTEM.md) |
+| New Developers and Onboarding | [docs/Learning route.md](docs/Learning%20route.md) | [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md), [docs/GUIA_FUNCIONAL.md](docs/GUIA_FUNCIONAL.md) |
+
+## Changelog and ADRs
+
+Recent implementation notes and change histories are distributed in docs files prefixed by CHANGELOG or implementation summaries.
+
+Examples:
+
+- [docs/CHANGELOG_FINANCE_WAREHOUSE.md](docs/CHANGELOG_FINANCE_WAREHOUSE.md)
+- [docs/CHANGELOG_REDIS_SMART_FALLBACK.md](docs/CHANGELOG_REDIS_SMART_FALLBACK.md)
+
+## Contribution Standards
+
+Baseline standards:
+
+- Follow repository linting, testing, and PR review requirements
+- Keep architecture decisions and flow changes documented in docs
+- Prefer module-level documentation updates over README-level technical expansion
+
+Developer workflow references:
+
+- [docs/ARCHITECTURE_AUDIT.md](docs/ARCHITECTURE_AUDIT.md)
+- [docs/Learning route.md](docs/Learning%20route.md)
+
+## Ownership and Review Cadence
+
+Recommended governance model:
+
+- README master map review: monthly
+- Security and architecture review: monthly or after critical change
+- Operational runbook review: before and after major deployments
+- Functional workflow review: each release affecting finance, warehouse, or inventory
+
+This README is intentionally high-level. Detailed implementation, SQL examples, and troubleshooting depth live under docs.
 
 ## License
 
-Copyright (c) 2025–2026 xCore. All rights reserved.
+Proprietary software. See [docs/SECURITY.md](docs/SECURITY.md) for legal terms and restrictions.
