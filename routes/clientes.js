@@ -17,6 +17,7 @@ const {
 const {
   actualizarPerfil,
   cambiarPassword,
+  asignarEstado,
 } = require("../controllers/clientes/perfilController");
 const { authenticate } = require("../middlewares/authMiddleware");
 const verifyTenantContext = require("../middlewares/verifyTenantContext");
@@ -528,5 +529,33 @@ router.post("/pagar-credito", authenticate, verifyTenantContext, registrarPagoCl
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/solicitar-credito", authenticate, verifyTenantContext, enviarSolicitudCredito);
+
+/**
+ * @swagger
+ * /api/cliente/asignar-estado:
+ *   post:
+ *     summary: Asignar estado al cliente (modal requerido)
+ *     tags: [Cliente - Perfil]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               estadoId:
+ *                 type: integer
+ *                 description: ID del estado a asignar
+ *     responses:
+ *       200:
+ *         description: Estado asignado exitosamente
+ *       400:
+ *         description: Datos inválidos
+ *       500:
+ *         description: Error del servidor
+ */
+router.post("/asignar-estado", authenticate, verifyTenantContext, asignarEstado);
 
 module.exports = router;

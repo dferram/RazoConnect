@@ -28,8 +28,28 @@ const {
  */
 async function calcularEstadoPedidoCorrect(client, pedidoId) {
   try {
+    // 🔧 FIX: Obtener admin_asignado_id del pedido PRIMERO
+    const pedidoResult = await client.query(
+      `SELECT admin_asignado_id FROM pedidos WHERE pedidoid = $1`,
+      [pedidoId]
+    );
+
+    if (pedidoResult.rows.length === 0) {
+      console.error(`[ESTADO] Pedido ${pedidoId} no encontrado`);
+      return ESTADOS_PEDIDO.BAJO_PEDIDO;
+    }
+
+    const adminAsignadoId = pedidoResult.rows[0].admin_asignado_id;
+
+    // ⚠️ CRÍTICO: Si admin_asignado_id es NULL, el cliente NO tiene admin asignado
+    // Esto es un error administrativo grave - registrar y retornar error
+    if (!adminAsignadoId) {
+      console.error(`[ESTADO] ⚠️ GRAVE: Pedido ${pedidoId} sin admin_asignado_id. Cliente sin estado/admin válido.`);
+      return ESTADOS_PEDIDO.BAJO_PEDIDO;
+    }
+
     // 1. Obtener detalles CON stock actual en tiempo real
-    // CRÍTICO: Considerar stock de TODOS los admins + stock global de producto_variantes
+    // CRÍTICO: Filtrar stock_admin SOLO del admin asignado al pedido (NO NULL)
     const detallesResult = await client.query(`
       SELECT
         d.detalleid,
@@ -37,19 +57,21 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
         d.piezastotales,
         d.estado_producto,
         COALESCE(d.cantidadsurtida, 0) as cantidadsurtida,
-        -- Stock TOTAL disponible: suma de stock_admin + stock global de variante
+        -- Stock disponible: SOLO del admin asignado al pedido
         COALESCE(SUM(sa.cantidad - sa.cantidad_reservada), 0) as stock_en_admin,
         COALESCE(pv.stock, 0) as stock_global,
-        (COALESCE(SUM(sa.cantidad - sa.cantidad_reservada), 0) + COALESCE(pv.stock, 0)) as stock_disponible_actual,
+        COALESCE(SUM(sa.cantidad - sa.cantidad_reservada), 0) as stock_disponible_actual,
         -- Flag original (para auditoría)
         d.esbackorder as esbackorder_original
       FROM detallesdelpedido d
-      LEFT JOIN stock_admin sa ON d.varianteid = sa.variante_id AND d.tenant_id = sa.tenant_id
+      LEFT JOIN stock_admin sa ON d.varianteid = sa.variante_id
+        AND d.tenant_id = sa.tenant_id
+        AND sa.admin_id = $2
       LEFT JOIN producto_variantes pv ON d.varianteid = pv.varianteid AND d.tenant_id = pv.tenant_id
       WHERE d.pedidoid = $1
       GROUP BY d.detalleid, d.varianteid, d.piezastotales, d.estado_producto, d.cantidadsurtida, d.esbackorder, d.tenant_id, pv.stock
       ORDER BY d.detalleid
-    `, [pedidoId]);
+    `, [pedidoId, adminAsignadoId]);
 
     const detalles = detallesResult.rows;
     if (detalles.length === 0) {

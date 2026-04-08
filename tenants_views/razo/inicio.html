@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 🔒 Guardia de estado - ejecutar PRIMERO -->
+    <script src="js/auth-guard-estado.js"></script>
     <title>RazoConnect - Inicio</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
     
@@ -26,6 +28,7 @@
     <link rel="stylesheet" href="/css/inicio-seasonal.css?v=2.2" />
     <link rel="stylesheet" href="/css/landing-carousel.css?v=2.0" />
     <link rel="stylesheet" href="/css/mobile-responsive.css?v=2.0" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/api.js"></script>
 
   </head>
@@ -345,8 +348,11 @@
         console.log('🎯 xCore Preview Mode: Receiver script loaded');
       }
     </script>
-    
+
     <!-- 🔍 DIAGNÓSTICO TEMPORAL - Remover después de verificar -->
     <script src="/js/debug-hero-styles.js"></script>
+
+    <!-- 🔒 Script global: Requerir selección de estado -->
+    <script src="js/modal-estado-requerido.js"></script>
   </body>
 </html>

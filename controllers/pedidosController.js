@@ -13,7 +13,7 @@ const { calcularTotalPedido, validarConsistenciaTotales } = require("../utils/ca
 const SmartStockService = require("../services/SmartStockService");
 const { calcularEstadoPedidoCorrect } = require("../utils/pedidoStatus");
 const { normalizarEstado, ESTADOS_PEDIDO } = require("../utils/pedidoEstados");
-const { getClienteEstado, asignarEstadoCliente } = require("../utils/estadosHelper");
+const { getClienteEstado, asignarEstadoCliente, getAdminByClienteEstado } = require("../utils/estadosHelper");
 
 const TAMANO_VALUE_KEYS = [
   "valor",
@@ -255,6 +255,21 @@ const crearPedido = async (req, res) => {
       }
     }
 
+    // 1.6 CRÍTICO: Obtener el adminId asignado al estado del cliente
+    // Este es el único admin del cual debe consumir stock este cliente
+    const clienteAdminId = await getAdminByClienteEstado(clienteId, tenant_id);
+    if (!clienteAdminId) {
+      // ⚠️ ERROR CRÍTICO: Cliente sin admin asignado - NO PUEDE HACER PEDIDOS
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+      removeUploadedComprobante();
+      logger.error(`[ERROR CRÍTICO] Cliente ${clienteId} no tiene admin asignado. No puede crear pedidos.`);
+      return res.status(403).json({
+        success: false,
+        message: `Tu cliente no está asignado a ningún administrador. Contacta al soporte técnico.`
+      });
+    }
+
     // 2. Obtener el carrito del cliente
     const carritoResult = await client.query(
       "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1 AND tenant_id = $2",
@@ -494,7 +509,7 @@ const crearPedido = async (req, res) => {
         varianteId: item.varianteid,
         cantidadRequerida: item.cantidad,
         orderDate: orderDate,
-        adminId: req.user?.adminId || null,
+        adminId: req.user?.adminId || clienteAdminId,
         tenantId: tenant_id,
         pedidoId: null,
         piezasPorPaquete: tamanoValor
@@ -1039,9 +1054,9 @@ const crearPedido = async (req, res) => {
       };
     }
 
-    // NUEVO: Obtener estado_id y admin responsable del cliente para asignarlos al pedido
+    // NUEVO: Obtener estado_id del cliente para asignarlo al pedido
+    // admin_id ya fue validado anteriormente (clienteAdminId)
     let estadoIdPedido = null;
-    let adminIdPedido = null;
 
     try {
       const estadosHelper = require("../utils/estadosHelper");
@@ -1049,13 +1064,13 @@ const crearPedido = async (req, res) => {
 
       if (clienteEstadoInfo && clienteEstadoInfo.estado_id) {
         estadoIdPedido = clienteEstadoInfo.estado_id;
-        adminIdPedido = await estadosHelper.getAdminByClienteEstado(clienteId, tenant_id);
       }
     } catch (error) {
-      logger.warn('Error al obtener estado/admin del cliente para pedido:', { error, clienteId });
+      logger.warn('Error al obtener estado del cliente para pedido:', { error, clienteId });
     }
 
-    await registrarPedido(adminIdPedido, estadoIdPedido);
+    // 🔧 USAR clienteAdminId que ya fue validado (garantizado != null)
+    await registrarPedido(clienteAdminId, estadoIdPedido);
 
     // 7. Crear los detalles del pedido y actualizar inventario
     const detallesPedido = [];
@@ -1281,13 +1296,14 @@ const crearPedido = async (req, res) => {
               ]
             );
           } else {
-            // CASO 2: Cliente sin admin - usar allocation automática
+            // CASO 2: Cliente - usar allocation automática con su admin asignado
 
             const allocationResult = await SmartStockService.allocateStockAutomatically({
               varianteId: item.varianteid,
               cantidadRequerida: piezasRealmenteSurtidas,
               tenantId: tenant_id,
-              estrategia: 'DESC'
+              estrategia: 'DESC',
+              adminId: clienteAdminId
             });
 
             // ✅ NUEVO: Permitir parcial (con backorder) si hay algo asignado

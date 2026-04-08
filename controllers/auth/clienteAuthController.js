@@ -276,6 +276,16 @@ const login = async (req, res) => {
       // Guardar refresh token en Redis (30 días)
       await saveRefreshToken(cliente.clienteid, "cliente", refreshToken, 30 * 24 * 60 * 60);
 
+      // 🔄 Obtener nombre del estado si tiene estado_id asignado
+      let estadoNombre = null;
+      if (cliente.estado_id) {
+        const estadoResult = await db.query(
+          "SELECT nombre FROM estados WHERE estadoid = $1",
+          [cliente.estado_id]
+        );
+        estadoNombre = estadoResult.rows.length > 0 ? estadoResult.rows[0].nombre : null;
+      }
+
       return res.status(200).json({
         success: true,
         message: "Login exitoso",
@@ -288,6 +298,7 @@ const login = async (req, res) => {
             email: cliente.email,
             telefono: cliente.telefono,
             estadoId: cliente.estado_id,
+            estadoNombre: estadoNombre, // ✅ NUEVO - Nombre del estado
           },
           accessToken,
           refreshToken,

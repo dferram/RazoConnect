@@ -90,14 +90,17 @@ const getCurrentUser = async (req, res) => {
       case "cliente":
         const { tenant_id } = req.tenant;
         const clienteQuery = `
-          SELECT 
-            ClienteID,
-            Nombre,
-            Apellido,
-            Email,
-            AgenteID
-          FROM clientes
-          WHERE ClienteID = $1 AND tenant_id = $2
+          SELECT
+            c.ClienteID,
+            c.Nombre,
+            c.Apellido,
+            c.Email,
+            c.AgenteID,
+            c.estado_id,
+            e.nombre as estado_nombre
+          FROM clientes c
+          LEFT JOIN estados e ON c.estado_id = e.estadoid
+          WHERE c.ClienteID = $1 AND c.tenant_id = $2
         `;
         const clienteResult = await db.query(clienteQuery, [efectiveUserId, tenant_id]);
 
@@ -118,6 +121,8 @@ const getCurrentUser = async (req, res) => {
           tipo: "cliente",
           empresa: null,
           agenteid: cliente.agenteid,
+          estadoId: cliente.estado_id,
+          estadoNombre: cliente.estado_nombre,
         };
         break;
 

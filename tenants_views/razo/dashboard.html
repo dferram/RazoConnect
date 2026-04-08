@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- 🔒 Guardia de estado - ejecutar PRIMERO -->
+    <script src="js/auth-guard-estado.js"></script>
     <title>Mi Cuenta - RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
 
@@ -468,6 +470,23 @@
                 />
               </div>
             </div>
+
+            <!-- Estado/Región -->
+            <div style="background: #FFF7ED; border-left: 4px solid #F97316; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
+              <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
+                <i class="bi bi-info-circle-fill" style="color: #F97316; margin-right: 0.5rem; font-size: 1.1rem;"></i>
+                <strong style="color: #333;">ℹ️ Estado/Región</strong>
+              </div>
+              <p style="color: #666; font-size: 0.9rem; margin: 0 0 1rem 0;">
+                Tu estado/región determina qué productos disponibles verás en tu catálogo.
+              </p>
+              <div class="form-group">
+                <label class="form-label" for="editEstado">Estado/Región *</label>
+                <select id="editEstado" class="form-input" required style="background-image: none; appearance: auto;">
+                  <option value="">-- Selecciona tu estado --</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <!-- Cambio de Contraseña -->
@@ -786,43 +805,70 @@
       });
 
       // Display profile data
-      function displayPerfil() {
-        const userData = getUserData() || {};
-        const nombre = userData.nombre || "N/A";
-        const apellido = userData.apellido || "";
-        const email = userData.email || "N/A";
-        const telefono = userData.telefono || "No especificado";
-        const estado = userData.estado_nombre || userData.estado || "Sin asignar";
-        const fechaRegistro =
-          userData.fechaDeRegistro || userData.fechaderegistro || null;
-        const fechaFormateada = formatDateSafe(fechaRegistro) !== "—" 
-          ? formatDateSafe(fechaRegistro)
-          : "N/A";
+      async function displayPerfil() {
+        try {
+          // Obtener datos actualizados desde el servidor
+          const token = localStorage.getItem('razoconnect_token');
+          if (!token) {
+            console.error('No hay token disponible');
+            return;
+          }
 
-        perfilContent.innerHTML = `
-        <div style="display: grid; gap: 1rem;">
-          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
-            <strong>Nombre:</strong>
-            <span>${nombre} ${apellido}</span>
+          const response = await fetch('/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            console.error('Error al obtener datos del servidor:', response.status);
+            return;
+          }
+
+          const data = await response.json();
+          const userData = data.data || {};
+
+          const nombre = userData.nombre || "N/A";
+          const apellido = userData.apellido || "";
+          const email = userData.email || "N/A";
+          const telefono = userData.telefono || "No especificado";
+          const estado = userData.estadoNombre || userData.estadoId || "Sin asignar";
+          const fechaRegistro =
+            userData.fechaDeRegistro || userData.fechaderegistro || null;
+          const fechaFormateada = formatDateSafe(fechaRegistro) !== "—"
+            ? formatDateSafe(fechaRegistro)
+            : "N/A";
+
+          perfilContent.innerHTML = `
+          <div style="display: grid; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+              <strong>Nombre:</strong>
+              <span>${nombre} ${apellido}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+              <strong>Email:</strong>
+              <span>${email}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+              <strong>Teléfono:</strong>
+              <span>${telefono}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+              <strong>🗺️ Estado:</strong>
+              <span style="font-weight: 600; color: var(--razo-orange);">${estado}</span>
+            </div>
           </div>
-          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
-            <strong>Email:</strong>
-            <span>${email}</span>
-          </div>
-          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
-            <strong>Teléfono:</strong>
-            <span>${telefono}</span>
-          </div>
-          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
-            <strong>🗺️ Estado:</strong>
-            <span style="font-weight: 600; color: var(--razo-orange);">${estado}</span>
-          </div>
-          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem;">
-            <strong>Miembro desde:</strong>
-            <span>${fechaFormateada}</span>
-          </div>
-        </div>
-      `;
+        `;
+
+          // Guardar datos en localStorage para referencia futura
+          const currentUser = JSON.parse(localStorage.getItem('razoconnect_user') || '{}');
+          Object.assign(currentUser, userData);
+          localStorage.setItem('razoconnect_user', JSON.stringify(currentUser));
+
+        } catch (error) {
+          console.error('Error en displayPerfil:', error);
+        }
       }
 
       // Format currency
@@ -1056,21 +1102,15 @@
                         .map(
                           (item) => {
                             console.log('🔍 Datos del item recibido:', item);
-                            
-                            // Calculate stock availability
-                            const stock = item.stock !== undefined ? item.stock : 0;
-                            const piezasPorTamano = item.piezasPorTamano || 1;
-                            const cantidadSolicitada = item.cantidad || 0;
-                            const piezasNecesarias = cantidadSolicitada * piezasPorTamano;
-                            const enStock = stock >= piezasNecesarias;
-                            
-                            // Integrity check
-                            if (enStock && stock === 0) {
-                              console.error(`[ERROR DE INTEGRIDAD] El producto SKU: ${item.sku} muestra stock fantasma.`);
-                            }
-                            
-                            const badgeClass = enStock ? 'badge-stock surtido' : 'badge-stock bajo-pedido';
-                            const badgeText = enStock ? 'SURTIDO' : 'BAJO PEDIDO';
+
+                            // 🔧 CORRECCIÓN: Mostrar SOLO "Con Stock" o "Bajo Pedido"
+                            // "SURTIDO" es estado administrativo - solo se muestra cuando inventarios confirma
+                            // esBackorder: false = "Con Stock" (se surtió de admin's stock)
+                            // esBackorder: true = "Bajo Pedido" (se pidió con backorder)
+                            const conStock = !item.esBackorder;
+
+                            const badgeClass = conStock ? 'badge-stock con-stock' : 'badge-stock bajo-pedido';
+                            const badgeText = conStock ? 'Con Stock' : 'Bajo Pedido';
                             
                             return `
                         <div class="pedido-item">
@@ -1595,20 +1635,43 @@
       const btnGuardarPerfilSpinner = document.getElementById("btnGuardarPerfilSpinner");
 
       // Abrir modal de editar perfil
-      btnEditarPerfil.addEventListener("click", () => {
+      btnEditarPerfil.addEventListener("click", async () => {
         const userData = getUserData() || {};
-        
+
         // Cargar datos actuales en el formulario
         document.getElementById("editNombre").value = userData.nombre || "";
         document.getElementById("editApellido").value = userData.apellido || "";
         document.getElementById("editEmail").value = userData.email || "";
         document.getElementById("editTelefono").value = userData.telefono || "";
-        
+
         // Limpiar campos de contraseña
         document.getElementById("passwordActual").value = "";
         document.getElementById("passwordNueva").value = "";
         document.getElementById("passwordConfirmar").value = "";
-        
+
+        // Cargar estados
+        try {
+          const response = await fetch('/api/public/estados-all');
+          if (response.ok) {
+            const data = await response.json();
+            const estados = data.data || [];
+            const selectEstado = document.getElementById("editEstado");
+
+            selectEstado.innerHTML = '<option value="">-- Selecciona tu estado --</option>';
+            estados.forEach(estado => {
+              const option = document.createElement('option');
+              option.value = estado.estadoid;
+              option.textContent = estado.nombre;
+              if (userData.estadoId === estado.estadoid) {
+                option.selected = true;
+              }
+              selectEstado.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Error cargando estados:', error);
+        }
+
         modalEditarPerfil.classList.add("show");
       });
 
@@ -1720,6 +1783,26 @@
             }
           }
 
+          // 3. Cambiar estado si se proporcionó
+          const estadoId = document.getElementById("editEstado").value;
+          if (estadoId) {
+            try {
+              const estadoResponse = await API.apiCall("/cliente/asignar-estado", {
+                method: "POST",
+                body: JSON.stringify({ estadoId: parseInt(estadoId, 10) }),
+              });
+
+              if (!estadoResponse.ok || !estadoResponse.data.success) {
+                console.warn("⚠️ Estado pendiente de revisión administrativa:", estadoResponse.data.message);
+              } else {
+                console.log("✅ Estado actualizado");
+              }
+            } catch (error) {
+              console.warn("⚠️ Error al actualizar estado:", error);
+              // No lanzar error, el estado se solicitó pero podría estar pendiente
+            }
+          }
+
           // Actualizar datos en localStorage
           const userData = getUserData() || {};
           const updatedData = {
@@ -1772,6 +1855,12 @@
 
       // Initialize
       window.addEventListener("razoconnect:client-updated", () => {
+        displayPerfil();
+      });
+
+      // Escuchar cuando header-loader.js actualiza localStorage
+      window.addEventListener("storageUpdated", (event) => {
+        console.log('📢 localStorage actualizado desde header-loader:', event.detail);
         displayPerfil();
       });
 
@@ -2150,6 +2239,7 @@
         })
         .catch(error => console.error('Error loading cancelacion info modal:', error));
     </script>
+
     <script src="js/instructional-banner.js"></script>
   </body>
 </html>

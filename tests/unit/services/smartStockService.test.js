@@ -170,9 +170,7 @@ describe('SmartStockService', () => {
     });
 
     it('debe retornar success: false cuando no hay admins con stock', async () => {
-      // Primera llamada: No hay admins con stock en stock_admin
-      db.query.mockResolvedValueOnce({ rows: [] });
-      // Segunda llamada: Fallback a producto_variantes - tampoco hay stock
+      // Mocking a single query since the function no longer falls back to global stock
       db.query.mockResolvedValueOnce({ rows: [] });
 
       const result = await SmartStockService.allocateStockAutomatically({
