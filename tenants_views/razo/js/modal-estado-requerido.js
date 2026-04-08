@@ -6,15 +6,44 @@
  */
 
 async function inicializarModalEstadoRequerido() {
-  const userData = getUserData() || {};
+  try {
+    // Primero verificar con el servidor si el usuario tiene estado
+    const token = localStorage.getItem('razoconnect_token');
+    if (!token) {
+      console.log('⏭️  No hay token, saltando verificación de estado');
+      return;
+    }
 
-  // Si ya tiene estado, no hacer nada
-  if (userData.estadoId) {
-    console.log(`✅ Cliente tiene estado: ${userData.estadoNombre}`);
-    return;
-  }
+    // Obtener datos del servidor para verificar estado
+    const response = await fetch('/api/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-  console.warn(`⚠️ Cliente SIN estado asignado - Mostrando modal forzoso`);
+    if (!response.ok) {
+      console.warn('⚠️  Error al verificar estado del servidor:', response.status);
+      return;
+    }
+
+    const serverData = await response.json();
+    const userData = serverData.data || {};
+
+    // Actualizar localStorage con datos del servidor
+    const localUserData = JSON.parse(localStorage.getItem('razoconnect_user') || '{}');
+    Object.assign(localUserData, userData);
+    localStorage.setItem('razoconnect_user', JSON.stringify(localUserData));
+
+    console.log('📊 Datos del usuario desde servidor:', userData);
+
+    // Si ya tiene estado, no mostrar modal
+    if (userData.estadoId) {
+      console.log(`✅ Cliente tiene estado en BD: ${userData.estadoNombre}`);
+      return;
+    }
+
+    console.warn(`⚠️ Cliente SIN estado asignado - Mostrando modal forzoso`);
 
   // Crear el modal dinámicamente
   const modal = document.createElement('div');
@@ -156,28 +185,45 @@ async function inicializarModalEstadoRequerido() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ Estado asignado');
+        console.log('✅ Estado asignado en server');
+        console.log('📊 Datos del servidor:', result.data);
 
-        // Actualizar localStorage
+        // Actualizar localStorage EXACTAMENTE como lo devuelve el servidor
         const userData = getUserData() || {};
-        userData.estadoId = parseInt(estadoId, 10);
-        userData.estadoNombre = select.options[select.selectedIndex].text;
-        localStorage.setItem('razoconnect_user', JSON.stringify(userData));
+        userData.estadoId = result.data.estadoId;
+        userData.estadoNombre = result.data.estadoNombre;
 
-        // Remover modal
-        modal.remove();
+        // Guardar en localStorage de forma más robusta
+        try {
+          localStorage.setItem('razoconnect_user', JSON.stringify(userData));
 
-        // Mostrar éxito
-        Swal.fire({
-          icon: 'success',
-          title: '¡Estado guardado!',
-          text: `Tu estado es: ${userData.estadoNombre}`,
-          confirmButtonColor: '#10b981',
-          timer: 2000,
-          timerProgressBar: true
-        }).then(() => {
-          location.reload();
-        });
+          // Verificar que se guardó correctamente
+          const verificacion = JSON.parse(localStorage.getItem('razoconnect_user'));
+          console.log('✅ localStorage después de guardar:', verificacion);
+          console.log('✅ estadoNombre en localStorage:', verificacion.estadoNombre);
+
+          // Remover modal
+          modal.remove();
+
+          // Mostrar éxito y navegar a dashboard
+          setTimeout(() => {
+            Swal.fire({
+              icon: 'success',
+              title: '¡Estado guardado!',
+              text: `Tu estado es: ${result.data.estadoNombre}`,
+              confirmButtonColor: '#10b981',
+              timer: 2000,
+              timerProgressBar: true
+            }).then(() => {
+              console.log('🔄 Navegando a dashboard...');
+              // Navegar a dashboard - debería tener el estado en localStorage
+              window.location.href = '/dashboard.html';
+            });
+          }, 300);
+        } catch (err) {
+          console.error('❌ Error al guardar localStorage:', err);
+          throw err;
+        }
       } else {
         throw new Error('Error al asignar estado');
       }

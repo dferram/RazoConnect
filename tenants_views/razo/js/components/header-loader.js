@@ -64,16 +64,20 @@
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
-          // Guardar los datos del usuario en localStorage usando AuthManager si está disponible
-          if (typeof window.AuthManager !== 'undefined' && AuthManager.saveTokens) {
-            // AuthManager ya debería tener los tokens, solo guardamos los datos del usuario
-            localStorage.setItem('razoconnect_user', JSON.stringify(data.data));
-          } else {
-            // Fallback: guardar directamente
-            localStorage.setItem('razoconnect_user', JSON.stringify(data.data));
-          }
-          console.log('[Header Loader] Datos de usuario actualizados desde backend:', data.data);
-          return data.data;
+          // IMPORTANTE: Hacer merge en lugar de reemplazar localStorage
+          const currentUser = JSON.parse(localStorage.getItem('razoconnect_user') || '{}');
+          Object.assign(currentUser, data.data);
+
+          // Guardar datos mergeados en localStorage
+          localStorage.setItem('razoconnect_user', JSON.stringify(currentUser));
+
+          console.log('[Header Loader] Datos de usuario actualizados desde backend:', currentUser);
+          console.log('[Header Loader] estadoNombre:', currentUser.estadoNombre);
+
+          // Disparar evento para que otras partes de la app se actualicen
+          window.dispatchEvent(new CustomEvent('storageUpdated', { detail: currentUser }));
+
+          return currentUser;
         }
       } else {
         console.error('[Header Loader] Error en respuesta del backend:', response.status);

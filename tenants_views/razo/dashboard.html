@@ -788,43 +788,70 @@
       });
 
       // Display profile data
-      function displayPerfil() {
-        const userData = getUserData() || {};
-        const nombre = userData.nombre || "N/A";
-        const apellido = userData.apellido || "";
-        const email = userData.email || "N/A";
-        const telefono = userData.telefono || "No especificado";
-        const estado = userData.estadoNombre || userData.estado_id || userData.estado || "Sin asignar";
-        const fechaRegistro =
-          userData.fechaDeRegistro || userData.fechaderegistro || null;
-        const fechaFormateada = formatDateSafe(fechaRegistro) !== "—"
-          ? formatDateSafe(fechaRegistro)
-          : "N/A";
+      async function displayPerfil() {
+        try {
+          // Obtener datos actualizados desde el servidor
+          const token = localStorage.getItem('razoconnect_token');
+          if (!token) {
+            console.error('No hay token disponible');
+            return;
+          }
 
-        perfilContent.innerHTML = `
-        <div style="display: grid; gap: 1rem;">
-          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
-            <strong>Nombre:</strong>
-            <span>${nombre} ${apellido}</span>
+          const response = await fetch('/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!response.ok) {
+            console.error('Error al obtener datos del servidor:', response.status);
+            return;
+          }
+
+          const data = await response.json();
+          const userData = data.data || {};
+
+          const nombre = userData.nombre || "N/A";
+          const apellido = userData.apellido || "";
+          const email = userData.email || "N/A";
+          const telefono = userData.telefono || "No especificado";
+          const estado = userData.estadoNombre || userData.estadoId || "Sin asignar";
+          const fechaRegistro =
+            userData.fechaDeRegistro || userData.fechaderegistro || null;
+          const fechaFormateada = formatDateSafe(fechaRegistro) !== "—"
+            ? formatDateSafe(fechaRegistro)
+            : "N/A";
+
+          perfilContent.innerHTML = `
+          <div style="display: grid; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+              <strong>Nombre:</strong>
+              <span>${nombre} ${apellido}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+              <strong>Email:</strong>
+              <span>${email}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+              <strong>Teléfono:</strong>
+              <span>${telefono}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
+              <strong>🗺️ Estado:</strong>
+              <span style="font-weight: 600; color: var(--razo-orange);">${estado}</span>
+            </div>
           </div>
-          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
-            <strong>Email:</strong>
-            <span>${email}</span>
-          </div>
-          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
-            <strong>Teléfono:</strong>
-            <span>${telefono}</span>
-          </div>
-          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem; border-bottom: 1px solid var(--border-color);">
-            <strong>🗺️ Estado:</strong>
-            <span style="font-weight: 600; color: var(--razo-orange);">${estado}</span>
-          </div>
-          <div style="display: grid; grid-template-columns: 150px 1fr; align-items: center; padding: 0.75rem;">
-            <strong>Miembro desde:</strong>
-            <span>${fechaFormateada}</span>
-          </div>
-        </div>
-      `;
+        `;
+
+          // Guardar datos en localStorage para referencia futura
+          const currentUser = JSON.parse(localStorage.getItem('razoconnect_user') || '{}');
+          Object.assign(currentUser, userData);
+          localStorage.setItem('razoconnect_user', JSON.stringify(currentUser));
+
+        } catch (error) {
+          console.error('Error en displayPerfil:', error);
+        }
       }
 
       // Format currency
@@ -1774,6 +1801,12 @@
 
       // Initialize
       window.addEventListener("razoconnect:client-updated", () => {
+        displayPerfil();
+      });
+
+      // Escuchar cuando header-loader.js actualiza localStorage
+      window.addEventListener("storageUpdated", (event) => {
+        console.log('📢 localStorage actualizado desde header-loader:', event.detail);
         displayPerfil();
       });
 
