@@ -1,101 +1,44 @@
-# 🛠️ Checklist de Mantenimiento - RazoConnect
+﻿# Maintenance Checklist
 
-## 📅 Mantenimiento Diario (5 min)
+## Purpose
 
-### ✅ Limpieza Automática (Ya configurado)
-- [x] GitHub Actions artifacts cleanup (2 AM UTC)
-- [x] Logs antiguos (mantener 7 días)
+This checklist defines recurring operational tasks to keep RazoConnect stable and secure.
 
-### 🔍 Revisiones Rápidas
-- [ ] Revisar logs de errores críticos
-- [ ] Verificar que todos los servicios estén funcionando
-- [ ] Revisar espacio en disco
+## Daily
 
-## 📅 Mantenimiento Semanal (15 min)
+- Check application health endpoints.
+- Review critical errors in logs.
+- Confirm database availability.
 
-### 🔒 Seguridad
-- [ ] Ejecutar: `npm run security:audit`
-- [ ] Revisar vulnerabilidades críticas
-- [ ] Actualizar dependencias si es necesario
+## Weekly
 
-### 📊 Monitoreo
-- [ ] Revisar métricas de rendimiento
-- [ ] Verificar uso de base de datos
-- [ ] Revisar GitHub Actions (workflows fallidos)
+- Run security audit: npm run security:audit
+- Review failed CI workflows.
+- Review storage growth and log retention.
 
-### 🧹 Limpieza
-- [ ] Ejecutar: `npm run cleanup:local`
-- [ ] Revisar artifacts en GitHub (manual si es necesario)
+## Monthly
 
-## 📅 Mantenimiento Mensual (30 min)
+- Review dependency updates.
+- Validate backup and restore process.
+- Review slow queries and high-latency endpoints.
+- Update runbook entries if process changed.
 
-### 🔄 Actualizaciones
-- [ ] Actualizar Node.js si hay nueva versión LTS
-- [ ] Revisar actualizaciones de dependencias principales
-- [ ] Probar en staging antes de producción
+## Before Release
 
-### 📈 Reportes
-- [ ] Generar reporte de uso del sistema
-- [ ] Revisar tendencias de errores
-- [ ] Documentar cambios importantes
+1. Run tests.
+2. Verify environment variables and secrets.
+3. Validate health checks in target environment.
+4. Verify one critical flow per role.
 
-### 🔧 Optimización
-- [ ] Revisar queries lentas de base de datos
-- [ ] Optimizar imágenes si es necesario
-- [ ] Revisar configuración de cache
+## Incident Follow-Up
 
-## 🚨 Emergencias (Cuando sea necesario)
+1. Capture root cause and timeline.
+2. Register corrective actions and owners.
+3. Add or update regression tests.
+4. Update docs affected by the incident.
 
-### ⚡ Acciones Inmediatas
-- [ ] Revisar logs del último error
-- [ ] Verificar estado de servicios críticos
-- [ ] Comunicar al equipo si es necesario
+## Related Files
 
-### 🔧 Recuperación
-- [ ] Restaurar desde backup si es necesario
-- [ ] Revisar rollback si hay deploy problemático
-- [ ] Documentar causa y solución
-
-## 🎯 Scripts Útiles
-
-```bash
-# Limpieza completa local y remota
-npm run maintenance:clean
-
-# Revisión de seguridad
-npm run security:audit
-
-# Ver logs en tiempo real
-npm run dev:logs
-
-# Limpieza de artifacts (manual)
-npm run cleanup:artifacts
-
-# Ejecutar tests para verificar estabilidad
-npm test
-```
-
-## 📞 Contactos de Emergencia
-
-- **Azure Support**: Para problemas de infraestructura
-- **GitHub Support**: Para problemas de Actions
-- **Database Admin**: Para problemas de PostgreSQL
-
-## 📋 Notas Importantes
-
-- **Nunca** hacer cambios en producción sin testing
-- **Siempre** hacer backup antes de actualizaciones mayores
-- **Documentar** cualquier cambio significativo
-- **Monitorear** después de cualquier cambio
-
-## 🔗 Recursos Útiles
-
-- [GitHub Actions Dashboard](https://github.com/dferram/RazoConnect/actions)
-- [Azure Portal](https://portal.azure.com)
-- [Logs Directory](./logs/)
-- [Documentation](./docs/)
-
----
-
-**Última actualización**: Marzo 2026  
-**Responsable**: Equipo de Desarrollo RazoConnect
+- docs/OPERATIONS_RUNBOOK.md
+- docs/DEPLOYMENT_AND_TROUBLESHOOTING.md
+- docs/SECURITY.md

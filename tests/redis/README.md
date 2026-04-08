@@ -233,7 +233,6 @@ describe('Nueva Funcionalidad', () => {
 ## 📚 Documentación Relacionada
 
 - [Redis Smart Fallback](../../docs/REDIS_SMART_FALLBACK.md)
-- [Testing Guide](../../docs/TESTING_REDIS_FALLBACK.md)
 - [Sistema de Autenticación](../../docs/AUTH_REFACTORING_2026.md)
 
 ## 🎓 Comandos Útiles

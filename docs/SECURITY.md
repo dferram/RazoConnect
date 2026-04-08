@@ -1,42 +1,145 @@
-Proprietary Software License
+# RazoConnect Security Architecture
 
-Copyright (c) 2024–2025 xCore. All rights reserved.
+## Security Posture and Threat Model
 
-This software and its source code, documentation, and associated files
-("Software") are the exclusive property of xCore and are protected by
-copyright law and international treaties.
+RazoConnect applies a defense-in-depth model across identity, tenant isolation, network controls, request validation, and data access boundaries.
 
-RESTRICTIONS
+Primary threat classes addressed:
 
-1. You may not copy, reproduce, distribute, publish, or transmit the
-   Software or any portion of it in any form or by any means, electronic
-   or mechanical, without the prior written permission of xCore.
+- Unauthorized access to protected business functions
+- Cross-tenant data exposure in a shared-schema SaaS model
+- Automated abuse and credential stuffing
+- Injection and payload-based attacks
+- Session misuse and token replay after logout
 
-2. You may not modify, adapt, translate, reverse engineer, decompile,
-   disassemble, or create derivative works based on the Software.
+Security priorities:
 
-3. You may not sublicense, sell, rent, lease, transfer, assign, or
-   otherwise dispose of the Software.
+- Preserve tenant data boundaries at all application layers
+- Enforce authenticated and role-scoped access before business logic execution
+- Fail safely on invalid sessions and token anomalies
+- Maintain auditable control points in middleware and database access patterns
 
-4. You may not remove or alter any proprietary notices, labels, or marks
-   on the Software.
+## Multi-Tenant Isolation
 
-PERMITTED USE
+RazoConnect enforces tenant isolation through layered controls in request processing and data access.
 
-Access to this repository is granted solely for evaluation, audit, or
-collaboration purposes as explicitly authorized in writing by xCore.
-Authorized access does not grant any license to use, reproduce, or
-distribute the Software beyond the scope defined in such authorization.
+Isolation controls:
 
-DISCLAIMER
+- Tenant resolution per request via domain mapping in tenantGuard middleware
+- Tenant context attached to req.tenant and consumed by downstream middleware/controllers
+- Mandatory tenant scoping pattern in SQL operations using tenant_id constraints
+- Session invalidation when a tenant context switch is detected
+- Explicit tenant mismatch detection between authenticated identity and current request tenant
 
-THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL
-XCORE BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM
-THE USE OR INABILITY TO USE THE SOFTWARE.
+Implementation controls:
 
-CONTACT
+- Domain and tenant resolution: middlewares/tenantGuard.js
+- Authenticated tenant consistency checks: middlewares/validateUserTenant.js
+- Session guard for cross-tenant mismatch handling: middlewares/tenantSessionGuard.js
+- Session persistence and domain-aware cookie policy: middlewares/dynamicSessionConfig.js
 
-For licensing inquiries or authorized access requests, contact:
-xCore — https://xcore.mx
+Data boundary expectation:
+
+- Every tenant-scoped read/write operation must include tenant_id conditions
+- No controller or service should execute tenant-bound queries without tenant context
+
+## Identity and Access Management (IAM)
+
+RazoConnect IAM combines token-based authentication with role-based authorization checks.
+
+Authentication model:
+
+- Bearer JWT access tokens are validated on protected routes
+- Token payload includes user identity, role, and tenant binding where applicable
+- Token replay protection is implemented through Redis-backed token blacklist checks
+- User activity and role are re-validated against persistent records (administradores, clientes, agentesdeventas)
+
+Authorization model:
+
+- Route guards enforce role-based access policies before controller execution
+- Administrative and operational guards support role granularity for business domains
+- Tenant/role consistency is validated before protected operations continue
+
+Operational role model in current platform:
+
+- super_admin
+- admin
+- inventarios
+- catalogo
+- finanzas
+- compras
+- agente
+- cliente
+
+Implementation controls:
+
+- Authentication and role guards: middlewares/authMiddleware.js
+- Auth route protection and brute-force controls: routes/auth.js
+
+## Application Security (AppSec)
+
+RazoConnect applies multiple AppSec controls on all API traffic.
+
+### Network and Request-Level Controls
+
+- Redis-backed distributed rate limiting for global, auth, tenant, and heavy-operation scopes
+- Proxy-aware client keying for cloud edge environments
+- Strict CORS whitelist model for trusted origins
+- Payload size limits to reduce oversized request abuse
+
+Implementation references:
+
+- middlewares/rateLimiter.js
+- index.js
+
+### Header Hardening and Browser Security Controls
+
+- Content-Security-Policy configured with explicit source directives
+- HSTS in production
+- X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+- Removal of technology disclosure headers
+
+Note:
+
+- Controls are implemented using a custom security middleware stack with Helmet-equivalent policy coverage, including CSP enforcement.
+
+Implementation reference:
+
+- middlewares/securityHeaders.js
+
+### Input Validation and Injection Resistance
+
+- Recursive input sanitization for body, params, and query
+- Prototype pollution key stripping
+- Structured validators for types, required fields, and length constraints
+- SQL injection pattern detection as an additional guard layer
+- Parameterized SQL query usage pattern enforced in business code
+
+Implementation references:
+
+- middlewares/inputValidator.js
+- middlewares/securityHeaders.js
+- controllers and services using parameterized queries through db.query(..., [params])
+
+## Secure Authentication Flow (Middleware Pipeline)
+
+The following flow describes the control chain for protected API requests.
+
+```mermaid
+flowchart TD
+    A[Incoming Request] --> B[Rate Limiter<br/>Redis-backed]
+    B --> C[Token Validator<br/>authenticate]
+    C --> D[Tenant Guard<br/>tenantGuard]
+    D --> E[Role Guard<br/>authorize / authorizeAdmin]
+    E --> F[Controller]
+    F --> G[Tenant-Scoped Data Access<br/>tenant_id-constrained SQL]
+```
+
+Control objective:
+
+- No protected business handler executes without passing anti-abuse, identity, tenant, and role gates.
+
+## Security Governance Notes
+
+- This document defines implemented security controls at architecture and middleware level.
+- Security control reviews should be performed after major authentication, tenancy, or middleware changes.
