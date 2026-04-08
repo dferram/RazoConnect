@@ -227,22 +227,10 @@ async function getStock({ varianteId, userId, userRole, tenantId, estadoId }) {
     }
   }
 
-  // CASO C: Cliente sin admin asignado - Retornar stock AGREGADO de todos los admins
+  // CASO C: Cliente sin admin asignado - No exponer stock para evitar mezcla entre admins
   if (context.isCliente && !context.adminId) {
-    try {
-      const { rows } = await db.query(
-        `SELECT SUM(COALESCE(cantidad, 0)) as stock_total
-         FROM stock_admin 
-         WHERE variante_id = $1 AND tenant_id = $2`,
-        [varianteId, tenantId]
-      );
-      
-      const stock = rows.length > 0 ? parseInt(rows[0].stock_total, 10) || 0 : 0;
-      return stock;
-    } catch (error) {
-      console.error('[SmartStockService] Error al leer stock agregado:', error);
-      return 0;
-    }
+    console.warn(`[SmartStockService] Cliente ${userId} sin admin asignado - retornando stock 0`);
+    return 0;
   }
 
   // CASO DEFAULT: Sin contexto válido
@@ -317,34 +305,11 @@ async function getBulkStock({ varianteIds, userId, userRole, tenantId, estadoId 
     }
   }
 
-  // CASO C: Cliente sin admin asignado - Retornar stock AGREGADO de todos los admins
+  // CASO C: Cliente sin admin asignado - No exponer stock para evitar mezcla entre admins
   if (context.isCliente && !context.adminId) {
-    try {
-      const { rows } = await db.query(
-        `SELECT variante_id, SUM(COALESCE(cantidad, 0)) as stock_total
-         FROM stock_admin 
-         WHERE variante_id = ANY($1::int[]) AND tenant_id = $2
-         GROUP BY variante_id`,
-        [varianteIds, tenantId]
-      );
-      
-      rows.forEach(row => {
-        stockMap.set(parseInt(row.variante_id, 10), parseInt(row.stock_total, 10));
-      });
-      
-      // Rellenar con 0 las variantes que no tienen stock en ningún admin
-      varianteIds.forEach(id => {
-        if (!stockMap.has(id)) {
-          stockMap.set(id, 0);
-        }
-      });
-      
-      return stockMap;
-    } catch (error) {
-      console.error('[SmartStockService] Error al leer stock agregado bulk:', error);
-      varianteIds.forEach(id => stockMap.set(id, 0));
-      return stockMap;
-    }
+    console.warn(`[SmartStockService] Cliente ${userId} sin admin asignado - retornando stock 0 en bulk`);
+    varianteIds.forEach(id => stockMap.set(id, 0));
+    return stockMap;
   }
 
   // CASO D: Sin contexto válido - Retornar 0 para todas

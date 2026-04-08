@@ -35,7 +35,8 @@ const autoRefreshToken = (req, res, next) => {
           id: decoded.id,
           rol: decoded.rol,
           email: decoded.email,
-          tenant_id: decoded.tenant_id
+          tenant_id: decoded.tenant_id,
+          estadoId: decoded.estadoId || null
         });
         
         // Agregar el nuevo token en el header de respuesta
