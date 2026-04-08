@@ -259,7 +259,15 @@ const crearPedido = async (req, res) => {
     // Este es el único admin del cual debe consumir stock este cliente
     const clienteAdminId = await getAdminByClienteEstado(clienteId, tenant_id);
     if (!clienteAdminId) {
-      logger.warn(`⚠️ Cliente ${clienteId} no tiene admin asignado a su estado. Usar adminId del contexto.`);
+      // ⚠️ ERROR CRÍTICO: Cliente sin admin asignado - NO PUEDE HACER PEDIDOS
+      await client.query("ROLLBACK");
+      transactionStarted = false;
+      removeUploadedComprobante();
+      logger.error(`[ERROR CRÍTICO] Cliente ${clienteId} no tiene admin asignado. No puede crear pedidos.`);
+      return res.status(403).json({
+        success: false,
+        message: `Tu cliente no está asignado a ningún administrador. Contacta al soporte técnico.`
+      });
     }
 
     // 2. Obtener el carrito del cliente
@@ -1046,9 +1054,9 @@ const crearPedido = async (req, res) => {
       };
     }
 
-    // NUEVO: Obtener estado_id y admin responsable del cliente para asignarlos al pedido
+    // NUEVO: Obtener estado_id del cliente para asignarlo al pedido
+    // admin_id ya fue validado anteriormente (clienteAdminId)
     let estadoIdPedido = null;
-    let adminIdPedido = null;
 
     try {
       const estadosHelper = require("../utils/estadosHelper");
@@ -1056,13 +1064,13 @@ const crearPedido = async (req, res) => {
 
       if (clienteEstadoInfo && clienteEstadoInfo.estado_id) {
         estadoIdPedido = clienteEstadoInfo.estado_id;
-        adminIdPedido = await estadosHelper.getAdminByClienteEstado(clienteId, tenant_id);
       }
     } catch (error) {
-      logger.warn('Error al obtener estado/admin del cliente para pedido:', { error, clienteId });
+      logger.warn('Error al obtener estado del cliente para pedido:', { error, clienteId });
     }
 
-    await registrarPedido(adminIdPedido, estadoIdPedido);
+    // 🔧 USAR clienteAdminId que ya fue validado (garantizado != null)
+    await registrarPedido(clienteAdminId, estadoIdPedido);
 
     // 7. Crear los detalles del pedido y actualizar inventario
     const detallesPedido = [];

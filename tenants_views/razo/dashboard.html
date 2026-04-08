@@ -1102,21 +1102,15 @@
                         .map(
                           (item) => {
                             console.log('🔍 Datos del item recibido:', item);
-                            
-                            // Calculate stock availability
-                            const stock = item.stock !== undefined ? item.stock : 0;
-                            const piezasPorTamano = item.piezasPorTamano || 1;
-                            const cantidadSolicitada = item.cantidad || 0;
-                            const piezasNecesarias = cantidadSolicitada * piezasPorTamano;
-                            const enStock = stock >= piezasNecesarias;
-                            
-                            // Integrity check
-                            if (enStock && stock === 0) {
-                              console.error(`[ERROR DE INTEGRIDAD] El producto SKU: ${item.sku} muestra stock fantasma.`);
-                            }
-                            
-                            const badgeClass = enStock ? 'badge-stock surtido' : 'badge-stock bajo-pedido';
-                            const badgeText = enStock ? 'SURTIDO' : 'BAJO PEDIDO';
+
+                            // 🔧 CORRECCIÓN: Mostrar SOLO "Con Stock" o "Bajo Pedido"
+                            // "SURTIDO" es estado administrativo - solo se muestra cuando inventarios confirma
+                            // esBackorder: false = "Con Stock" (se surtió de admin's stock)
+                            // esBackorder: true = "Bajo Pedido" (se pidió con backorder)
+                            const conStock = !item.esBackorder;
+
+                            const badgeClass = conStock ? 'badge-stock con-stock' : 'badge-stock bajo-pedido';
+                            const badgeText = conStock ? 'Con Stock' : 'Bajo Pedido';
                             
                             return `
                         <div class="pedido-item">

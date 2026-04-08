@@ -283,23 +283,23 @@ async function getBulkStock({ varianteIds, userId, userRole, tenantId, estadoId 
   if (context.adminId) {
     try {
       const { rows } = await db.query(
-        `SELECT variante_id, COALESCE(cantidad, 0) as stock 
-         FROM stock_admin 
+        `SELECT variante_id, COALESCE(cantidad, 0) as stock
+         FROM stock_admin
          WHERE variante_id = ANY($1::int[]) AND admin_id = $2 AND tenant_id = $3`,
         [varianteIds, context.adminId, tenantId]
       );
-      
+
       rows.forEach(row => {
         stockMap.set(parseInt(row.variante_id, 10), parseInt(row.stock, 10));
       });
-      
+
       // Rellenar con 0 las variantes que no tienen registro en stock_admin
       varianteIds.forEach(id => {
         if (!stockMap.has(id)) {
           stockMap.set(id, 0);
         }
       });
-      
+
       return stockMap;
     } catch (error) {
       console.error('[SmartStockService] Error al leer stock de admin bulk:', error);

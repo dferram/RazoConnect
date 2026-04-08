@@ -318,8 +318,8 @@
     
     // Obtener rol del usuario
     const rolRaw = usuario?.rol || usuario?.Rol || usuario?.role || usuario?.Role;
-    const rol = (rolRaw || "").toString().trim();
-    
+    const rol = (rolRaw || "").toString().trim().toLowerCase();
+
     console.log('🔍 [Header Loader] Nombre extraído:', nombre);
     console.log('🔍 [Header Loader] Rol extraído:', rol);
 
@@ -336,12 +336,12 @@
       loginElements.forEach(el => el.style.display = 'none');
       dashboardElements.forEach(el => el.style.display = 'list-item');
       logoutElements.forEach(el => el.style.display = 'list-item');
-      
+
       if (nombreEl) {
         if (nombre) {
           // Mostrar nombre y rol si ambos están disponibles
           if (rol && rol !== 'cliente') {
-            nombreEl.textContent = `${nombre.split(" ")[0]} (${rol})`;
+            nombreEl.textContent = `${nombre.split(" ")[0]} (${rol.charAt(0).toUpperCase() + rol.slice(1)})`;
             console.log('✅ [Header Loader] Mostrando nombre y rol:', nombreEl.textContent);
           } else {
             nombreEl.textContent = `Hola, ${nombre.split(" ")[0]}`;
