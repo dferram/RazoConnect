@@ -1195,7 +1195,7 @@ const crearPedido = async (req, res) => {
              estado_producto,
              tenant_id
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0, 'Completo', $8)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0, 'Con stock', $8)
            RETURNING DetalleID`,
           [
             pedidoId,
@@ -1210,6 +1210,15 @@ const crearPedido = async (req, res) => {
         );
 
         const detalleIdSurtido = detalleResult.rows[0].detalleid;
+
+        logger.info('✅ [PEDIDO] Producto marcado como CON STOCK:', {
+          pedidoId,
+          detalleId: detalleIdSurtido,
+          varianteId: item.varianteid,
+          cantidadSurtida: split.cantidadSurtida,
+          estadoProducto: 'Con stock',
+          message: 'Producto tiene stock disponible'
+        });
 
         detallesPedido.push({
           detalleId: detalleIdSurtido,
@@ -1401,6 +1410,16 @@ const crearPedido = async (req, res) => {
             tenant_id,
           ]
         );
+
+        logger.info('⏳ [PEDIDO] Producto marcado como BAJO PEDIDO:', {
+          pedidoId,
+          detalleId: detalleBackorderResult.rows[0].detalleid,
+          varianteId: item.varianteid,
+          cantidadBackorder: cantidadRealBackorder,
+          estadoProducto: 'Bajo pedido',
+          esBackorder: true,
+          message: 'Producto en backorder - esperando del proveedor'
+        });
 
         detallesPedido.push({
           detalleId: detalleBackorderResult.rows[0].detalleid,
