@@ -368,8 +368,10 @@ async function registrarPagoManual(req, res) {
                 fecha_pago,
                 validado_por,
                 fecha_validacion,
-                notas
-            ) VALUES ($1, $2, $3, $4, 'APROBADO', CURRENT_TIMESTAMP, $5, CURRENT_TIMESTAMP, $6)
+                notas,
+                admin_id,
+                tenant_id
+            ) VALUES ($1, $2, $3, $4, 'APROBADO', CURRENT_TIMESTAMP, $5, CURRENT_TIMESTAMP, $6, $7, $8)
             RETURNING pago_id
         `, [
             credito.cliente_id,
@@ -377,7 +379,9 @@ async function registrarPagoManual(req, res) {
             metodoPago.toUpperCase(),
             referencia || `MANUAL-${Date.now()}`,
             adminId,
-            notas || 'Pago manual registrado por administrador'
+            notas || 'Pago manual registrado por administrador',
+            adminId,
+            tenantId
         ]);
 
         const pagoId = pagoCreado.pago_id;
