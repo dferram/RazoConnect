@@ -22,9 +22,10 @@ const { getOrSetCache } = require('../config/redisClient');
  */
 const getFinanzasTotales = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const adminId = req.user?.adminId || req.user?.userId;
     const tenantId = req.tenant?.tenant_id || 1;
+
+    // ⚠️ CRÍTICO: Usar admin_responsable_id si existe (rol subordinado), sino usar admin en curso
+    const adminId = req.user?.admin_responsable_id ?? req.user.id;
 
     // Authorization is already handled by authorizeRole middleware at route level
     // No need for redundant checks here

@@ -568,51 +568,15 @@ const obtenerProductos = async (req, res) => {
 
     if (varianteIds.length > 0 && req.user && req.user.id && req.tenant) {
       try {
-        // 🔧 FIX: Para clientes, usar allocation-aware stock en lugar de global stock
-        if (isClienteScope) {
-          const adminId = await getAdminByClienteEstado(req.user.userId, req.tenant.tenant_id);
-
-          if (adminId) {
-            // Calcular allocation-aware stock para cada variante maestra
-            for (const varianteId of varianteIds) {
-              try {
-                const piezasInfo = piezasPorVarianteMap.get(varianteId) || {};
-                const piezasPorPaquete = piezasInfo.piezasPorPaquete || 1;
-
-                const allocationStatus = await SmartStockService.calculateAllocationStatus({
-                  varianteId,
-                  cantidadRequerida: 1, // Just checking availability
-                  orderDate: new Date().toISOString(),
-                  adminId,
-                  tenantId: req.tenant.tenant_id,
-                  piezasPorPaquete
-                });
-
-                // Store allocation-aware available piezas
-                if (allocationStatus && allocationStatus.disponiblePiezas !== undefined) {
-                  stockMapByRole.set(varianteId, allocationStatus.disponiblePiezas);
-                }
-              } catch (itemError) {
-                logger.warn('[ProductosController] Error calculating allocation for variante', {
-                  varianteId,
-                  error: itemError.message
-                });
-              }
-            }
-          } else {
-            // No admin assigned - show 0 stock (client without region)
-            varianteIds.forEach(id => stockMapByRole.set(id, 0));
-          }
-        } else {
-          // Para admins/staff, usar bulk stock (global para inventario)
-          stockMapByRole = await SmartStockService.getBulkStock({
-            varianteIds,
-            userId: req.user.id,
-            userRole: req.user.roles || ['cliente'],
-            tenantId: req.tenant.tenant_id,
-            estadoId: req.user.estadoId || null
-          });
-        }
+        // 🚀 OPTIMIZACIÓN: Usar getBulkStock para TODOS (clientes y admins)
+        // Se eliminó el loop N+1 que hacia calculateAllocationStatus por cada variante
+        stockMapByRole = await SmartStockService.getBulkStock({
+          varianteIds,
+          userId: req.user.userId || req.user.id,
+          userRole: req.user.roles || [req.user.rol || 'cliente'],
+          tenantId: req.tenant.tenant_id,
+          estadoId: req.user.estadoId || null
+        });
       } catch (stockError) {
         logger.error('Error al obtener stock dinámico', {
           error: stockError.message,
@@ -961,7 +925,7 @@ const obtenerDimensiones = async (req, res) => {
       [tenant_id]
     );
 
-    const dimensiones = result.rows.map((row) => row.dimension);
+    const dimensiones = result.rows.map((row) => row.dimensiones);
 
     res.status(200).json({
       success: true,

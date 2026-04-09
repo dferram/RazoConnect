@@ -198,7 +198,7 @@ async function getOrdenesPendientes(req, res) {
 async function crearSesionInventario(req, res) {
     const { nombre, descripcion, notas } = req.body;
     const { tenant_id } = req.tenant;
-    const adminId = req.user.id || req.user.userId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
     const isAdmin = req.user.roles && req.user.roles.includes('admin');
 
     if (!isAdmin) {

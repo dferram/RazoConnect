@@ -425,8 +425,12 @@ const getPedidoDetalle = async (req, res) => {
     // Obtener información del pedido
     const { tenant_id } = req.tenant;
 
+    // ⚠️ CRÍTICO: Obtener admin del cliente para filtrar stock (ANTES de usarlo en queries)
+    const estadosHelper = require('../utils/estadosHelper');
+    let adminClienteId = null;
+
     const pedidoResult = await db.query(
-      `SELECT 
+      `SELECT
         p.*,
         c.nombre as clientenombre,
         c.apellido as clienteapellido,
@@ -451,7 +455,7 @@ const getPedidoDetalle = async (req, res) => {
       LEFT JOIN cliente_direcciones d ON p.direccionenvioid = d.direccionid AND d.tenant_id = $2
       LEFT JOIN estados e ON d.estadoid = e.estadoid
       WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
-      [pedidoId, tenant_id, null, adminClienteId]
+      [pedidoId, tenant_id]
     );
 
     if (pedidoResult.rows.length === 0) {
@@ -463,13 +467,12 @@ const getPedidoDetalle = async (req, res) => {
 
     const pedido = pedidoResult.rows[0];
 
-    // ⚠️ CRÍTICO: Obtener admin del cliente para filtrar stock
-    const estadosHelper = require('../utils/estadosHelper');
-    const adminClienteId = await estadosHelper.getAdminByClienteEstado(pedido.clienteid, tenant_id);
+    // Ahora sí obtenemos el admin del cliente
+    adminClienteId = await estadosHelper.getAdminByClienteEstado(pedido.clienteid, tenant_id);
 
     // Obtener detalles de productos del pedido
     const detallesResult = await db.query(
-      `SELECT 
+      `SELECT
         dp.detalleid,
         dp.pedidoid,
         dp.varianteid,
@@ -482,7 +485,7 @@ const getPedidoDetalle = async (req, res) => {
         dp.cantidadsurtida,
         COALESCE(dp.estado_producto, 'Pendiente') as estado_producto,
         COALESCE(
-          dp.preciounitario, 
+          dp.preciounitario,
           ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
         ) as preciounitariocalculado,
         pv.sku,
@@ -491,7 +494,7 @@ const getPedidoDetalle = async (req, res) => {
         pv.color_nombre,
         pv.color_hex,
         COALESCE(
-          (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND admin_id = $4 AND tenant_id = $2 LIMIT 1),
+          (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND admin_id = $3 AND tenant_id = $2 LIMIT 1),
           pv.stock,
           0
         ) as stock,
@@ -507,13 +510,13 @@ const getPedidoDetalle = async (req, res) => {
       LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid AND ct.tenant_id = $2
       WHERE dp.pedidoid = $1 AND dp.tenant_id = $2
       ORDER BY dp.detalleid`,
-      [pedidoId, tenant_id, null, adminClienteId]
+      [pedidoId, tenant_id, adminClienteId]
     ).catch(async (error) => {
       // Si el campo confirmado_finanzas no existe, usar query sin ese campo
       if (error.message && error.message.includes('column "confirmado_finanzas" does not exist')) {
         logger.warn('⚠️ Campo confirmado_finanzas no existe. Usando query sin ese campo. Ejecuta add_finanzas_confirmation_fields.sql', { pedidoId });
         return db.query(
-          `SELECT 
+          `SELECT
             dp.detalleid,
             dp.pedidoid,
             dp.varianteid,
@@ -526,7 +529,7 @@ const getPedidoDetalle = async (req, res) => {
             dp.cantidadsurtida,
             COALESCE(dp.estado_producto, 'Pendiente') as estado_producto,
             COALESCE(
-              dp.preciounitario, 
+              dp.preciounitario,
               ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
             ) as preciounitariocalculado,
             pv.sku,
@@ -535,7 +538,7 @@ const getPedidoDetalle = async (req, res) => {
             pv.color_nombre,
             pv.color_hex,
             COALESCE(
-              (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND admin_id = $4 AND tenant_id = $2 LIMIT 1),
+              (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND admin_id = $3 AND tenant_id = $2 LIMIT 1),
               pv.stock,
               0
             ) as stock,
@@ -551,7 +554,7 @@ const getPedidoDetalle = async (req, res) => {
           LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid AND ct.tenant_id = $2
           WHERE dp.pedidoid = $1 AND dp.tenant_id = $2
           ORDER BY dp.detalleid`,
-          [pedidoId, tenant_id, null, adminClienteId]
+          [pedidoId, tenant_id, adminClienteId]
         );
       }
       throw error;
@@ -638,7 +641,10 @@ const getPedidoDetalle = async (req, res) => {
   } catch (error) {
     logger.error('Error al obtener detalle del pedido:', {
       requestId: req.requestId,
-      tenantId: req.tenant?.tenant_id
+      tenantId: req.tenant?.tenant_id,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      pedidoId: req.params.id
     });
     res.status(500).json({
       success: false,
@@ -769,11 +775,16 @@ const surtirPedido = async (req, res) => {
     const userId = req.user?.id || req.user?.adminid;
 
     // ⚠️ CRÍTICO: Obtener admin_responsable_id del usuario para filtrar stock correctamente
-    const adminResponsableResult = await db.query(
-      `SELECT admin_responsable_id FROM administradores WHERE adminid = $1 AND tenant_id = $2 LIMIT 1`,
-      [userId, tenant_id]
-    );
-    const adminIdUser = adminResponsableResult.rows.length > 0 ? adminResponsableResult.rows[0].admin_responsable_id : userId;
+    const adminIdUser = req.user?.admin_responsable_id ?? req.user?.id;
+    console.log('🔍 [SURTIR PEDIDO] Admin ID Being Used:', {
+      adminIdUser,
+      admin_responsable_id: req.user?.admin_responsable_id,
+      user_id: req.user?.id,
+      adminid: req.user?.adminid,
+      rol: req.user?.rol,
+      email: req.user?.email,
+      tenantId: tenant_id
+    });
 
     await client.query('BEGIN');
 
@@ -1052,45 +1063,36 @@ const surtirPedido = async (req, res) => {
     // 2. Insertar registro en pedido_surtido_detalle con las piezas correctas
     
     for (const detalle of detallesMarcadosResult.rows) {
-      const adminId = req.user?.id || req.user?.adminid;
+      const adminId = adminIdUser; // Usar el admin asignado, no el admin del usuario actual
       const piezasSurtidas = detalle.piezastotales; // Usar piezas totales, no paquetes
-      
-      // 1. Restar del stock_admin SOLO del admin correspondiente
+
+      // 1. Solo registrar que fue marcado para surtido en pedido_surtido_detalle
+      // No modificar stock_admin - el stock YA fue reservado cuando el cliente creó el pedido
+      // La cantidad se restará cuando finanzas confirme el surtido
       await client.query(
-        `UPDATE stock_admin
-         SET cantidad = cantidad - $1,
-             cantidad_reservada = GREATEST(cantidad_reservada - $1, 0)
-         WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4`,
-        [piezasSurtidas, detalle.varianteid, adminId, tenant_id]
-      );
-      
-      // 2. Insertar en pedido_surtido_detalle
-      await client.query(
-        `INSERT INTO pedido_surtido_detalle 
+        `INSERT INTO pedido_surtido_detalle
          (pedido_id, detalle_id, variante_id, admin_id, cantidad, tenant_id, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
         [pedidoId, detalle.detalleid, detalle.varianteid, adminId, piezasSurtidas, tenant_id]
       );
-      
-      // 3. Registrar movimiento en inventario
-      const observacionesMovimiento = `Surtido pedido #${pedidoId} - ${piezasSurtidas} piezas`;
-      
-      // Obtener el stock actual del admin específico
-      const stockActualQuery = await client.query(
-        `SELECT cantidad FROM stock_admin WHERE variante_id = $1 AND admin_id = $2 AND tenant_id = $3`,
-        [detalle.varianteid, adminId, tenant_id]
+
+      // 2. Actualizar cantidadsurtida en el detalle (warehouse surtió esta cantidad)
+      // Finance usará este valor para confirmar
+      await client.query(
+        `UPDATE detallesdelpedido
+         SET cantidadsurtida = $1
+         WHERE detalleid = $2 AND tenant_id = $3`,
+        [piezasSurtidas, detalle.detalleid, tenant_id]
       );
 
-      const stockPrevio = stockActualQuery.rows[0]?.cantidad || 0;
-      const stockPosterior = stockPrevio - piezasSurtidas;
-      
+      // 3. Actualizar estado del detalle a "Surtido" (será "Facturado" cuando finance confirme)
       await client.query(
-        `INSERT INTO movimientos_inventario 
-         (admin_id, variante_id, tenant_id, tipo, cantidad, stock_previo, stock_posterior, motivo, observaciones, ip_origen)
-         VALUES ($1, $2, $3, 'MERMA', $4, $5, $6, 'Surtido de pedido', $7, $8)`,
-        [adminId, detalle.varianteid, tenant_id, piezasSurtidas, stockPrevio, stockPosterior, observacionesMovimiento, req.ip]
+        `UPDATE detallesdelpedido
+         SET estado_producto = 'Surtido'
+         WHERE detalleid = $1 AND tenant_id = $2`,
+        [detalle.detalleid, tenant_id]
       );
-      
+
       logger.info('Stock actualizado y surtido registrado', {
         pedidoId,
         detalleId: detalle.detalleid,
@@ -1333,7 +1335,27 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       });
 
       try {
-        // Reducir DIRECTAMENTE del stock_admin del admin que realizó el surtido
+        // 1. Obtener el stock ANTERIOR antes de actualizar
+        const getStockQuery = `
+          SELECT cantidad
+          FROM stock_admin
+          WHERE variante_id = $1 AND admin_id = $2 AND tenant_id = $3
+        `;
+        const stockAnteriorResult = await client.query(getStockQuery, [
+          varianteId,
+          adminSurtidor,
+          tenant_id
+        ]);
+
+        if (stockAnteriorResult.rows.length === 0) {
+          throw new Error(
+            `No se encontró stock para el admin ${adminSurtidor} y variante ${varianteId}`
+          );
+        }
+
+        const stockPrevio = parseInt(stockAnteriorResult.rows[0].cantidad || 0, 10);
+
+        // 2. Reducir DIRECTAMENTE del stock_admin del admin que realizó el surtido
         // NO usar SmartStockService para evitar confusiones de contexto
         const updateStockQuery = `
           UPDATE stock_admin
@@ -1358,16 +1380,16 @@ const confirmarSurtidoFinanzas = async (req, res) => {
 
         const nuevoStock = updateResult.rows[0].cantidad;
 
-        // Registrar en log de movimientos de inventario
+        // 3. Registrar en log de movimientos de inventario (CON stock_previo)
         await client.query(
           `INSERT INTO movimientos_inventario
-           (admin_id, variante_id, tenant_id, tipo, cantidad, stock_posterior, motivo, observaciones, ip_origen)
-           VALUES ($1, $2, $3, 'MERMA', $4, $5, 'Confirmación surtido por finanzas', $6, $7)`,
-          [adminSurtidor, varianteId, tenant_id, piezasSurtidas, nuevoStock,
+           (admin_id, variante_id, tenant_id, tipo, cantidad, stock_previo, stock_posterior, motivo, observaciones, ip_origen)
+           VALUES ($1, $2, $3, 'MERMA', $4, $5, $6, 'Confirmación surtido por finanzas', $7, $8)`,
+          [adminSurtidor, varianteId, tenant_id, piezasSurtidas, stockPrevio, nuevoStock,
            `Confirmación surtido Pedido #${pedidoId}`, req.ip]
         );
 
-        // Marcar el detalle como confirmado por finanzas y cambiar estado a Facturado
+        // 4. Marcar el detalle como confirmado por finanzas y cambiar estado a Facturado
         const updateDetalleQuery = `
           UPDATE detallesdelpedido
           SET estado_producto = 'Facturado'
@@ -1380,6 +1402,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
           varianteId,
           adminSurtidor,
           piezasSurtidas,
+          stockPrevio,
           nuevoStock,
           productosConfirmados
         });
@@ -1654,7 +1677,7 @@ const rechazarPedidoFinanzas = async (req, res) => {
         )
         UPDATE detallesdelpedido dp
         SET estado_producto = CASE
-          WHEN (sa.total_cantidad - sa.total_reservado) >= dp.piezastotales THEN 'Con stock'
+          WHEN (sa.total_cantidad - sa.total_reservado) >= dp.piezastotales THEN 'Completo'
           ELSE 'Bajo pedido'
         END,
         cantidadsurtida = 0

@@ -494,10 +494,21 @@ const crearPedido = async (req, res) => {
         varianteId: item.varianteid,
         cantidadRequerida: item.cantidad,
         orderDate: orderDate,
-        adminId: req.user?.adminId || clienteAdminId,
+        adminId: clienteAdminId,
         tenantId: tenant_id,
         pedidoId: null,
         piezasPorPaquete: tamanoValor
+      });
+
+      console.log('📊 [CREAR PEDIDO] FIFO Stock Allocation:', {
+        varianteId: item.varianteid,
+        clienteAdminId,
+        cantidadRequerida: item.cantidad,
+        cantidadSurtible: fifoAllocation.cantidadSurtible,
+        cantidadBackorder: fifoAllocation.cantidadBackorder,
+        disponiblePiezas: fifoAllocation.disponiblePiezas,
+        sku: item.sku,
+        nombreProducto: item.nombreproducto
       });
 
 
@@ -1181,9 +1192,10 @@ const crearPedido = async (req, res) => {
              EsBackorder,
              CantidadSurtida,
              CantidadBackorder,
+             estado_producto,
              tenant_id
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0, $8)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0, 'Completo', $8)
            RETURNING DetalleID`,
           [
             pedidoId,
@@ -1236,8 +1248,8 @@ const crearPedido = async (req, res) => {
         const piezasRealmenteSurtidas = split.cantidadSurtida * tamanoValor;
         if (piezasRealmenteSurtidas > 0) {
               
-          // Determinar admin_id para la reserva
-          const adminIdReserva = req.user?.adminId || null;
+        // Determinar admin_id para la reserva
+        const adminIdReserva = clienteAdminId;
           
           if (adminIdReserva) {
             // CASO 1: Cliente con admin asignado - reservar en stock específico
@@ -1373,9 +1385,10 @@ const crearPedido = async (req, res) => {
              EsBackorder,
              CantidadSurtida,
              CantidadBackorder,
+             estado_producto,
              tenant_id
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, 0, $4, $8)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, 0, $4, 'Bajo pedido', $8)
            RETURNING DetalleID`,
           [
             pedidoId,

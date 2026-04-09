@@ -1408,7 +1408,7 @@ router.put(
 router.get(
   "/pedidos/:id/detalle",
   authenticate,
-  authorizeAdmin,
+  authorizeRole(['super_admin', 'admin', 'inventarios', 'finanzas', 'gerente_finanzas']),
   pedidosAdminController.getPedidoDetalle
 );
 

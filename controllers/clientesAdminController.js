@@ -290,7 +290,7 @@ const actualizarCreditoCliente = async (req, res) => {
   try {
     const clienteId = parseInt(req.params.id, 10);
     const { limiteCredito, diasGracia, activo } = req.body;
-    const adminId = req.user?.adminId || req.user?.userId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.adminid;
 
     if (!Number.isInteger(clienteId) || clienteId <= 0) {
       return res.status(400).json({

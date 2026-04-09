@@ -422,8 +422,9 @@ async function ajustarPedido(req, res) {
           esbackorder,
           cantidadsurtida,
           cantidadbackorder,
+          estado_producto,
           tenant_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0, $8)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, 0, 0, 'Pendiente', $8)`,
         [
           pedidoId,
           varianteId,

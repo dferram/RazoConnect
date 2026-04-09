@@ -60,7 +60,7 @@ async function getPagosPendientes(req, res) {
 async function aprobarPago(req, res) {
   const client = await db.pool.connect();
   const { pagoId } = req.params;
-  const adminId = req.user?.adminId || req.user?.userId;
+  const adminId = req.user?.admin_responsable_id ?? req.user?.id;
   const tenant_id = req.tenant?.tenant_id || 1;
 
   try {
@@ -164,7 +164,7 @@ async function rechazarPago(req, res) {
   const client = await db.pool.connect();
   const { pagoId } = req.params;
   const { motivo } = req.body;
-  const adminId = req.user?.adminId || req.user?.userId;
+  const adminId = req.user?.admin_responsable_id ?? req.user?.id;
   const tenant_id = req.tenant?.tenant_id || 1;
 
   try {
