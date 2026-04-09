@@ -158,44 +158,44 @@ const getAllPedidos = async (req, res) => {
 
     let query = `
       SELECT 
-        p.PedidoID,
-        p.FechaPedido,
-        p.MontoTotal,
-        p.Estatus,
-        p.CostoEnvio,
-        p.Monto_Descuento,
-        p.Cupon_ID,
+        p.pedidoid,
+        p.fechapedido,
+        p.montototal,
+        p.estatus,
+        p.costoenvio,
+        p.monto_descuento,
+        p.cupon_id,
         p.completamente_surtido,
         p.es_historico,
         p.fecha_confirmacion,
-        c.Nombre as ClienteNombre,
-        c.Apellido as ClienteApellido,
-        c.Email as ClienteEmail,
-        a.Nombre as AgenteNombre,
-        a.Apellido as AgenteApellido,
-        a.CodigoAgente,
-        d.Ciudad,
-        d.EstadoID,
-        e.Nombre as EstadoNombre
-      FROM Pedidos p
-      LEFT JOIN Clientes c ON p.ClienteID = c.ClienteID
-      LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
-      LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
-      LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
+        c.nombre as ClienteNombre,
+        c.apellido as ClienteApellido,
+        c.email as ClienteEmail,
+        a.nombre as AgenteNombre,
+        a.apellido as AgenteApellido,
+        a.codigoagente,
+        d.ciudad,
+        d.estadoid,
+        e.nombre as EstadoNombre
+      FROM pedidos p
+      LEFT JOIN clientes c ON p.clienteid = c.clienteid
+      LEFT JOIN agentesdeventas a ON p.agenteid = a.agenteid
+      LEFT JOIN cliente_direcciones d ON p.direccionenvioid = d.direccionid
+      LEFT JOIN estados e ON d.estadoid = e.estadoid
       WHERE p.tenant_id = $1
     `;
 
     // FILTRO POR ROL Y TIPO DE VISTA
     if (isInventarios) {
       // Inventarios solo ve ACTIVOS (no entregados)
-      query += ` AND p.Estatus NOT IN ('Surtido', 'Enviado', 'Entregado')`;
+      query += ` AND p.estatus NOT IN ('Surtido', 'Enviado', 'Entregado')`;
       logger.info('✅ [PEDIDOS] Inventarios - mostrando solo pedidos activos (excluyendo Surtido/Enviado/Entregado)', {
         userId: req.user?.id,
         rol: userRole
       });
     } else if (wantsHistorico) {
       // Finanzas/Admin/SuperAdmin pueden ver históricos (solo Entregado)
-      query += ` AND p.Estatus IN ('Entregado')`;
+      query += ` AND p.estatus IN ('Entregado')`;
       logger.info('✅ [PEDIDOS] Histórico - mostrando solo pedidos entregados', {
         userId: req.user?.id,
         rol: userRole,
@@ -204,7 +204,7 @@ const getAllPedidos = async (req, res) => {
       });
     } else {
       // Finanzas/Admin/SuperAdmin ven activos (todo MENOS Entregado)
-      query += ` AND p.Estatus NOT IN ('Entregado')`;
+      query += ` AND p.estatus NOT IN ('Entregado')`;
       logger.info('✅ [PEDIDOS] Activos - mostrando pedidos activos', {
         userId: req.user?.id,
         rol: userRole,
@@ -217,31 +217,31 @@ const getAllPedidos = async (req, res) => {
     let paramIndex = 2;
 
     if (estatus) {
-      query += ` AND p.Estatus = $${paramIndex}`;
+      query += ` AND p.estatus = $${paramIndex}`;
       params.push(estatus);
       paramIndex++;
     }
 
     if (clienteId) {
-      query += ` AND p.ClienteID = $${paramIndex}`;
+      query += ` AND p.clienteid = $${paramIndex}`;
       params.push(parseInt(clienteId));
       paramIndex++;
     }
 
     if (agenteId) {
-      query += ` AND p.AgenteID = $${paramIndex}`;
+      query += ` AND p.agenteid = $${paramIndex}`;
       params.push(parseInt(agenteId));
       paramIndex++;
     }
 
     if (fechaInicio) {
-      query += ` AND p.FechaPedido >= $${paramIndex}`;
+      query += ` AND p.fechapedido >= $${paramIndex}`;
       params.push(fechaInicio);
       paramIndex++;
     }
 
     if (fechaFin) {
-      query += ` AND p.FechaPedido <= $${paramIndex}`;
+      query += ` AND p.fechapedido <= $${paramIndex}`;
       params.push(fechaFin);
       paramIndex++;
     }
@@ -249,39 +249,39 @@ const getAllPedidos = async (req, res) => {
     // Count total records for pagination (use same filters as main query)
     const countParams = [tenant_id];
     let countParamIndex = 2;
-    let countQuery = `SELECT COUNT(*) FROM Pedidos p WHERE p.tenant_id = $1`;
+    let countQuery = `SELECT COUNT(*) FROM pedidos p WHERE p.tenant_id = $1`;
     
     // Aplicar mismo filtro por rol en el count
     if (isInventarios) {
-      countQuery += ` AND p.Estatus NOT IN ('Surtido', 'Enviado', 'Entregado')`;
+      countQuery += ` AND p.estatus NOT IN ('Surtido', 'Enviado', 'Entregado')`;
     } else if (wantsHistorico) {
-      countQuery += ` AND p.Estatus IN ('Entregado')`;
+      countQuery += ` AND p.estatus IN ('Entregado')`;
     } else {
-      countQuery += ` AND p.Estatus NOT IN ('Entregado')`;
+      countQuery += ` AND p.estatus NOT IN ('Entregado')`;
     }
     
     if (estatus) {
-      countQuery += ` AND p.Estatus = $${countParamIndex}`;
+      countQuery += ` AND p.estatus = $${countParamIndex}`;
       countParams.push(estatus);
       countParamIndex++;
     }
     if (clienteId) {
-      countQuery += ` AND p.ClienteID = $${countParamIndex}`;
+      countQuery += ` AND p.clienteid = $${countParamIndex}`;
       countParams.push(parseInt(clienteId));
       countParamIndex++;
     }
     if (agenteId) {
-      countQuery += ` AND p.AgenteID = $${countParamIndex}`;
+      countQuery += ` AND p.agenteid = $${countParamIndex}`;
       countParams.push(parseInt(agenteId));
       countParamIndex++;
     }
     if (fechaInicio) {
-      countQuery += ` AND p.FechaPedido >= $${countParamIndex}`;
+      countQuery += ` AND p.fechapedido >= $${countParamIndex}`;
       countParams.push(fechaInicio);
       countParamIndex++;
     }
     if (fechaFin) {
-      countQuery += ` AND p.FechaPedido <= $${countParamIndex}`;
+      countQuery += ` AND p.fechapedido <= $${countParamIndex}`;
       countParams.push(fechaFin);
       countParamIndex++;
     }
@@ -289,7 +289,7 @@ const getAllPedidos = async (req, res) => {
     const countResult = await db.query(countQuery, countParams);
     const total = parseInt(countResult.rows[0].count, 10);
 
-    query += ` ORDER BY p.FechaPedido DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    query += ` ORDER BY p.fechapedido DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
     params.push(limit, offset);
 
     const result = await db.query(query, params);
@@ -304,7 +304,7 @@ const getAllPedidos = async (req, res) => {
           PedidoID,
           CantidadPaquetes,
           PrecioPorPaquete
-        FROM DetallesDelPedido
+        FROM detallesdelpedido
         WHERE PedidoID = ANY($1::int[])
       `;
       
@@ -677,7 +677,7 @@ const confirmarPedido = async (req, res) => {
     await client.query("BEGIN");
 
     const pedidoResult = await client.query(
-      "SELECT PedidoID, Estatus FROM Pedidos WHERE PedidoID = $1 AND tenant_id = $2 FOR UPDATE",
+      "SELECT PedidoID, Estatus FROM pedidos WHERE PedidoID = $1 AND tenant_id = $2 FOR UPDATE",
       [pedidoId, tenant_id, null, adminClienteId]
     );
 
@@ -705,11 +705,11 @@ const confirmarPedido = async (req, res) => {
          dp.PiezasTotales,
          pr.NombreProducto,
          pv.SKU
-       FROM DetallesDelPedido dp
+       FROM detallesdelpedido dp
        INNER JOIN Producto_Variantes pv ON pv.VarianteID = dp.VarianteID
        INNER JOIN Productos pr ON pr.ProductoID = pv.ProductoID
        INNER JOIN Pedidos p ON p.pedidoid = dp.pedidoid
-       WHERE dp.PedidoID = $1 AND p.tenant_id = $2`,
+       WHERE dp.pedidoid = $1 AND p.tenant_id = $2`,
       [pedidoId, tenant_id]
     );
 
@@ -722,7 +722,7 @@ const confirmarPedido = async (req, res) => {
     }
 
     await client.query(
-      "UPDATE Pedidos SET Estatus = 'Confirmado', fecha_confirmacion = NOW() WHERE PedidoID = $1 AND tenant_id = $2",
+      "UPDATE Pedidos SET estatus = 'Confirmado', fecha_confirmacion = NOW() WHERE PedidoID = $1 AND tenant_id = $2",
       [pedidoId, tenant_id]
     );
 
@@ -1100,7 +1100,7 @@ const surtirPedido = async (req, res) => {
     // LÓGICA: Inventarios marcó productos → Cambiar a "Listo para remisionar" (siempre)
     // Después Finanzas confirmará y el status será "Surtido" o "Facturado"
     
-    const nuevoEstatus = 'Listo para remisionar';
+    const nuevoestatus = 'Listo para remisionar';
     const completamenteSurtido = false; // Inventarios solo marca, Finanzas confirma y cambia esto
 
     logger.info('✅ [ESTADO] Actualizando estado del pedido después de marcar surtidos', {

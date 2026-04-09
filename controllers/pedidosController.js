@@ -216,7 +216,7 @@ const crearPedido = async (req, res) => {
 
     // 1. Verificar que la dirección pertenece al cliente
     const direccionResult = await client.query(
-      "SELECT DireccionID FROM Cliente_Direcciones WHERE DireccionID = $1 AND ClienteID = $2",
+      "SELECT direccionid FROM cliente_direcciones WHERE direccionid = $1 AND clienteid = $2",
       [DireccionEnvioID, clienteId]
     );
 
@@ -272,7 +272,7 @@ const crearPedido = async (req, res) => {
 
     // 2. Obtener el carrito del cliente
     const carritoResult = await client.query(
-      "SELECT CarritoID FROM CarritoDeCompra WHERE ClienteID = $1 AND tenant_id = $2",
+      "SELECT carritoid FROM carritodecompra WHERE clienteid = $1 AND tenant_id = $2",
       [clienteId, tenant_id]
     );
 
@@ -740,7 +740,7 @@ const crearPedido = async (req, res) => {
 
     // 5. Obtener el agente asignado al cliente (si existe)
     const clienteAgenteResult = await client.query(
-      "SELECT AgenteID, Nombre, Email FROM Clientes WHERE ClienteID = $1",
+      "SELECT agenteid, nombre, email FROM clientes WHERE clienteid = $1",
       [clienteId]
     );
 
@@ -765,7 +765,7 @@ const crearPedido = async (req, res) => {
     let agenteNombre = null;
     if (agenteId) {
       const agenteResult = await client.query(
-        "SELECT Email, Nombre FROM AgentesDeVentas WHERE AgenteID = $1",
+        "SELECT email, nombre FROM agentesdeventas WHERE agenteid = $1",
         [agenteId]
       );
 
@@ -927,21 +927,21 @@ const crearPedido = async (req, res) => {
 
     async function registrarPedido(adminIdAsignado, estadoIdAsignado) {
       const pedidoResult = await client.query(
-        `INSERT INTO Pedidos (
-           ClienteID,
-           AgenteID,
-           DireccionEnvioID,
-           MontoTotal,
-           Estatus,
-           Es_Credito,
-           Pagado,
-           Fecha_Vencimiento,
-           Metodo_Pago,
-           Transaccion_ID,
-           Comprobante_URL,
-           Cupon_ID,
-           Monto_Descuento,
-           Saldo_Pendiente,
+        `INSERT INTO pedidos (
+           clienteid,
+           agenteid,
+           direccionenvioid,
+           montototal,
+           estatus,
+           es_credito,
+           pagado,
+           fecha_vencimiento,
+           metodo_pago,
+           transaccion_id,
+           comprobante_url,
+           cupon_id,
+           monto_descuento,
+           saldo_pendiente,
            monto_surtido,
            monto_backorder,
            tenant_id,
@@ -972,7 +972,7 @@ const crearPedido = async (req, res) => {
            $16,
            $17
          )
-         RETURNING PedidoID, FechaPedido, MontoTotal, Estatus, Fecha_Vencimiento, Es_Credito, Pagado, Metodo_Pago, Transaccion_ID, Comprobante_URL, Cupon_ID, Monto_Descuento, Saldo_Pendiente`,
+         RETURNING pedidoid, fechapedido, montototal, estatus, fecha_vencimiento, es_credito, pagado, metodo_pago, transaccion_id, comprobante_url, cupon_id, monto_descuento, saldo_pendiente`,
         [
           clienteId,
           agenteId,
@@ -1181,22 +1181,22 @@ const crearPedido = async (req, res) => {
       // CRÍTICO: Usar precioPorPaquete CON descuento prorrateado
       if (puedeSerSurtido) {
         const detalleResult = await client.query(
-          `INSERT INTO DetallesDelPedido (
-             PedidoID,
-             VarianteID,
-             TamanoID,
-             CantidadPaquetes,
-             PrecioPorPaquete,
-             PiezasTotales,
-             PrecioUnitario,
-             EsBackorder,
-             CantidadSurtida,
-             CantidadBackorder,
+          `INSERT INTO detallesdelpedido (
+             pedidoid,
+             varianteid,
+             tamanoid,
+             cantidadpaquetes,
+             precioporpaquete,
+             piezastotales,
+             preciounitario,
+             esbackorder,
+             cantidadsurtida,
+             cantidadbackorder,
              estado_producto,
              tenant_id
            )
            VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0, 'Con stock', $8)
-           RETURNING DetalleID`,
+           RETURNING detalleid`,
           [
             pedidoId,
             item.varianteid,
@@ -1383,22 +1383,22 @@ const crearPedido = async (req, res) => {
       if (debeInsertarBackorder) {
         const piezasBackorderReal = cantidadRealBackorder * tamanoValor;
         const detalleBackorderResult = await client.query(
-          `INSERT INTO DetallesDelPedido (
-             PedidoID,
-             VarianteID,
-             TamanoID,
-             CantidadPaquetes,
-             PrecioPorPaquete,
-             PiezasTotales,
-             PrecioUnitario,
-             EsBackorder,
-             CantidadSurtida,
-             CantidadBackorder,
+          `INSERT INTO detallesdelpedido (
+             pedidoid,
+             varianteid,
+             tamanoid,
+             cantidadpaquetes,
+             precioporpaquete,
+             piezastotales,
+             preciounitario,
+             esbackorder,
+             cantidadsurtida,
+             cantidadbackorder,
              estado_producto,
              tenant_id
            )
            VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, 0, $4, 'Bajo pedido', $8)
-           RETURNING DetalleID`,
+           RETURNING detalleid`,
           [
             pedidoId,
             item.varianteid,
@@ -1496,7 +1496,7 @@ const crearPedido = async (req, res) => {
 
     if (estadoNormalizado !== pedidoEstatus) {
       const updatePedidoResult = await client.query(
-        "UPDATE Pedidos SET Estatus = $1 WHERE PedidoID = $2 AND tenant_id = $3 RETURNING Estatus",
+        "UPDATE pedidos SET estatus = $1 WHERE pedidoid = $2 AND tenant_id = $3 RETURNING estatus",
         [estadoNormalizado, pedidoId, tenant_id]
       );
       if (updatePedidoResult.rows.length > 0) {
@@ -1528,9 +1528,9 @@ const crearPedido = async (req, res) => {
       const montoComision = baseComision * (porcentajeComision / 100);
       
       const comisionResult = await client.query(
-        `INSERT INTO Comisiones (PedidoID, AgenteID, MontoComision, Estatus, tenant_id)
+        `INSERT INTO comisiones (pedidoid, agenteid, montocomision, estatus, tenant_id)
          VALUES ($1, $2, $3, 'Pendiente', $4)
-         RETURNING ComisionID, MontoComision, FechaCalculo`,
+         RETURNING comisionid, montocomision, fechacalculo`,
         [pedidoId, agenteId, montoComision, tenant_id]
       );
 
@@ -1790,32 +1790,32 @@ const obtenerPedidos = async (req, res) => {
     const clienteId = req.user.userId;
 
     const query = `
-      SELECT 
-        p.PedidoID,
-        p.FechaPedido,
-        p.MontoTotal,
-        p.CostoEnvio,
-        p.Monto_Descuento,
-        p.Cupon_ID,
-        p.Estatus,
-        p.Es_Credito,
-        p.Pagado,
-        p.Metodo_Pago,
-        d.Receptor,
-        d.Calle,
-        d.Ciudad,
-        d.EstadoID,
-        e.Nombre AS EstadoNombre,
-        a.Nombre as AgenteNombre,
-        a.Apellido as AgenteApellido,
-        a.CodigoAgente,
-        ROW_NUMBER() OVER (ORDER BY p.FechaPedido ASC, p.PedidoID ASC) AS NumeroPedidoCliente
-      FROM Pedidos p
-      LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
-      LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
-      LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
-      WHERE p.ClienteID = $1 AND p.tenant_id = $2
-      ORDER BY p.FechaPedido DESC
+      SELECT
+        p.pedidoid,
+        p.fechapedido,
+        p.montototal,
+        p.costoenvio,
+        p.monto_descuento,
+        p.cupon_id,
+        p.estatus,
+        p.es_credito,
+        p.pagado,
+        p.metodo_pago,
+        d.receptor,
+        d.calle,
+        d.ciudad,
+        d.estadoid,
+        e.nombre AS estadonombre,
+        a.nombre as agentenombre,
+        a.apellido as agenteapellido,
+        a.codigoagente,
+        ROW_NUMBER() OVER (ORDER BY p.fechapedido ASC, p.pedidoid ASC) AS numeropedidocliente
+      FROM pedidos p
+      LEFT JOIN cliente_direcciones d ON p.direccionenvioid = d.direccionid
+      LEFT JOIN estados e ON d.estadoid = e.estadoid
+      LEFT JOIN agentesdeventas a ON p.agenteid = a.agenteid
+      WHERE p.clienteid = $1 AND p.tenant_id = $2
+      ORDER BY p.fechapedido DESC
     `;
 
     const result = await db.query(query, [clienteId, tenant_id]);
@@ -2010,31 +2010,31 @@ const obtenerPedidoPorId = async (req, res) => {
     }
 
     const pedidoQuery = `
-      SELECT 
-        p.PedidoID,
-        p.FechaPedido,
-        p.MontoTotal,
-        p.Estatus,
-        d.Receptor,
-        d.Calle,
-        d.Ciudad,
-        d.EstadoID,
-        e.Nombre AS EstadoNombre,
-        a.Nombre AS AgenteNombre,
-        a.Apellido AS AgenteApellido,
-        a.CodigoAgente
-      FROM Pedidos p
-      LEFT JOIN Cliente_Direcciones d ON p.DireccionEnvioID = d.DireccionID
-      LEFT JOIN Estados e ON d.EstadoID = e.EstadoID
-      LEFT JOIN AgentesDeVentas a ON p.AgenteID = a.AgenteID
-      WHERE p.PedidoID = $1 AND p.ClienteID = $2 AND p.tenant_id = $3
+      SELECT
+        p.pedidoid,
+        p.fechapedido,
+        p.montototal,
+        p.estatus,
+        d.receptor,
+        d.calle,
+        d.ciudad,
+        d.estadoid,
+        e.nombre AS estadonombre,
+        a.nombre AS agentenombre,
+        a.apellido AS agenteapellido,
+        a.codigoagente
+      FROM pedidos p
+      LEFT JOIN cliente_direcciones d ON p.direccionenvioid = d.direccionid
+      LEFT JOIN estados e ON d.estadoid = e.estadoid
+      LEFT JOIN agentesdeventas a ON p.agenteid = a.agenteid
+      WHERE p.pedidoid = $1 AND p.clienteid = $2 AND p.tenant_id = $3
     `;
 
     const pedidoResult = await db.query(pedidoQuery, [pedidoId, clienteId, tenant_id]);
 
     if (pedidoResult.rows.length === 0) {
       const existsResult = await db.query(
-        "SELECT ClienteID FROM Pedidos WHERE PedidoID = $1 AND tenant_id = $2",
+        "SELECT clienteid FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2",
         [pedidoId, tenant_id]
       );
 
