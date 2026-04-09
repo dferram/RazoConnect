@@ -436,7 +436,9 @@ const buscarProductoPorSKU = async (req, res) => {
     try {
         const { sku } = req.query;
         const { tenant_id } = req.tenant;
-        const adminId = req.user.adminId;
+
+        // ⚠️ CRÍTICO: Usar admin_responsable_id si existe (rol subordinado), sino usar admin en curso
+        const adminId = req.user?.admin_responsable_id ?? req.user?.id;
 
         if (!sku) {
             return res.status(400).json({ 

@@ -494,7 +494,7 @@ const crearPedido = async (req, res) => {
         varianteId: item.varianteid,
         cantidadRequerida: item.cantidad,
         orderDate: orderDate,
-        adminId: req.user?.adminId || clienteAdminId,
+        adminId: clienteAdminId,
         tenantId: tenant_id,
         pedidoId: null,
         piezasPorPaquete: tamanoValor
@@ -1237,8 +1237,8 @@ const crearPedido = async (req, res) => {
         const piezasRealmenteSurtidas = split.cantidadSurtida * tamanoValor;
         if (piezasRealmenteSurtidas > 0) {
               
-          // Determinar admin_id para la reserva
-          const adminIdReserva = req.user?.adminId || null;
+        // Determinar admin_id para la reserva
+        const adminIdReserva = clienteAdminId;
           
           if (adminIdReserva) {
             // CASO 1: Cliente con admin asignado - reservar en stock específico

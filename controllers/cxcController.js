@@ -309,7 +309,7 @@ async function exportarLoteCxC(req, res) {
 async function getMetricasCobranza(req, res) {
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
-    const adminId = req.user?.adminId || req.user?.userId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
 
     try {
         // Ejecutar consultas en paralelo
@@ -373,7 +373,7 @@ async function getMetricasCobranza(req, res) {
 async function getClientesCredito(req, res) {
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
-    const adminId = req.user?.adminId || req.user?.userId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
@@ -445,7 +445,7 @@ async function getClientesCredito(req, res) {
 
 async function obtenerHistorialMovimientos(req, res) {
     const tenant_id = req.tenant?.tenant_id || 1;
-    const adminId = req.user?.adminId || req.user?.userId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.adminid;
     const limit = parseInt(req.query.limit) || 100;
 
     try {
@@ -495,7 +495,17 @@ async function obtenerHistorialMovimientos(req, res) {
 async function getSummaryAging(req, res) {
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
-    const userAdminId = req.user?.adminId || req.user?.userId; // ⚠️ CRITICAL: Use authenticated user's admin_id
+    const userId = req.user?.id || req.user?.adminid;
+
+    // ⚠️ CRÍTICO: Obtener admin_responsable_id si el usuario es un rol subordinado (finanzas, compras, etc)
+    const adminResponsableResult = await client.query(
+      `SELECT admin_responsable_id FROM administradores WHERE adminid = $1 AND tenant_id = $2 LIMIT 1`,
+      [userId, tenant_id]
+    );
+    const userAdminId = adminResponsableResult.rows.length > 0 && adminResponsableResult.rows[0].admin_responsable_id
+      ? adminResponsableResult.rows[0].admin_responsable_id
+      : userId;
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
@@ -723,7 +733,7 @@ async function getSummaryAging(req, res) {
  */
 async function getPagosClientesPendientes(req, res) {
     const tenant_id = req.tenant?.tenant_id || 1;
-    const adminId = req.user?.adminId || req.user?.userId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.adminid;
 
     try {
         const { rows } = await db.query(`
@@ -779,7 +789,7 @@ async function gestionarPagoCliente(req, res) {
     const client = await db.pool.connect();
     const { pagoId } = req.params;
     const { accion, motivo } = req.body;
-    const adminId = req.user?.adminId || req.user?.userId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.adminid;
     const tenant_id = req.tenant?.tenant_id || 1;
 
     if (!['aprobar', 'rechazar'].includes(accion)) {
@@ -934,7 +944,7 @@ async function gestionarPagoCliente(req, res) {
 async function getClienteCXCDetail(req, res) {
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
-    const adminId = req.user?.adminId || req.user?.userId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
     const clienteId = parseInt(req.params.clienteId);
 
     try {
@@ -991,7 +1001,7 @@ async function getClienteCXCDetail(req, res) {
 async function getClienteCXCMovimientos(req, res) {
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
-    const adminId = req.user?.adminId || req.user?.userId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
     const clienteId = parseInt(req.params.clienteId);
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 15;

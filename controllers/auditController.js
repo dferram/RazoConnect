@@ -6,7 +6,7 @@ const crearSesionAuditoria = async (req, res) => {
   try {
     const { nombre } = req.body;
     const { tenant_id } = req.tenant;
-    const adminId = req.user.adminId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
 
     if (!nombre || nombre.trim() === '') {
       return res.status(400).json({ success: false, message: 'El nombre de la sesión es requerido' });
@@ -54,7 +54,7 @@ const obtenerSesionDetalle = async (req, res) => {
   try {
     const { sesionId } = req.params;
     const { tenant_id } = req.tenant;
-    const adminId = req.user.adminId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
 
     const client = await db.pool.connect();
     try {
@@ -98,7 +98,7 @@ const registrarConteo = async (req, res) => {
     const { sesionId } = req.params;
     const { sku, cantidadFisica, comentario } = req.body;
     const { tenant_id } = req.tenant;
-    const adminId = req.user.adminId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
 
     if (!sku || cantidadFisica === undefined || cantidadFisica === null) {
       return res.status(400).json({ success: false, message: 'SKU y cantidad física son requeridos' });
@@ -160,7 +160,7 @@ const obtenerStockTeorico = async (req, res) => {
   try {
     const { sku } = req.params;
     const { tenant_id } = req.tenant;
-    const adminId = req.user.adminId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
     const { fechaInicio, fechaFin } = req.query;
 
     const client = await db.pool.connect();
@@ -210,7 +210,7 @@ const obtenerReconciliacion = async (req, res) => {
   try {
     const { sesionId } = req.params;
     const { tenant_id } = req.tenant;
-    const adminId = req.user.adminId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
 
     const conteos = await inventoryAuditService.obtenerConteosConReconciliacion(
       sesionId,
@@ -250,7 +250,7 @@ const agregarComentario = async (req, res) => {
     const { conteoId } = req.params;
     const { comentario } = req.body;
     const { tenant_id } = req.tenant;
-    const adminId = req.user.adminId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
 
     if (!comentario || comentario.trim() === '') {
       return res.status(400).json({ success: false, message: 'El comentario es requerido' });
@@ -301,7 +301,7 @@ const cerrarYSincronizarAuditoria = async (req, res) => {
   try {
     const { sesionId } = req.params;
     const { tenant_id } = req.tenant;
-    const adminId = req.user.adminId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
 
     const userRoles = req.user.roles || [];
     const isSuperAdmin = userRoles.includes('super_admin');
@@ -338,7 +338,7 @@ const generarReporteAuditoria = async (req, res) => {
   try {
     const { sesionId } = req.params;
     const { tenant_id } = req.tenant;
-    const adminId = req.user.adminId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
 
     const reporte = await inventoryAuditService.generarReporteAuditoria(
       sesionId,
@@ -360,7 +360,7 @@ const generarReporteAuditoria = async (req, res) => {
 const calcularStockTeoricoMasivo = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
-    const adminId = req.user.adminId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
     const { fechaInicio, fechaFin } = req.query;
 
     const resultados = await inventoryAuditService.calcularStockTeoricoMasivo(

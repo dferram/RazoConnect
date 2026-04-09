@@ -19,7 +19,7 @@ const logger = require('../../utils/logger');
 async function obtenerPagosPendientes(req, res) {
     try {
         const tenant_id = req.tenant?.tenant_id || 1;
-        const adminId = req.user?.adminId || req.user?.userId;
+        const adminId = req.user?.admin_responsable_id ?? req.user?.id;
 
         const { rows } = await db.query(`
             SELECT
@@ -73,7 +73,7 @@ async function obtenerPagosPendientes(req, res) {
 async function gestionarPago(req, res) {
     const { id } = req.params;
     const { accion, motivo } = req.body;
-    const adminId = req.user?.adminId || req.user?.userId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.adminid;
 
     if (!accion || !['aprobar', 'rechazar'].includes(accion)) {
         return res.status(400).json({

@@ -11,7 +11,7 @@ const { format } = require('date-fns');
 async function exportarCxC(req, res) {
     const client = await pool.connect();
     const { tenant_id } = req.tenant;
-    const adminId = req.user?.adminId || req.user?.userId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.adminid;
 
     try {
         await client.query('BEGIN');

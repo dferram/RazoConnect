@@ -188,7 +188,7 @@ const authenticate = async (req, res, next) => {
     }
 
     const adminResult = await db.query(
-      "SELECT adminid, rol, activo, email, tenant_id FROM administradores WHERE adminid = $1 AND tenant_id = $2 AND activo = TRUE LIMIT 1",
+      "SELECT adminid, rol, activo, email, tenant_id, admin_responsable_id FROM administradores WHERE adminid = $1 AND tenant_id = $2 AND activo = TRUE LIMIT 1",
       [userId, tenantIdFromToken]
     );
     
@@ -214,11 +214,13 @@ const authenticate = async (req, res, next) => {
 
       req.user = {
         id: userId,
+        adminid: adminResult.rows[0].adminid, // Include adminid explicitly
         userId, // Legacy compatibility
         rol: rolFinal,
         roles: [rolFinal], // Legacy compatibility
         email: decoded?.email || adminResult.rows[0].email || null,
         tenant_id: adminResult.rows[0].tenant_id,
+        admin_responsable_id: adminResult.rows[0].admin_responsable_id, // ⚠️ CRÍTICO para roles subordinados
         permisos: [], // Se llenará con authorizePermiso si es necesario
       };
 

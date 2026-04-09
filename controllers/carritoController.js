@@ -231,6 +231,13 @@ const obtenerCarrito = async (req, res) => {
 
     // Obtener admin del cliente para stock allocation
     const adminId = await getAdminByClienteEstado(clienteId, tenant_id);
+    console.log('🔍 [CLIENTE CARRITO] Admin ID Being Used for Stock:', {
+      adminId,
+      clienteId,
+      tenantId: tenant_id,
+      userId: req.user?.userId || req.user?.id,
+      message: 'Cliente viendo stock de este admin'
+    });
 
     // Obtener los items del carrito con información de productos y tamaño seleccionado
     // PRIORIDAD: Imagen de variante > Imagen de producto

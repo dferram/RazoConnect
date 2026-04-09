@@ -775,11 +775,16 @@ const surtirPedido = async (req, res) => {
     const userId = req.user?.id || req.user?.adminid;
 
     // ⚠️ CRÍTICO: Obtener admin_responsable_id del usuario para filtrar stock correctamente
-    const adminResponsableResult = await db.query(
-      `SELECT admin_responsable_id FROM administradores WHERE adminid = $1 AND tenant_id = $2 LIMIT 1`,
-      [userId, tenant_id]
-    );
-    const adminIdUser = adminResponsableResult.rows.length > 0 ? adminResponsableResult.rows[0].admin_responsable_id : userId;
+    const adminIdUser = req.user?.admin_responsable_id ?? req.user?.id;
+    console.log('🔍 [SURTIR PEDIDO] Admin ID Being Used:', {
+      adminIdUser,
+      admin_responsable_id: req.user?.admin_responsable_id,
+      user_id: req.user?.id,
+      adminid: req.user?.adminid,
+      rol: req.user?.rol,
+      email: req.user?.email,
+      tenantId: tenant_id
+    });
 
     await client.query('BEGIN');
 
@@ -1058,7 +1063,7 @@ const surtirPedido = async (req, res) => {
     // 2. Insertar registro en pedido_surtido_detalle con las piezas correctas
     
     for (const detalle of detallesMarcadosResult.rows) {
-      const adminId = req.user?.id || req.user?.adminid;
+      const adminId = adminIdUser; // Usar el admin asignado, no el admin del usuario actual
       const piezasSurtidas = detalle.piezastotales; // Usar piezas totales, no paquetes
       
       // 1. Restar del stock_admin SOLO del admin correspondiente

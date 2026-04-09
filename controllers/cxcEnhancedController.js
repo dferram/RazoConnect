@@ -290,7 +290,7 @@ async function getEstadoCuentaCliente(req, res) {
  */
 async function registrarPagoManual(req, res) {
     const { creditoId, monto, metodoPago, referencia, notas } = req.body;
-    const adminId = req.user?.adminId || req.user?.userId;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.adminid;
     const adminNombre = req.user?.nombre || 'Admin';
     const adminRol = req.user?.rol || 'admin';
     const tenantId = req.tenant?.tenant_id || 1;
