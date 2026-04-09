@@ -1076,7 +1076,16 @@ const surtirPedido = async (req, res) => {
         [pedidoId, detalle.detalleid, detalle.varianteid, adminId, piezasSurtidas, tenant_id]
       );
 
-      // 2. Actualizar estado del detalle a "Surtido" (será "Facturado" cuando finance confirme)
+      // 2. Actualizar cantidadsurtida en el detalle (warehouse surtió esta cantidad)
+      // Finance usará este valor para confirmar
+      await client.query(
+        `UPDATE detallesdelpedido
+         SET cantidadsurtida = $1
+         WHERE detalleid = $2 AND tenant_id = $3`,
+        [piezasSurtidas, detalle.detalleid, tenant_id]
+      );
+
+      // 3. Actualizar estado del detalle a "Surtido" (será "Facturado" cuando finance confirme)
       await client.query(
         `UPDATE detallesdelpedido
          SET estado_producto = 'Surtido'
