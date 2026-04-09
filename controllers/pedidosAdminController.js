@@ -1854,6 +1854,28 @@ const setPrioritario = async (req, res) => {
       [prioritario, pedidoId, tenant_id]
     );
 
+    // 🔑 CRÍTICO: Recalcular FIFO para todas las variantes del pedido
+    if (prioritario) {
+      try {
+        const variantesResult = await client.query(
+          `SELECT DISTINCT d.varianteid FROM detallesdelpedido d
+           WHERE d.pedidoid = $1 AND d.tenant_id = $2`,
+          [pedidoId, tenant_id]
+        );
+
+        const SmartStockService = require('../services/SmartStockService');
+
+        for (const row of variantesResult.rows) {
+          const varianteId = row.varianteid;
+          await SmartStockService.reallocateStockForVariant(varianteId, tenant_id);
+          logger.info(`[setPrioritario] Realocado stock para variante ${varianteId} por pedido prioritario`);
+        }
+      } catch (error) {
+        logger.error('Error recalculando FIFO después de marcar prioritario:', error);
+        // Continuar aunque falle - no bloquear la marca de prioritario
+      }
+    }
+
     const userName = req.user?.nombre || req.user?.username || 'Usuario';
     const titulo = prioritario
       ? `⚠️ Pedido #${pedidoId} Marcado como PRIORITARIO`
