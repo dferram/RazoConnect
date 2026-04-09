@@ -1342,22 +1342,20 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
       [userId, id]
     );
 
-    // 🔹 CRITICAL: Marcar productos como "Facturado" en detallesdelpedido
-    // Esto indica que finanzas ha confirmado estos productos
+    // 🔹 Update timestamp - estado_producto remains "Con stock" or "Bajo pedido" (product status, not workflow)
     const updateProductosResult = await client.query(
       `UPDATE detallesdelpedido
-       SET estado_producto = 'Facturado',
-           fecha_actualizacion = NOW()
+       SET fecha_actualizacion = NOW()
        WHERE pedidoid = $1
          AND detalle_pedido_id IN (
-           SELECT detalle_pedido_id FROM detalles_remision 
+           SELECT detalle_pedido_id FROM detalles_remision
            WHERE remision_id = $2
          )
        RETURNING detalle_pedido_id, estado_producto`,
       [remision.pedidoid, id]
     );
 
-    logger.info(`✅ [FINANZAS] ${updateProductosResult.rowCount} productos marcados como Facturado`, {
+    logger.info(`✅ [FINANZAS] ${updateProductosResult.rowCount} productos confirmados en remisión`, {
       remision_id: id,
       pedidoid: remision.pedidoid,
       productos_actualizados: updateProductosResult.rowCount,

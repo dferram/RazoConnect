@@ -1058,28 +1058,7 @@ const obtenerProductoPorId = async (req, res) => {
         ? Math.max(parseInt(varianteMaestra.stock, 10), 0)
         : null;
 
-    // ✅ SMART STOCK: Obtener stock dinámico para detalle de producto
-    const varianteIdsDetalle = variantesRaw.map(v => v.varianteid);
-    let stockMapDetalle = new Map();
-    
-    if (varianteIdsDetalle.length > 0 && req.user && req.user.id && req.tenant) {
-      try {
-        stockMapDetalle = await SmartStockService.getBulkStock({
-          varianteIds: varianteIdsDetalle,
-          userId: req.user.id,
-          userRole: req.user.roles || ['cliente'],
-          tenantId: req.tenant.tenant_id,
-          estadoId: req.user.estadoId || null
-        });
-      } catch (stockError) {
-        logger.error('Error al obtener stock detalle', {
-          error: stockError.message,
-          requestId: req.requestId,
-          tenantId: req.tenant?.tenant_id
-        });
-      }
-    }
-
+    // ✅ SMART STOCK: Obtener stock dinámico FIFO-aware para detalle de producto
     const isClienteScope = Boolean(
       req.user &&
       (
@@ -1088,7 +1067,33 @@ const obtenerProductoPorId = async (req, res) => {
       )
     );
 
-    const variantes = variantesRaw.map((row) => {
+    // Para clientes, usar calculateAllocationStatus para obtener stock FIFO-aware
+    let adminId = null;
+    if (isClienteScope && req.user && req.user.id) {
+      try {
+        adminId = await require("../utils/estadosHelper").getAdminByClienteEstado(
+          req.user.userId || req.user.id,
+          tenant_id
+        );
+        logger.info('📦 [PRODUCTO DETALLE] Cliente viewing product stock:', {
+          clienteId: req.user.userId || req.user.id,
+          productoId: id,
+          adminAsignado: adminId,
+          message: 'Using admin allocation stock (NOT global stock)'
+        });
+      } catch (e) {
+        logger.warn('Error obteniendo admin para cliente:', e.message);
+      }
+    } else if (!isClienteScope) {
+      logger.info('📦 [PRODUCTO DETALLE] Non-client user viewing product:', {
+        userId: req.user?.id,
+        rol: req.user?.rol,
+        productoId: id,
+        message: 'Using global stock'
+      });
+    }
+
+    const variantes = await Promise.all(variantesRaw.map(async (row) => {
       const precioUnitario =
         row.preciounitario !== null ? parseFloat(row.preciounitario) : null;
       const precioOfertaUnitario =
@@ -1099,33 +1104,64 @@ const obtenerProductoPorId = async (req, res) => {
         row.piezasporpaquete !== null
           ? parseInt(row.piezasporpaquete, 10)
           : null;
-      
-      // ✅ SMART STOCK: Usar stock dinámico según rol del usuario
+
+      // ✅ SMART STOCK: Usar stock FIFO-aware para clientes
       let stockCalculado = null;
-      
-      if (stockMapDetalle.has(row.varianteid)) {
-        const stockReal = stockMapDetalle.get(row.varianteid);
-        
-        if (piezasPorPaquete && piezasPorPaquete > 1) {
-          stockCalculado = Math.floor(stockReal / piezasPorPaquete);
-        } else {
-          stockCalculado = stockReal;
+
+      if (isClienteScope && adminId && piezasPorPaquete) {
+        try {
+          // Usar calculateAllocationStatus para obtener stock considerando FIFO
+          const allocationStatus = await SmartStockService.calculateAllocationStatus({
+            varianteId: row.varianteid,
+            cantidadRequerida: 1, // Verificar si al menos 1 package está disponible
+            orderDate: new Date().toISOString(),
+            adminId,
+            tenantId: tenant_id,
+            piezasPorPaquete
+          });
+          // stockDisponible está en piezas, convertir a paquetes
+          const piezasDisponibles = Math.max(allocationStatus.stockDisponible || 0, 0);
+          stockCalculado = Math.floor(piezasDisponibles / piezasPorPaquete);
+
+          logger.debug('📦 [PRODUCTO DETALLE] FIFO Stock calculated for variant:', {
+            varianteId: row.varianteid,
+            adminId,
+            piezasDisponibles,
+            paquetesCalculados: stockCalculado,
+            estatus: allocationStatus.estatus,
+            message: 'Using FIFO-aware allocation stock'
+          });
+        } catch (e) {
+          logger.error('Error calculando stock FIFO para variante:', {
+            varianteId: row.varianteid,
+            adminId,
+            error: e.message
+          });
+          // ⚠️ NEVER fall back to global stock for cliente - show 0 if calculation fails
+          stockCalculado = 0;
+        }
+      } else if (!isClienteScope) {
+        // ⚠️ SOLO para NO-cliente: mostrar stock global
+        logger.debug('📦 [PRODUCTO DETALLE] Using global stock for non-client:', {
+          varianteId: row.varianteid,
+          rol: req.user?.rol
+        });
+        stockCalculado =
+          row.stock !== null ? Math.max(parseInt(row.stock, 10), 0) : null;
+        if (
+          piezasPorPaquete &&
+          piezasPorPaquete > 1 &&
+          typeof stockMaestro === "number"
+        ) {
+          stockCalculado = Math.floor(stockMaestro / piezasPorPaquete);
         }
       } else {
-        if (isClienteScope) {
-          stockCalculado = 0;
-        } else {
-          // Fallback legacy para contextos no-cliente
-          stockCalculado =
-            row.stock !== null ? Math.max(parseInt(row.stock, 10), 0) : null;
-          if (
-            piezasPorPaquete &&
-            piezasPorPaquete > 1 &&
-            typeof stockMaestro === "number"
-          ) {
-            stockCalculado = Math.floor(stockMaestro / piezasPorPaquete);
-          }
-        }
+        // Cliente sin adminId asignado - mostrar 0 (no debe suceder normalmente)
+        logger.warn('⚠️ [PRODUCTO DETALLE] Cliente without admin assignment:', {
+          varianteId: row.varianteid,
+          clienteId: req.user?.id
+        });
+        stockCalculado = 0;
       }
 
       const imagenes = Array.isArray(row.imagenes)
@@ -1156,7 +1192,7 @@ const obtenerProductoPorId = async (req, res) => {
         medidaId: row.medidaid !== null ? parseInt(row.medidaid, 10) : null,
         imagenes,
       };
-    });
+    }));
 
     const tamanosQuery = `
       SELECT ptd.tamanoid, ct.*

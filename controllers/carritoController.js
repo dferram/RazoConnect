@@ -231,12 +231,12 @@ const obtenerCarrito = async (req, res) => {
 
     // Obtener admin del cliente para stock allocation
     const adminId = await getAdminByClienteEstado(clienteId, tenant_id);
-    console.log('🔍 [CLIENTE CARRITO] Admin ID Being Used for Stock:', {
+    logger.info('🛒 [CARRITO CLIENTE] Cart retrieved with admin allocation:', {
       adminId,
       clienteId,
       tenantId: tenant_id,
       userId: req.user?.userId || req.user?.id,
-      message: 'Cliente viendo stock de este admin'
+      message: 'All stock calculations WILL use this admin allocation (NOT global stock)'
     });
 
     // Obtener los items del carrito con información de productos y tamaño seleccionado
@@ -372,7 +372,6 @@ const obtenerCarrito = async (req, res) => {
       let stockPiezas = 0;
       try {
         if (adminId && tamanoCantidad) {
-          const cantidadPiezas = cantidad * tamanoCantidad;
           const allocationStatus = await SmartStockService.calculateAllocationStatus({
             varianteId: item.varianteid,
             cantidadRequerida: cantidad,
@@ -382,14 +381,26 @@ const obtenerCarrito = async (req, res) => {
             piezasPorPaquete: tamanoCantidad
           });
 
-          // Use available piezas from allocation status
-          stockPiezas = allocationStatus.disponiblePiezas || 0;
+          // Use available piezas from allocation status (FIFO-aware stock)
+          stockPiezas = allocationStatus.stockDisponible || 0;
+
+          logger.debug('🛒 [CARRITO] FIFO Stock calculated for cart item:', {
+            varianteId: item.varianteid,
+            itemId: item.itemid,
+            adminId,
+            cantidadRequerida: cantidad,
+            stockDisponiblePiezas: stockPiezas,
+            estatus: allocationStatus.estatus,
+            message: 'Using FIFO-aware allocation stock (NOT global stock)'
+          });
         }
       } catch (error) {
-        logger.warn('[CarritoController] Error calculating allocation status:', {
+        logger.error('[CarritoController] Error calculating allocation status:', {
           varianteId: item.varianteid,
+          adminId,
           error: error.message
         });
+        // ⚠️ NEVER fall back to global stock - be conservative
         stockPiezas = 0;
       }
 
