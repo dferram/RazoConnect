@@ -500,6 +500,17 @@ const crearPedido = async (req, res) => {
         piezasPorPaquete: tamanoValor
       });
 
+      console.log('📊 [CREAR PEDIDO] FIFO Stock Allocation:', {
+        varianteId: item.varianteid,
+        clienteAdminId,
+        cantidadRequerida: item.cantidad,
+        cantidadSurtible: fifoAllocation.cantidadSurtible,
+        cantidadBackorder: fifoAllocation.cantidadBackorder,
+        disponiblePiezas: fifoAllocation.disponiblePiezas,
+        sku: item.sku,
+        nombreProducto: item.nombreproducto
+      });
+
 
       // Usar el resultado FIFO para crear el split
       const multiploBackorder = multiploPorKey.get(

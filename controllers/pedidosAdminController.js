@@ -1065,43 +1065,25 @@ const surtirPedido = async (req, res) => {
     for (const detalle of detallesMarcadosResult.rows) {
       const adminId = adminIdUser; // Usar el admin asignado, no el admin del usuario actual
       const piezasSurtidas = detalle.piezastotales; // Usar piezas totales, no paquetes
-      
-      // 1. Restar del stock_admin SOLO del admin correspondiente
+
+      // 1. Solo registrar que fue marcado para surtido en pedido_surtido_detalle
+      // No modificar stock_admin - el stock YA fue reservado cuando el cliente creó el pedido
+      // La cantidad se restará cuando finanzas confirme el surtido
       await client.query(
-        `UPDATE stock_admin
-         SET cantidad = cantidad - $1,
-             cantidad_reservada = GREATEST(cantidad_reservada - $1, 0)
-         WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4`,
-        [piezasSurtidas, detalle.varianteid, adminId, tenant_id]
-      );
-      
-      // 2. Insertar en pedido_surtido_detalle
-      await client.query(
-        `INSERT INTO pedido_surtido_detalle 
+        `INSERT INTO pedido_surtido_detalle
          (pedido_id, detalle_id, variante_id, admin_id, cantidad, tenant_id, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
         [pedidoId, detalle.detalleid, detalle.varianteid, adminId, piezasSurtidas, tenant_id]
       );
-      
-      // 3. Registrar movimiento en inventario
-      const observacionesMovimiento = `Surtido pedido #${pedidoId} - ${piezasSurtidas} piezas`;
-      
-      // Obtener el stock actual del admin específico
-      const stockActualQuery = await client.query(
-        `SELECT cantidad FROM stock_admin WHERE variante_id = $1 AND admin_id = $2 AND tenant_id = $3`,
-        [detalle.varianteid, adminId, tenant_id]
+
+      // 2. Actualizar estado del detalle a "Surtido" (será "Facturado" cuando finance confirme)
+      await client.query(
+        `UPDATE detallesdelpedido
+         SET estado_producto = 'Surtido'
+         WHERE detalleid = $1 AND tenant_id = $2`,
+        [detalle.detalleid, tenant_id]
       );
 
-      const stockPrevio = stockActualQuery.rows[0]?.cantidad || 0;
-      const stockPosterior = stockPrevio - piezasSurtidas;
-      
-      await client.query(
-        `INSERT INTO movimientos_inventario 
-         (admin_id, variante_id, tenant_id, tipo, cantidad, stock_previo, stock_posterior, motivo, observaciones, ip_origen)
-         VALUES ($1, $2, $3, 'MERMA', $4, $5, $6, 'Surtido de pedido', $7, $8)`,
-        [adminId, detalle.varianteid, tenant_id, piezasSurtidas, stockPrevio, stockPosterior, observacionesMovimiento, req.ip]
-      );
-      
       logger.info('Stock actualizado y surtido registrado', {
         pedidoId,
         detalleId: detalle.detalleid,
@@ -1344,7 +1326,27 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       });
 
       try {
-        // Reducir DIRECTAMENTE del stock_admin del admin que realizó el surtido
+        // 1. Obtener el stock ANTERIOR antes de actualizar
+        const getStockQuery = `
+          SELECT cantidad
+          FROM stock_admin
+          WHERE variante_id = $1 AND admin_id = $2 AND tenant_id = $3
+        `;
+        const stockAnteriorResult = await client.query(getStockQuery, [
+          varianteId,
+          adminSurtidor,
+          tenant_id
+        ]);
+
+        if (stockAnteriorResult.rows.length === 0) {
+          throw new Error(
+            `No se encontró stock para el admin ${adminSurtidor} y variante ${varianteId}`
+          );
+        }
+
+        const stockPrevio = parseInt(stockAnteriorResult.rows[0].cantidad || 0, 10);
+
+        // 2. Reducir DIRECTAMENTE del stock_admin del admin que realizó el surtido
         // NO usar SmartStockService para evitar confusiones de contexto
         const updateStockQuery = `
           UPDATE stock_admin
@@ -1369,16 +1371,16 @@ const confirmarSurtidoFinanzas = async (req, res) => {
 
         const nuevoStock = updateResult.rows[0].cantidad;
 
-        // Registrar en log de movimientos de inventario
+        // 3. Registrar en log de movimientos de inventario (CON stock_previo)
         await client.query(
           `INSERT INTO movimientos_inventario
-           (admin_id, variante_id, tenant_id, tipo, cantidad, stock_posterior, motivo, observaciones, ip_origen)
-           VALUES ($1, $2, $3, 'MERMA', $4, $5, 'Confirmación surtido por finanzas', $6, $7)`,
-          [adminSurtidor, varianteId, tenant_id, piezasSurtidas, nuevoStock,
+           (admin_id, variante_id, tenant_id, tipo, cantidad, stock_previo, stock_posterior, motivo, observaciones, ip_origen)
+           VALUES ($1, $2, $3, 'MERMA', $4, $5, $6, 'Confirmación surtido por finanzas', $7, $8)`,
+          [adminSurtidor, varianteId, tenant_id, piezasSurtidas, stockPrevio, nuevoStock,
            `Confirmación surtido Pedido #${pedidoId}`, req.ip]
         );
 
-        // Marcar el detalle como confirmado por finanzas y cambiar estado a Facturado
+        // 4. Marcar el detalle como confirmado por finanzas y cambiar estado a Facturado
         const updateDetalleQuery = `
           UPDATE detallesdelpedido
           SET estado_producto = 'Facturado'
@@ -1391,6 +1393,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
           varianteId,
           adminSurtidor,
           piezasSurtidas,
+          stockPrevio,
           nuevoStock,
           productosConfirmados
         });
