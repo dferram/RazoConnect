@@ -906,12 +906,11 @@ const surtirPedido = async (req, res) => {
       // Y cambiamos el estado_producto a 'Surtido'
       const marcarSurtidosQuery = `
         UPDATE detallesdelpedido
-        SET cantidadsurtida = CASE 
-          WHEN cantidadsurtida < cantidadpaquetes THEN cantidadpaquetes 
-          ELSE cantidadsurtida 
-        END,
-        estado_producto = 'Surtido'
-        WHERE pedidoid = $1 
+        SET cantidadsurtida = CASE
+          WHEN cantidadsurtida < cantidadpaquetes THEN cantidadpaquetes
+          ELSE cantidadsurtida
+        END
+        WHERE pedidoid = $1
           AND detalleid = ANY($2::int[])
           AND tenant_id = $3
         RETURNING detalleid, cantidadsurtida, cantidadpaquetes, estado_producto
@@ -1085,13 +1084,7 @@ const surtirPedido = async (req, res) => {
         [piezasSurtidas, detalle.detalleid, tenant_id]
       );
 
-      // 3. Actualizar estado del detalle a "Surtido" (será "Facturado" cuando finance confirme)
-      await client.query(
-        `UPDATE detallesdelpedido
-         SET estado_producto = 'Surtido'
-         WHERE detalleid = $1 AND tenant_id = $2`,
-        [detalle.detalleid, tenant_id]
-      );
+      // 3. estado_producto remains "Con stock" or "Bajo pedido" - workflow tracked in pedidos.estatus
 
       logger.info('Stock actualizado y surtido registrado', {
         pedidoId,
@@ -1289,7 +1282,6 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         AND dp.detalleid = ANY($2::int[])
         AND dp.cantidadsurtida > 0
         AND dp.tenant_id = $3
-        AND dp.estado_producto = 'Surtido'
     `;
     
     const productosResult = await client.query(productosQuery, [pedidoId, detalleIds, tenant_id]);
@@ -1389,13 +1381,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
            `Confirmación surtido Pedido #${pedidoId}`, req.ip]
         );
 
-        // 4. Marcar el detalle como confirmado por finanzas y cambiar estado a Facturado
-        const updateDetalleQuery = `
-          UPDATE detallesdelpedido
-          SET estado_producto = 'Facturado'
-          WHERE detalleid = $1 AND tenant_id = $2
-        `;
-        await client.query(updateDetalleQuery, [item.detalleid, tenant_id]);
+        // 4. estado_producto remains "Con stock" or "Bajo pedido" - workflow tracked in pedidos.estatus
 
         productosConfirmados++;
         logger.info('✅ Stock reducido correctamente:', {
@@ -1442,7 +1428,6 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = dp.tenant_id AND sa.admin_id = $3
       WHERE dp.pedidoid = $1
         AND dp.tenant_id = $2
-        AND dp.estado_producto != 'Facturado'
       GROUP BY dp.detalleid, dp.varianteid, dp.piezastotales
       ORDER BY dp.detalleid
     `;
@@ -1677,7 +1662,7 @@ const rechazarPedidoFinanzas = async (req, res) => {
         )
         UPDATE detallesdelpedido dp
         SET estado_producto = CASE
-          WHEN (sa.total_cantidad - sa.total_reservado) >= dp.piezastotales THEN 'Completo'
+          WHEN (sa.total_cantidad - sa.total_reservado) >= dp.piezastotales THEN 'Con stock'
           ELSE 'Bajo pedido'
         END,
         cantidadsurtida = 0
@@ -1685,7 +1670,7 @@ const rechazarPedidoFinanzas = async (req, res) => {
         WHERE dp.pedidoid = $1
           AND dp.detalleid = ANY($2::int[])
           AND dp.tenant_id = $3
-          AND dp.estado_producto = 'Facturado'
+          AND dp.cantidadsurtida > 0
           AND sa.variante_id = dp.varianteid
           AND sa.tenant_id = dp.tenant_id
         RETURNING dp.detalleid, dp.estado_producto
