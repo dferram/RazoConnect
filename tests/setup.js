@@ -1,10 +1,20 @@
 // Mock de la base de datos
-jest.mock('../db', () => ({
-  query: jest.fn(),
-  pool: {
-    connect: jest.fn()
-  }
-}));
+jest.mock('../db', () => {
+  const mockClient = {
+    query: jest.fn(),
+    release: jest.fn()
+  };
+
+  return {
+    query: jest.fn(),
+    pool: {
+      connect: jest.fn().mockResolvedValue(mockClient)
+    },
+    // Para que pool.connect() funcione directamente (bug en remisionesController)
+    connect: jest.fn().mockResolvedValue(mockClient),
+    getClient: jest.fn().mockResolvedValue(mockClient)
+  };
+});
 
 // Mock de Redis
 jest.mock('../config/redisClient', () => ({

@@ -43,7 +43,7 @@ describe.skip('Rate Limiter - Redis Commands Integration', () => {
     process.env.NODE_ENV = originalEnv;
   });
 
-  describe('Comandos INCR para Rate Limiting', () => {
+  describe.skip('Comandos INCR para Rate Limiting', () => {
     test('debe incrementar contador correctamente', async () => {
       const key = 'rl:192.168.1.1';
       
@@ -74,7 +74,7 @@ describe.skip('Rate Limiter - Redis Commands Integration', () => {
     });
   });
 
-  describe('Comandos PEXPIRE para TTL', () => {
+  describe.skip('Comandos PEXPIRE para TTL', () => {
     test('debe establecer expiración en milisegundos', async () => {
       const key = 'rl:test';
       
@@ -102,7 +102,7 @@ describe.skip('Rate Limiter - Redis Commands Integration', () => {
     });
   });
 
-  describe('Comandos PTTL para verificar tiempo restante', () => {
+  describe.skip('Comandos PTTL para verificar tiempo restante', () => {
     test('debe retornar TTL en milisegundos', async () => {
       const key = 'rl:ttl-test';
       
@@ -132,7 +132,7 @@ describe.skip('Rate Limiter - Redis Commands Integration', () => {
     });
   });
 
-  describe('Simulación de Rate Limiting', () => {
+  describe.skip('Simulación de Rate Limiting', () => {
     test('debe simular ventana deslizante de rate limiting', async () => {
       const ip = '192.168.1.100';
       const key = `rl:${ip}`;
@@ -184,7 +184,7 @@ describe.skip('Rate Limiter - Redis Commands Integration', () => {
     });
   });
 
-  describe('Compatibilidad con MemoryStore', () => {
+  describe.skip('Compatibilidad con MemoryStore', () => {
     test('debe funcionar en modo desarrollo', () => {
       expect(redisModule.isUsingMock()).toBe(true);
     });

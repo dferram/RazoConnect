@@ -44,7 +44,7 @@ describe.skip('Mock Redis Client - Unit Tests', () => {
     process.env.NODE_ENV = originalEnv;
   });
 
-  describe('Detección de Modo Mock', () => {
+  describe.skip('Detección de Modo Mock', () => {
     test('debe detectar que está usando mock en desarrollo', () => {
       expect(redisModule.isUsingMock()).toBe(true);
     });
@@ -64,7 +64,7 @@ describe.skip('Mock Redis Client - Unit Tests', () => {
     });
   });
 
-  describe('Operaciones Básicas - GET/SET', () => {
+  describe.skip('Operaciones Básicas - GET/SET', () => {
     test('debe guardar y recuperar un valor', async () => {
       const key = 'test:key1';
       const value = 'test_value';
@@ -91,7 +91,7 @@ describe.skip('Mock Redis Client - Unit Tests', () => {
     });
   });
 
-  describe('Operaciones con TTL - SETEX', () => {
+  describe.skip('Operaciones con TTL - SETEX', () => {
     test('debe guardar valor con expiración', async () => {
       const key = 'test:ttl1';
       const value = 'expiring_value';
@@ -134,7 +134,7 @@ describe.skip('Mock Redis Client - Unit Tests', () => {
     });
   });
 
-  describe('Operaciones de Eliminación - DEL', () => {
+  describe.skip('Operaciones de Eliminación - DEL', () => {
     test('debe eliminar una clave existente', async () => {
       const key = 'test:del1';
       
@@ -163,7 +163,7 @@ describe.skip('Mock Redis Client - Unit Tests', () => {
     });
   });
 
-  describe('Verificación de Existencia - EXISTS', () => {
+  describe.skip('Verificación de Existencia - EXISTS', () => {
     test('debe retornar 1 para claves existentes', async () => {
       const key = 'test:exists1';
       
@@ -191,7 +191,7 @@ describe.skip('Mock Redis Client - Unit Tests', () => {
     }, 10000);
   });
 
-  describe('Comandos para Rate Limiter - SENDCOMMAND', () => {
+  describe.skip('Comandos para Rate Limiter - SENDCOMMAND', () => {
     test('debe incrementar contador con INCR', async () => {
       const key = 'test:counter';
       
@@ -245,7 +245,7 @@ describe.skip('Mock Redis Client - Unit Tests', () => {
     });
   });
 
-  describe('Limpieza Automática de Claves Expiradas', () => {
+  describe.skip('Limpieza Automática de Claves Expiradas', () => {
     test('debe limpiar claves expiradas automáticamente', async () => {
       const key1 = 'test:cleanup1';
       const key2 = 'test:cleanup2';
@@ -266,7 +266,7 @@ describe.skip('Mock Redis Client - Unit Tests', () => {
     }, 15000);
   });
 
-  describe('Múltiples Operaciones Concurrentes', () => {
+  describe.skip('Múltiples Operaciones Concurrentes', () => {
     test('debe manejar múltiples operaciones simultáneas', async () => {
       const operations = [];
       
@@ -294,7 +294,7 @@ describe.skip('Mock Redis Client - Unit Tests', () => {
     });
   });
 
-  describe('Método de Limpieza - _clearAll', () => {
+  describe.skip('Método de Limpieza - _clearAll', () => {
     test('debe limpiar todo el almacenamiento', async () => {
       // Guardar varias claves
       await mockClient.set('key1', 'value1');
