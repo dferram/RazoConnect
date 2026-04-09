@@ -232,12 +232,10 @@ async function getStock({ varianteId, userId, userRole, tenantId, estadoId }) {
 
   // CASO C: Cliente sin admin asignado - No exponer stock para evitar mezcla entre admins
   if (context.isCliente && !context.adminId) {
-    console.warn(`[SmartStockService] Cliente ${userId} sin admin asignado - retornando stock 0`);
     return 0;
   }
 
   // CASO DEFAULT: Sin contexto válido
-  console.warn(`⚠️ [SmartStock] Usuario ${userId} sin contexto válido - Retornando 0`);
   return 0;
 }
 
@@ -310,7 +308,6 @@ async function getBulkStock({ varianteIds, userId, userRole, tenantId, estadoId 
 
   // CASO C: Cliente sin admin asignado - No exponer stock para evitar mezcla entre admins
   if (context.isCliente && !context.adminId) {
-    console.warn(`[SmartStockService] Cliente ${userId} sin admin asignado - retornando stock 0 en bulk`);
     varianteIds.forEach(id => stockMap.set(id, 0));
     return stockMap;
   }
@@ -650,7 +647,7 @@ async function calculateAllocationStatus({
     }
 
     const deudaQuery = `
-      SELECT 
+      SELECT
         COALESCE(SUM(d.cantidadpaquetes), 0) as total_paquetes_anteriores,
         COALESCE(SUM(d.piezastotales), 0) as total_piezas_anteriores,
         COUNT(DISTINCT p.pedidoid) as num_pedidos_anteriores
@@ -665,7 +662,7 @@ async function calculateAllocationStatus({
           (COALESCE(p.es_prioritario, false) = false AND p.fechapedido < $2)
         )
         AND p.tenant_id = $3
-        AND p.estatus NOT IN ('Cancelado', 'Entregado')
+        AND p.estatus NOT IN ('Cancelado', 'Entregado', 'Surtido', 'Surtido Completo', 'Listo para remisionar', 'Facturado')
         AND d.esbackorder = false
         ${adminFilter}
         ${excludeCurrentOrder}

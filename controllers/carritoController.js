@@ -2,6 +2,7 @@ const db = require("../db");
 const logger = require('../utils/logger');
 const { calcularTotalPedido } = require("../utils/calculadoraPedidos");
 const SmartStockService = require("../services/SmartStockService");
+const { getAdminByClienteEstado } = require("../utils/estadosHelper");
 
 const TAMANO_VALUE_KEYS = [
   "valor",
@@ -228,6 +229,9 @@ const obtenerCarrito = async (req, res) => {
 
     const carritoId = carritoResult.rows[0].carritoid;
 
+    // Obtener admin del cliente para stock allocation
+    const adminId = await getAdminByClienteEstado(clienteId, tenant_id);
+
     // Obtener los items del carrito con información de productos y tamaño seleccionado
     // PRIORIDAD: Imagen de variante > Imagen de producto
     const itemsQuery = `
@@ -286,71 +290,6 @@ const obtenerCarrito = async (req, res) => {
 
     const itemsResult = await db.query(itemsQuery, [carritoId, tenant_id]);
 
-    const productosEnCarrito = [
-      ...new Set(itemsResult.rows.map((row) => row.productoid).filter(Boolean)),
-    ];
-
-    // ✅ SMART STOCK: Obtener stock dinámico para variantes maestras
-    let masterVariantsMap = new Map();
-    
-    if (productosEnCarrito.length) {
-      const masterVariantsResult = await db.query(
-        `SELECT pv.ProductoID, pv.VarianteID
-         FROM Producto_Variantes pv
-         INNER JOIN Productos p ON p.ProductoID = pv.ProductoID
-         WHERE pv.ProductoID = ANY($1::int[])
-           AND pv.PiezasPorPaquete = 1
-           AND p.tenant_id = $2`,
-        [productosEnCarrito, tenant_id]
-      );
-
-      // Obtener IDs de variantes maestras
-      const masterVarianteIds = masterVariantsResult.rows.map(r => r.varianteid);
-      
-      // Obtener stock dinámico en bulk
-      let stockMapBulk = new Map();
-      if (masterVarianteIds.length > 0 && req.user && req.user.id) {
-        try {
-          stockMapBulk = await SmartStockService.getBulkStock({
-            varianteIds: masterVarianteIds,
-            userId: req.user.id,
-            userRole: req.user.roles || ['cliente'],
-            tenantId: tenant_id,
-            estadoId: req.user.estadoId || null
-          });
-          console.log(`✅ [CarritoController] Stock bulk obtenido para ${masterVarianteIds.length} variantes maestras`);
-        } catch (stockError) {
-          logger.error('[CarritoController] Error al obtener stock bulk:', {
-      error: stockError.message,
-      requestId: req.requestId,
-      tenantId: req.tenant?.tenant_id
-    });
-        }
-      }
-      
-      // Construir mapa con stock dinámico
-      masterVariantsMap = new Map(
-        masterVariantsResult.rows.map((row) => [
-          row.productoid,
-          {
-            varianteId: row.varianteid,
-            stock: stockMapBulk.get(row.varianteid) || 0,
-          },
-        ])
-      );
-    }
-
-    const valueCandidates = [
-      "cantidad",
-      "valor",
-      "piezas",
-      "piezasporpaquete",
-      "numeropiezas",
-      "tamano",
-      "cantidadpiezas",
-    ];
-    const labelCandidates = ["etiqueta", "descripcion", "nombre", "label"];
-
     const items = await Promise.all(itemsResult.rows.map(async (item) => {
       // LÓGICA DE PRECIOS CON OFERTA: Si existe precio de oferta, úsalo. Si no, usa precio normal.
       const precioBase =
@@ -365,6 +304,17 @@ const obtenerCarrito = async (req, res) => {
       const tamanoInfo = item.tamano_info || {};
 
       let tamanoCantidad = null;
+      const valueCandidates = [
+        "cantidad",
+        "valor",
+        "piezas",
+        "piezasporpaquete",
+        "numeropiezas",
+        "tamano",
+        "cantidadpiezas",
+      ];
+      const labelCandidates = ["etiqueta", "descripcion", "nombre", "label"];
+
       for (const key of valueCandidates) {
         if (Object.prototype.hasOwnProperty.call(tamanoInfo, key)) {
           const parsed = parseInt(tamanoInfo[key], 10);
@@ -410,8 +360,32 @@ const obtenerCarrito = async (req, res) => {
           : item.cantidad !== null
           ? parseInt(item.cantidad, 10)
           : 0;
-      const masterInfo = masterVariantsMap.get(item.productoid);
-      const stockPiezas = masterInfo ? masterInfo.stock : 0;
+
+      // 🔧 FIX: Use allocation-aware stock instead of global stock
+      let stockPiezas = 0;
+      try {
+        if (adminId && tamanoCantidad) {
+          const cantidadPiezas = cantidad * tamanoCantidad;
+          const allocationStatus = await SmartStockService.calculateAllocationStatus({
+            varianteId: item.varianteid,
+            cantidadRequerida: cantidad,
+            orderDate: new Date().toISOString(),
+            adminId,
+            tenantId: tenant_id,
+            piezasPorPaquete: tamanoCantidad
+          });
+
+          // Use available piezas from allocation status
+          stockPiezas = allocationStatus.disponiblePiezas || 0;
+        }
+      } catch (error) {
+        logger.warn('[CarritoController] Error calculating allocation status:', {
+          varianteId: item.varianteid,
+          error: error.message
+        });
+        stockPiezas = 0;
+      }
+
       const piezasPorPaquete = tamanoCantidad;
 
       const multiploBackorder = await obtenerMultiploBackorderDesdeReglaEmpaque({

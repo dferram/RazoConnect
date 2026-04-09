@@ -442,21 +442,6 @@ const crearPedido = async (req, res) => {
         }
       }
 
-      // CRITICAL: Log stock source verification
-      masterVariantsResult.rows.forEach(row => {
-        const stockValue = stockMapBulk.get(row.varianteid) || 0;
-        if (stockValue < 0) {
-          logger.error('Stock negativo detectado', {
-            varianteId: row.varianteid,
-            stock: stockValue,
-            requestId: req.requestId,
-            tenantId: tenant_id
-          });
-        } else if (stockValue === 0) {
-          console.warn(`⚠️ [STOCK WARNING] Variante ${row.varianteid} tiene stock CERO`);
-        }
-      });
-
       masterVariantsMap = new Map(
         masterVariantsResult.rows.map((row) => {
           const stockDinamico = stockMapBulk.get(row.varianteid) || 0;

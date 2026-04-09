@@ -1694,19 +1694,19 @@
       async function handleCheckoutSuccess() {
         closeCheckoutModal();
         clearLocalCartCache();
-        
+
         // Limpiar cupón después de confirmar pedido (no debe persistir)
         if (typeof window.limpiarCupon === "function") {
           window.limpiarCupon();
         }
-        
+
         if (typeof window.updateCartBadge === "function") {
           window.updateCartBadge();
         }
         await showSuccessAlert(
           "¡Tu pedido ha sido recibido exitosamente! Puedes descargar tu remisión en PDF desde la sección 'Mis Pedidos'."
         );
-        window.location.href = "/inicio.html";
+        window.location.href = "/dashboard.html?tab=pedidos";
       }
 
       function buildPedidoPayload(extraMetodoFields = {}) {
