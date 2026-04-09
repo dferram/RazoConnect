@@ -425,8 +425,12 @@ const getPedidoDetalle = async (req, res) => {
     // Obtener información del pedido
     const { tenant_id } = req.tenant;
 
+    // ⚠️ CRÍTICO: Obtener admin del cliente para filtrar stock (ANTES de usarlo en queries)
+    const estadosHelper = require('../utils/estadosHelper');
+    let adminClienteId = null;
+
     const pedidoResult = await db.query(
-      `SELECT 
+      `SELECT
         p.*,
         c.nombre as clientenombre,
         c.apellido as clienteapellido,
@@ -451,7 +455,7 @@ const getPedidoDetalle = async (req, res) => {
       LEFT JOIN cliente_direcciones d ON p.direccionenvioid = d.direccionid AND d.tenant_id = $2
       LEFT JOIN estados e ON d.estadoid = e.estadoid
       WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
-      [pedidoId, tenant_id, null, adminClienteId]
+      [pedidoId, tenant_id]
     );
 
     if (pedidoResult.rows.length === 0) {
@@ -463,13 +467,12 @@ const getPedidoDetalle = async (req, res) => {
 
     const pedido = pedidoResult.rows[0];
 
-    // ⚠️ CRÍTICO: Obtener admin del cliente para filtrar stock
-    const estadosHelper = require('../utils/estadosHelper');
-    const adminClienteId = await estadosHelper.getAdminByClienteEstado(pedido.clienteid, tenant_id);
+    // Ahora sí obtenemos el admin del cliente
+    adminClienteId = await estadosHelper.getAdminByClienteEstado(pedido.clienteid, tenant_id);
 
     // Obtener detalles de productos del pedido
     const detallesResult = await db.query(
-      `SELECT 
+      `SELECT
         dp.detalleid,
         dp.pedidoid,
         dp.varianteid,
@@ -482,7 +485,7 @@ const getPedidoDetalle = async (req, res) => {
         dp.cantidadsurtida,
         COALESCE(dp.estado_producto, 'Pendiente') as estado_producto,
         COALESCE(
-          dp.preciounitario, 
+          dp.preciounitario,
           ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
         ) as preciounitariocalculado,
         pv.sku,
@@ -491,7 +494,7 @@ const getPedidoDetalle = async (req, res) => {
         pv.color_nombre,
         pv.color_hex,
         COALESCE(
-          (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND admin_id = $4 AND tenant_id = $2 LIMIT 1),
+          (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND admin_id = $3 AND tenant_id = $2 LIMIT 1),
           pv.stock,
           0
         ) as stock,
@@ -507,13 +510,13 @@ const getPedidoDetalle = async (req, res) => {
       LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid AND ct.tenant_id = $2
       WHERE dp.pedidoid = $1 AND dp.tenant_id = $2
       ORDER BY dp.detalleid`,
-      [pedidoId, tenant_id, null, adminClienteId]
+      [pedidoId, tenant_id, adminClienteId]
     ).catch(async (error) => {
       // Si el campo confirmado_finanzas no existe, usar query sin ese campo
       if (error.message && error.message.includes('column "confirmado_finanzas" does not exist')) {
         logger.warn('⚠️ Campo confirmado_finanzas no existe. Usando query sin ese campo. Ejecuta add_finanzas_confirmation_fields.sql', { pedidoId });
         return db.query(
-          `SELECT 
+          `SELECT
             dp.detalleid,
             dp.pedidoid,
             dp.varianteid,
@@ -526,7 +529,7 @@ const getPedidoDetalle = async (req, res) => {
             dp.cantidadsurtida,
             COALESCE(dp.estado_producto, 'Pendiente') as estado_producto,
             COALESCE(
-              dp.preciounitario, 
+              dp.preciounitario,
               ROUND(dp.precioporpaquete / NULLIF((dp.piezastotales / NULLIF(dp.cantidadpaquetes, 0)), 0), 2)
             ) as preciounitariocalculado,
             pv.sku,
@@ -535,7 +538,7 @@ const getPedidoDetalle = async (req, res) => {
             pv.color_nombre,
             pv.color_hex,
             COALESCE(
-              (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND admin_id = $4 AND tenant_id = $2 LIMIT 1),
+              (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND admin_id = $3 AND tenant_id = $2 LIMIT 1),
               pv.stock,
               0
             ) as stock,
@@ -551,7 +554,7 @@ const getPedidoDetalle = async (req, res) => {
           LEFT JOIN cat_tamanopaquetes ct ON dp.tamanoid = ct.tamanoid AND ct.tenant_id = $2
           WHERE dp.pedidoid = $1 AND dp.tenant_id = $2
           ORDER BY dp.detalleid`,
-          [pedidoId, tenant_id, null, adminClienteId]
+          [pedidoId, tenant_id, adminClienteId]
         );
       }
       throw error;
@@ -638,7 +641,10 @@ const getPedidoDetalle = async (req, res) => {
   } catch (error) {
     logger.error('Error al obtener detalle del pedido:', {
       requestId: req.requestId,
-      tenantId: req.tenant?.tenant_id
+      tenantId: req.tenant?.tenant_id,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      pedidoId: req.params.id
     });
     res.status(500).json({
       success: false,
@@ -1654,7 +1660,7 @@ const rechazarPedidoFinanzas = async (req, res) => {
         )
         UPDATE detallesdelpedido dp
         SET estado_producto = CASE
-          WHEN (sa.total_cantidad - sa.total_reservado) >= dp.piezastotales THEN 'Con stock'
+          WHEN (sa.total_cantidad - sa.total_reservado) >= dp.piezastotales THEN 'Completo'
           ELSE 'Bajo pedido'
         END,
         cantidadsurtida = 0

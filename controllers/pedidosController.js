@@ -1181,9 +1181,10 @@ const crearPedido = async (req, res) => {
              EsBackorder,
              CantidadSurtida,
              CantidadBackorder,
+             estado_producto,
              tenant_id
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0, $8)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, FALSE, $4, 0, 'Completo', $8)
            RETURNING DetalleID`,
           [
             pedidoId,
@@ -1373,9 +1374,10 @@ const crearPedido = async (req, res) => {
              EsBackorder,
              CantidadSurtida,
              CantidadBackorder,
+             estado_producto,
              tenant_id
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, 0, $4, $8)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, TRUE, 0, $4, 'Bajo pedido', $8)
            RETURNING DetalleID`,
           [
             pedidoId,
