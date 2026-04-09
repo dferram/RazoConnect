@@ -16,7 +16,7 @@ describe.skip('Redis Smart Fallback System - Integration Tests', () => {
     process.env.NODE_ENV = originalEnv;
   });
 
-  describe('Modo Desarrollo (Mock)', () => {
+  describe.skip('Modo Desarrollo (Mock)', () => {
     let redisModule;
 
     beforeAll(async () => {
@@ -47,7 +47,7 @@ describe.skip('Redis Smart Fallback System - Integration Tests', () => {
     });
   });
 
-  describe('Funciones de Negocio - Refresh Tokens', () => {
+  describe.skip('Funciones de Negocio - Refresh Tokens', () => {
     let redisModule;
 
     beforeAll(async () => {
@@ -123,7 +123,7 @@ describe.skip('Redis Smart Fallback System - Integration Tests', () => {
     });
   });
 
-  describe('Funciones de Negocio - Blacklist de Tokens', () => {
+  describe.skip('Funciones de Negocio - Blacklist de Tokens', () => {
     let redisModule;
 
     beforeAll(async () => {
@@ -190,7 +190,7 @@ describe.skip('Redis Smart Fallback System - Integration Tests', () => {
     });
   });
 
-  describe('Funciones de Negocio - Hybrid Cache', () => {
+  describe.skip('Funciones de Negocio - Hybrid Cache', () => {
     let redisModule;
 
     beforeAll(async () => {
@@ -248,7 +248,7 @@ describe.skip('Redis Smart Fallback System - Integration Tests', () => {
     });
   });
 
-  describe('Estructura de Claves Redis', () => {
+  describe.skip('Estructura de Claves Redis', () => {
     let redisModule;
 
     beforeAll(async () => {
@@ -299,7 +299,7 @@ describe.skip('Redis Smart Fallback System - Integration Tests', () => {
     });
   });
 
-  describe('Manejo de Errores', () => {
+  describe.skip('Manejo de Errores', () => {
     let redisModule;
 
     beforeAll(async () => {
@@ -356,7 +356,7 @@ describe.skip('Redis Smart Fallback System - Integration Tests', () => {
     });
   });
 
-  describe('Limpieza de Recursos', () => {
+  describe.skip('Limpieza de Recursos', () => {
     test('debe cerrar conexión correctamente', async () => {
       process.env.NODE_ENV = 'development';
       jest.resetModules();
