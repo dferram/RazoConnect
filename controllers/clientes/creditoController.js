@@ -487,18 +487,23 @@ const registrarPagoCliente = async (req, res) => {
     }
 
     const tenant_id = req.tenant?.tenant_id || 1;
+    const estadosHelper = require('../../utils/estadosHelper');
+
     const creditoActivo = await fetchCreditoActivo(clienteId, tenant_id);
     const creditoId = creditoActivo?.credito_id || null;
+
+    // Obtener admin_id basado en el estado del cliente
+    const adminId = await estadosHelper.getAdminByClienteEstado(clienteId, tenant_id);
 
     const comprobanteUrl = req.body.comprobanteUrl || null;
     const movimientosAplicados = Array.isArray(movimientosIds) ? movimientosIds : [];
 
     const insertQuery = `
-      INSERT INTO pagos_clientes 
-        (cliente_id, credito_id, monto, tipo_pago, estatus, comprobante_url, 
-         referencia_bancaria, transaccion_id, movimientos_aplicados, tenant_id)
-      VALUES 
-        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      INSERT INTO pagos_clientes
+        (cliente_id, credito_id, monto, tipo_pago, estatus, comprobante_url,
+         referencia_bancaria, transaccion_id, movimientos_aplicados, tenant_id, admin_id)
+      VALUES
+        ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING pago_id, fecha_pago
     `;
 
@@ -513,6 +518,7 @@ const registrarPagoCliente = async (req, res) => {
       transaccionId || null,
       JSON.stringify(movimientosAplicados),
       tenant_id,
+      adminId || 1,
     ];
 
     const { rows } = await db.query(insertQuery, values);

@@ -9,9 +9,10 @@ const { registrarCambio } = require('../../services/auditService');
 async function getPagosPendientes(req, res) {
   try {
     const tenant_id = req.tenant?.tenant_id || 1;
-    
+    const adminId = req.user?.admin_responsable_id ?? req.user?.adminid ?? req.user?.id;
+
     const query = `
-      SELECT 
+      SELECT
         p.pedidoid,
         p.clienteid,
         p.fechapedido,
@@ -23,18 +24,20 @@ async function getPagosPendientes(req, res) {
         p.saldo_pendiente,
         c.nombre,
         c.apellido,
-        c.email
+        c.email,
+        p.admin_id
       FROM pedidos p
       INNER JOIN clientes c ON c.clienteid = p.clienteid
-      WHERE p.pagado = false
-        AND p.comprobante_url IS NOT NULL
-        AND p.estatus NOT IN ('Cancelado', 'Rechazado')
+      WHERE p.comprobante_url IS NOT NULL
+        AND (p.pagado = false OR p.estatus = 'Pendiente')
+        AND p.estatus NOT IN ('Cancelado', 'Rechazado', 'Completado')
         AND p.tenant_id = $1
         AND c.tenant_id = $1
+        AND p.admin_id = $2
       ORDER BY p.fechapedido DESC
     `;
 
-    const { rows } = await db.query(query, [tenant_id]);
+    const { rows } = await db.query(query, [tenant_id, adminId]);
 
     res.json({
       success: true,
@@ -60,26 +63,27 @@ async function getPagosPendientes(req, res) {
 async function aprobarPago(req, res) {
   const client = await db.pool.connect();
   const { pagoId } = req.params;
-  const adminId = req.user?.admin_responsable_id ?? req.user?.id;
+  const adminId = req.user?.admin_responsable_id ?? req.user?.adminid ?? req.user?.id;
   const tenant_id = req.tenant?.tenant_id || 1;
 
   try {
     await client.query('BEGIN');
 
     const pedidoQuery = await client.query(
-      `SELECT 
+      `SELECT
         p.pedidoid,
         p.clienteid,
         p.montototal,
         p.estatus,
         p.pagado,
         p.metodo_pago,
+        p.admin_id,
         c.nombre,
         c.apellido
       FROM pedidos p
       INNER JOIN clientes c ON c.clienteid = p.clienteid
-      WHERE p.pedidoid = $1 AND p.tenant_id = $2 AND c.tenant_id = $2`,
-      [pagoId, tenant_id]
+      WHERE p.pedidoid = $1 AND p.tenant_id = $2 AND p.admin_id = $3`,
+      [pagoId, tenant_id, adminId]
     );
 
     if (pedidoQuery.rows.length === 0) {
@@ -164,25 +168,26 @@ async function rechazarPago(req, res) {
   const client = await db.pool.connect();
   const { pagoId } = req.params;
   const { motivo } = req.body;
-  const adminId = req.user?.admin_responsable_id ?? req.user?.id;
+  const adminId = req.user?.admin_responsable_id ?? req.user?.adminid ?? req.user?.id;
   const tenant_id = req.tenant?.tenant_id || 1;
 
   try {
     await client.query('BEGIN');
 
     const pedidoQuery = await client.query(
-      `SELECT 
+      `SELECT
         p.pedidoid,
         p.clienteid,
         p.montototal,
         p.estatus,
         p.pagado,
+        p.admin_id,
         c.nombre,
         c.apellido
       FROM pedidos p
       INNER JOIN clientes c ON c.clienteid = p.clienteid
-      WHERE p.pedidoid = $1 AND p.tenant_id = $2 AND c.tenant_id = $2`,
-      [pagoId, tenant_id]
+      WHERE p.pedidoid = $1 AND p.tenant_id = $2 AND p.admin_id = $3`,
+      [pagoId, tenant_id, adminId]
     );
 
     if (pedidoQuery.rows.length === 0) {
