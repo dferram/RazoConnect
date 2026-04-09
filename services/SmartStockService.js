@@ -216,14 +216,18 @@ async function getStock({ varianteId, userId, userRole, tenantId, estadoId }) {
   if (context.adminId) {
     try {
       const { rows } = await db.query(
-        `SELECT COALESCE(cantidad, 0) as stock 
-         FROM stock_admin 
+        `SELECT
+           COALESCE(cantidad, 0) as stock,
+           COALESCE(cantidad_reservada, 0) as reservada
+         FROM stock_admin
          WHERE variante_id = $1 AND admin_id = $2 AND tenant_id = $3`,
         [varianteId, context.adminId, tenantId]
       );
-      
+
       const stock = rows.length > 0 ? parseInt(rows[0].stock, 10) : 0;
-      return stock;
+      const reservada = rows.length > 0 ? parseInt(rows[0].reservada, 10) : 0;
+      const disponible = Math.max(stock - reservada, 0);
+      return disponible;
     } catch (error) {
       console.error('[SmartStockService] Error al leer stock de admin:', error);
       return 0;
@@ -282,14 +286,20 @@ async function getBulkStock({ varianteIds, userId, userRole, tenantId, estadoId 
   if (context.adminId) {
     try {
       const { rows } = await db.query(
-        `SELECT variante_id, COALESCE(cantidad, 0) as stock
+        `SELECT
+           variante_id,
+           COALESCE(cantidad, 0) as stock,
+           COALESCE(cantidad_reservada, 0) as reservada
          FROM stock_admin
          WHERE variante_id = ANY($1::int[]) AND admin_id = $2 AND tenant_id = $3`,
         [varianteIds, context.adminId, tenantId]
       );
 
       rows.forEach(row => {
-        stockMap.set(parseInt(row.variante_id, 10), parseInt(row.stock, 10));
+        const stock = parseInt(row.stock, 10);
+        const reservada = parseInt(row.reservada, 10);
+        const disponible = Math.max(stock - reservada, 0);
+        stockMap.set(parseInt(row.variante_id, 10), disponible);
       });
 
       // Rellenar con 0 las variantes que no tienen registro en stock_admin
