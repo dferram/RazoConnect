@@ -64,7 +64,7 @@ jobs:
           psql -h localhost -U test_user -d test_razoconnect -c "CREATE TABLE IF NOT EXISTS administradores (adminid SERIAL PRIMARY KEY);" || true
 
       - name: Run Unit Tests (Mocked)
-        run: npm test -- --testPathPattern="tests/unit" --testPathIgnorePatterns="tests/integration"
+        run: npm test -- --testPathPatterns="tests/unit" --testPathIgnorePatterns="tests/integration"
         env:
           NODE_ENV: test
           JWT_SECRET: test-secret-suficientemente-largo-32chars-ci
@@ -85,7 +85,7 @@ jobs:
           DB_PASSWORD: test_password
 
       - name: Run Integration Tests (Con BD)
-        run: npm test -- --testPathPattern="tests/integration"
+        run: npm test -- --testPathPatterns="tests/integration"
         env:
           NODE_ENV: test
           JWT_SECRET: test-secret-suficientemente-largo-32chars-ci

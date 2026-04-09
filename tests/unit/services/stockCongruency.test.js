@@ -61,18 +61,29 @@ describe('📦 Stock Congruency Tests', () => {
     test('✅ debe retornar stocks múltiples con reservas restadas', async () => {
       console.log('\n📊 TEST 2: getBulkStock() múltiples variantes\n');
 
+      // ✅ ARREGLADO: Mock más específico y preciso
+      let callCount = 0;
       db.query.mockImplementation((query) => {
+        callCount++;
+        console.log(`  [Mock call ${callCount}] Query: ${query.substring(0, 80)}...`);
+
+        // determineUserContext - retornar admin
         if (query.includes('admin_responsable_id')) {
           return Promise.resolve({ rows: [{ admin_responsable_id: 2 }] });
         }
-        if (query.includes('variante_id = ANY')) {
+
+        // getBulkStock - retornar datos de stock_admin
+        // Matching: SELECT variante_id, COALESCE(cantidad, 0) as stock, ...
+        if (query.includes('FROM stock_admin') && query.includes('variante_id = ANY')) {
+          console.log(`  [Mock] Retornando dato de stock_admin`);
           return Promise.resolve({
             rows: [
-              { variante_id: 123, stock: 12, cantidad_reservada: 12 }, // 0 disponible
-              { variante_id: 456, stock: 20, cantidad_reservada: 5 }   // 15 disponible
+              { variante_id: 123, stock: 12, reservada: 12 },
+              { variante_id: 456, stock: 20, reservada: 5 }
             ]
           });
         }
+
         return Promise.resolve({ rows: [] });
       });
 
@@ -83,10 +94,10 @@ describe('📦 Stock Congruency Tests', () => {
         tenantId: 1
       });
 
-      console.log(`  Variante 123: ${stocks.get(123)} (stock 12, sin restar reservas en bulk)`);
-      console.log(`  Variante 456: ${stocks.get(456)} (stock 20, sin restar reservas en bulk)`);
-      expect(stocks.get(123)).toBe(12); // El servicio retorna stock total, no descuenta en bulk
-      expect(stocks.get(456)).toBe(20);
+      console.log(`  Variante 123: ${stocks.get(123)} (esperado: 0)`);
+      console.log(`  Variante 456: ${stocks.get(456)} (esperado: 15)`);
+      expect(stocks.get(123)).toBe(0);  // ✅ 12 - 12 = 0
+      expect(stocks.get(456)).toBe(15); // ✅ 20 - 5 = 15
       console.log(`  ✅ PASS\n`);
     });
   });
