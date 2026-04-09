@@ -84,33 +84,33 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
 
     // ============================================================
     // PRIORIDAD TIENDA: Si NO hay productos Facturados
-    // En la tienda, calcular SIEMPRE basado en esbackorder/stock
-    // Saltarse los estados administrativos (Surtido, Listo para remisionar)
+    // En la tienda, calcular SIEMPRE basado en esbackorder ORIGINAL
+    // (determinado al momento de crear el pedido)
     // ============================================================
     const productosFacturadosCount = detalles.filter(d => d.estado_producto === 'Facturado').length;
 
     if (productosFacturadosCount === 0) {
-      // 🛍️ TIENDA: Ningún producto facturado aún - calcular basado en esbackorder/stock disponible
-      let productosConStockActual = 0;
-      let productosBackorderActual = 0;
+      // 🛍️ TIENDA: Ningún producto facturado aún - usar esbackorder ORIGINAL
+      let productosConStock = 0;
+      let productosBackorder = 0;
 
       detalles.forEach(d => {
-        const tieneStockDisponible = d.stock_disponible_actual >= d.piezastotales;
-        if (tieneStockDisponible) {
-          productosConStockActual++;
+        // Usar esbackorder_original que fue asignado al crear el pedido
+        if (d.esbackorder_original === true || d.esbackorder_original === 'true') {
+          productosBackorder++;
         } else {
-          productosBackorderActual++;
+          productosConStock++;
         }
       });
 
       // Aplicar lógica de disponibilidad (TIENDA)
-      if (productosBackorderActual === totalProductos && productosConStockActual === 0) {
+      if (productosBackorder === totalProductos && productosConStock === 0) {
         return ESTADOS_PEDIDO.BAJO_PEDIDO; // 🔴 Todos sin stock
       }
-      if (productosConStockActual === totalProductos && productosBackorderActual === 0) {
+      if (productosConStock === totalProductos && productosBackorder === 0) {
         return ESTADOS_PEDIDO.COMPLETO; // 🟡 Todos con stock
       }
-      if (productosBackorderActual > 0 && productosConStockActual > 0) {
+      if (productosBackorder > 0 && productosConStock > 0) {
         return ESTADOS_PEDIDO.COMBINADO; // 🟠 Mix de stock/backorder
       }
     }
