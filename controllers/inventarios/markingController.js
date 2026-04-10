@@ -183,6 +183,7 @@ async function validarYMarcarProductos({
     let marcarResult = { rowCount: 0 };
 
     // SUBCASO 3A: Marcar COMPLETOS como 'Surtido' (cantidadsurtida = piezastotales en piezas)
+    // ✅ PROTECCIÓN: Solo actualizar si cantidadsurtida = 0 (evita doble surtido)
     if (productosCompletos.length > 0) {
       const detalleIdsCompletos = productosCompletos.map(p => p.detalleid);
 
@@ -193,6 +194,7 @@ async function validarYMarcarProductos({
         WHERE pedidoid = $1
           AND detalleid = ANY($2::int[])
           AND tenant_id = $3
+          AND cantidadsurtida = 0
         RETURNING detalleid, cantidadsurtida, cantidadpaquetes, estado_producto
       `;
 
@@ -205,28 +207,67 @@ async function validarYMarcarProductos({
     // La diferencia entre completo vs parcial está en cantidadsurtida, NO en estado_producto
     // Si piezasParaSurtir > 0 (sea completo o parcial) → 'Surtido'
     // Si piezasParaSurtir = 0 → 'Bajo pedido' (no se marca)
+    // ✅ PROTECCIÓN: Solo actualizar si cantidadsurtida = 0 (evita doble surtido)
     if (productosParciales.length > 0) {
-      for (const parcial of productosParciales) {
-        try {
-          // Si hay stock disponible (sea completo o parcial), marcar como 'Surtido'
-          // cantidadsurtida contendrá la cantidad real (12 de 24 si es parcial, 24 de 24 si es completo)
-          const estadoProducto = 'Surtido';
+      // Construir batch query para todos los PARCIALES
+      let parcialesCaseStatement = '';
+      const parcialesParams = [pedidoId, tenant_id];
 
-          await client.query(
-            `UPDATE detallesdelpedido
-             SET cantidadsurtida = $1,
-                 estado_producto = $2
-             WHERE pedidoid = $3
-               AND detalleid = $4
-               AND tenant_id = $5`,
-            [parcial.piezasParaSurtir, estadoProducto, pedidoId, parcial.detalleid, tenant_id]
-          );
-          marcarResult.rowCount++;
-        } catch (err) {
-          logger.warn('Error al marcar producto parcial:', {
-            detalleId: parcial.detalleid,
-            error: err.message
-          });
+      for (let i = 0; i < productosParciales.length; i++) {
+        const parcial = productosParciales[i];
+        const detailIdParam = parcialesParams.length + 1;
+        const cantidadParam = parcialesParams.length + 2;
+
+        parcialesParams.push(parcial.detalleid, parcial.piezasParaSurtir);
+
+        parcialesCaseStatement += `
+          WHEN detalleid = $${detailIdParam} THEN $${cantidadParam}
+        `;
+      }
+
+      const marcarParcialesQuery = `
+        UPDATE detallesdelpedido
+        SET cantidadsurtida = CASE
+          ${parcialesCaseStatement}
+          ELSE cantidadsurtida
+        END,
+            estado_producto = 'Surtido'
+        WHERE pedidoid = $1
+          AND tenant_id = $2
+          AND detalleid = ANY(ARRAY[${productosParciales.map((_, i) => `$${3 + i * 2}`).join(', ')}]::int[])
+          AND cantidadsurtida = 0
+        RETURNING detalleid, cantidadsurtida, cantidadpaquetes, estado_producto
+      `;
+
+      try {
+        const resultParciales = await client.query(marcarParcialesQuery, parcialesParams);
+        marcarResult.rowCount += resultParciales.rowCount;
+      } catch (err) {
+        logger.error('Error al marcar productos parciales (batch):', {
+          error: err.message,
+          pedidoId
+        });
+        // Si falla el batch, intentar uno a uno como fallback
+        for (const parcial of productosParciales) {
+          try {
+            const estadoProducto = 'Surtido';
+            await client.query(
+              `UPDATE detallesdelpedido
+               SET cantidadsurtida = $1,
+                   estado_producto = $2
+               WHERE pedidoid = $3
+                 AND detalleid = $4
+                 AND tenant_id = $5
+                 AND cantidadsurtida = 0`,
+              [parcial.piezasParaSurtir, estadoProducto, pedidoId, parcial.detalleid, tenant_id]
+            );
+            marcarResult.rowCount++;
+          } catch (innerErr) {
+            logger.warn('Error al marcar producto parcial (fallback individual):', {
+              detalleId: parcial.detalleid,
+              error: innerErr.message
+            });
+          }
         }
       }
     }
