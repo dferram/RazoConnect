@@ -20,15 +20,19 @@ const logger = require('../utils/logger');
 
 /**
  * Obtener todos los clientes
- * 
+ * ⚠️ CRITICAL: ADMIN ISOLATION - Filtra por admin_id si no es super_admin
+ *
  * @route GET /api/admin/clientes
  */
 const getAllClientes = async (req, res) => {
   try {
     const { tenant_id } = req.tenant;
+    const estadosHelper = require('../utils/estadosHelper');
+    const { adminId, shouldFilter } = estadosHelper.getAdminIdFromContext(req.user);
 
-    const result = await db.query(
-      `SELECT 
+    // Build query with conditional admin filter
+    // For non-super_admin users, join with administrador_estados to filter by their assigned states
+    let query = `SELECT
         c.ClienteID,
         c.Nombre,
         c.Apellido,
@@ -39,12 +43,24 @@ const getAllClientes = async (req, res) => {
         COUNT(DISTINCT p.PedidoID) AS TotalPedidos,
         COALESCE(SUM(p.MontoTotal), 0) AS MontoTotalCompras
       FROM Clientes c
-      LEFT JOIN Pedidos p ON c.ClienteID = p.ClienteID
+      LEFT JOIN Pedidos p ON c.ClienteID = p.ClienteID`;
+
+    // Add admin filter if needed (non-super_admin users)
+    if (shouldFilter) {
+      query += `
+      INNER JOIN administrador_estados ae ON c.estado_id = ae.estado_id
+        AND ae.admin_id = $2
+        AND ae.tenant_id = $1`;
+    }
+
+    query += `
       WHERE c.tenant_id = $1
       GROUP BY c.ClienteID
-      ORDER BY c.FechaDeRegistro DESC`,
-      [tenant_id]
-    );
+      ORDER BY c.FechaDeRegistro DESC`;
+
+    const params = shouldFilter ? [tenant_id, adminId] : [tenant_id];
+
+    const result = await db.query(query, params);
 
     res.json({
       success: true,

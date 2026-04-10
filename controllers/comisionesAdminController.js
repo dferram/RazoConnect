@@ -21,9 +21,12 @@ const { solicitarCambio } = require('../services/ChangeRequestService');
 const getAllComisiones = async (req, res) => {
   try {
     const { estatus } = req.query;
+    const { tenant_id } = req.tenant;
+    const estadosHelper = require('../utils/estadosHelper');
+    const { adminId, shouldFilter } = estadosHelper.getAdminIdFromContext(req.user);
 
     let query = `
-      SELECT 
+      SELECT
         c.ComisionID,
         c.PedidoID,
         c.AgenteID,
@@ -37,29 +40,49 @@ const getAllComisiones = async (req, res) => {
       FROM Comisiones c
       INNER JOIN AgentesDeVentas a ON c.AgenteID = a.AgenteID
       INNER JOIN Pedidos p ON c.PedidoID = p.PedidoID
+      WHERE p.tenant_id = $1
     `;
 
-    const params = [];
+    const params = [tenant_id];
+    let paramIndex = 2;
+
+    // ⚠️ CRÍTICO: Agregar filtro de admin si no es super_admin
+    if (shouldFilter && adminId) {
+      query += ` AND p.admin_asignado_id = $${paramIndex}`;
+      params.push(adminId);
+      paramIndex++;
+    }
+
     if (estatus) {
-      query += " WHERE c.Estatus = $1";
+      query += ` AND c.Estatus = $${paramIndex}`;
       params.push(estatus);
+      paramIndex++;
     }
 
     query += " ORDER BY c.FechaCalculo DESC";
 
     const result = await db.query(query, params);
 
-    // Calcular totales
-    const totalesQuery = `
-      SELECT 
+    // Calcular totales - ⚠️ CRÍTICO: Incluir mismo filtro de admin
+    let totalesQuery = `
+      SELECT
         COUNT(*) FILTER (WHERE Estatus = 'Pendiente') as total_pendientes,
         COUNT(*) FILTER (WHERE Estatus = 'Pagado') as total_pagadas,
         COALESCE(SUM(MontoComision) FILTER (WHERE Estatus = 'Pendiente'), 0) as monto_pendiente,
         COALESCE(SUM(MontoComision) FILTER (WHERE Estatus = 'Pagado'), 0) as monto_pagado,
         COALESCE(SUM(MontoComision), 0) as monto_total
-      FROM Comisiones
+      FROM Comisiones c
+      INNER JOIN Pedidos p ON c.PedidoID = p.PedidoID
+      WHERE p.tenant_id = $1
     `;
-    const totalesResult = await db.query(totalesQuery);
+
+    const totalesParams = [tenant_id];
+    if (shouldFilter && adminId) {
+      totalesQuery += ` AND p.admin_asignado_id = $2`;
+      totalesParams.push(adminId);
+    }
+
+    const totalesResult = await db.query(totalesQuery, totalesParams);
     const totales = totalesResult.rows[0];
 
     res.json({
