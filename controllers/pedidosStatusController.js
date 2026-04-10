@@ -24,6 +24,7 @@
 
 const db = require('../db');
 const logger = require('../utils/logger');
+const estadosHelper = require('../utils/estadosHelper');
 const SmartStockService = require('../services/SmartStockService');
 const inventoryService = require('../services/inventoryService');
 const { crearNotificacion } = require('../services/notificacionesService');
@@ -88,110 +89,44 @@ const updatePedidoEstatus = async (req, res) => {
       });
     }
 
-    // Obtener estatus actual del pedido
-    const pedidoActualResult = await db.query(
-      `SELECT estatus FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2`,
+    // Obtener información completa del pedido CON detalles (QUERY CONSOLIDADA)
+    const pedidoConDetalles = await db.query(
+      `SELECT
+        p.pedidoid,
+        p.estatus,
+        p.clienteid,
+        p.montototal,
+        p.es_credito,
+        p.monto_descuento,
+        p.admin_asignado_id,
+        p.tenant_id,
+        d.detalleid,
+        d.varianteid,
+        d.piezastotales,
+        d.cantidadsurtida,
+        d.estado_producto,
+        pv.sku,
+        pv.stock,
+        pv.dimensiones,
+        prd.nombreproducto as producto_nombre,
+        prd.productoid
+       FROM pedidos p
+       LEFT JOIN detallesdelpedido d ON d.pedidoid = p.pedidoid AND d.tenant_id = p.tenant_id
+       LEFT JOIN producto_variantes pv ON pv.varianteid = d.varianteid
+       LEFT JOIN productos prd ON prd.productoid = pv.productoid
+       WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
       [pedidoId, tenant_id]
     );
 
-    if (pedidoActualResult.rows.length === 0) {
+    if (pedidoConDetalles.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Pedido no encontrado"
       });
     }
 
-    const estatusActual = pedidoActualResult.rows[0].estatus;
-
-    // ⚠️ DEPRECATED: Validación de transición de estados
-    // Con el nuevo sistema de estados dinámicos, las transiciones son:
-    // Pendiente → Bajo pedido/Completo/Combinado → Listo para remisionar → Surtido completo
-    // El sistema automático maneja las transiciones basadas en stock.
-    // Esta validación está aquí por compatibilidad pero NO debería usarse para flujos nuevos.
-    /*
-    if ((estatus === 'Enviado' || estatus === 'Entregado') &&
-        estatusActual !== 'Surtido' &&
-        estatusActual !== 'Enviado') {
-      return res.status(400).json({
-        success: false,
-        message: `No se puede cambiar a "${estatus}" sin haber surtido el pedido primero.`,
-        estatusActual: estatusActual,
-        estatusRequerido: 'Surtido'
-      });
-    }
-    */
-
-    // Validar stock disponible ANTES de iniciar transacción
-    const estatusQueRequierenStock = ['Surtido', 'Enviado', 'Entregado'];
-    
-    if (estatusQueRequierenStock.includes(estatus) && !confirmarBackorder) {
-      
-      const detallesResult = await db.query(
-        `SELECT 
-          d.detalleid,
-          d.varianteid,
-          d.piezastotales,
-          pv.sku,
-          p.nombreproducto as producto_nombre,
-          pv.dimensiones,
-          COALESCE(pv.stock, 0) as stock_actual
-         FROM detallesdelpedido d
-         INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
-         INNER JOIN productos p ON p.productoid = pv.productoid
-         WHERE d.pedidoid = $1 AND p.tenant_id = $2`,
-        [pedidoId, tenant_id]
-      );
-
-      if (detallesResult.rows.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: "No se encontraron productos en el pedido"
-        });
-      }
-
-      const itemsConStockInsuficiente = [];
-      
-      for (const item of detallesResult.rows) {
-        const piezasNecesarias = parseInt(item.piezastotales) || 0;
-        const piezasDisponibles = parseInt(item.stock_actual) || 0;
-        
-        
-        if (piezasDisponibles < piezasNecesarias) {
-          itemsConStockInsuficiente.push({
-            sku: item.sku,
-            producto: item.producto_nombre,
-            dimensiones: item.dimensiones || 'N/A',
-            necesario: piezasNecesarias,
-            disponible: piezasDisponibles,
-            faltante: piezasNecesarias - piezasDisponibles
-          });
-        }
-      }
-
-      if (itemsConStockInsuficiente.length > 0) {
-        logger.warn(`[STOCK VALIDATION] Stock insuficiente para ${itemsConStockInsuficiente.length} items`, {
-          itemsCount: itemsConStockInsuficiente.length,
-          requestId: req.requestId,
-          tenantId: req.tenant?.tenant_id
-        });
-        
-        const detalleProductos = itemsConStockInsuficiente.map(item => 
-          `${item.producto} (${item.sku}): Necesitas ${item.necesario}, disponible ${item.disponible}`
-        ).join('; ');
-        
-        return res.status(400).json({
-          success: false,
-          message: `Stock insuficiente para el producto: ${itemsConStockInsuficiente[0].producto}`,
-          error: `No hay suficiente inventario. ${detalleProductos}`,
-          data: {
-            itemsConStockInsuficiente,
-            totalItems: detallesResult.rows.length,
-            itemsConProblemas: itemsConStockInsuficiente.length
-          }
-        });
-      }
-
-    }
+    const estatusActual = pedidoConDetalles.rows[0].estatus;
+    const detalles = pedidoConDetalles.rows.filter(row => row.detalleid);  // Filtrar filas con detalles
 
     // ========================================
     // TRANSACCIÓN ATÓMICA
@@ -203,63 +138,34 @@ const updatePedidoEstatus = async (req, res) => {
       // ✅ PASO 1: Deducir stock y generar CXC si cambia a "Surtido"
       if (estatus === 'Surtido' && estatusActual !== 'Surtido') {
         logger.logOperation('DEDUCCION_STOCK_INICIO', { pedidoId });
-        
-        // Obtener información del pedido
-        const pedidoInfo = await client.query(
-          `SELECT 
-            p.pedidoid,
-            p.clienteid,
-            p.montototal,
-            p.es_credito,
-            p.monto_descuento
-           FROM pedidos p
-           WHERE p.pedidoid = $1 AND p.tenant_id = $2`,
-          [pedidoId, tenant_id]
-        );
 
-        if (pedidoInfo.rows.length === 0) {
-          throw new Error(`Pedido ${pedidoId} no encontrado en transacción`);
-        }
-
-        const pedido = pedidoInfo.rows[0];
+        // ⚠️ CRITICAL: Reutilizar datos ya consolidados para NO hacer queries adicionales
+        const pedido = {
+          pedidoid: pedidoConDetalles.rows[0].pedidoid,
+          clienteid: pedidoConDetalles.rows[0].clienteid,
+          montototal: pedidoConDetalles.rows[0].montototal,
+          es_credito: pedidoConDetalles.rows[0].es_credito,
+          monto_descuento: pedidoConDetalles.rows[0].monto_descuento
+        };
 
         // ⚠️ CRITICAL: Obtener admin_id del cliente para asignar CXC al admin correcto
-        const estadosHelper = require('../utils/estadosHelper');
         const adminClienteId = await estadosHelper.getAdminByClienteEstado(pedido.clienteid, tenant_id);
         const adminIdCxc = adminClienteId || 1;
 
-        // Obtener detalles para deducir stock
-        const detallesResult = await client.query(
-          `SELECT 
-            d.detalleid,
-            d.varianteid,
-            d.cantidadpaquetes,
-            d.piezastotales,
-            pv.sku,
-            p.nombreproducto as producto_nombre
-           FROM detallesdelpedido d
-           INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
-           INNER JOIN productos p ON p.productoid = pv.productoid
-           WHERE d.pedidoid = $1 AND p.tenant_id = $2`,
-          [pedidoId, tenant_id]
-        );
+        // ⚠️ CRITICAL: Filtrar detalles que tienen stock > 0
+        const detallesFiltrados = detalles.filter(row => parseInt(row.piezastotales) > 0);
 
-        if (detallesResult.rows.length === 0) {
+        if (detallesFiltrados.length === 0) {
           throw new Error('No se encontraron productos para deducir stock');
         }
 
         const motivo = `Venta Pedido #${pedidoId}`;
-        
-        // Deducir stock para cada producto
-        for (const item of detallesResult.rows) {
-          const varianteId = parseInt(item.varianteid);
-          const piezasTotales = parseInt(item.piezastotales) || 0;
-          
-          if (piezasTotales <= 0) {
-            continue;
-          }
 
-          // ✅ Usar inventoryService para registrar en log_inventario con tipo_origen=VENTA
+        // ✅ FIX #2: Paralelizar deducción de stock con Promise.allSettled
+        const deduccionPromesas = detallesFiltrados.map(async (item) => {
+          const varianteId = parseInt(item.varianteid);
+          const piezasTotales = parseInt(item.piezastotales);
+
           try {
             await inventoryService.registrarMovimiento(client, {
               varianteId,
@@ -272,18 +178,31 @@ const updatePedidoEstatus = async (req, res) => {
               tipoOrigen: 'VENTA' // ✅ CRÍTICO: Registrar como VENTA para conciliación
             });
 
-            logger.logOperation('STOCK_DEDUCIDO', { 
-              sku: item.sku, 
+            logger.logOperation('STOCK_DEDUCIDO', {
+              sku: item.sku,
               cantidad: piezasTotales,
               tipoOrigen: 'VENTA'
             });
+            return { success: true, sku: item.sku };
           } catch (error) {
-            logger.logOperation('ERROR_DEDUCCION_STOCK', { 
-              sku: item.sku, 
-              error: error.message 
+            logger.logOperation('ERROR_DEDUCCION_STOCK', {
+              sku: item.sku,
+              error: error.message
             });
-            throw new Error(`Error al deducir stock de ${item.sku}: ${error.message}`);
+            return { success: false, sku: item.sku, error: error.message };
           }
+        });
+
+        // Ejecutar TODO en paralelo (no secuencial)
+        const resultados = await Promise.allSettled(deduccionPromesas);
+
+        // Verificar si hubo errores críticos
+        const errores = resultados
+          .filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success))
+          .map(r => r.reason?.message || r.value?.error || 'Unknown error');
+
+        if (errores.length > 0) {
+          throw new Error(`Error deduciendo stock: ${errores.join('; ')}`);
         }
 
 
@@ -385,35 +304,30 @@ const updatePedidoEstatus = async (req, res) => {
     });
 
     // ========================================
-    // POST-TRANSACCIÓN: Notificación
+    // POST-TRANSACCIÓN: Notificación (Fire-and-Forget)
     // ========================================
 
-    // Crear notificación para el cliente (fuera de transacción)
-    try {
-      await crearNotificacion(
-        result.pedido.clienteid,
-        'pedido',
-        `Pedido ${estatus}`,
-        `Tu pedido #${pedidoId} ha sido actualizado a: ${estatus}`,
-        {
-          url: `/dashboard.html?tab=pedidos`,
-          prioridad: 'normal',
-          metadata: { pedidoId }
-        }
-      );
-      logger.info('[NOTIFICATION] Notificación creada exitosamente', {
-        clienteId: result.pedido.clienteid,
-        pedidoId,
-        estatus
-      });
-    } catch (notifError) {
+    // ✅ FIX #1: Fire-and-forget notificación - NO esperar
+    // Cliente recibe respuesta inmediatamente (-200ms)
+    crearNotificacion(
+      result.pedido.clienteid,
+      'pedido',
+      `Pedido ${estatus}`,
+      `Tu pedido #${pedidoId} ha sido actualizado a: ${estatus}`,
+      {
+        url: `/dashboard.html?tab=pedidos`,
+        prioridad: 'normal',
+        metadata: { pedidoId }
+      }
+    ).catch(notifError => {
       logger.warn('[NOTIFICATION] Error al crear notificación (no crítico)', {
         error: notifError.message,
         requestId: req.requestId,
-        tenantId: req.tenant?.tenant_id
+        tenantId: req.tenant?.tenant_id,
+        pedidoId,
+        clienteId: result.pedido.clienteid
       });
-    }
-
+    });
 
     res.json({
       success: true,
