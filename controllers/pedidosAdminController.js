@@ -20,6 +20,7 @@ const { ESTADOS_PEDIDO, normalizarEstado } = require('../utils/pedidoEstados');
 // Importar controladores delegados (refactorización)
 const { confirmarSurtidoFinanzas: confirmarSurtidoFinanzasFromFinanzas } = require('./finanzas/confirmController');
 const { rechazarPedidoFinanzas: rechazarPedidoFinanzasFromFinanzas } = require('./finanzas/rejectController');
+const { validarYMarcarProductos } = require('./inventarios/markingController');
 
 /**
  * @swagger
@@ -863,211 +864,38 @@ const surtirPedido = async (req, res) => {
     const esModoSelectivo = detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0;
     
     if (esModoSelectivo) {
-      // MODO SELECTIVO: Solo marcar productos específicos seleccionados por inventarios
-      // FIX: Trust frontend validation - if inventarios selected them, they have stock
-      // Don't filter by esbackorder flag as it can be inconsistent
-      
-      logger.info('Intentando marcar productos como surtidos:', {
+      // MODO SELECTIVO: Delegar a markingController para validar FIFO y marcar
+      const markingResult = await validarYMarcarProductos({
         pedidoId,
         detalleIds,
-        cantidadSeleccionados: detalleIds.length,
-        tenantId: tenant_id
-      });
-      
-      // STEP 1: Get detailed info about products and their stock
-      // Single query to check what we need to mark
-      const detalleProductosQuery = `
-        SELECT 
-          dp.detalleid,
-          dp.varianteid,
-          dp.cantidadsurtida,
-          dp.cantidadpaquetes,
-          dp.piezastotales,
-          dp.esbackorder,
-          dp.estado_producto,
-          pv.stock as stock_pv,
-          p.nombreproducto,
-          COALESCE(sa.cantidad, 0) as stock_sa,
-          COALESCE(sa.cantidad_reservada, 0) as stock_reservado
-        FROM detallesdelpedido dp
-        INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid AND pv.tenant_id = $3
-        INNER JOIN productos p ON pv.productoid = p.productoid AND p.tenant_id = $3
-        LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = $3 AND sa.admin_id = (
-          SELECT admin_responsable_id FROM administradores WHERE adminid = $4 AND tenant_id = $3
-          UNION ALL
-          SELECT $5 WHERE NOT EXISTS (SELECT admin_responsable_id FROM administradores WHERE adminid = $4 AND tenant_id = $3)
-        )
-        WHERE dp.pedidoid = $1 
-          AND dp.detalleid = ANY($2::int[])
-          AND dp.tenant_id = $3
-      `;
-      
-      const detalleProductos = await client.query(detalleProductosQuery, [pedidoId, detalleIds, tenant_id, userId, adminIdUser]);
-      
-      // STEP 2: Clasificar productos en COMPLETOS, PARCIALES, o SIN STOCK
-      // ✅ NUEVO: Usar FIFO (calculateAllocationStatus) para validar stock respetando deuda de pedidos anteriores
-      // ⚠️ IMPORTANTE: cantidadsurtida se guarda en PIEZAS (no paquetes) para consistencia con finanzas
-      const productosCompletos = [];
-      const productosParciales = [];
-      const productosAlcanza = []; // Para logging
-
-      for (const p of detalleProductos.rows) {
-        const piezasRequeridas = p.piezastotales;
-
-        try {
-          // FIFO: Calcular si se puede surtir este producto respetando pedidos anteriores
-          const allocationStatus = await SmartStockService.calculateAllocationStatus({
-            varianteId: p.varianteid,
-            cantidadRequerida: piezasRequeridas,
-            orderDate: pedido.fechapedido,
-            adminId: pedido.admin_asignado_id,
-            tenantId: tenant_id,
-            pedidoId: pedidoId,
-            piezasPorPaquete: 1  // Ya trabajamos en piezas
-          });
-
-          productosAlcanza.push({
-            detalleid: p.detalleid,
-            producto: p.nombreproducto,
-            requeridas: piezasRequeridas,
-            status: allocationStatus
-          });
-
-          // Clasificar basado en FIFO result
-          if (allocationStatus.estatus === 'surtido' && allocationStatus.cantidadSurtible >= piezasRequeridas) {
-            // ✅ COMPLETO: FIFO permite surtir TODO lo requerido
-            productosCompletos.push(p);
-          } else if (allocationStatus.cantidadSurtible > 0) {
-            // ⚠️ PARCIAL: FIFO permite surtir ALGO pero no todo (respetando deuda previa)
-            productosParciales.push({
-              ...p,
-              piezasParaSurtir: allocationStatus.cantidadSurtible,
-              fifoInfo: {
-                deudaPrevia: allocationStatus.deudaPrevia,
-                stockFisico: allocationStatus.stockFisico,
-                cantidadBackorder: allocationStatus.cantidadBackorder,
-                numPedidosAnteriores: allocationStatus.numPedidosAnteriores
-              }
-            });
-          }
-          // estatus 'backorder' = 0 surtible → no se agrega a ninguna lista
-
-        } catch (err) {
-          logger.error('Error al calcular FIFO para producto:', {
-            detalleId: p.detalleid,
-            varianteId: p.varianteid,
-            error: err.message
-          });
-          // En caso de error, asumir no surtible para ser conservador
-        }
-      }
-
-      logger.info('🔄 FIFO Allocation Analysis:', {
-        pedidoId,
-        admin_asignado_id: pedido.admin_asignado_id,
-        totalProductosSeleccionados: detalleProductos.rows.length,
-        completosFIFO: productosCompletos.length,
-        parcialesFIFO: productosParciales.length,
-        detalles: productosAlcanza
+        pedido,
+        tenant_id,
+        userId,
+        adminIdUser,
+        client
       });
 
-      if (productosCompletos.length === 0 && productosParciales.length === 0) {
+      if (!markingResult.success) {
         await client.query('ROLLBACK');
-
-        // Extraer información de deuda para mensaje informativo
-        const deudaInfo = productosAlcanza
-          .filter(p => p.status?.deudaPrevia > 0)
-          .map(p => ({
-            producto: p.producto,
-            deudaPrevia: p.status.deudaPrevia,
-            pedidosAnteriores: p.status.numPedidosAnteriores
-          }));
-
         return res.status(400).json({
           success: false,
-          message: 'Ninguno de los productos seleccionados tiene stock disponible (validación FIFO)',
-          razon: deudaInfo.length > 0
-            ? 'Stock reservado para pedidos anteriores. El FIFO impide overselling.'
-            : 'Stock insuficiente en inventario.',
-          detalles_fifo: deudaInfo,
-          analisis: {
-            totalSeleccionados: detalleProductos.rows.length,
-            completosSin_Deuda: productosCompletos.length,
-            parcialesCon_Reserva: productosParciales.length,
-            mensaje_auxiliar: 'Revisa pedidos anteriores que aún no están entregados - tienen prioridad FIFO'
-          }
+          message: markingResult.message,
+          razon: markingResult.razon,
+          detalles_fifo: markingResult.detalles_fifo,
+          analisis: markingResult.analisis
         });
       }
 
-      // STEP 3: Marcar productos con estado COMPLETO o PARCIAL
-      let marcarResult = { rowCount: 0 };
+      // ✅ Obtener resultados del marking
+      marcarResult = markingResult.marcarResult;
+      const { productosCompletos, productosParciales, productosAlcanza } = markingResult;
 
-      // SUBCASO 3A: Marcar COMPLETOS como 'Surtido' (cantidadsurtida = piezastotales en piezas)
-      if (productosCompletos.length > 0) {
-        const detalleIdsCompletos = productosCompletos.map(p => p.detalleid);
-
-        const marcarCompletosQuery = `
-          UPDATE detallesdelpedido
-          SET cantidadsurtida = piezastotales,
-              estado_producto = 'Surtido'
-          WHERE pedidoid = $1
-            AND detalleid = ANY($2::int[])
-            AND tenant_id = $3
-          RETURNING detalleid, cantidadsurtida, cantidadpaquetes, estado_producto
-        `;
-
-        const resultCompletos = await client.query(marcarCompletosQuery, [pedidoId, detalleIdsCompletos, tenant_id]);
-        marcarResult.rowCount += resultCompletos.rowCount;
-      }
-
-      // SUBCASO 3B: Marcar PARCIALES (cantidadsurtida = piezasParaSurtir en piezas)
-      // ✅ IMPORTANTE: Guardar estado 'Surtido' para cualquier cantidad > 0
-      // La diferencia entre completo vs parcial está en cantidadsurtida, NO en estado_producto
-      // Si piezasParaSurtir > 0 (sea completo o parcial) → 'Surtido'
-      // Si piezasParaSurtir = 0 → 'Bajo pedido' (no se marca)
-      if (productosParciales.length > 0) {
-        for (const parcial of productosParciales) {
-          try {
-            // Si hay stock disponible (sea completo o parcial), marcar como 'Surtido'
-            // cantidadsurtida contendrá la cantidad real (12 de 24 si es parcial, 24 de 24 si es completo)
-            const estadoProducto = 'Surtido';
-
-            await client.query(
-              `UPDATE detallesdelpedido
-               SET cantidadsurtida = $1,
-                   estado_producto = $2
-               WHERE pedidoid = $3
-                 AND detalleid = $4
-                 AND tenant_id = $5`,
-              [parcial.piezasParaSurtir, estadoProducto, pedidoId, parcial.detalleid, tenant_id]
-            );
-            marcarResult.rowCount++;
-          } catch (err) {
-            logger.warn('Error al marcar producto parcial:', {
-              detalleId: parcial.detalleid,
-              error: err.message
-            });
-          }
-        }
-      }
-
-      logger.info('✅ Productos marcados (COMPLETOS + PARCIALES con FIFO):', {
+      logger.info('✅ Productos marcados por markingController (FIFO):', {
         pedidoId,
         admin_asignado_id: pedido.admin_asignado_id,
         completos: productosCompletos.length,
         parciales: productosParciales.length,
         totalMarcados: marcarResult.rowCount,
-        detalles: {
-          completosConStock: productosCompletos.map(p => ({ detalleid: p.detalleid, piezastotales: p.piezastotales })),
-          parcialesConStock: productosParciales.map(p => ({
-            detalleid: p.detalleid,
-            piezasParaSurtir: p.piezasParaSurtir,
-            piezastotales: p.piezastotales,
-            fifo_deudaPrevia: p.fifoInfo?.deudaPrevia,
-            fifo_pedidosAnteriores: p.fifoInfo?.numPedidosAnteriores,
-            fifo_cantidadBackorder: p.fifoInfo?.cantidadBackorder
-          }))
-        },
         tenantId: tenant_id
       });
     } else if (!esModoSelectivo && detalleIds && Array.isArray(detalleIds)) {

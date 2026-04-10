@@ -22,6 +22,8 @@ const SmartStockService = require('../../services/SmartStockService');
  * - Clasifica en: COMPLETOS (todo lo requerido), PARCIALES (algo), BACKORDER (nada)
  * - Actualiza detallesdelpedido con estado_producto = 'Surtido' y cantidadsurtida
  *
+ * ⚠️ IMPORTANTE: Esta función NO hace BEGIN/COMMIT. El caller debe manejar la transacción.
+ *
  * @param {Object} params
  * @param {number} params.pedidoId - ID del pedido
  * @param {Array} params.detalleIds - Array de detalle IDs a marcar
@@ -29,8 +31,8 @@ const SmartStockService = require('../../services/SmartStockService');
  * @param {number} params.tenant_id - ID del tenant
  * @param {number} params.userId - ID del usuario
  * @param {number} params.adminIdUser - ID del admin responsable
- * @param {Object} params.client - Client de BD (para transacción)
- * @returns {Promise<Object>} { marcarResult, productosCompletos, productosParciales, error? }
+ * @param {Object} params.client - Client de BD (para transacción - REQUERIDO)
+ * @returns {Promise<Object>} { success, marcarResult, productosCompletos, productosParciales, error? }
  */
 async function validarYMarcarProductos({
   pedidoId,
@@ -48,6 +50,10 @@ async function validarYMarcarProductos({
       cantidadSeleccionados: detalleIds.length,
       tenantId: tenant_id
     });
+
+    if (!client) {
+      throw new Error('Client de BD es requerido para validarYMarcarProductos');
+    }
 
     // STEP 1: Get detailed info about products and their stock
     // Single query to check what we need to mark
