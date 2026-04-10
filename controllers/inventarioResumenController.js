@@ -101,7 +101,8 @@ const getInventarioResumen = async (req, res) => {
 
     const whereClause = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
 
-    // ✅ SMART STOCK: Obtener productos con sus variantes (sin filtrar por stock aún)
+    // ✅ SMART STOCK: Obtener productos con sus variantes Y detalles de dimensiones/color
+    // Usar subquery para evitar error con DISTINCT en JSON_BUILD_OBJECT
     const query = `
       SELECT
         p.ProductoID,
@@ -109,7 +110,24 @@ const getInventarioResumen = async (req, res) => {
         p.Activo,
         c.Nombre AS NombreCategoria,
         ARRAY_AGG(DISTINCT v.VarianteID) FILTER (WHERE v.VarianteID IS NOT NULL) AS VarianteIDs,
-        COUNT(DISTINCT v.VarianteID) AS TotalVariantes
+        COUNT(DISTINCT v.VarianteID) AS TotalVariantes,
+        COALESCE(
+          (
+            SELECT JSON_AGG(
+              JSON_BUILD_OBJECT(
+                'varianteId', v2.VarianteID,
+                'dimensiones', v2.dimensiones,
+                'color_nombre', v2.color_nombre
+              )
+            )
+            FROM (
+              SELECT DISTINCT ON (VarianteID) VarianteID, dimensiones, color_nombre
+              FROM Producto_Variantes v2
+              WHERE v2.ProductoID = p.ProductoID
+            ) v2
+          ),
+          '[]'::JSON
+        ) AS variantes_detalles
       FROM Productos p
       LEFT JOIN Categorias c ON c.CategoriaID = p.CategoriaID AND c.tenant_id = $1
       LEFT JOIN Producto_Variantes v ON v.ProductoID = p.ProductoID
@@ -152,11 +170,22 @@ const getInventarioResumen = async (req, res) => {
     // ✅ Construir productos con stock desde el mapa global
     const productosConStock = result.rows.map(row => {
       const varianteIds = row.varianteids || [];
-      
+
       // Calcular stock total del producto desde el mapa global
       const stockTotal = varianteIds.reduce((sum, varianteId) => {
         return sum + (globalStockMap.get(varianteId) || 0);
       }, 0);
+
+      // Procesar variantes detalles - parsear JSON si es string
+      let variantesDetalles = [];
+      if (row.variantes_detalles) {
+        // Si es string, parsear; si es array, usar directamente
+        const variantes = typeof row.variantes_detalles === 'string'
+          ? JSON.parse(row.variantes_detalles)
+          : (Array.isArray(row.variantes_detalles) ? row.variantes_detalles : []);
+
+        variantesDetalles = variantes.filter(v => v && v.varianteId);
+      }
 
       return {
         productoId: row.productoid,
@@ -164,7 +193,8 @@ const getInventarioResumen = async (req, res) => {
         activo: row.activo !== undefined ? row.activo : true,
         nombreCategoria: row.nombrecategoria || "Sin categoría",
         totalVariantes: parseInt(row.totalvariantes, 10) || 0,
-        stockTotal
+        stockTotal,
+        variantes: variantesDetalles
       };
     });
 
@@ -253,7 +283,8 @@ const getProductoDetalleInventario = async (req, res) => {
               'varianteId', pv.varianteid,
               'sku', pv.sku,
               'dimensiones', pv.dimensiones,
-              'colorNombre', pv.color_nombre,
+              'color_nombre', pv.color_nombre,
+              'color_hex', pv.color_hex,
               'precioUnitario', pv.preciounitario,
               'activo', pv.activo
             )
