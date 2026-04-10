@@ -67,23 +67,21 @@ const updatePedidoEstatus = async (req, res) => {
     }
 
     const estatusValidos = [
-      'Pendiente', 
-      'Surtido', 
-      'Procesando', 
-      'Enviado', 
-      'Entregado', 
-      'Cancelado', 
-      'Completado', 
-      'Parcial', 
-      'Parcialmente Surtido',
-      'Listo para remisionar'
+      'Pendiente',
+      'Bajo pedido',
+      'Completo',
+      'Combinado',
+      'Listo para remisionar',
+      'Surtido completo',
+      'Cancelado',
+      'Entregado'
     ];
 
     if (!estatusValidos.includes(estatus)) {
-      logger.error('❌ [STATUS CHANGE] Estatus inválido: ${estatus}', {
-      requestId: req.requestId,
-      tenantId: req.tenant?.tenant_id
-    });
+      logger.error(`❌ [STATUS CHANGE] Estatus inválido: ${estatus}`, {
+        requestId: req.requestId,
+        tenantId: req.tenant?.tenant_id
+      });
       return res.status(400).json({
         success: false,
         message: `Estatus inválido. Valores permitidos: ${estatusValidos.join(', ')}`
@@ -105,9 +103,14 @@ const updatePedidoEstatus = async (req, res) => {
 
     const estatusActual = pedidoActualResult.rows[0].estatus;
 
-    // Validar transición de estatus
-    if ((estatus === 'Enviado' || estatus === 'Entregado') && 
-        estatusActual !== 'Surtido' && 
+    // ⚠️ DEPRECATED: Validación de transición de estados
+    // Con el nuevo sistema de estados dinámicos, las transiciones son:
+    // Pendiente → Bajo pedido/Completo/Combinado → Listo para remisionar → Surtido completo
+    // El sistema automático maneja las transiciones basadas en stock.
+    // Esta validación está aquí por compatibilidad pero NO debería usarse para flujos nuevos.
+    /*
+    if ((estatus === 'Enviado' || estatus === 'Entregado') &&
+        estatusActual !== 'Surtido' &&
         estatusActual !== 'Enviado') {
       return res.status(400).json({
         success: false,
@@ -116,6 +119,7 @@ const updatePedidoEstatus = async (req, res) => {
         estatusRequerido: 'Surtido'
       });
     }
+    */
 
     // Validar stock disponible ANTES de iniciar transacción
     const estatusQueRequierenStock = ['Surtido', 'Enviado', 'Entregado'];
@@ -220,7 +224,7 @@ const updatePedidoEstatus = async (req, res) => {
         const pedido = pedidoInfo.rows[0];
 
         // ⚠️ CRITICAL: Obtener admin_id del cliente para asignar CXC al admin correcto
-        const estadosHelper = require('../../utils/estadosHelper');
+        const estadosHelper = require('../utils/estadosHelper');
         const adminClienteId = await estadosHelper.getAdminByClienteEstado(pedido.clienteid, tenant_id);
         const adminIdCxc = adminClienteId || 1;
 

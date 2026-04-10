@@ -68,7 +68,6 @@ class PedidoEstadoSincronizadorService {
       logger.info('[PedidoEstadoSync] Recálculo completado', {
         pedidoId,
         cambioRealizado: resultado.cambio_realizado,
-        estadoAnterior: resultado.estado_anterior,
         estadoNuevo: resultado.nuevo_estado,
         duracionMs: duration
       });
@@ -127,7 +126,7 @@ class PedidoEstadoSincronizadorService {
         WHERE
           p.admin_asignado_id = $1
           AND p.tenant_id = $2
-          AND p.estatus NOT IN ('Cancelado', 'Completado', 'Entregado')
+          AND p.estatus NOT IN ('Cancelado', 'Completado', 'Entregado', 'Surtido completo', 'Listo para remisionar')
         ORDER BY p.pedidoid
       `, [adminId, tenantId]);
 
@@ -301,9 +300,9 @@ class PedidoEstadoSincronizadorService {
           COUNT(DISTINCT admin_id) as admins_unicos,
           COUNT(DISTINCT disparador) as tipos_disparadores,
           STRING_AGG(DISTINCT disparador, ', ' ORDER BY disparador) as disparadores,
-          COUNT(CASE WHEN estado_nuevo = 'COMPLETO' THEN 1 END) as cambios_a_completo,
-          COUNT(CASE WHEN estado_nuevo = 'BAJO_PEDIDO' THEN 1 END) as cambios_a_bajo_pedido,
-          COUNT(CASE WHEN estado_nuevo = 'COMBINADO' THEN 1 END) as cambios_a_combinado
+          COUNT(CASE WHEN estado_nuevo = 'Completo' THEN 1 END) as cambios_a_completo,
+          COUNT(CASE WHEN estado_nuevo = 'Bajo pedido' THEN 1 END) as cambios_a_bajo_pedido,
+          COUNT(CASE WHEN estado_nuevo = 'Combinado' THEN 1 END) as cambios_a_combinado
         FROM estado_cambios_automaticos
         WHERE tenant_id = $1
           AND created_at >= NOW() - INTERVAL '30 days'
@@ -329,7 +328,7 @@ class PedidoEstadoSincronizadorService {
     } catch (error) {
       logger.error('[PedidoEstadoSync] Error calculando estadísticas', {
         tenantId,
-        period,
+        periodo,
         error: error.message
       });
       throw error;
@@ -352,7 +351,7 @@ class PedidoEstadoSincronizadorService {
   static async obtenerCambiosPorDisparador(disparador, tenantId, limit = 100) {
     try {
       // Validar disparador
-      const disparadoresValidos = ['STOCK_INSERT', 'STOCK_UPDATE', 'STOCK_DELETE'];
+      const disparadoresValidos = ['STOCK_INSERT', 'STOCK_UPDATE', 'STOCK_DELETE', 'ESTADO_PRODUCTO_UPDATE'];
       if (!disparadoresValidos.includes(disparador)) {
         throw new Error(`Disparador inválido: ${disparador}`);
       }
