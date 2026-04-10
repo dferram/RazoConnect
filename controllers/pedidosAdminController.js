@@ -932,18 +932,30 @@ const surtirPedido = async (req, res) => {
         marcarResult.rowCount += resultCompletos.rowCount;
       }
 
-      // SUBCASO 3B: Marcar PARCIALES como 'Surtido Parcial' (cantidadsurtida = piezasParaSurtir en piezas)
+      // SUBCASO 3B: Marcar PARCIALES (cantidadsurtida = piezasParaSurtir en piezas)
+      // ✅ IMPORTANTE: Guardar el estado CORRECTO basado en cantidad
+      // Si piezasParaSurtir >= piezastotales → 'Surtido'
+      // Si 0 < piezasParaSurtir < piezastotales → 'Surtido Parcial'
+      // Si piezasParaSurtir = 0 → 'Pendiente'
       if (productosParciales.length > 0) {
         for (const parcial of productosParciales) {
           try {
+            // Determinar estado correcto basado en cantidad
+            let estadoProducto = 'Pendiente';
+            if (parcial.piezasParaSurtir >= parcial.piezastotales) {
+              estadoProducto = 'Surtido';
+            } else if (parcial.piezasParaSurtir > 0) {
+              estadoProducto = 'Surtido Parcial';
+            }
+
             await client.query(
               `UPDATE detallesdelpedido
                SET cantidadsurtida = $1,
-                   estado_producto = 'Surtido Parcial'
-               WHERE pedidoid = $2
-                 AND detalleid = $3
-                 AND tenant_id = $4`,
-              [parcial.piezasParaSurtir, pedidoId, parcial.detalleid, tenant_id]
+                   estado_producto = $2
+               WHERE pedidoid = $3
+                 AND detalleid = $4
+                 AND tenant_id = $5`,
+              [parcial.piezasParaSurtir, estadoProducto, pedidoId, parcial.detalleid, tenant_id]
             );
             marcarResult.rowCount++;
           } catch (err) {
@@ -1536,14 +1548,15 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     const estadosResult = await client.query(estadosQuery, [pedidoId, tenant_id, adminClienteId]);
 
     // Determinar nuevo estado del pedido
-    // ✅ NUEVA LÓGICA: Considerar 'Surtido Parcial' correctamente
+    // ✅ NUEVA LÓGICA: Calcular estado dinámicamente
+    // Nota: 'Parcialmente Surtido' se calcula en lectura, no se guarda
     let nuevoEstatusPedido = 'Facturado'; // por defecto cuando finanzas confirma
     let completamenteSurtido = false;
 
     if (estadosResult.rows.length > 0) {
-      // Contar productos por estado
+      // Contar productos por estado (guardado en BD)
       const facturados = estadosResult.rows.filter(p => p.estado_producto === 'Facturado').length;
-      const surtidosCompletos = estadosResult.rows.filter(p => p.estado_producto === 'Surtido').length;
+      const surtidos = estadosResult.rows.filter(p => p.estado_producto === 'Surtido').length;
       const surtidasParciales = estadosResult.rows.filter(p => p.estado_producto === 'Surtido Parcial').length;
       const pendientes = estadosResult.rows.filter(p => p.estado_producto === 'Pendiente').length;
       const totalProductos = estadosResult.rows.length;
@@ -1551,11 +1564,17 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       logger.info('📊 [ESTADO] Analizando estado de productos después de confirmar', {
         pedidoId,
         facturados,
-        surtidosCompletos,
+        surtidos,
         surtidasParciales,
         pendientes,
         totalProductos,
-        tenantId: tenant_id
+        tenantId: tenant_id,
+        detalles: estadosResult.rows.map(r => ({
+          detalleid: r.detalleid,
+          estado_producto: r.estado_producto,
+          cantidadsurtida: r.cantidadsurtida,
+          cantidadpaquetes: r.cantidadpaquetes
+        }))
       });
 
       // ✅ LÓGICA DE ESTADO DEL PEDIDO
@@ -1565,14 +1584,14 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         completamenteSurtido = true;
         logger.info('✅ Estado: Facturado (todos los productos confirmados)', { pedidoId });
       } else if (facturados > 0 && pendientes === 0) {
-        // PARCIALMENTE FACTURADO: Hay facturados + algunos parciales, pero NO hay pendientes
-        // Significa que se surtió parcial o completo, pero no se completaron todos
+        // PARCIALMENTE FACTURADO: Hay facturados + surtidos, pero NO hay pendientes
+        // (Los "surtidos" pueden ser completos o parciales, se calcula en lectura)
         nuevoEstatusPedido = 'Parcialmente Facturado';
         completamenteSurtido = false;
-        logger.info('🟠 Estado: Parcialmente Facturado (surtido completo y parcial)', {
+        logger.info('🟠 Estado: Parcialmente Facturado (algunos confirmados, otros surtidos)', {
           pedidoId,
           facturados,
-          surtidasParciales
+          surtidos
         });
       } else if (facturados > 0 && pendientes > 0) {
         // COMBINADO: Algunos confirmados + otros por confirmar
@@ -1637,9 +1656,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         dp.detalleid,
         dp.cantidadsurtida,
         dp.cantidadpaquetes,
-        CASE WHEN dp.cantidadsurtida > 0 AND dp.cantidadsurtida = dp.cantidadpaquetes THEN 'Surtido'
-             WHEN dp.cantidadsurtida > 0 AND dp.cantidadsurtida < dp.cantidadpaquetes THEN 'Parcialmente Surtido'
-             ELSE 'Pendiente' END as estado_producto
+        dp.piezastotales,
+        dp.estado_producto
       FROM detallesdelpedido dp
       WHERE dp.pedidoid = $1 AND dp.tenant_id = $2
     `;

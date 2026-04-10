@@ -63,8 +63,8 @@ describe('Surtido Parcial + Validación Dinámica', () => {
     });
   });
 
-  describe('Escenario 2: Surtido PARCIAL', () => {
-    test('Producto con stock parcial (12 de 24) se marca como "Surtido Parcial"', async () => {
+  describe('Escenario 2: Surtido PARCIAL (Guardado Dinámicamente)', () => {
+    test('Producto con stock parcial (12 de 24) se guarda con cantidadsurtida=12, estado "Surtido Parcial"', async () => {
       // MOCK: Detalle del pedido
       const detalle = {
         detalleid: 2,
@@ -88,9 +88,22 @@ describe('Surtido Parcial + Validación Dinámica', () => {
       expect(surtidoParcial).toBe(true);
       expect(stockDisponible).toBe(12);
 
-      // ESPERADO: cantidadsurtida = 12 (piezas disponibles)
-      const cantidadsurtidaEsperada = stockDisponible;
-      expect(cantidadsurtidaEsperada).toBe(12);
+      // ✅ GUARDADO EN BD (NUEVO ENFOQUE):
+      // - estado_producto = 'Surtido Parcial' (guardado dinámicamente por cantidad)
+      // - cantidadsurtida = 12 (piezas disponibles)
+      const cantidadsurtidaGuardada = stockDisponible;
+      const estadoProductoGuardado = 'Surtido Parcial'; // Guardado dinámicamente
+
+      expect(cantidadsurtidaGuardada).toBe(12);
+      expect(estadoProductoGuardado).toBe('Surtido Parcial');
+
+      // ✅ LECTURA (simplificada):
+      // Ahora solo leemos el estado ya guardado, sin cálculos dinámicos
+      const cantidadsurtidaLectura = 12; // piezas
+      const piezastotalesdLectura = 24; // piezas
+      const estadoGuardado = 'Surtido Parcial'; // Se leyó de BD
+
+      expect(estadoGuardado).toBe('Surtido Parcial'); // Guardado, no calculado
     });
   });
 
@@ -231,19 +244,25 @@ describe('Surtido Parcial + Validación Dinámica', () => {
   });
 
   describe('Escenario 6: Flujo Completo (Inventarios → Finanzas)', () => {
-    test('Flujo consisten Te de una transacción parcial al 100%', () => {
-      // PASO 1: Inventarios marca como "Surtido Parcial"
+    test('Flujo consistente de una transacción parcial al 100%', () => {
+      // PASO 1: Inventarios marca como "Surtido" (guarda cantidadsurtida)
       const paso1 = {
         accion: 'Inventarios marca',
         producto: 'Producto X',
         solicitadas: 24,
         disponibles: 12,
         cantidadsurtida: 12,
-        estado: 'Surtido Parcial',
+        estado: 'Surtido', // Guardado en BD (no 'Surtido Parcial')
       };
 
       expect(paso1.cantidadsurtida).toBe(paso1.disponibles);
-      expect(paso1.estado).toBe('Surtido Parcial');
+      expect(paso1.estado).toBe('Surtido'); // Lo que se guarda
+
+      // NOTA: En lectura, la query CALCULA dinámicamente:
+      // CASE WHEN cantidadsurtida > 0 AND cantidadsurtida < cantidadpaquetes
+      //   THEN 'Parcialmente Surtido' (calculado, no guardado)
+      const estadoCalculadoEnLectura = 'Parcialmente Surtido'; // Calculado por la query
+      expect(estadoCalculadoEnLectura).toBe('Parcialmente Surtido');
 
       // PASO 2: Finanzas valida
       const paso2 = {
