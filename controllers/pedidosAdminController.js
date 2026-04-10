@@ -873,50 +873,99 @@ const surtirPedido = async (req, res) => {
       
       const detalleProductos = await client.query(detalleProductosQuery, [pedidoId, detalleIds, tenant_id, userId, adminIdUser]);
       
-      // STEP 2: Only keep products with sufficient stock
-      // FIX: No filtrar por esbackorder, solo validar stock real
-      const productosConStock = detalleProductos.rows.filter(p => {
+      // STEP 2: Clasificar productos en COMPLETOS, PARCIALES, o SIN STOCK
+      // ✅ NUEVO: Soportar surtido parcial para que el almacenista no pierda el rastro
+      // ⚠️ IMPORTANTE: cantidadsurtida se guarda en PIEZAS (no paquetes) para consistencia con finanzas
+      const productosCompletos = [];
+      const productosParciales = [];
+
+      for (const p of detalleProductos.rows) {
         const stockSaDisponible = p.stock_sa - p.stock_reservado;
         const stockPV = p.stock_pv;
-        const paquetesRequeridos = p.cantidadpaquetes;
         const piezasRequeridas = p.piezastotales;
-        
-        // Validar stock usando piezas totales (unidades individuales requeridas)
-        // El stock en BD está en piezas, no en paquetes
-        const tieneStockSa = stockSaDisponible >= piezasRequeridas;
-        const tieneStockPV = stockPV >= piezasRequeridas;
-        const tieneStock = tieneStockSa || tieneStockPV;
-        
-        return tieneStock;
-      });
-      
-      if (productosConStock.length === 0) {
+        const cantidadPaquetes = p.cantidadpaquetes;
+
+        // Determinar stock disponible (usar stock_admin si existe, sino producto_variantes)
+        const stockDisponible = (stockSaDisponible !== null && stockSaDisponible >= 0) ? stockSaDisponible : stockPV;
+
+        if (stockDisponible >= piezasRequeridas) {
+          // ✅ STOCK COMPLETO: Tiene todo lo que se pidió
+          productosCompletos.push(p);
+        } else if (stockDisponible > 0) {
+          // ⚠️ STOCK PARCIAL: Tiene algo pero no todo
+          // Guardamos las piezas reales disponibles para surtido
+          productosParciales.push({
+            ...p,
+            piezasParaSurtir: stockDisponible  // En piezas, no paquetes
+          });
+        }
+        // Si stock = 0, no se agrega a ninguna lista (permanece sin marcar)
+      }
+
+      if (productosCompletos.length === 0 && productosParciales.length === 0) {
         await client.query('ROLLBACK');
         return res.status(400).json({
           success: false,
-          message: 'Ninguno de los productos seleccionados tiene stock suficiente'
+          message: 'Ninguno de los productos seleccionados tiene stock disponible',
+          razon: 'Los productos seleccionados no tienen stock suficiente para marcar.'
         });
       }
-      
-      // STEP 3: Now mark only those with stock
-      const detalleIdsConStock = productosConStock.map(p => p.detalleid);
-      
-      // 🔥 FIX: Permitir surtir productos adicionales aunque ya estén parcialmente surtidos
-      // Solo actualizamos la cantidad surtida si es menor que la cantidad de paquetes
-      // Y cambiamos el estado_producto a 'Surtido'
-      const marcarSurtidosQuery = `
-        UPDATE detallesdelpedido
-        SET cantidadsurtida = CASE
-          WHEN cantidadsurtida < cantidadpaquetes THEN cantidadpaquetes
-          ELSE cantidadsurtida
-        END
-        WHERE pedidoid = $1
-          AND detalleid = ANY($2::int[])
-          AND tenant_id = $3
-        RETURNING detalleid, cantidadsurtida, cantidadpaquetes, estado_producto
-      `;
-      
-      marcarResult = await client.query(marcarSurtidosQuery, [pedidoId, detalleIdsConStock, tenant_id]);
+
+      // STEP 3: Marcar productos con estado COMPLETO o PARCIAL
+      let marcarResult = { rowCount: 0 };
+
+      // SUBCASO 3A: Marcar COMPLETOS como 'Surtido' (cantidadsurtida = piezastotales en piezas)
+      if (productosCompletos.length > 0) {
+        const detalleIdsCompletos = productosCompletos.map(p => p.detalleid);
+
+        const marcarCompletosQuery = `
+          UPDATE detallesdelpedido
+          SET cantidadsurtida = piezastotales,
+              estado_producto = 'Surtido'
+          WHERE pedidoid = $1
+            AND detalleid = ANY($2::int[])
+            AND tenant_id = $3
+          RETURNING detalleid, cantidadsurtida, cantidadpaquetes, estado_producto
+        `;
+
+        const resultCompletos = await client.query(marcarCompletosQuery, [pedidoId, detalleIdsCompletos, tenant_id]);
+        marcarResult.rowCount += resultCompletos.rowCount;
+      }
+
+      // SUBCASO 3B: Marcar PARCIALES como 'Surtido Parcial' (cantidadsurtida = piezasParaSurtir en piezas)
+      if (productosParciales.length > 0) {
+        for (const parcial of productosParciales) {
+          try {
+            await client.query(
+              `UPDATE detallesdelpedido
+               SET cantidadsurtida = $1,
+                   estado_producto = 'Surtido Parcial'
+               WHERE pedidoid = $2
+                 AND detalleid = $3
+                 AND tenant_id = $4`,
+              [parcial.piezasParaSurtir, pedidoId, parcial.detalleid, tenant_id]
+            );
+            marcarResult.rowCount++;
+          } catch (err) {
+            logger.warn('Error al marcar producto parcial:', {
+              detalleId: parcial.detalleid,
+              error: err.message
+            });
+          }
+        }
+      }
+
+      logger.info('✅ Productos marcados (COMPLETOS + PARCIALES):', {
+        pedidoId,
+        completos: productosCompletos.length,
+        parciales: productosParciales.length,
+        totalMarcados: marcarResult.rowCount,
+        detalles: {
+          completosConStock: productosCompletos.map(p => ({ detalleid: p.detalleid, piezastotales: p.piezastotales })),
+          parcialesConStock: productosParciales.map(p => ({ detalleid: p.detalleid, piezasParaSurtir: p.piezasParaSurtir, piezastotales: p.piezastotales }))
+        },
+        tenantId: tenant_id
+      });
     } else if (!esModoSelectivo && detalleIds && Array.isArray(detalleIds)) {
       // VALIDATION: Prevent empty array from triggering LEGACY mode
       await client.query('ROLLBACK');
@@ -941,22 +990,23 @@ const surtirPedido = async (req, res) => {
       
       const marcarSurtidosQuery = `
         UPDATE detallesdelpedido d
-        SET cantidadsurtida = cantidadpaquetes
+        SET cantidadsurtida = cantidadpaquetes,
+            estado_producto = 'Surtido'
         FROM producto_variantes pv
         LEFT JOIN stock_admin sa ON sa.variante_id = d.varianteid AND sa.tenant_id = d.tenant_id AND sa.admin_id = $3
-        WHERE d.pedidoid = $1 
+        WHERE d.pedidoid = $1
           AND d.esbackorder = false
           AND d.cantidadsurtida = 0
           AND d.tenant_id = $2
           AND pv.varianteid = d.varianteid
           AND pv.tenant_id = $2
           AND (
-            CASE 
+            CASE
               WHEN sa.cantidad IS NOT NULL THEN (sa.cantidad - COALESCE(sa.cantidad_reservada, 0)) >= d.piezastotales
               ELSE pv.stock >= d.piezastotales
             END
           )
-        RETURNING d.detalleid, d.cantidadsurtida, d.cantidadpaquetes
+        RETURNING d.detalleid, d.cantidadsurtida, d.cantidadpaquetes, d.estado_producto
       `;
       
       marcarResult = await client.query(marcarSurtidosQuery, [pedidoId, tenant_id, adminIdUser]);
@@ -1063,7 +1113,19 @@ const surtirPedido = async (req, res) => {
     
     for (const detalle of detallesMarcadosResult.rows) {
       const adminId = adminIdUser; // Usar el admin asignado, no el admin del usuario actual
-      const piezasSurtidas = detalle.piezastotales; // Usar piezas totales, no paquetes
+
+      // ✅ IMPORTANTE: Usar cantidadsurtida (cantidad real surtida)
+      // Para productos completos: cantidadsurtida = piezastotales
+      // Para productos parciales: cantidadsurtida = piezasDisponibles
+      const piezasSurtidas = parseInt(detalle.cantidadsurtida || 0, 10);
+
+      if (piezasSurtidas <= 0) {
+        logger.warn('⚠️ Producto sin cantidad surtida, saltando:', {
+          detalleId: detalle.detalleid,
+          cantidadsurtida: detalle.cantidadsurtida
+        });
+        continue;
+      }
 
       // 1. Solo registrar que fue marcado para surtido en pedido_surtido_detalle
       // No modificar stock_admin - el stock YA fue reservado cuando el cliente creó el pedido
@@ -1075,22 +1137,12 @@ const surtirPedido = async (req, res) => {
         [pedidoId, detalle.detalleid, detalle.varianteid, adminId, piezasSurtidas, tenant_id]
       );
 
-      // 2. Actualizar cantidadsurtida en el detalle (warehouse surtió esta cantidad)
-      // Finance usará este valor para confirmar
-      await client.query(
-        `UPDATE detallesdelpedido
-         SET cantidadsurtida = $1
-         WHERE detalleid = $2 AND tenant_id = $3`,
-        [piezasSurtidas, detalle.detalleid, tenant_id]
-      );
-
-      // 3. estado_producto remains "Con stock" or "Bajo pedido" - workflow tracked in pedidos.estatus
-
-      logger.info('Stock actualizado y surtido registrado', {
+      logger.info('✅ Surtido registrado (completo o parcial):', {
         pedidoId,
         detalleId: detalle.detalleid,
         varianteId: detalle.varianteid,
         piezasSurtidas,
+        estadoProducto: detalle.estado_producto,
         adminId,
         tenantId: tenant_id
       });
@@ -1099,8 +1151,8 @@ const surtirPedido = async (req, res) => {
     // Actualizar estatus del pedido
     // LÓGICA: Inventarios marcó productos → Cambiar a "Listo para remisionar" (siempre)
     // Después Finanzas confirmará y el status será "Surtido" o "Facturado"
-    
-    const nuevoestatus = 'Listo para remisionar';
+
+    const nuevoEstatus = 'Listo para remisionar';
     const completamenteSurtido = false; // Inventarios solo marca, Finanzas confirma y cambia esto
 
     logger.info('✅ [ESTADO] Actualizando estado del pedido después de marcar surtidos', {
@@ -1347,12 +1399,44 @@ const confirmarSurtidoFinanzas = async (req, res) => {
 
         const stockPrevio = parseInt(stockAnteriorResult.rows[0].cantidad || 0, 10);
 
+        // ✅ VALIDACIÓN CRÍTICA: Verificar que hay stock SUFICIENTE antes de restar
+        if (stockPrevio < piezasSurtidas) {
+          await client.query('ROLLBACK');
+
+          const nombre = (item.nombreproducto || 'Producto').toString().trim();
+          const sku = (item.sku || '').toString().trim();
+          const ref = sku ? `${nombre} (${sku})` : nombre;
+
+          logger.error('❌ Stock insuficiente en confirmación:', {
+            producto: ref,
+            varianteId,
+            stockDisponible: stockPrevio,
+            piezasRequeridas: piezasSurtidas,
+            adminSurtidor,
+            detalleId: item.detalleid,
+            pedidoId
+          });
+
+          return res.status(400).json({
+            success: false,
+            message: `Stock insuficiente: ${ref}`,
+            detalles: {
+              producto: ref,
+              disponible: stockPrevio,
+              requeridas: piezasSurtidas,
+              falta: piezasSurtidas - stockPrevio
+            },
+            sugerencia: 'Inventarios debe revisar el stock. Es posible que este producto haya sido usado en otro pedido.'
+          });
+        }
+
         // 2. Reducir DIRECTAMENTE del stock_admin del admin que realizó el surtido
         // NO usar SmartStockService para evitar confusiones de contexto
+        // ⚠️ CRÍTICO: Solo reducir cantidad, NO cantidad_reservada
+        // ✅ IMPORTANTE: Ahora SÍ es seguro porque ya validamos arriba
         const updateStockQuery = `
           UPDATE stock_admin
-          SET cantidad = GREATEST(cantidad - $1, 0),
-              cantidad_reservada = GREATEST(cantidad_reservada - $1, 0)
+          SET cantidad = cantidad - $1
           WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4
           RETURNING cantidad
         `;
@@ -1414,13 +1498,31 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       }
     }
 
-    // Verificar estado de TODOS los productos del pedido (EXCEPTO Facturado)
+    // ✅ ACTUALIZAR estado_producto A "Facturado" DESPUÉS DE CONFIRMAR STOCK EN FINANZAS
+    for (const detalleId of detalleIds) {
+      try {
+        await client.query(
+          `UPDATE detallesdelpedido
+           SET estado_producto = 'Facturado'
+           WHERE detalleid = $1 AND pedidoid = $2 AND tenant_id = $3`,
+          [detalleId, pedidoId, tenant_id]
+        );
+      } catch (updateError) {
+        logger.warn('⚠️ No se pudo actualizar estado_producto:', {
+          detalleId,
+          error: updateError.message
+        });
+      }
+    }
+
+    // Verificar estado de TODOS los productos del pedido
     // ⚠️ CRÍTICO: Solo considerar stock del admin del cliente, NO suma de todos
     const estadosQuery = `
       SELECT
         dp.detalleid,
         dp.varianteid,
         dp.piezastotales,
+        dp.estado_producto,
         COALESCE(SUM(sa.cantidad), 0) as stock_total,
         COALESCE(SUM(sa.cantidad_reservada), 0) as stock_reservado,
         (COALESCE(SUM(sa.cantidad), 0) - COALESCE(SUM(sa.cantidad_reservada), 0)) as stock_disponible
@@ -1428,63 +1530,69 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = dp.tenant_id AND sa.admin_id = $3
       WHERE dp.pedidoid = $1
         AND dp.tenant_id = $2
-      GROUP BY dp.detalleid, dp.varianteid, dp.piezastotales
+      GROUP BY dp.detalleid, dp.varianteid, dp.piezastotales, dp.estado_producto
       ORDER BY dp.detalleid
     `;
     const estadosResult = await client.query(estadosQuery, [pedidoId, tenant_id, adminClienteId]);
 
-    // Determinar nuevo estado del pedido basado en stock disponible de productos NO facturados
-    let nuevoEstatusPedido = 'Surtido'; // por defecto si todos están facturados
-    let completamenteSurtido = true;
+    // Determinar nuevo estado del pedido
+    // ✅ NUEVA LÓGICA: Considerar 'Surtido Parcial' correctamente
+    let nuevoEstatusPedido = 'Facturado'; // por defecto cuando finanzas confirma
+    let completamenteSurtido = false;
 
     if (estadosResult.rows.length > 0) {
-      let productosConStock = 0;
-      let productosBackorder = 0;
+      // Contar productos por estado
+      const facturados = estadosResult.rows.filter(p => p.estado_producto === 'Facturado').length;
+      const surtidosCompletos = estadosResult.rows.filter(p => p.estado_producto === 'Surtido').length;
+      const surtidasParciales = estadosResult.rows.filter(p => p.estado_producto === 'Surtido Parcial').length;
+      const pendientes = estadosResult.rows.filter(p => p.estado_producto === 'Pendiente').length;
+      const totalProductos = estadosResult.rows.length;
 
-      logger.info('📊 [ESTADO] Analizando stock de productos restantes', {
+      logger.info('📊 [ESTADO] Analizando estado de productos después de confirmar', {
         pedidoId,
-        totalProductos: estadosResult.rows.length,
-        tenantId: tenant_id,
-        detalles: estadosResult.rows.map(r => ({
-          detalleid: r.detalleid,
-          piezastotales: r.piezastotales,
-          stock_disponible: r.stock_disponible
-        }))
+        facturados,
+        surtidosCompletos,
+        surtidasParciales,
+        pendientes,
+        totalProductos,
+        tenantId: tenant_id
       });
 
-      // Contar productos con/sin stock disponible
-      estadosResult.rows.forEach(producto => {
-        const tieneStock = producto.stock_disponible >= producto.piezastotales;
-        if (tieneStock) {
-          productosConStock++;
-        } else {
-          productosBackorder++;
-        }
-      });
-
-      // Lógica de estado basada en stock disponible:
-      // - Si TODOS sin stock → "Bajo pedido"
-      // - Si TODOS con stock → "Completo"
-      // - Si MIX → "Combinado"
-      if (productosBackorder === estadosResult.rows.length && productosConStock === 0) {
-        // Todos sin stock
-        nuevoEstatusPedido = 'Bajo pedido';
-        completamenteSurtido = false;
-        logger.info('🔴 Estado: Bajo pedido (todos sin stock)', { pedidoId });
-      } else if (productosConStock === estadosResult.rows.length && productosBackorder === 0) {
-        // Todos con stock
-        nuevoEstatusPedido = 'Completo';
+      // ✅ LÓGICA DE ESTADO DEL PEDIDO
+      if (facturados === totalProductos) {
+        // TODOS FACTURADOS (completamente surtidos y confirmados)
+        nuevoEstatusPedido = 'Facturado';
         completamenteSurtido = true;
-        logger.info('🟢 Estado: Completo (todos con stock)', { pedidoId });
-      } else if (productosBackorder > 0 && productosConStock > 0) {
-        // Mix de stock y backorder
+        logger.info('✅ Estado: Facturado (todos los productos confirmados)', { pedidoId });
+      } else if (facturados > 0 && pendientes === 0) {
+        // PARCIALMENTE FACTURADO: Hay facturados + algunos parciales, pero NO hay pendientes
+        // Significa que se surtió parcial o completo, pero no se completaron todos
+        nuevoEstatusPedido = 'Parcialmente Facturado';
+        completamenteSurtido = false;
+        logger.info('🟠 Estado: Parcialmente Facturado (surtido completo y parcial)', {
+          pedidoId,
+          facturados,
+          surtidasParciales
+        });
+      } else if (facturados > 0 && pendientes > 0) {
+        // COMBINADO: Algunos confirmados + otros por confirmar
         nuevoEstatusPedido = 'Combinado';
         completamenteSurtido = false;
-        logger.info('🟠 Estado: Combinado (mix de stock/backorder)', {
+        logger.info('🟡 Estado: Combinado (parcialmente confirmado)', {
           pedidoId,
-          conStock: productosConStock,
-          sinStock: productosBackorder
+          facturados,
+          pendientes
         });
+      } else if (facturados === 0 && pendientes === totalProductos) {
+        // NINGUNO FACTURADO (todos aún pendientes)
+        nuevoEstatusPedido = 'Bajo pedido';
+        completamenteSurtido = false;
+        logger.info('🔴 Estado: Bajo pedido (sin confirmar)', { pedidoId });
+      } else {
+        // Fallback: otro estado (aunque no debería ocurrir)
+        nuevoEstatusPedido = 'Combinado';
+        completamenteSurtido = false;
+        logger.warn('⚠️ Estado: Combinado (estado indeterminado)', { pedidoId });
       }
     }
 
