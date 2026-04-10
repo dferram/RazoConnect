@@ -52,8 +52,8 @@ describe('pagosController', () => {
       await pagosController.getPagosPendientes(req, res);
 
       expect(db.query).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE p.pagado = false'),
-        [1]
+        expect.stringContaining('AND (p.pagado = false OR p.estatus ='),
+        [1, 2]  // [tenant_id, admin_id]
       );
       expect(res.json).toHaveBeenCalledWith({
         success: true,

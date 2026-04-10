@@ -12,9 +12,15 @@
 const db = require('../db');
 const logger = require('../utils/logger');
 const inventoryService = require('../services/inventoryService');
+const SmartStockService = require('../services/SmartStockService');
 const { getPaginationParams, buildPaginationMeta } = require('../utils/pagination');
 const { updatePedidoStatus, calcularEstadoPedidoCorrect } = require('../utils/pedidoStatus');
 const { ESTADOS_PEDIDO, normalizarEstado } = require('../utils/pedidoEstados');
+
+// Importar controladores delegados (refactorización)
+const { confirmarSurtidoFinanzas: confirmarSurtidoFinanzasFromFinanzas } = require('./finanzas/confirmController');
+const { rechazarPedidoFinanzas: rechazarPedidoFinanzasFromFinanzas } = require('./finanzas/rejectController');
+const { validarYMarcarProductos } = require('./inventarios/markingController');
 
 /**
  * @swagger
@@ -813,21 +819,22 @@ const surtirPedido = async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Obtener pedido
+    // Obtener pedido (incluir admin_asignado_id para FIFO)
     const pedidoQuery = `
-      SELECT p.pedidoid, p.clienteid, p.agenteid, p.direccionenvioid, p.fechapedido, p.montototal, p.estatus, 
-             p.costoenvio, p.es_credito, p.fecha_vencimiento, p.pagado, p.transaccion_id, p.comprobante_url, 
-             p.metodo_pago, p.cupon_id, p.monto_descuento, p.saldo_pendiente, p.url_evidencia_entrega, 
-             p.fecha_entrega_real, p.tenant_id, p.estatus_deuda, p.dias_atraso, p.tiene_remisiones, 
-             p.completamente_surtido, p.monto_surtido, p.monto_backorder, p.es_prioritario, p.es_historico, 
+      SELECT p.pedidoid, p.clienteid, p.agenteid, p.direccionenvioid, p.fechapedido, p.montototal, p.estatus,
+             p.costoenvio, p.es_credito, p.fecha_vencimiento, p.pagado, p.transaccion_id, p.comprobante_url,
+             p.metodo_pago, p.cupon_id, p.monto_descuento, p.saldo_pendiente, p.url_evidencia_entrega,
+             p.fecha_entrega_real, p.tenant_id, p.estatus_deuda, p.dias_atraso, p.tiene_remisiones,
+             p.completamente_surtido, p.monto_surtido, p.monto_backorder, p.es_prioritario, p.es_historico,
              p.fecha_confirmacion, p.observaciones_finanzas, p.rechazado_por_finanzas, p.fecha_rechazo_finanzas,
+             p.admin_asignado_id,
         (SELECT COUNT(*) FROM detallesdelpedido WHERE pedidoid = p.pedidoid) as total_productos,
         (SELECT COUNT(*) FROM detallesdelpedido WHERE pedidoid = p.pedidoid AND esbackorder = true) as productos_backorder
       FROM pedidos p
-      WHERE p.pedidoid = $1 AND p.tenant_id = $2
+      WHERE p.pedidoid = $1 AND p.tenant_id = $2 AND p.admin_asignado_id = $3
     `;
-    
-    const pedidoResult = await client.query(pedidoQuery, [pedidoId, tenant_id]);
+
+    const pedidoResult = await client.query(pedidoQuery, [pedidoId, tenant_id, adminIdUser]);
     
     if (pedidoResult.rows.length === 0) {
       await client.query('ROLLBACK');
@@ -857,146 +864,38 @@ const surtirPedido = async (req, res) => {
     const esModoSelectivo = detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0;
     
     if (esModoSelectivo) {
-      // MODO SELECTIVO: Solo marcar productos específicos seleccionados por inventarios
-      // FIX: Trust frontend validation - if inventarios selected them, they have stock
-      // Don't filter by esbackorder flag as it can be inconsistent
-      
-      logger.info('Intentando marcar productos como surtidos:', {
+      // MODO SELECTIVO: Delegar a markingController para validar FIFO y marcar
+      const markingResult = await validarYMarcarProductos({
         pedidoId,
         detalleIds,
-        cantidadSeleccionados: detalleIds.length,
-        tenantId: tenant_id
+        pedido,
+        tenant_id,
+        userId,
+        adminIdUser,
+        client
       });
-      
-      // STEP 1: Get detailed info about products and their stock
-      // Single query to check what we need to mark
-      const detalleProductosQuery = `
-        SELECT 
-          dp.detalleid,
-          dp.varianteid,
-          dp.cantidadsurtida,
-          dp.cantidadpaquetes,
-          dp.piezastotales,
-          dp.esbackorder,
-          dp.estado_producto,
-          pv.stock as stock_pv,
-          p.nombreproducto,
-          COALESCE(sa.cantidad, 0) as stock_sa,
-          COALESCE(sa.cantidad_reservada, 0) as stock_reservado
-        FROM detallesdelpedido dp
-        INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid AND pv.tenant_id = $3
-        INNER JOIN productos p ON pv.productoid = p.productoid AND p.tenant_id = $3
-        LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = $3 AND sa.admin_id = (
-          SELECT admin_responsable_id FROM administradores WHERE adminid = $4 AND tenant_id = $3
-          UNION ALL
-          SELECT $5 WHERE NOT EXISTS (SELECT admin_responsable_id FROM administradores WHERE adminid = $4 AND tenant_id = $3)
-        )
-        WHERE dp.pedidoid = $1 
-          AND dp.detalleid = ANY($2::int[])
-          AND dp.tenant_id = $3
-      `;
-      
-      const detalleProductos = await client.query(detalleProductosQuery, [pedidoId, detalleIds, tenant_id, userId, adminIdUser]);
-      
-      // STEP 2: Clasificar productos en COMPLETOS, PARCIALES, o SIN STOCK
-      // ✅ NUEVO: Soportar surtido parcial para que el almacenista no pierda el rastro
-      // ⚠️ IMPORTANTE: cantidadsurtida se guarda en PIEZAS (no paquetes) para consistencia con finanzas
-      const productosCompletos = [];
-      const productosParciales = [];
 
-      for (const p of detalleProductos.rows) {
-        const stockSaDisponible = p.stock_sa - p.stock_reservado;
-        const stockPV = p.stock_pv;
-        const piezasRequeridas = p.piezastotales;
-        const cantidadPaquetes = p.cantidadpaquetes;
-
-        // Determinar stock disponible (usar stock_admin si existe, sino producto_variantes)
-        const stockDisponible = (stockSaDisponible !== null && stockSaDisponible >= 0) ? stockSaDisponible : stockPV;
-
-        if (stockDisponible >= piezasRequeridas) {
-          // ✅ STOCK COMPLETO: Tiene todo lo que se pidió
-          productosCompletos.push(p);
-        } else if (stockDisponible > 0) {
-          // ⚠️ STOCK PARCIAL: Tiene algo pero no todo
-          // Guardamos las piezas reales disponibles para surtido
-          productosParciales.push({
-            ...p,
-            piezasParaSurtir: stockDisponible  // En piezas, no paquetes
-          });
-        }
-        // Si stock = 0, no se agrega a ninguna lista (permanece sin marcar)
-      }
-
-      if (productosCompletos.length === 0 && productosParciales.length === 0) {
+      if (!markingResult.success) {
         await client.query('ROLLBACK');
         return res.status(400).json({
           success: false,
-          message: 'Ninguno de los productos seleccionados tiene stock disponible',
-          razon: 'Los productos seleccionados no tienen stock suficiente para marcar.'
+          message: markingResult.message,
+          razon: markingResult.razon,
+          detalles_fifo: markingResult.detalles_fifo,
+          analisis: markingResult.analisis
         });
       }
 
-      // STEP 3: Marcar productos con estado COMPLETO o PARCIAL
-      let marcarResult = { rowCount: 0 };
+      // ✅ Obtener resultados del marking
+      marcarResult = markingResult.marcarResult;
+      const { productosCompletos, productosParciales, productosAlcanza } = markingResult;
 
-      // SUBCASO 3A: Marcar COMPLETOS como 'Surtido' (cantidadsurtida = piezastotales en piezas)
-      if (productosCompletos.length > 0) {
-        const detalleIdsCompletos = productosCompletos.map(p => p.detalleid);
-
-        const marcarCompletosQuery = `
-          UPDATE detallesdelpedido
-          SET cantidadsurtida = piezastotales,
-              estado_producto = 'Surtido'
-          WHERE pedidoid = $1
-            AND detalleid = ANY($2::int[])
-            AND tenant_id = $3
-          RETURNING detalleid, cantidadsurtida, cantidadpaquetes, estado_producto
-        `;
-
-        const resultCompletos = await client.query(marcarCompletosQuery, [pedidoId, detalleIdsCompletos, tenant_id]);
-        marcarResult.rowCount += resultCompletos.rowCount;
-      }
-
-      // SUBCASO 3B: Marcar PARCIALES (cantidadsurtida = piezasParaSurtir en piezas)
-      // ✅ IMPORTANTE: Guardar estado 'Surtido' para cualquier cantidad > 0
-      // La diferencia entre completo vs parcial está en cantidadsurtida, NO en estado_producto
-      // Si piezasParaSurtir > 0 (sea completo o parcial) → 'Surtido'
-      // Si piezasParaSurtir = 0 → 'Bajo pedido' (no se marca)
-      if (productosParciales.length > 0) {
-        for (const parcial of productosParciales) {
-          try {
-            // Si hay stock disponible (sea completo o parcial), marcar como 'Surtido'
-            // cantidadsurtida contendrá la cantidad real (12 de 24 si es parcial, 24 de 24 si es completo)
-            const estadoProducto = 'Surtido';
-
-            await client.query(
-              `UPDATE detallesdelpedido
-               SET cantidadsurtida = $1,
-                   estado_producto = $2
-               WHERE pedidoid = $3
-                 AND detalleid = $4
-                 AND tenant_id = $5`,
-              [parcial.piezasParaSurtir, estadoProducto, pedidoId, parcial.detalleid, tenant_id]
-            );
-            marcarResult.rowCount++;
-          } catch (err) {
-            logger.warn('Error al marcar producto parcial:', {
-              detalleId: parcial.detalleid,
-              error: err.message
-            });
-          }
-        }
-      }
-
-      logger.info('✅ Productos marcados (COMPLETOS + PARCIALES):', {
+      logger.info('✅ Productos marcados por markingController (FIFO):', {
         pedidoId,
+        admin_asignado_id: pedido.admin_asignado_id,
         completos: productosCompletos.length,
         parciales: productosParciales.length,
         totalMarcados: marcarResult.rowCount,
-        detalles: {
-          completosConStock: productosCompletos.map(p => ({ detalleid: p.detalleid, piezastotales: p.piezastotales })),
-          parcialesConStock: productosParciales.map(p => ({ detalleid: p.detalleid, piezasParaSurtir: p.piezasParaSurtir, piezastotales: p.piezastotales }))
-        },
         tenantId: tenant_id
       });
     } else if (!esModoSelectivo && detalleIds && Array.isArray(detalleIds)) {
@@ -1322,681 +1221,6 @@ const surtirPedido = async (req, res) => {
 };
 
 /**
- * Confirmar surtido y reducir inventario (finanzas)
- * Usado por finanzas para confirmar que el pedido está listo y reducir stock
- * 
- * ⚠️ PROTECCIÓN DE LÓGICA FINANCIERA PARA SURTIDO PARCIAL:
- * - Solo reduce stock de productos que fueron marcados como surtidos (cantidadsurtida > 0)
- * - Si el pedido está en "Surtido Parcial", solo procesa los items completados
- * - El resto de items quedan pendientes para futuras entregas
- * - La CXC se genera posteriormente en remisionesController basada en lo realmente entregado
- * 
- * POST /api/admin/pedidos/:id/confirmar-surtido
- */
-const confirmarSurtidoFinanzas = async (req, res) => {
-  const client = await db.getClient();
-  
-  try {
-    const { id: pedidoId } = req.params;
-    const { detalleIds } = req.body; // Array de IDs de productos seleccionados por finanzas
-    const { tenant_id } = req.tenant;
-    const userId = req.user?.id || req.user?.adminid;
-
-    await client.query('BEGIN');
-
-    // Obtener pedido y verificar que está listo para surtir
-    const pedidoQuery = `
-      SELECT p.pedidoid, p.clienteid, p.agenteid, p.direccionenvioid, p.fechapedido, p.montototal, p.estatus, 
-             p.costoenvio, p.es_credito, p.fecha_vencimiento, p.pagado, p.transaccion_id, p.comprobante_url, 
-             p.metodo_pago, p.cupon_id, p.monto_descuento, p.saldo_pendiente, p.url_evidencia_entrega, 
-             p.fecha_entrega_real, p.tenant_id, p.estatus_deuda, p.dias_atraso, p.tiene_remisiones, 
-             p.completamente_surtido, p.monto_surtido, p.monto_backorder, p.es_prioritario, p.es_historico, 
-             p.fecha_confirmacion, p.observaciones_finanzas, p.rechazado_por_finanzas, p.fecha_rechazo_finanzas,
-        (SELECT COUNT(*) FROM detallesdelpedido WHERE pedidoid = p.pedidoid AND esbackorder = false) as productos_con_stock
-      FROM pedidos p
-      WHERE p.pedidoid = $1 AND p.tenant_id = $2
-    `;
-    
-    const pedidoResult = await client.query(pedidoQuery, [pedidoId, tenant_id]);
-    
-    if (pedidoResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({
-        success: false,
-        message: 'Pedido no encontrado'
-      });
-    }
-
-    const pedido = pedidoResult.rows[0];
-    const estatusActual = (pedido.estatus || '').toLowerCase().trim();
-
-    // ⚠️ CRÍTICO: Obtener admin del cliente para filtrar stock correctamente
-    const estadosHelper = require('../utils/estadosHelper');
-    const adminClienteId = await estadosHelper.getAdminByClienteEstado(pedido.clienteid, tenant_id);
-
-    // Validar que el pedido está en estado correcto
-    if (!['listo para surtir', 'parcialmente surtido', 'parcialmente_surtido', 'surtido parcial', 'listo para remisionar'].includes(estatusActual)) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({
-        success: false,
-        message: `No se puede confirmar. El pedido debe estar en estado "Listo para Surtir", "Surtido Parcial" o "Listo para remisionar". Estado actual: ${pedido.estatus}`
-      });
-    }
-
-    // VALIDACIÓN: Verificar que se proporcionaron detalleIds
-    if (!detalleIds || !Array.isArray(detalleIds) || detalleIds.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({
-        success: false,
-        message: 'Debes seleccionar al menos un producto para confirmar.'
-      });
-    }
-
-    // PROTECCIÓN PARA SURTIDO PARCIAL: Obtener productos que están SURTIDOS (marcados por inventarios)
-    // Y que fueron seleccionados por finanzas para confirmar
-    // IMPORTANTE: También obtener el admin_id que realizó el surtido (de pedido_surtido_detalle)
-    const productosQuery = `
-      SELECT
-        dp.detalleid,
-        dp.varianteid,
-        dp.piezastotales,
-        dp.cantidadsurtida,
-        dp.esbackorder,
-        dp.estado_producto,
-        pv.sku,
-        pr.nombreproducto,
-        psd.admin_id as admin_surtidor
-      FROM detallesdelpedido dp
-      INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
-      INNER JOIN productos pr ON pv.productoid = pr.productoid
-      LEFT JOIN pedido_surtido_detalle psd ON dp.detalleid = psd.detalle_id AND dp.pedidoid = psd.pedido_id
-      WHERE dp.pedidoid = $1
-        AND dp.detalleid = ANY($2::int[])
-        AND dp.cantidadsurtida > 0
-        AND dp.tenant_id = $3
-    `;
-    
-    const productosResult = await client.query(productosQuery, [pedidoId, detalleIds, tenant_id]);
-    
-    if (productosResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({
-        success: false,
-        message: 'No hay productos surtidos para confirmar. Inventarios debe marcar productos primero.'
-      });
-    }
-
-    let productosConfirmados = 0;
-
-    logger.info('🔍 [DEBUG] Iniciando confirmación de surtido:', {
-      pedidoId,
-      userId,
-      tenant_id,
-      userRole: ['finanzas', 'admin'],
-      productosConStock: productosResult.rows.length
-    });
-
-    // Reducir inventario del admin que realizó el surtido (NO del usuario de finanzas)
-    for (const item of productosResult.rows) {
-      const varianteId = parseInt(item.varianteid);
-      const piezasSurtidas = parseInt(item.cantidadsurtida || 0);
-      const adminSurtidor = parseInt(item.admin_surtidor || 0);
-
-      if (!adminSurtidor) {
-        logger.warn('⚠️ No se encontró admin_surtidor para detalle:', {
-          detalleId: item.detalleid,
-          varianteId
-        });
-        continue;
-      }
-
-      logger.info('🔍 [DEBUG] Procesando producto para confirmar:', {
-        varianteId,
-        piezasSurtidas,
-        adminSurtidor,
-        sku: item.sku,
-        nombre: item.nombreproducto
-      });
-
-      try {
-        // 1. Obtener el stock ANTERIOR antes de actualizar
-        const getStockQuery = `
-          SELECT cantidad
-          FROM stock_admin
-          WHERE variante_id = $1 AND admin_id = $2 AND tenant_id = $3
-        `;
-        const stockAnteriorResult = await client.query(getStockQuery, [
-          varianteId,
-          adminSurtidor,
-          tenant_id
-        ]);
-
-        if (stockAnteriorResult.rows.length === 0) {
-          throw new Error(
-            `No se encontró stock para el admin ${adminSurtidor} y variante ${varianteId}`
-          );
-        }
-
-        const stockPrevio = parseInt(stockAnteriorResult.rows[0].cantidad || 0, 10);
-
-        // ✅ VALIDACIÓN CRÍTICA: Verificar que hay stock SUFICIENTE antes de restar
-        if (stockPrevio < piezasSurtidas) {
-          await client.query('ROLLBACK');
-
-          const nombre = (item.nombreproducto || 'Producto').toString().trim();
-          const sku = (item.sku || '').toString().trim();
-          const ref = sku ? `${nombre} (${sku})` : nombre;
-
-          logger.error('❌ Stock insuficiente en confirmación:', {
-            producto: ref,
-            varianteId,
-            stockDisponible: stockPrevio,
-            piezasRequeridas: piezasSurtidas,
-            adminSurtidor,
-            detalleId: item.detalleid,
-            pedidoId
-          });
-
-          return res.status(400).json({
-            success: false,
-            message: `Stock insuficiente: ${ref}`,
-            detalles: {
-              producto: ref,
-              disponible: stockPrevio,
-              requeridas: piezasSurtidas,
-              falta: piezasSurtidas - stockPrevio
-            },
-            sugerencia: 'Inventarios debe revisar el stock. Es posible que este producto haya sido usado en otro pedido.'
-          });
-        }
-
-        // 2. Reducir DIRECTAMENTE del stock_admin del admin que realizó el surtido
-        // NO usar SmartStockService para evitar confusiones de contexto
-        // ⚠️ CRÍTICO: Solo reducir cantidad, NO cantidad_reservada
-        // ✅ IMPORTANTE: Ahora SÍ es seguro porque ya validamos arriba
-        const updateStockQuery = `
-          UPDATE stock_admin
-          SET cantidad = cantidad - $1
-          WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4
-          RETURNING cantidad
-        `;
-
-        const updateResult = await client.query(updateStockQuery, [
-          piezasSurtidas,
-          varianteId,
-          adminSurtidor,
-          tenant_id
-        ]);
-
-        if (updateResult.rows.length === 0) {
-          throw new Error(
-            `No se encontró stock para el admin ${adminSurtidor} y variante ${varianteId}`
-          );
-        }
-
-        const nuevoStock = updateResult.rows[0].cantidad;
-
-        // 3. Registrar en log de movimientos de inventario (CON stock_previo)
-        await client.query(
-          `INSERT INTO movimientos_inventario
-           (admin_id, variante_id, tenant_id, tipo, cantidad, stock_previo, stock_posterior, motivo, observaciones, ip_origen)
-           VALUES ($1, $2, $3, 'MERMA', $4, $5, $6, 'Confirmación surtido por finanzas', $7, $8)`,
-          [adminSurtidor, varianteId, tenant_id, piezasSurtidas, stockPrevio, nuevoStock,
-           `Confirmación surtido Pedido #${pedidoId}`, req.ip]
-        );
-
-        // 4. estado_producto remains "Con stock" or "Bajo pedido" - workflow tracked in pedidos.estatus
-
-        productosConfirmados++;
-        logger.info('✅ Stock reducido correctamente:', {
-          varianteId,
-          adminSurtidor,
-          piezasSurtidas,
-          stockPrevio,
-          nuevoStock,
-          productosConfirmados
-        });
-      } catch (invError) {
-        await client.query('ROLLBACK');
-
-        const nombre = (item.nombreproducto || 'Producto').toString().trim();
-        const sku = (item.sku || '').toString().trim();
-        const ref = sku ? `${nombre} (${sku})` : nombre;
-
-        logger.error('Error al reducir stock:', {
-          error: invError.message,
-          varianteId,
-          adminSurtidor,
-          detalleId: item.detalleid
-        });
-
-        return res.status(500).json({
-          success: false,
-          message: `Error al descontar inventario para ${ref}: ${invError.message}`,
-          code: invError.code,
-        });
-      }
-    }
-
-    // ✅ ACTUALIZAR estado_producto A "Facturado" DESPUÉS DE CONFIRMAR STOCK EN FINANZAS
-    for (const detalleId of detalleIds) {
-      try {
-        await client.query(
-          `UPDATE detallesdelpedido
-           SET estado_producto = 'Facturado'
-           WHERE detalleid = $1 AND pedidoid = $2 AND tenant_id = $3`,
-          [detalleId, pedidoId, tenant_id]
-        );
-      } catch (updateError) {
-        logger.warn('⚠️ No se pudo actualizar estado_producto:', {
-          detalleId,
-          error: updateError.message
-        });
-      }
-    }
-
-    // Verificar estado de TODOS los productos del pedido
-    // ⚠️ CRÍTICO: Solo considerar stock del admin del cliente, NO suma de todos
-    const estadosQuery = `
-      SELECT
-        dp.detalleid,
-        dp.varianteid,
-        dp.piezastotales,
-        dp.estado_producto,
-        COALESCE(SUM(sa.cantidad), 0) as stock_total,
-        COALESCE(SUM(sa.cantidad_reservada), 0) as stock_reservado,
-        (COALESCE(SUM(sa.cantidad), 0) - COALESCE(SUM(sa.cantidad_reservada), 0)) as stock_disponible
-      FROM detallesdelpedido dp
-      LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = dp.tenant_id AND sa.admin_id = $3
-      WHERE dp.pedidoid = $1
-        AND dp.tenant_id = $2
-      GROUP BY dp.detalleid, dp.varianteid, dp.piezastotales, dp.estado_producto
-      ORDER BY dp.detalleid
-    `;
-    const estadosResult = await client.query(estadosQuery, [pedidoId, tenant_id, adminClienteId]);
-
-    // Determinar nuevo estado del pedido
-    // ✅ NUEVA LÓGICA: Calcular estado dinámicamente
-    // Nota: 'Parcialmente Surtido' se calcula en lectura, no se guarda
-    let nuevoEstatusPedido = 'Facturado'; // por defecto cuando finanzas confirma
-    let completamenteSurtido = false;
-
-    if (estadosResult.rows.length > 0) {
-      // Contar productos por estado (guardado en BD)
-      const facturados = estadosResult.rows.filter(p => p.estado_producto === 'Facturado').length;
-      const surtidos = estadosResult.rows.filter(p => p.estado_producto === 'Surtido').length;
-      const bajosPedido = estadosResult.rows.filter(p => p.estado_producto === 'Bajo pedido').length;
-      const conStock = estadosResult.rows.filter(p => p.estado_producto === 'Con stock').length;
-      const pendientes = estadosResult.rows.filter(p => p.estado_producto === 'Pendiente').length;
-      const totalProductos = estadosResult.rows.length;
-
-      logger.info('📊 [ESTADO] Analizando estado de productos después de confirmar', {
-        pedidoId,
-        facturados,
-        surtidos,
-        bajosPedido,
-        conStock,
-        pendientes,
-        totalProductos,
-        tenantId: tenant_id,
-        detalles: estadosResult.rows.map(r => ({
-          detalleid: r.detalleid,
-          estado_producto: r.estado_producto,
-          cantidadsurtida: r.cantidadsurtida,
-          cantidadpaquetes: r.cantidadpaquetes
-        }))
-      });
-
-      // ✅ LÓGICA DE ESTADO DEL PEDIDO en FINANZAS
-      if (facturados === totalProductos && facturados > 0) {
-        // ✅ TODOS FACTURADOS (completamente surtidos y confirmados por finanzas)
-        nuevoEstatusPedido = 'Surtido';
-        completamenteSurtido = true;
-        logger.info('✅ Estado: Surtido (TODOS los productos confirmados por finanzas)', { pedidoId });
-      } else if (facturados > 0 && (surtidos > 0 || bajosPedido > 0 || conStock > 0)) {
-        // ⚠️ COMBINADO: Hay algunos facturados pero otros aún en otros estados
-        nuevoEstatusPedido = 'Combinado';
-        completamenteSurtido = false;
-        logger.info('🟠 Estado: Combinado (algunos confirmados, otros surtidos/con stock)', {
-          pedidoId,
-          facturados,
-          surtidos,
-          bajosPedido,
-          conStock
-        });
-      } else if (facturados === 0 && surtidos === totalProductos) {
-        // 🔵 LISTO PARA REMISIONAR: Todos surtidos pero NO facturados aún
-        nuevoEstatusPedido = 'Listo para remisionar';
-        completamenteSurtido = false;
-        logger.info('🔵 Estado: Listo para remisionar (surtidos pero no confirmados)', { pedidoId });
-      } else if (conStock === totalProductos && facturados === 0 && surtidos === 0) {
-        // 🟢 CON STOCK: Todos con stock pero no surtidos
-        nuevoEstatusPedido = 'Con stock';
-        completamenteSurtido = false;
-        logger.info('🟢 Estado: Con stock (disponible pero no procesado)', { pedidoId });
-      } else if (bajosPedido === totalProductos && facturados === 0 && surtidos === 0) {
-        // 🔴 BAJO PEDIDO: Todos sin stock
-        nuevoEstatusPedido = 'Bajo pedido';
-        completamenteSurtido = false;
-        logger.info('🔴 Estado: Bajo pedido (sin stock disponible)', { pedidoId });
-      } else {
-        // Fallback: estado indeterminado → Combinado
-        nuevoEstatusPedido = 'Combinado';
-        completamenteSurtido = false;
-        logger.warn('⚠️ Estado: Combinado (estado indeterminado - mezcla confusa)', {
-          pedidoId,
-          facturados,
-          surtidos,
-          bajosPedido,
-          conStock
-        });
-      }
-    }
-
-    // Actualizar pedido con el nuevo estado
-    const updateQuery = `
-      UPDATE pedidos 
-      SET 
-        estatus = $3,
-        completamente_surtido = $4,
-        fecha_confirmacion = NOW()
-      WHERE pedidoid = $1 AND tenant_id = $2
-      RETURNING pedidoid, estatus, completamente_surtido
-    `;
-    
-    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, nuevoEstatusPedido, completamenteSurtido]);
-    
-    if (!updateResult.rows || updateResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      logger.error('❌ [ERROR] El UPDATE del estado del pedido no retornó filas', {
-        pedidoId,
-        nuevoEstatusPedido,
-        tenantId: tenant_id
-      });
-      return res.status(500).json({
-        success: false,
-        message: 'Error: No se pudo actualizar el estado del pedido'
-      });
-    }
-
-    await client.query('COMMIT');
-
-    // Obtener datos actualizados del pedido y productos después de la confirmación
-    const pedidoActualizadoQuery = `
-      SELECT p.pedidoid, p.estatus, p.completamente_surtido
-      FROM pedidos p
-      WHERE p.pedidoid = $1 AND p.tenant_id = $2
-    `;
-    const pedidoActualizadoResult = await client.query(pedidoActualizadoQuery, [pedidoId, tenant_id]);
-    
-    const productosActualizadosQuery = `
-      SELECT
-        dp.detalleid,
-        dp.cantidadsurtida,
-        dp.cantidadpaquetes,
-        dp.piezastotales,
-        dp.estado_producto
-      FROM detallesdelpedido dp
-      WHERE dp.pedidoid = $1 AND dp.tenant_id = $2
-    `;
-    const productosActualizadosResult = await client.query(productosActualizadosQuery, [pedidoId, tenant_id]);
-
-    // Initialize missing variables
-    const totalProductosSurtidos = productosActualizadosResult.rows.length;
-    const todoConfirmado = completamenteSurtido;
-
-    logger.info('✅ Pedido confirmado por Finanzas - Estado actualizado:', {
-      pedidoId,
-      productosConfirmados,
-      totalProductosSurtidos,
-      nuevoEstatusPedido,
-      todoConfirmado,
-      completamenteSurtido,
-      tenantId: tenant_id,
-      userId,
-      requestId: req.requestId
-    });
-
-    res.json({
-      success: true,
-      message: `✅ ${productosConfirmados} producto(s) confirmado(s) exitosamente. Pedido actualizado a estado: "${nuevoEstatusPedido}".`,
-      data: {
-        pedidoId,
-        estatusPedido: nuevoEstatusPedido,
-        productosConfirmados,
-        totalProductosSurtidos,
-        completamenteSurtido,
-        pedidoActualizado: pedidoActualizadoResult.rows[0] || {},
-        productosActualizados: productosActualizadosResult.rows || []
-      }
-    });
-
-  } catch (error) {
-    await client.query('ROLLBACK');
-    logger.error('Error al confirmar surtido:', {
-      error: error.message,
-      stack: error.stack,
-      requestId: req.requestId,
-      tenantId: req.tenant?.tenant_id
-    });
-    res.status(500).json({
-      success: false,
-      message: 'Error al confirmar el surtido',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  } finally {
-    client.release();
-  }
-};
-
-/**
- * Rechazar pedido y regresar a almacén (finanzas)
- * Usado por finanzas para rechazar un pedido y regresarlo al almacenista para corrección
- * POST /api/admin/pedidos/:id/rechazar-finanzas
- */
-const rechazarPedidoFinanzas = async (req, res) => {
-  const client = await db.getClient();
-  
-  try {
-    const { id: pedidoId } = req.params;
-    const { detalleIds, observaciones_finanzas } = req.body; // detalleIds para regresar productos específicos
-    const { tenant_id } = req.tenant;
-    const userId = req.user?.id || req.user?.adminid;
-
-    if (!observaciones_finanzas || observaciones_finanzas.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        message: 'Se requieren observaciones para rechazar el pedido'
-      });
-    }
-
-    await client.query('BEGIN');
-
-    // Obtener pedido
-    const pedidoQuery = `
-      SELECT p.pedidoid, p.clienteid, p.agenteid, p.direccionenvioid, p.fechapedido, p.montototal, p.estatus, 
-             p.costoenvio, p.es_credito, p.fecha_vencimiento, p.pagado, p.transaccion_id, p.comprobante_url, 
-             p.metodo_pago, p.cupon_id, p.monto_descuento, p.saldo_pendiente, p.url_evidencia_entrega, 
-             p.fecha_entrega_real, p.tenant_id, p.estatus_deuda, p.dias_atraso, p.tiene_remisiones, 
-             p.completamente_surtido, p.monto_surtido, p.monto_backorder, p.es_prioritario, p.es_historico, 
-             p.fecha_confirmacion, p.observaciones_finanzas, p.rechazado_por_finanzas, p.fecha_rechazo_finanzas
-      FROM pedidos p
-      WHERE p.pedidoid = $1 AND p.tenant_id = $2
-    `;
-    
-    const pedidoResult = await client.query(pedidoQuery, [pedidoId, tenant_id]);
-    
-    if (pedidoResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({
-        success: false,
-        message: 'Pedido no encontrado'
-      });
-    }
-
-    const pedido = pedidoResult.rows[0];
-    const estatusActual = (pedido.estatus || '').toLowerCase().trim();
-
-    // ⚠️ CRÍTICO: Obtener admin del cliente para filtrar stock correctamente
-    const estadosHelper = require('../utils/estadosHelper');
-    const adminClienteId = await estadosHelper.getAdminByClienteEstado(pedido.clienteid, tenant_id);
-
-    // Validar que el pedido está listo para remisionar
-    const estadosValidos = ['listo para remisionar'];
-    if (!estadosValidos.includes(estatusActual)) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({
-        success: false,
-        message: `No se puede rechazar. El pedido debe estar en estado "Listo para remisionar". Estado actual: ${pedido.estatus}`
-      });
-    }
-
-    // Si se proporcionaron detalleIds, regresar solo esos productos de Facturado a su estado original
-    if (detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0) {
-      // Regresar productos específicos de Facturado a su estado original (Surtido o Bajo pedido)
-      // ⚠️ CRÍTICO: Solo considerar stock del admin del cliente
-      const regresarProductosQuery = `
-        WITH stock_agregado AS (
-          SELECT variante_id, tenant_id,
-            COALESCE(SUM(cantidad), 0) as total_cantidad,
-            COALESCE(SUM(cantidad_reservada), 0) as total_reservado
-          FROM stock_admin
-          WHERE admin_id = $4
-          GROUP BY variante_id, tenant_id
-        )
-        UPDATE detallesdelpedido dp
-        SET estado_producto = CASE
-          WHEN (sa.total_cantidad - sa.total_reservado) >= dp.piezastotales THEN 'Surtido'
-          WHEN (sa.total_cantidad - sa.total_reservado) > 0 THEN 'Surtido'
-          ELSE 'Bajo pedido'
-        END,
-        cantidadsurtida = 0
-        FROM stock_agregado sa
-        WHERE dp.pedidoid = $1
-          AND dp.detalleid = ANY($2::int[])
-          AND dp.tenant_id = $3
-          AND dp.cantidadsurtida > 0
-          AND sa.variante_id = dp.varianteid
-          AND sa.tenant_id = dp.tenant_id
-        RETURNING dp.detalleid, dp.estado_producto
-      `;
-
-      const regresarResult = await client.query(regresarProductosQuery, [pedidoId, detalleIds, tenant_id, adminClienteId]);
-      
-      if (regresarResult.rowCount === 0) {
-        await client.query('ROLLBACK');
-        return res.status(400).json({
-          success: false,
-          message: 'No se encontraron productos facturados para regresar'
-        });
-      }
-      
-      // Devolver stock a inventario del admin que lo surtió originalmente
-      for (const producto of regresarResult.rows) {
-        // Obtener el admin y cantidad que surtió este detalle
-        const surtidoQuery = await client.query(
-          `SELECT psd.admin_id, dp.varianteid, dp.piezastotales
-           FROM pedido_surtido_detalle psd
-           INNER JOIN detallesdelpedido dp ON psd.detalle_id = dp.detalleid
-           WHERE psd.detalle_id = $1 AND psd.pedido_id = $2 AND psd.tenant_id = $3
-           LIMIT 1`,
-          [producto.detalleid, pedidoId, tenant_id]
-        );
-
-        if (surtidoQuery.rows.length > 0) {
-          const { admin_id, varianteid, piezastotales } = surtidoQuery.rows[0];
-
-          // Regresar stock al admin que lo surtió
-          await client.query(
-            `UPDATE stock_admin
-             SET cantidad = cantidad + $1
-             WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4`,
-            [piezastotales, varianteid, admin_id, tenant_id]
-          );
-
-          logger.info('Stock regresado al admin original:', {
-            detalleId: producto.detalleid,
-            varianteId: varianteid,
-            adminId: admin_id,
-            piezasRegresadas: piezastotales
-          });
-        }
-      }
-      
-      await client.query('COMMIT');
-      
-      logger.info('Productos regresados de Facturado a estado original:', {
-        pedidoId,
-        productosRegresados: regresarResult.rowCount,
-        detalleIds,
-        userId,
-        tenantId: tenant_id
-      });
-      
-      return res.json({
-        success: true,
-        message: `${regresarResult.rowCount} producto(s) regresado(s) a su estado original`,
-        data: {
-          pedidoId,
-          productosRegresados: regresarResult.rowCount,
-          productos: regresarResult.rows
-        }
-      });
-    }
-
-    // Cambiar estado a "Revisión de almacén"
-    const updateQuery = `
-      UPDATE pedidos 
-      SET 
-        estatus = 'Revisión de almacén',
-        observaciones_finanzas = $3,
-        rechazado_por_finanzas = $4,
-        fecha_rechazo_finanzas = NOW()
-      WHERE pedidoid = $1 AND tenant_id = $2
-      RETURNING *
-    `;
-    
-    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, observaciones_finanzas, userId]);
-
-    await client.query('COMMIT');
-
-    logger.info('Pedido rechazado por finanzas y regresado a almacén:', {
-      pedidoId,
-      observaciones: observaciones_finanzas,
-      userId,
-      tenantId: tenant_id,
-      requestId: req.requestId
-    });
-
-    res.json({
-      success: true,
-      message: 'Pedido regresado al almacén para corrección',
-      data: {
-        pedidoId: updateResult.rows[0].pedidoid,
-        estatus: updateResult.rows[0].estatus,
-        observaciones_finanzas
-      }
-    });
-
-  } catch (error) {
-    await client.query('ROLLBACK');
-    logger.error('Error al rechazar pedido por finanzas:', {
-      error: error.message,
-      stack: error.stack,
-      requestId: req.requestId,
-      tenantId: req.tenant?.tenant_id
-    });
-    res.status(500).json({
-      success: false,
-      message: 'Error al rechazar el pedido',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  } finally {
-    client.release();
-  }
-};
-
-/**
  * Marcar/desmarcar pedido como prioritario
  * POST /api/admin/pedidos/:id/prioritario
  * Solo accesible por roles: finanzas, admin, super_admin
@@ -2153,7 +1377,8 @@ module.exports = {
   getPedidoDetalle,
   confirmarPedido,
   surtirPedido,
-  confirmarSurtidoFinanzas,
-  rechazarPedidoFinanzas,
+  // Delegadas a controladores específicos (refactorización)
+  confirmarSurtidoFinanzas: confirmarSurtidoFinanzasFromFinanzas,
+  rechazarPedidoFinanzas: rechazarPedidoFinanzasFromFinanzas,
   setPrioritario,
 };
