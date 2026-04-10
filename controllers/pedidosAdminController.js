@@ -145,7 +145,14 @@ const getAllPedidos = async (req, res) => {
     const isInventarios = userRole === 'inventarios';
     const isFinanzas = userRole === 'finanzas';
     const isAdmin = userRole === 'admin' || userRole === 'superadmin';
-    
+
+    // ⚠️ CRÍTICO: Obtener admin_asignado_id del usuario para aislamiento
+    let adminAsignadoId = null;
+    if (isFinanzas) {
+      // Finanzas ve SOLO sus propios pedidos
+      adminAsignadoId = req.user?.adminid || null;
+    }
+
     // VALIDACIÓN: Inventarios NO puede ver históricos
     const wantsHistorico = showHistorico === 'true';
     if (isInventarios && wantsHistorico) {
@@ -157,7 +164,7 @@ const getAllPedidos = async (req, res) => {
     }
 
     let query = `
-      SELECT 
+      SELECT
         p.pedidoid,
         p.fechapedido,
         p.montototal,
@@ -185,6 +192,11 @@ const getAllPedidos = async (req, res) => {
       WHERE p.tenant_id = $1
     `;
 
+    // ⚠️ CRÍTICO: Agregar filtro de admin si es finanzas
+    if (isFinanzas && adminAsignadoId) {
+      query += ` AND p.admin_asignado_id = $2`;
+    }
+
     // FILTRO POR ROL Y TIPO DE VISTA
     if (isInventarios) {
       // Inventarios solo ve ACTIVOS (no entregados)
@@ -200,7 +212,8 @@ const getAllPedidos = async (req, res) => {
         userId: req.user?.id,
         rol: userRole,
         isFinanzas,
-        isAdmin
+        isAdmin,
+        adminAsignadoId
       });
     } else {
       // Finanzas/Admin/SuperAdmin ven activos (todo MENOS Entregado)
@@ -209,12 +222,16 @@ const getAllPedidos = async (req, res) => {
         userId: req.user?.id,
         rol: userRole,
         isFinanzas,
-        isAdmin
+        isAdmin,
+        adminAsignadoId
       });
     }
 
     const params = [tenant_id];
-    let paramIndex = 2;
+    if (isFinanzas && adminAsignadoId) {
+      params.push(adminAsignadoId);
+    }
+    let paramIndex = params.length + 1;
 
     if (estatus) {
       query += ` AND p.estatus = $${paramIndex}`;
@@ -248,9 +265,17 @@ const getAllPedidos = async (req, res) => {
 
     // Count total records for pagination (use same filters as main query)
     const countParams = [tenant_id];
-    let countParamIndex = 2;
+    if (isFinanzas && adminAsignadoId) {
+      countParams.push(adminAsignadoId);
+    }
+    let countParamIndex = countParams.length + 1;
     let countQuery = `SELECT COUNT(*) FROM pedidos p WHERE p.tenant_id = $1`;
-    
+
+    // ⚠️ CRÍTICO: Agregar filtro de admin en COUNT también
+    if (isFinanzas && adminAsignadoId) {
+      countQuery += ` AND p.admin_asignado_id = $2`;
+    }
+
     // Aplicar mismo filtro por rol en el count
     if (isInventarios) {
       countQuery += ` AND p.estatus NOT IN ('Surtido', 'Enviado', 'Entregado')`;
@@ -259,7 +284,7 @@ const getAllPedidos = async (req, res) => {
     } else {
       countQuery += ` AND p.estatus NOT IN ('Entregado')`;
     }
-    
+
     if (estatus) {
       countQuery += ` AND p.estatus = $${countParamIndex}`;
       countParams.push(estatus);
