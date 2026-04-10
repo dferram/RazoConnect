@@ -12,6 +12,7 @@
 const db = require('../db');
 const logger = require('../utils/logger');
 const inventoryService = require('../services/inventoryService');
+const SmartStockService = require('../services/SmartStockService');
 const { getPaginationParams, buildPaginationMeta } = require('../utils/pagination');
 const { updatePedidoStatus, calcularEstadoPedidoCorrect } = require('../utils/pedidoStatus');
 const { ESTADOS_PEDIDO, normalizarEstado } = require('../utils/pedidoEstados');
@@ -813,14 +814,15 @@ const surtirPedido = async (req, res) => {
 
     await client.query('BEGIN');
 
-    // Obtener pedido
+    // Obtener pedido (incluir admin_asignado_id para FIFO)
     const pedidoQuery = `
-      SELECT p.pedidoid, p.clienteid, p.agenteid, p.direccionenvioid, p.fechapedido, p.montototal, p.estatus, 
-             p.costoenvio, p.es_credito, p.fecha_vencimiento, p.pagado, p.transaccion_id, p.comprobante_url, 
-             p.metodo_pago, p.cupon_id, p.monto_descuento, p.saldo_pendiente, p.url_evidencia_entrega, 
-             p.fecha_entrega_real, p.tenant_id, p.estatus_deuda, p.dias_atraso, p.tiene_remisiones, 
-             p.completamente_surtido, p.monto_surtido, p.monto_backorder, p.es_prioritario, p.es_historico, 
+      SELECT p.pedidoid, p.clienteid, p.agenteid, p.direccionenvioid, p.fechapedido, p.montototal, p.estatus,
+             p.costoenvio, p.es_credito, p.fecha_vencimiento, p.pagado, p.transaccion_id, p.comprobante_url,
+             p.metodo_pago, p.cupon_id, p.monto_descuento, p.saldo_pendiente, p.url_evidencia_entrega,
+             p.fecha_entrega_real, p.tenant_id, p.estatus_deuda, p.dias_atraso, p.tiene_remisiones,
+             p.completamente_surtido, p.monto_surtido, p.monto_backorder, p.es_prioritario, p.es_historico,
              p.fecha_confirmacion, p.observaciones_finanzas, p.rechazado_por_finanzas, p.fecha_rechazo_finanzas,
+             p.admin_asignado_id,
         (SELECT COUNT(*) FROM detallesdelpedido WHERE pedidoid = p.pedidoid) as total_productos,
         (SELECT COUNT(*) FROM detallesdelpedido WHERE pedidoid = p.pedidoid AND esbackorder = true) as productos_backorder
       FROM pedidos p
@@ -899,40 +901,97 @@ const surtirPedido = async (req, res) => {
       const detalleProductos = await client.query(detalleProductosQuery, [pedidoId, detalleIds, tenant_id, userId, adminIdUser]);
       
       // STEP 2: Clasificar productos en COMPLETOS, PARCIALES, o SIN STOCK
-      // ✅ NUEVO: Soportar surtido parcial para que el almacenista no pierda el rastro
+      // ✅ NUEVO: Usar FIFO (calculateAllocationStatus) para validar stock respetando deuda de pedidos anteriores
       // ⚠️ IMPORTANTE: cantidadsurtida se guarda en PIEZAS (no paquetes) para consistencia con finanzas
       const productosCompletos = [];
       const productosParciales = [];
+      const productosAlcanza = []; // Para logging
 
       for (const p of detalleProductos.rows) {
-        const stockSaDisponible = p.stock_sa - p.stock_reservado;
-        const stockPV = p.stock_pv;
         const piezasRequeridas = p.piezastotales;
-        const cantidadPaquetes = p.cantidadpaquetes;
 
-        // Determinar stock disponible (usar stock_admin si existe, sino producto_variantes)
-        const stockDisponible = (stockSaDisponible !== null && stockSaDisponible >= 0) ? stockSaDisponible : stockPV;
-
-        if (stockDisponible >= piezasRequeridas) {
-          // ✅ STOCK COMPLETO: Tiene todo lo que se pidió
-          productosCompletos.push(p);
-        } else if (stockDisponible > 0) {
-          // ⚠️ STOCK PARCIAL: Tiene algo pero no todo
-          // Guardamos las piezas reales disponibles para surtido
-          productosParciales.push({
-            ...p,
-            piezasParaSurtir: stockDisponible  // En piezas, no paquetes
+        try {
+          // FIFO: Calcular si se puede surtir este producto respetando pedidos anteriores
+          const allocationStatus = await SmartStockService.calculateAllocationStatus({
+            varianteId: p.varianteid,
+            cantidadRequerida: piezasRequeridas,
+            orderDate: pedido.fechapedido,
+            adminId: pedido.admin_asignado_id,
+            tenantId: tenant_id,
+            pedidoId: pedidoId,
+            piezasPorPaquete: 1  // Ya trabajamos en piezas
           });
+
+          productosAlcanza.push({
+            detalleid: p.detalleid,
+            producto: p.nombreproducto,
+            requeridas: piezasRequeridas,
+            status: allocationStatus
+          });
+
+          // Clasificar basado en FIFO result
+          if (allocationStatus.estatus === 'surtido' && allocationStatus.cantidadSurtible >= piezasRequeridas) {
+            // ✅ COMPLETO: FIFO permite surtir TODO lo requerido
+            productosCompletos.push(p);
+          } else if (allocationStatus.cantidadSurtible > 0) {
+            // ⚠️ PARCIAL: FIFO permite surtir ALGO pero no todo (respetando deuda previa)
+            productosParciales.push({
+              ...p,
+              piezasParaSurtir: allocationStatus.cantidadSurtible,
+              fifoInfo: {
+                deudaPrevia: allocationStatus.deudaPrevia,
+                stockFisico: allocationStatus.stockFisico,
+                cantidadBackorder: allocationStatus.cantidadBackorder,
+                numPedidosAnteriores: allocationStatus.numPedidosAnteriores
+              }
+            });
+          }
+          // estatus 'backorder' = 0 surtible → no se agrega a ninguna lista
+
+        } catch (err) {
+          logger.error('Error al calcular FIFO para producto:', {
+            detalleId: p.detalleid,
+            varianteId: p.varianteid,
+            error: err.message
+          });
+          // En caso de error, asumir no surtible para ser conservador
         }
-        // Si stock = 0, no se agrega a ninguna lista (permanece sin marcar)
       }
+
+      logger.info('🔄 FIFO Allocation Analysis:', {
+        pedidoId,
+        admin_asignado_id: pedido.admin_asignado_id,
+        totalProductosSeleccionados: detalleProductos.rows.length,
+        completosFIFO: productosCompletos.length,
+        parcialesFIFO: productosParciales.length,
+        detalles: productosAlcanza
+      });
 
       if (productosCompletos.length === 0 && productosParciales.length === 0) {
         await client.query('ROLLBACK');
+
+        // Extraer información de deuda para mensaje informativo
+        const deudaInfo = productosAlcanza
+          .filter(p => p.status?.deudaPrevia > 0)
+          .map(p => ({
+            producto: p.producto,
+            deudaPrevia: p.status.deudaPrevia,
+            pedidosAnteriores: p.status.numPedidosAnteriores
+          }));
+
         return res.status(400).json({
           success: false,
-          message: 'Ninguno de los productos seleccionados tiene stock disponible',
-          razon: 'Los productos seleccionados no tienen stock suficiente para marcar.'
+          message: 'Ninguno de los productos seleccionados tiene stock disponible (validación FIFO)',
+          razon: deudaInfo.length > 0
+            ? 'Stock reservado para pedidos anteriores. El FIFO impide overselling.'
+            : 'Stock insuficiente en inventario.',
+          detalles_fifo: deudaInfo,
+          analisis: {
+            totalSeleccionados: detalleProductos.rows.length,
+            completosSin_Deuda: productosCompletos.length,
+            parcialesCon_Reserva: productosParciales.length,
+            mensaje_auxiliar: 'Revisa pedidos anteriores que aún no están entregados - tienen prioridad FIFO'
+          }
         });
       }
 
@@ -988,14 +1047,22 @@ const surtirPedido = async (req, res) => {
         }
       }
 
-      logger.info('✅ Productos marcados (COMPLETOS + PARCIALES):', {
+      logger.info('✅ Productos marcados (COMPLETOS + PARCIALES con FIFO):', {
         pedidoId,
+        admin_asignado_id: pedido.admin_asignado_id,
         completos: productosCompletos.length,
         parciales: productosParciales.length,
         totalMarcados: marcarResult.rowCount,
         detalles: {
           completosConStock: productosCompletos.map(p => ({ detalleid: p.detalleid, piezastotales: p.piezastotales })),
-          parcialesConStock: productosParciales.map(p => ({ detalleid: p.detalleid, piezasParaSurtir: p.piezasParaSurtir, piezastotales: p.piezastotales }))
+          parcialesConStock: productosParciales.map(p => ({
+            detalleid: p.detalleid,
+            piezasParaSurtir: p.piezasParaSurtir,
+            piezastotales: p.piezastotales,
+            fifo_deudaPrevia: p.fifoInfo?.deudaPrevia,
+            fifo_pedidosAnteriores: p.fifoInfo?.numPedidosAnteriores,
+            fifo_cantidadBackorder: p.fifoInfo?.cantidadBackorder
+          }))
         },
         tenantId: tenant_id
       });
