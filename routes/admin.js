@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
+const logger = require("../utils/logger");
 const adminAuthController = require("../controllers/auth/adminAuthController");
 const { 
   loginAdminSchema, 
@@ -98,6 +99,7 @@ const gruposOrdenesPDFController = require("../controllers/gruposOrdenesPDFContr
 const gruposOrdenesExcelController = require("../controllers/gruposOrdenesExcelController");
 const solicitudesModificacionController = require("../controllers/solicitudesModificacionController");
 const pickingController = require("../controllers/pickingController");
+const pedidoEstadoSincronizadorService = require("../services/pedidoEstadoSincronizadorService");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
 const uploadProductImages = require("../middlewares/uploadProductImages");
@@ -2562,6 +2564,250 @@ router.post(
   authenticate,
   authorizeRole(['super_admin']),
   administradorEstadosController.asignarEstados
+);
+
+// ============================================================
+// ENDPOINTS: Sincronización Automática de Estados de Pedidos
+// ============================================================
+// Estos endpoints permiten recalcular estados dinámicamente
+// y ver el historial de cambios automáticos.
+
+/**
+ * @route   POST /api/admin/pedidos/:id/recalcular-estado
+ * @desc    Recalcula manualmente el estado de UN pedido específico
+ * @access  Private (Super Admin, Admin)
+ * @body    ninguno
+ * @returns { success, cambio, estadoAnterior, estadoNuevo, razon }
+ *
+ * Ejemplo:
+ * POST /api/admin/pedidos/1234/recalcular-estado
+ * Response: {
+ *   "success": true,
+ *   "cambio": true,
+ *   "estadoAnterior": "BAJO_PEDIDO",
+ *   "estadoNuevo": "COMPLETO",
+ *   "razon": "Recalculado automáticamente por cambio de stock"
+ * }
+ */
+router.post(
+  "/pedidos/:id/recalcular-estado",
+  authenticate,
+  authorizeRole(['super_admin', 'admin']),
+  async (req, res) => {
+    try {
+      const { tenant_id } = req.tenant;
+      const pedidoId = parseInt(req.params.id);
+
+      if (isNaN(pedidoId)) {
+        return res.status(400).json({
+          success: false,
+          message: "ID de pedido inválido"
+        });
+      }
+
+      const result = await pedidoEstadoSincronizadorService.recalcularUnPedido(
+        pedidoId,
+        tenant_id
+      );
+
+      res.json({
+        success: true,
+        cambio: result.cambio_realizado,
+        estadoAnterior: result.estado_anterior,
+        estadoNuevo: result.nuevo_estado,
+        razon: result.razon
+      });
+    } catch (error) {
+      logger.error('[Admin Routes] Error recalculando estado de pedido', {
+        pedidoId: req.params.id,
+        error: error.message
+      });
+      res.status(500).json({
+        success: false,
+        message: "Error recalculando estado del pedido",
+        error: error.message
+      });
+    }
+  }
+);
+
+/**
+ * @route   GET /api/admin/pedidos/:id/historial-cambios
+ * @desc    Obtiene historial de cambios automáticos de un pedido
+ * @access  Private (Super Admin, Admin)
+ * @query   limit (opcional, default: 50)
+ * @returns Array de cambios con: cambio_id, estado_anterior, estado_nuevo, razon, disparador, created_at
+ *
+ * Ejemplo:
+ * GET /api/admin/pedidos/1234/historial-cambios?limit=20
+ * Response: {
+ *   "success": true,
+ *   "data": [
+ *     {
+ *       "cambio_id": 1,
+ *       "estado_anterior": "BAJO_PEDIDO",
+ *       "estado_nuevo": "COMPLETO",
+ *       "disparador": "STOCK_UPDATE",
+ *       "razon": "Recalculado automáticamente por cambio de stock",
+ *       "created_at": "2026-04-10T10:30:45.123Z"
+ *     }
+ *   ]
+ * }
+ */
+router.get(
+  "/pedidos/:id/historial-cambios",
+  authenticate,
+  authorizeRole(['super_admin', 'admin']),
+  async (req, res) => {
+    try {
+      const { tenant_id } = req.tenant;
+      const pedidoId = parseInt(req.params.id);
+      const limit = Math.min(parseInt(req.query.limit) || 50, 500);
+
+      if (isNaN(pedidoId)) {
+        return res.status(400).json({
+          success: false,
+          message: "ID de pedido inválido"
+        });
+      }
+
+      const historial = await pedidoEstadoSincronizadorService.obtenerHistorialCambios(
+        pedidoId,
+        tenant_id,
+        limit
+      );
+
+      res.json({
+        success: true,
+        data: historial,
+        total: historial.length
+      });
+    } catch (error) {
+      logger.error('[Admin Routes] Error obteniendo historial de cambios', {
+        pedidoId: req.params.id,
+        error: error.message
+      });
+      res.status(500).json({
+        success: false,
+        message: "Error obteniendo historial",
+        error: error.message
+      });
+    }
+  }
+);
+
+/**
+ * @route   GET /api/admin/estadisticas-cambios-estados
+ * @desc    Obtiene estadísticas agregadas de cambios automáticos
+ * @access  Private (Super Admin, Admin)
+ * @query   periodo (opcional: 'hora', 'dia', 'semana', default: dia)
+ * @returns Estadísticas con: cambios totales, pedidos únicos, tipos de disparadores, etc.
+ *
+ * Ejemplo:
+ * GET /api/admin/estadisticas-cambios-estados?periodo=dia
+ * Response: {
+ *   "success": true,
+ *   "periodo": "dia",
+ *   "estadisticas": [ { periodo, total_cambios, pedidos_unicos, disparadores, ... } ],
+ *   "resumen": { totalCambios: 150, pedidosUnicos: 42, adminsUnicos: 3 }
+ * }
+ */
+router.get(
+  "/estadisticas-cambios-estados",
+  authenticate,
+  authorizeRole(['super_admin', 'admin']),
+  async (req, res) => {
+    try {
+      const { tenant_id } = req.tenant;
+      const periodo = req.query.periodo || 'dia';
+
+      const estadisticas = await pedidoEstadoSincronizadorService.obtenerEstadisticasCambios(
+        tenant_id,
+        periodo
+      );
+
+      res.json({
+        success: true,
+        ...estadisticas
+      });
+    } catch (error) {
+      logger.error('[Admin Routes] Error obteniendo estadísticas', {
+        error: error.message
+      });
+      res.status(500).json({
+        success: false,
+        message: "Error obteniendo estadísticas",
+        error: error.message
+      });
+    }
+  }
+);
+
+/**
+ * @route   POST /api/admin/recalcular-pedidos-admin
+ * @desc    Recalcula TODOS los pedidos de un admin (regeneración masiva, use con cuidado)
+ * @access  Private (Super Admin only)
+ * @body    { adminId: number }
+ * @returns Array de resultados con: pedidoId, cambio, nuevoEstado
+ *
+ * ADVERTENCIA: Operación pesada para admins con muchos pedidos.
+ * Considerar ejecutar en horario de bajo uso.
+ *
+ * Ejemplo:
+ * POST /api/admin/recalcular-pedidos-admin
+ * Body: { "adminId": 3 }
+ * Response: {
+ *   "success": true,
+ *   "totalPedidos": 150,
+ *   "procesados": 150,
+ *   "conCambios": 23,
+ *   "datos": [
+ *     { "pedidoId": 1001, "cambio": true, "nuevoEstado": "COMPLETO" },
+ *     ...
+ *   ]
+ * }
+ */
+router.post(
+  "/recalcular-pedidos-admin",
+  authenticate,
+  authorizeSuperAdmin,
+  async (req, res) => {
+    try {
+      const { tenant_id } = req.tenant;
+      const { adminId } = req.body;
+
+      if (!adminId || isNaN(adminId)) {
+        return res.status(400).json({
+          success: false,
+          message: "adminId es requerido y debe ser un número"
+        });
+      }
+
+      const resultados = await pedidoEstadoSincronizadorService.recalcularPedidosDelAdmin(
+        adminId,
+        tenant_id
+      );
+
+      const conCambios = resultados.filter(r => r.cambio).length;
+
+      res.json({
+        success: true,
+        totalPedidos: resultados.length,
+        procesados: resultados.filter(r => !r.error).length,
+        conCambios,
+        datos: resultados
+      });
+    } catch (error) {
+      logger.error('[Admin Routes] Error recalculando pedidos masivo', {
+        error: error.message
+      });
+      res.status(500).json({
+        success: false,
+        message: "Error recalculando pedidos",
+        error: error.message
+      });
+    }
+  }
 );
 
 module.exports = router;
