@@ -73,17 +73,13 @@ async function validarYMarcarProductos({
       FROM detallesdelpedido dp
       INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid AND pv.tenant_id = $3
       INNER JOIN productos p ON pv.productoid = p.productoid AND p.tenant_id = $3
-      LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = $3 AND sa.admin_id = (
-        SELECT admin_responsable_id FROM administradores WHERE adminid = $4 AND tenant_id = $3
-        UNION ALL
-        SELECT $5 WHERE NOT EXISTS (SELECT admin_responsable_id FROM administradores WHERE adminid = $4 AND tenant_id = $3)
-      )
+      LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = $3 AND sa.admin_id = $4
       WHERE dp.pedidoid = $1
         AND dp.detalleid = ANY($2::int[])
         AND dp.tenant_id = $3
     `;
 
-    const detalleProductos = await client.query(detalleProductosQuery, [pedidoId, detalleIds, tenant_id, userId, adminIdUser]);
+    const detalleProductos = await client.query(detalleProductosQuery, [pedidoId, detalleIds, tenant_id, adminIdUser]);
 
     // STEP 2: Clasificar productos en COMPLETOS, PARCIALES, o SIN STOCK
     // ✅ NUEVO: Usar FIFO (calculateAllocationStatus) para validar stock respetando deuda de pedidos anteriores

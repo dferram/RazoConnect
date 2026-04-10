@@ -831,10 +831,10 @@ const surtirPedido = async (req, res) => {
         (SELECT COUNT(*) FROM detallesdelpedido WHERE pedidoid = p.pedidoid) as total_productos,
         (SELECT COUNT(*) FROM detallesdelpedido WHERE pedidoid = p.pedidoid AND esbackorder = true) as productos_backorder
       FROM pedidos p
-      WHERE p.pedidoid = $1 AND p.tenant_id = $2
+      WHERE p.pedidoid = $1 AND p.tenant_id = $2 AND p.admin_asignado_id = $3
     `;
-    
-    const pedidoResult = await client.query(pedidoQuery, [pedidoId, tenant_id]);
+
+    const pedidoResult = await client.query(pedidoQuery, [pedidoId, tenant_id, adminIdUser]);
     
     if (pedidoResult.rows.length === 0) {
       await client.query('ROLLBACK');
