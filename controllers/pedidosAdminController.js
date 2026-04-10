@@ -933,20 +933,16 @@ const surtirPedido = async (req, res) => {
       }
 
       // SUBCASO 3B: Marcar PARCIALES (cantidadsurtida = piezasParaSurtir en piezas)
-      // ✅ IMPORTANTE: Guardar el estado CORRECTO basado en cantidad
-      // Si piezasParaSurtir >= piezastotales → 'Surtido'
-      // Si 0 < piezasParaSurtir < piezastotales → 'Surtido Parcial'
-      // Si piezasParaSurtir = 0 → 'Pendiente'
+      // ✅ IMPORTANTE: Guardar estado 'Surtido' para cualquier cantidad > 0
+      // La diferencia entre completo vs parcial está en cantidadsurtida, NO en estado_producto
+      // Si piezasParaSurtir > 0 (sea completo o parcial) → 'Surtido'
+      // Si piezasParaSurtir = 0 → 'Bajo pedido' (no se marca)
       if (productosParciales.length > 0) {
         for (const parcial of productosParciales) {
           try {
-            // Determinar estado correcto basado en cantidad
-            let estadoProducto = 'Pendiente';
-            if (parcial.piezasParaSurtir >= parcial.piezastotales) {
-              estadoProducto = 'Surtido';
-            } else if (parcial.piezasParaSurtir > 0) {
-              estadoProducto = 'Surtido Parcial';
-            }
+            // Si hay stock disponible (sea completo o parcial), marcar como 'Surtido'
+            // cantidadsurtida contendrá la cantidad real (12 de 24 si es parcial, 24 de 24 si es completo)
+            const estadoProducto = 'Surtido';
 
             await client.query(
               `UPDATE detallesdelpedido
@@ -1160,19 +1156,66 @@ const surtirPedido = async (req, res) => {
       });
     }
 
-    // Actualizar estatus del pedido
-    // LÓGICA: Inventarios marcó productos → Cambiar a "Listo para remisionar" (siempre)
-    // Después Finanzas confirmará y el status será "Surtido" o "Facturado"
+    // ✅ NUEVA LÓGICA: Calcular estado del pedido DINÁMICAMENTE basado en estado de detalles
+    // Obtener TODOS los detalles del pedido para analizar su estado
+    const estadosDetallesQuery = `
+      SELECT
+        detalleid,
+        estado_producto,
+        cantidadsurtida,
+        piezastotales
+      FROM detallesdelpedido
+      WHERE pedidoid = $1 AND tenant_id = $2
+      ORDER BY detalleid
+    `;
 
-    const nuevoEstatus = 'Listo para remisionar';
-    const completamenteSurtido = false; // Inventarios solo marca, Finanzas confirma y cambia esto
+    const estadosDetallesResult = await client.query(estadosDetallesQuery, [pedidoId, tenant_id]);
+    const detalles = estadosDetallesResult.rows;
 
-    logger.info('✅ [ESTADO] Actualizando estado del pedido después de marcar surtidos', {
+    // Contar estados de productos
+    const surtidos = detalles.filter(d => d.estado_producto === 'Surtido').length;
+    const bajosPedido = detalles.filter(d => d.estado_producto === 'Bajo pedido').length;
+    const conStock = detalles.filter(d => d.estado_producto === 'Con stock').length;
+    const totalDetalles = detalles.length;
+
+    // Calcular nuevo estado del pedido basado en estado de detalles
+    let nuevoEstatus = 'Bajo pedido'; // default
+    let completamenteSurtido = false;
+
+    if (surtidos === totalDetalles && surtidos > 0) {
+      // ✅ TODOS surtidos por inventarios → Listo para que finanzas confirme
+      nuevoEstatus = 'Listo para remisionar';
+      completamenteSurtido = false;
+    } else if (surtidos > 0 && (bajosPedido > 0 || conStock > 0)) {
+      // ⚠️ MIX: algunos surtidos + otros pending/con stock → Combinado
+      nuevoEstatus = 'Combinado';
+      completamenteSurtido = false;
+    } else if (conStock === totalDetalles && surtidos === 0 && bajosPedido === 0) {
+      // 🟢 TODOS con stock pero NO surtidos aún
+      nuevoEstatus = 'Con stock';
+      completamenteSurtido = false;
+    } else if (bajosPedido === totalDetalles && surtidos === 0 && conStock === 0) {
+      // 🔴 TODOS bajo pedido, nada surtido
+      nuevoEstatus = 'Bajo pedido';
+      completamenteSurtido = false;
+    }
+
+    logger.info('✅ [ESTADO] Calculado estado del pedido dinámicamente', {
       pedidoId,
       productosActualizados: marcarResult.rowCount,
+      surtidos,
+      bajosPedido,
+      conStock,
+      totalDetalles,
       nuevoEstatus,
       completamenteSurtido,
-      tenantId: tenant_id
+      tenantId: tenant_id,
+      detalles: detalles.map(d => ({
+        detalleid: d.detalleid,
+        estado_producto: d.estado_producto,
+        cantidadsurtida: d.cantidadsurtida,
+        piezastotales: d.piezastotales
+      }))
     });
     
     const updateQuery = `
@@ -1557,7 +1600,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       // Contar productos por estado (guardado en BD)
       const facturados = estadosResult.rows.filter(p => p.estado_producto === 'Facturado').length;
       const surtidos = estadosResult.rows.filter(p => p.estado_producto === 'Surtido').length;
-      const surtidasParciales = estadosResult.rows.filter(p => p.estado_producto === 'Surtido Parcial').length;
+      const bajosPedido = estadosResult.rows.filter(p => p.estado_producto === 'Bajo pedido').length;
+      const conStock = estadosResult.rows.filter(p => p.estado_producto === 'Con stock').length;
       const pendientes = estadosResult.rows.filter(p => p.estado_producto === 'Pendiente').length;
       const totalProductos = estadosResult.rows.length;
 
@@ -1565,7 +1609,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         pedidoId,
         facturados,
         surtidos,
-        surtidasParciales,
+        bajosPedido,
+        conStock,
         pendientes,
         totalProductos,
         tenantId: tenant_id,
@@ -1577,41 +1622,49 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         }))
       });
 
-      // ✅ LÓGICA DE ESTADO DEL PEDIDO
-      if (facturados === totalProductos) {
-        // TODOS FACTURADOS (completamente surtidos y confirmados)
-        nuevoEstatusPedido = 'Facturado';
+      // ✅ LÓGICA DE ESTADO DEL PEDIDO en FINANZAS
+      if (facturados === totalProductos && facturados > 0) {
+        // ✅ TODOS FACTURADOS (completamente surtidos y confirmados por finanzas)
+        nuevoEstatusPedido = 'Surtido';
         completamenteSurtido = true;
-        logger.info('✅ Estado: Facturado (todos los productos confirmados)', { pedidoId });
-      } else if (facturados > 0 && pendientes === 0) {
-        // PARCIALMENTE FACTURADO: Hay facturados + surtidos, pero NO hay pendientes
-        // (Los "surtidos" pueden ser completos o parciales, se calcula en lectura)
-        nuevoEstatusPedido = 'Parcialmente Facturado';
-        completamenteSurtido = false;
-        logger.info('🟠 Estado: Parcialmente Facturado (algunos confirmados, otros surtidos)', {
-          pedidoId,
-          facturados,
-          surtidos
-        });
-      } else if (facturados > 0 && pendientes > 0) {
-        // COMBINADO: Algunos confirmados + otros por confirmar
+        logger.info('✅ Estado: Surtido (TODOS los productos confirmados por finanzas)', { pedidoId });
+      } else if (facturados > 0 && (surtidos > 0 || bajosPedido > 0 || conStock > 0)) {
+        // ⚠️ COMBINADO: Hay algunos facturados pero otros aún en otros estados
         nuevoEstatusPedido = 'Combinado';
         completamenteSurtido = false;
-        logger.info('🟡 Estado: Combinado (parcialmente confirmado)', {
+        logger.info('🟠 Estado: Combinado (algunos confirmados, otros surtidos/con stock)', {
           pedidoId,
           facturados,
-          pendientes
+          surtidos,
+          bajosPedido,
+          conStock
         });
-      } else if (facturados === 0 && pendientes === totalProductos) {
-        // NINGUNO FACTURADO (todos aún pendientes)
+      } else if (facturados === 0 && surtidos === totalProductos) {
+        // 🔵 LISTO PARA REMISIONAR: Todos surtidos pero NO facturados aún
+        nuevoEstatusPedido = 'Listo para remisionar';
+        completamenteSurtido = false;
+        logger.info('🔵 Estado: Listo para remisionar (surtidos pero no confirmados)', { pedidoId });
+      } else if (conStock === totalProductos && facturados === 0 && surtidos === 0) {
+        // 🟢 CON STOCK: Todos con stock pero no surtidos
+        nuevoEstatusPedido = 'Con stock';
+        completamenteSurtido = false;
+        logger.info('🟢 Estado: Con stock (disponible pero no procesado)', { pedidoId });
+      } else if (bajosPedido === totalProductos && facturados === 0 && surtidos === 0) {
+        // 🔴 BAJO PEDIDO: Todos sin stock
         nuevoEstatusPedido = 'Bajo pedido';
         completamenteSurtido = false;
-        logger.info('🔴 Estado: Bajo pedido (sin confirmar)', { pedidoId });
+        logger.info('🔴 Estado: Bajo pedido (sin stock disponible)', { pedidoId });
       } else {
-        // Fallback: otro estado (aunque no debería ocurrir)
+        // Fallback: estado indeterminado → Combinado
         nuevoEstatusPedido = 'Combinado';
         completamenteSurtido = false;
-        logger.warn('⚠️ Estado: Combinado (estado indeterminado)', { pedidoId });
+        logger.warn('⚠️ Estado: Combinado (estado indeterminado - mezcla confusa)', {
+          pedidoId,
+          facturados,
+          surtidos,
+          bajosPedido,
+          conStock
+        });
       }
     }
 
@@ -1775,7 +1828,7 @@ const rechazarPedidoFinanzas = async (req, res) => {
 
     // Si se proporcionaron detalleIds, regresar solo esos productos de Facturado a su estado original
     if (detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0) {
-      // Regresar productos específicos de Facturado a su estado original (Con stock o Bajo pedido)
+      // Regresar productos específicos de Facturado a su estado original (Surtido o Bajo pedido)
       // ⚠️ CRÍTICO: Solo considerar stock del admin del cliente
       const regresarProductosQuery = `
         WITH stock_agregado AS (
@@ -1788,7 +1841,8 @@ const rechazarPedidoFinanzas = async (req, res) => {
         )
         UPDATE detallesdelpedido dp
         SET estado_producto = CASE
-          WHEN (sa.total_cantidad - sa.total_reservado) >= dp.piezastotales THEN 'Con stock'
+          WHEN (sa.total_cantidad - sa.total_reservado) >= dp.piezastotales THEN 'Surtido'
+          WHEN (sa.total_cantidad - sa.total_reservado) > 0 THEN 'Surtido'
           ELSE 'Bajo pedido'
         END,
         cantidadsurtida = 0

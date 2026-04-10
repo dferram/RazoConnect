@@ -63,8 +63,8 @@ describe('Surtido Parcial + Validación Dinámica', () => {
     });
   });
 
-  describe('Escenario 2: Surtido PARCIAL (Guardado Dinámicamente)', () => {
-    test('Producto con stock parcial (12 de 24) se guarda con cantidadsurtida=12, estado "Surtido Parcial"', async () => {
+  describe('Escenario 2: Surtido PARCIAL (Guardado como Surtido)', () => {
+    test('Producto con stock parcial (12 de 24) se guarda con cantidadsurtida=12, estado "Surtido"', async () => {
       // MOCK: Detalle del pedido
       const detalle = {
         detalleid: 2,
@@ -88,22 +88,25 @@ describe('Surtido Parcial + Validación Dinámica', () => {
       expect(surtidoParcial).toBe(true);
       expect(stockDisponible).toBe(12);
 
-      // ✅ GUARDADO EN BD (NUEVO ENFOQUE):
-      // - estado_producto = 'Surtido Parcial' (guardado dinámicamente por cantidad)
-      // - cantidadsurtida = 12 (piezas disponibles)
+      // ✅ GUARDADO EN BD:
+      // - estado_producto = 'Surtido' (si hay stock disponible, sea completo o parcial)
+      // - cantidadsurtida = 12 (piezas disponibles - cantidad REAL surtida)
       const cantidadsurtidaGuardada = stockDisponible;
-      const estadoProductoGuardado = 'Surtido Parcial'; // Guardado dinámicamente
+      const estadoProductoGuardado = 'Surtido'; // Guardado como 'Surtido'
 
       expect(cantidadsurtidaGuardada).toBe(12);
-      expect(estadoProductoGuardado).toBe('Surtido Parcial');
+      expect(estadoProductoGuardado).toBe('Surtido');
 
-      // ✅ LECTURA (simplificada):
-      // Ahora solo leemos el estado ya guardado, sin cálculos dinámicos
-      const cantidadsurtidaLectura = 12; // piezas
-      const piezastotalesdLectura = 24; // piezas
-      const estadoGuardado = 'Surtido Parcial'; // Se leyó de BD
+      // ✅ DIFERENCIA: Se ve en cantidadsurtida, NO en estado_producto
+      // La diferencia entre parcial vs completo está en:
+      // - Completo: cantidadsurtida = 24 (== piezastotales)
+      // - Parcial: cantidadsurtida = 12 (< piezastotales)
+      // - Pero AMBOS: estado_producto = 'Surtido'
+      const esCompletamenteSurtido = cantidadsurtidaGuardada >= piezasRequeridas;
+      const esParcialmenteSurtido = cantidadsurtidaGuardada > 0 && cantidadsurtidaGuardada < piezasRequeridas;
 
-      expect(estadoGuardado).toBe('Surtido Parcial'); // Guardado, no calculado
+      expect(esCompletamenteSurtido).toBe(false);
+      expect(esParcialmenteSurtido).toBe(true);
     });
   });
 
