@@ -99,6 +99,7 @@ const gruposOrdenesPDFController = require("../controllers/gruposOrdenesPDFContr
 const gruposOrdenesExcelController = require("../controllers/gruposOrdenesExcelController");
 const solicitudesModificacionController = require("../controllers/solicitudesModificacionController");
 const pickingController = require("../controllers/pickingController");
+const rejectController = require("../controllers/finanzas/rejectController");
 const pedidoEstadoSincronizadorService = require("../services/pedidoEstadoSincronizadorService");
 const upload = require("../middlewares/upload");
 const uploadComprobante = require("../middlewares/uploadComprobante");
@@ -501,6 +502,15 @@ router.post(
   authenticate,
   authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas']),
   pedidosAdminController.rechazarPedidoFinanzas
+);
+
+// ✅ NUEVO: Rechazar y REPONER stock (cuando finanzas rechaza surtimiento)
+// Stock ya fue descuento en generación de remisión, así que se debe reponer
+router.post(
+  "/pedidos/:id/rechazar-finanzas-reponer-stock",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas']),
+  rejectController.rechazarRemisionYReponerStock
 );
 
 // Marcar/desmarcar pedido como prioritario (finanzas)
