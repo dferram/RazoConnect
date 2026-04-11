@@ -80,6 +80,8 @@ exports.generarRemision = async (req, res) => {
 
     // 2. Obtener detalles del pedido con información completa
     // CRÍTICO: Incluir stock REAL desde producto_variantes (NO desde sesiones de inventario)
+    // 🔒 SEGURIDAD: Agregar FOR UPDATE para PREVENIR RACE CONDITION
+    //    Sin esto, dos usuarios podrían generar remisiones con el mismo stock simultáneamente
     const detallesQuery = await client.query(
       `SELECT DISTINCT ON (dp.detalleid)
         dp.*,
@@ -94,7 +96,8 @@ exports.generarRemision = async (req, res) => {
        INNER JOIN productos p ON pv.productoid = p.productoid
        LEFT JOIN cat_tamanopaquetes tp ON dp.tamanoid = tp.tamanoid AND tp.tenant_id = $2
        WHERE dp.pedidoid = $1 AND dp.tenant_id = $2
-       ORDER BY dp.detalleid`,
+       ORDER BY dp.detalleid
+       FOR UPDATE OF pv  -- 🔒 LOCK variantes hasta fin de transacción (previene doble surtimiento)`,
       [pedido_id, tenant_id]
     );
 
