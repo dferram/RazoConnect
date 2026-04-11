@@ -217,7 +217,14 @@ const rechazarRemisionYReponerStock = async (req, res) => {
 };
 
 /**
- * ORIGINAL: Rechazar pedido y regresar a almacén (finanzas)
+ * ORIGINAL FUNCTION (Preserved for reference, but use rechazarRemisionYReponerStock for new flow):
+ * Rechazar pedido y regresar a almacén (finanzas)
+ *
+ * Nota: Esta función original permanece para compatibilidad hacia atrás
+ * pero ya NO se usa con el nuevo flujo simplificado.
+ * Usar: rechazarRemisionYReponerStock() en su lugar.
+ */
+const rechazarPedidoFinanzas = async (req, res) => {
   const client = await db.getClient();
 
   try {
