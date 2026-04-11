@@ -119,7 +119,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
 
     let productosConfirmados = 0;
 
-    logger.info('🔍 [DEBUG] Iniciando confirmación de surtido:', {
+    logger.info('ℹ️ [FINANZAS] Iniciando confirmación de surtido (sin descontar stock - ya fue descuento):', {
       pedidoId,
       userId,
       tenant_id,
@@ -127,7 +127,8 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       productosConStock: productosResult.rows.length
     });
 
-    // Reducir inventario del admin que realizó el surtido (NO del usuario de finanzas)
+    // ✅ NUEVO: Solo VALIDAR que el stock fue descuento en remisiones (NO descontar aquí)
+    // El stock ya fue descuento cuando inventarios generó la remisión
     for (const item of productosResult.rows) {
       const varianteId = parseInt(item.varianteid);
       const piezasSurtidas = parseInt(item.cantidadsurtida || 0);
@@ -141,7 +142,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         continue;
       }
 
-      logger.info('🔍 [DEBUG] Procesando producto para confirmar:', {
+      logger.info('ℹ️ [FINANZAS] Validando producto (stock ya descuento):', {
         varianteId,
         piezasSurtidas,
         adminSurtidor,
@@ -150,121 +151,53 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       });
 
       try {
-        // 1. Obtener el stock ANTERIOR antes de actualizar
+        // ✅ VALIDAR QUE EL STOCK EXISTE (confirma que inventarios lo descuento)
         const getStockQuery = `
           SELECT cantidad
           FROM stock_admin
           WHERE variante_id = $1 AND admin_id = $2 AND tenant_id = $3
         `;
-        const stockAnteriorResult = await client.query(getStockQuery, [
+        const stockResult = await client.query(getStockQuery, [
           varianteId,
           adminSurtidor,
           tenant_id
         ]);
 
-        if (stockAnteriorResult.rows.length === 0) {
+        if (stockResult.rows.length === 0) {
           throw new Error(
-            `No se encontró stock para el admin ${adminSurtidor} y variante ${varianteId}`
+            `Stock no encontrado para variante ${varianteId}. Inventarios debe haber generado la remisión.`
           );
         }
 
-        const stockPrevio = parseInt(stockAnteriorResult.rows[0].cantidad || 0, 10);
+        const stockActual = parseInt(stockResult.rows[0].cantidad || 0, 10);
 
-        // ✅ VALIDACIÓN CRÍTICA: Verificar que hay stock SUFICIENTE antes de restar
-        if (stockPrevio < piezasSurtidas) {
-          await client.query('ROLLBACK');
-
-          const nombre = (item.nombreproducto || 'Producto').toString().trim();
-          const sku = (item.sku || '').toString().trim();
-          const ref = sku ? `${nombre} (${sku})` : nombre;
-
-          logger.error('❌ Stock insuficiente en confirmación:', {
-            producto: ref,
-            varianteId,
-            stockDisponible: stockPrevio,
-            piezasRequeridas: piezasSurtidas,
-            adminSurtidor,
-            detalleId: item.detalleid,
-            pedidoId
-          });
-
-          return res.status(400).json({
-            success: false,
-            message: `Stock insuficiente: ${ref}`,
-            detalles: {
-              producto: ref,
-              disponible: stockPrevio,
-              requeridas: piezasSurtidas,
-              falta: piezasSurtidas - stockPrevio
-            },
-            sugerencia: 'Inventarios debe revisar el stock. Es posible que este producto haya sido usado en otro pedido.'
-          });
-        }
-
-        // 2. Reducir DIRECTAMENTE del stock_admin del admin que realizó el surtido
-        // NO usar SmartStockService para evitar confusiones de contexto
-        // ⚠️ CRÍTICO: Solo reducir cantidad, NO cantidad_reservada
-        // ✅ IMPORTANTE: Ahora SÍ es seguro porque ya validamos arriba
-        const updateStockQuery = `
-          UPDATE stock_admin
-          SET cantidad = cantidad - $1
-          WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4
-          RETURNING cantidad
-        `;
-
-        const updateResult = await client.query(updateStockQuery, [
-          piezasSurtidas,
+        logger.info('✅ [FINANZAS] Stock validado (descuento anterior confirmado):', {
           varianteId,
           adminSurtidor,
-          tenant_id
-        ]);
-
-        if (updateResult.rows.length === 0) {
-          throw new Error(
-            `No se encontró stock para el admin ${adminSurtidor} y variante ${varianteId}`
-          );
-        }
-
-        const nuevoStock = updateResult.rows[0].cantidad;
-
-        // 3. Registrar en log de movimientos de inventario (CON stock_previo)
-        await client.query(
-          `INSERT INTO movimientos_inventario
-           (admin_id, variante_id, tenant_id, tipo, cantidad, stock_previo, stock_posterior, motivo, observaciones, ip_origen)
-           VALUES ($1, $2, $3, 'MERMA', $4, $5, $6, 'Confirmación surtido por finanzas', $7, $8)`,
-          [adminSurtidor, varianteId, tenant_id, piezasSurtidas, stockPrevio, nuevoStock,
-           `Confirmación surtido Pedido #${pedidoId}`, req.ip]
-        );
-
-        // 4. estado_producto remains "Con stock" or "Bajo pedido" - workflow tracked in pedidos.estatus
-
-        productosConfirmados++;
-        logger.info('✅ Stock reducido correctamente:', {
-          varianteId,
-          adminSurtidor,
-          piezasSurtidas,
-          stockPrevio,
-          nuevoStock,
-          productosConfirmados
+          stockActual,
+          piezasSurtidas
         });
-      } catch (invError) {
+
+        // ✅ NO DESCONTAR AQUÍ - ya fue descuento en remisiones
+        productosConfirmados++;
+      } catch (validationError) {
         await client.query('ROLLBACK');
 
         const nombre = (item.nombreproducto || 'Producto').toString().trim();
         const sku = (item.sku || '').toString().trim();
         const ref = sku ? `${nombre} (${sku})` : nombre;
 
-        logger.error('Error al reducir stock:', {
-          error: invError.message,
+        logger.error('❌ Error en validación de stock:', {
+          error: validationError.message,
           varianteId,
           adminSurtidor,
           detalleId: item.detalleid
         });
 
-        return res.status(500).json({
+        return res.status(400).json({
           success: false,
-          message: `Error al descontar inventario para ${ref}: ${invError.message}`,
-          code: invError.code,
+          message: `Error validando stock para ${ref}: ${validationError.message}`,
+          sugerencia: 'Verifica que inventarios generó la remisión correctamente'
         });
       }
     }

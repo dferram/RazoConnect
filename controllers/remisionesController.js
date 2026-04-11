@@ -270,7 +270,11 @@ exports.generarRemision = async (req, res) => {
 
     const remision = remisionInsert.rows[0];
 
-    // 6. Insertar detalles de remisión
+    // 6. Obtener admin del cliente (para descontar stock correcto)
+    const estadosHelper = require('../utils/estadosHelper');
+    const adminClienteId = await estadosHelper.getAdminByClienteEstado(pedido.clienteid, tenant_id);
+
+    // 7. Insertar detalles de remisión Y descontar stock inmediatamente
     for (const item of itemsValidados) {
       // Calcular número de ronda: contar cuántas veces se ha surtido este detalle antes
       const rondaQuery = await client.query(
@@ -282,8 +286,8 @@ exports.generarRemision = async (req, res) => {
       const rondaSurtido = rondaQuery.rows[0].siguiente_ronda;
 
       await client.query(
-        `INSERT INTO detalles_remision 
-         (remision_id, detalle_pedido_id, variante_id, cantidad_paquetes_surtidos, 
+        `INSERT INTO detalles_remision
+         (remision_id, detalle_pedido_id, variante_id, cantidad_paquetes_surtidos,
           piezas_surtidas, precio_unitario, tamano_id, subtotal, tenant_id, ronda_surtido)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
         [
@@ -300,13 +304,77 @@ exports.generarRemision = async (req, res) => {
         ]
       );
 
-      // 6.5. IMPORTANTE: NO descontar stock aquí
-      // El stock solo se descuenta cuando FINANZAS confirma la remisión
-      // Por ahora solo registramos los items en detalles_remision
+      // 7.5. ✅ NUEVO: DESCONTAR STOCK INMEDIATAMENTE (Arquitectura simplificada)
+      // El stock se descuenta ahora que inventarios genera la remisión
+      // Si finanzas rechaza, hay un endpoint para REPONER el stock
+      const piezasSurtidas = item.piezas_surtidas;
 
-      // 7. Actualizar cantidad surtida en detallesdelpedido
+      // Obtener stock actual antes de descontar
+      const stockAnteriorResult = await client.query(
+        `SELECT cantidad FROM stock_admin
+         WHERE variante_id = $1 AND admin_id = $2 AND tenant_id = $3`,
+        [item.variante_id, adminClienteId, tenant_id]
+      );
+
+      if (stockAnteriorResult.rows.length === 0) {
+        throw new Error(
+          `No se encontró stock para admin ${adminClienteId} y variante ${item.variante_id}.
+           El cliente podría estar asignado a un admin incorrecto.`
+        );
+      }
+
+      const stockPrevio = parseInt(stockAnteriorResult.rows[0].cantidad || 0, 10);
+
+      // Validar que hay stock suficiente (double check)
+      if (stockPrevio < piezasSurtidas) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          success: false,
+          message: `Stock insuficiente al descontar: ${item.variante_id}. Disponible: ${stockPrevio}, Requerido: ${piezasSurtidas}`
+        });
+      }
+
+      // Descontar stock
+      const updateStockResult = await client.query(
+        `UPDATE stock_admin
+         SET cantidad = cantidad - $1
+         WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4
+         RETURNING cantidad`,
+        [piezasSurtidas, item.variante_id, adminClienteId, tenant_id]
+      );
+
+      const nuevoStock = updateStockResult.rows[0].cantidad;
+
+      // Registrar movimiento en kardex
       await client.query(
-        `UPDATE detallesdelpedido 
+        `INSERT INTO movimientos_inventario
+         (admin_id, variante_id, tenant_id, tipo, cantidad, stock_previo, stock_posterior, motivo, observaciones)
+         VALUES ($1, $2, $3, 'SURTIMIENTO', $4, $5, $6, $7, $8)`,
+        [
+          adminClienteId,
+          item.variante_id,
+          tenant_id,
+          piezasSurtidas,
+          stockPrevio,
+          nuevoStock,
+          'Surtimiento Remisión',
+          `Remisión #${remision.folio} - Pedido #${pedido_id}`
+        ]
+      );
+
+      logger.info('✅ Stock descuento al generar remisión:', {
+        varianteId: item.variante_id,
+        adminId: adminClienteId,
+        piezasSurtidas,
+        stockPrevio,
+        nuevoStock,
+        remisionId: remision.remision_id,
+        pedidoId
+      });
+
+      // 8. Actualizar cantidad surtida en detallesdelpedido
+      await client.query(
+        `UPDATE detallesdelpedido
          SET cantidad_surtida_remisiones = COALESCE(cantidad_surtida_remisiones, 0) + $1
          WHERE detalleid = $2 AND tenant_id = $3`,
         [item.cantidad_paquetes, item.detalle_pedido_id, tenant_id]
