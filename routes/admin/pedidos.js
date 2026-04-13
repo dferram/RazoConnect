@@ -17,6 +17,7 @@ const { authenticate, authorizeAdmin, authorizeRole, authorizeSuperAdmin } = req
 const { heavyOperationLimiter } = require("../../middlewares/rateLimiter");
 const uploadEvidenciaEntrega = require("../../middlewares/uploadEvidenciaEntrega");
 const upload = require("../../middlewares/upload");
+const validateSingleAdminMode = require("../../middlewares/validateSingleAdminMode");
 
 /**
  * @swagger
@@ -136,10 +137,12 @@ router.post(
 // ✅ NUEVO: Confirmar Directo - Admin Único (Marcar + Descuento + Facturación en UN PASO)
 // Para sistemas sin roles empresariales (solo 1 admin)
 // Combina: validar FIFO → marcar surtido → descontar stock → facturar
+// ⚠️ PROTECCIÓN: Bloqueado si el tenant tiene rol "finanzas"
 router.post(
   "/pedidos/:id/confirmar-directo",
   authenticate,
   authorizeRole(['super_admin', 'admin']),
+  validateSingleAdminMode,
   confirmDirectoController.confirmarDirecto
 );
 
