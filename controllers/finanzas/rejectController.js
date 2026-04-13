@@ -151,7 +151,7 @@ const rechazarRemisionYReponerStock = async (req, res) => {
       // 4.4. Actualizar estado del detalle
       await client.query(
         `UPDATE detallesdelpedido
-         SET estado_producto = 'Pendiente',
+         SET estado_producto = 'Con stock',
              cantidadsurtida = 0,
              cantidad_surtida_remisiones = 0
          WHERE detalleid = $1 AND tenant_id = $2`,
