@@ -9,6 +9,7 @@ const solicitudesModificacionController = require("../../controllers/solicitudes
 const evidenciasController = require("../../controllers/evidenciasController");
 const remisionesPedidosController = require("../../controllers/remisionesPedidosController");
 const rejectController = require("../../controllers/finanzas/rejectController");
+const confirmDirectoController = require("../../controllers/finanzas/confirmDirectoController");
 const pedidoEstadoSincronizadorService = require("../../services/pedidoEstadoSincronizadorService");
 const logger = require("../../utils/logger");
 const facturaController = require("../../controllers/facturaController");
@@ -130,6 +131,16 @@ router.post(
   authenticate,
   authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas']),
   rejectController.rechazarRemisionYReponerStock
+);
+
+// ✅ NUEVO: Confirmar Directo - Admin Único (Marcar + Descuento + Facturación en UN PASO)
+// Para sistemas sin roles empresariales (solo 1 admin)
+// Combina: validar FIFO → marcar surtido → descontar stock → facturar
+router.post(
+  "/pedidos/:id/confirmar-directo",
+  authenticate,
+  authorizeRole(['super_admin', 'admin']),
+  confirmDirectoController.confirmarDirecto
 );
 
 // Marcar/desmarcar pedido como prioritario (finanzas)
