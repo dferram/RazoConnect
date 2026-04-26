@@ -281,83 +281,97 @@ const rechazarPedidoFinanzas = async (req, res) => {
       });
     }
 
-    // Si se proporcionaron detalleIds, regresar solo esos productos de Facturado a su estado original
+    // Si se proporcionaron detalleIds, regresar esos productos surtidos a su estado original
     if (detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0) {
-      // Regresar productos específicos de Facturado a su estado original (Surtido o Bajo pedido)
-      // ⚠️ CRÍTICO: Solo considerar stock del admin del cliente
-      const regresarProductosQuery = `
-        WITH stock_agregado AS (
-          SELECT variante_id, tenant_id,
-            COALESCE(SUM(cantidad), 0) as total_cantidad,
-            COALESCE(SUM(cantidad_reservada), 0) as total_reservado
-          FROM stock_admin
-          WHERE admin_id = $4
-          GROUP BY variante_id, tenant_id
-        )
-        UPDATE detallesdelpedido dp
-        SET estado_producto = CASE
-          WHEN (sa.total_cantidad - sa.total_reservado) >= dp.piezastotales THEN 'Surtido'
-          WHEN (sa.total_cantidad - sa.total_reservado) > 0 THEN 'Surtido'
-          ELSE 'Bajo pedido'
-        END,
-        cantidadsurtida = 0
-        FROM stock_agregado sa
-        WHERE dp.pedidoid = $1
-          AND dp.detalleid = ANY($2::int[])
-          AND dp.tenant_id = $3
-          AND dp.cantidadsurtida > 0
-          AND sa.variante_id = dp.varianteid
-          AND sa.tenant_id = dp.tenant_id
-        RETURNING dp.detalleid, dp.estado_producto
-      `;
 
-      const regresarResult = await client.query(regresarProductosQuery, [pedidoId, detalleIds, tenant_id, adminClienteId]);
+      // 1. Obtener los detalles a rechazar con la cantidad REAL surtida (antes de modificar nada)
+      const productosARechazarResult = await client.query(
+        `SELECT dp.detalleid, dp.varianteid, dp.cantidadsurtida, dp.piezastotales,
+                psd.admin_id AS admin_surtidor, psd.cantidad AS cantidad_psd
+         FROM detallesdelpedido dp
+         LEFT JOIN pedido_surtido_detalle psd
+           ON psd.detalle_id = dp.detalleid AND psd.pedido_id = $1
+         WHERE dp.pedidoid = $1
+           AND dp.detalleid = ANY($2::int[])
+           AND dp.tenant_id = $3
+           AND dp.cantidadsurtida > 0`,
+        [pedidoId, detalleIds, tenant_id]
+      );
 
-      if (regresarResult.rowCount === 0) {
+      if (productosARechazarResult.rows.length === 0) {
         await client.query('ROLLBACK');
         return res.status(400).json({
           success: false,
-          message: 'No se encontraron productos facturados para regresar'
+          message: 'No se encontraron productos surtidos para rechazar'
         });
       }
 
-      // Devolver stock a inventario del admin que lo surtió originalmente
-      for (const producto of regresarResult.rows) {
-        // Obtener el admin y cantidad que surtió este detalle
-        const surtidoQuery = await client.query(
-          `SELECT psd.admin_id, dp.varianteid, dp.piezastotales
-           FROM pedido_surtido_detalle psd
-           INNER JOIN detallesdelpedido dp ON psd.detalle_id = dp.detalleid
-           WHERE psd.detalle_id = $1 AND psd.pedido_id = $2 AND psd.tenant_id = $3
-           LIMIT 1`,
-          [producto.detalleid, pedidoId, tenant_id]
+      // 2. Devolver stock al admin que surtió (usando cantidad real de psd, no piezastotales)
+      for (const producto of productosARechazarResult.rows) {
+        const adminSurtidor = producto.admin_surtidor;
+        const piezasADevolver = parseInt(producto.cantidad_psd || producto.cantidadsurtida || 0, 10);
+
+        if (!adminSurtidor || piezasADevolver <= 0) {
+          logger.warn('⚠️ No se puede devolver stock, datos faltantes:', {
+            detalleId: producto.detalleid,
+            adminSurtidor,
+            piezasADevolver
+          });
+          continue;
+        }
+
+        await client.query(
+          `UPDATE stock_admin
+           SET cantidad = cantidad + $1
+           WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4`,
+          [piezasADevolver, producto.varianteid, adminSurtidor, tenant_id]
         );
 
-        if (surtidoQuery.rows.length > 0) {
-          const { admin_id, varianteid, piezastotales } = surtidoQuery.rows[0];
-
-          // Regresar stock al admin que lo surtió
-          await client.query(
-            `UPDATE stock_admin
-             SET cantidad = cantidad + $1
-             WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4`,
-            [piezastotales, varianteid, admin_id, tenant_id]
-          );
-
-          logger.info('Stock regresado al admin original:', {
-            detalleId: producto.detalleid,
-            varianteId: varianteid,
-            adminId: admin_id,
-            piezasRegresadas: piezastotales
-          });
-        }
+        logger.info('✅ Stock devuelto al admin surtidor:', {
+          detalleId: producto.detalleid,
+          varianteId: producto.varianteid,
+          adminId: adminSurtidor,
+          piezasDevueltas: piezasADevolver
+        });
       }
+
+      // 3. Actualizar estado_producto basado en el NUEVO stock (ya devuelto) y poner cantidadsurtida=0
+      await client.query(
+        `UPDATE detallesdelpedido dp
+         SET estado_producto = CASE
+               WHEN COALESCE(sa.cantidad, 0) >= dp.piezastotales THEN 'Con stock'
+               ELSE 'Bajo pedido'
+             END,
+             cantidadsurtida = 0
+         FROM (
+           SELECT variante_id, SUM(cantidad) AS cantidad
+           FROM stock_admin
+           WHERE admin_id = $4 AND tenant_id = $3
+           GROUP BY variante_id
+         ) sa
+         WHERE dp.pedidoid = $1
+           AND dp.detalleid = ANY($2::int[])
+           AND dp.tenant_id = $3
+           AND sa.variante_id = dp.varianteid`,
+        [pedidoId, detalleIds, tenant_id, adminClienteId]
+      );
+
+      // 4. Marcar pedido en Revisión de almacén
+      await client.query(
+        `UPDATE pedidos
+         SET estatus = 'Revisión de almacén',
+             observaciones_finanzas = $3,
+             rechazado_por_finanzas = true,
+             fecha_rechazo_finanzas = NOW()
+         WHERE pedidoid = $1 AND tenant_id = $2`,
+        [pedidoId, tenant_id, observaciones_finanzas]
+      );
 
       await client.query('COMMIT');
 
-      logger.info('Productos regresados de Facturado a estado original:', {
+      logger.info('✅ Productos rechazados y stock devuelto:', {
         pedidoId,
-        productosRegresados: regresarResult.rowCount,
+        productosRechazados: productosARechazarResult.rows.length,
         detalleIds,
         userId,
         tenantId: tenant_id
@@ -365,11 +379,11 @@ const rechazarPedidoFinanzas = async (req, res) => {
 
       return res.json({
         success: true,
-        message: `${regresarResult.rowCount} producto(s) regresado(s) a su estado original`,
+        message: `${productosARechazarResult.rows.length} producto(s) rechazado(s) y stock devuelto. Pedido en Revisión de almacén.`,
         data: {
           pedidoId,
-          productosRegresados: regresarResult.rowCount,
-          productos: regresarResult.rows
+          productosRechazados: productosARechazarResult.rows.length,
+          nuevoEstatus: 'Revisión de almacén'
         }
       });
     }

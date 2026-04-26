@@ -1059,9 +1059,56 @@ const surtirPedido = async (req, res) => {
         continue;
       }
 
-      // 1. Solo registrar que fue marcado para surtido en pedido_surtido_detalle
-      // No modificar stock_admin - el stock YA fue reservado cuando el cliente creó el pedido
-      // La cantidad se restará cuando finanzas confirme el surtido
+      // 1. Obtener stock actual del admin que surte
+      const stockActualResult = await client.query(
+        `SELECT cantidad FROM stock_admin
+         WHERE variante_id = $1 AND admin_id = $2 AND tenant_id = $3`,
+        [detalle.varianteid, adminId, tenant_id]
+      );
+
+      if (stockActualResult.rows.length === 0) {
+        logger.warn('⚠️ No se encontró registro de stock_admin para variante, saltando:', {
+          detalleId: detalle.detalleid,
+          varianteId: detalle.varianteid,
+          adminId
+        });
+        continue;
+      }
+
+      const stockPrevio = parseInt(stockActualResult.rows[0].cantidad || 0, 10);
+      const stockPosterior = stockPrevio - piezasSurtidas;
+
+      // 2. Descontar stock inmediatamente al surtir
+      await client.query(
+        `UPDATE stock_admin
+         SET cantidad = $1
+         WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4`,
+        [stockPosterior, detalle.varianteid, adminId, tenant_id]
+      );
+
+      // 3. Registrar movimiento de inventario
+      await client.query(
+        `INSERT INTO movimientos_inventario
+         (admin_id, variante_id, tenant_id, tipo, cantidad, stock_previo, stock_posterior, motivo, observaciones)
+         VALUES ($1, $2, $3, 'MERMA', $4, $5, $6, 'Surtido de pedido', $7)`,
+        [
+          adminId, detalle.varianteid, tenant_id,
+          piezasSurtidas, stockPrevio, stockPosterior,
+          `Pedido #${pedidoId}: surtido por inventarios`
+        ]
+      );
+
+      logger.info('✅ Stock descontado al surtir:', {
+        pedidoId,
+        detalleId: detalle.detalleid,
+        varianteId: detalle.varianteid,
+        adminId,
+        piezasSurtidas,
+        stockPrevio,
+        stockPosterior
+      });
+
+      // 4. Registrar en pedido_surtido_detalle para auditoría y para poder revertir
       await client.query(
         `INSERT INTO pedido_surtido_detalle
          (pedido_id, detalle_id, variante_id, admin_id, cantidad, tenant_id, created_at)
@@ -1191,7 +1238,7 @@ const surtirPedido = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Pedido enviado a finanzas para confirmación. ${marcarResult.rowCount} producto(s) marcado(s) como listo(s) para remisionar, ${productosBackorder} en backorder. Stock NO afectado hasta confirmación de finanzas.`,
+      message: `Pedido enviado a finanzas para confirmación. ${marcarResult.rowCount} producto(s) marcado(s) como listo(s) para remisionar, ${productosBackorder} en backorder. Stock descontado inmediatamente.`,
       data: {
         pedidoId: updateResult.rows[0].pedidoid,
         estatus: updateResult.rows[0].estatus,

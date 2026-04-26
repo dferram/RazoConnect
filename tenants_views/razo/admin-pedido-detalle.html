@@ -1362,7 +1362,8 @@
               );
             }
 
-            const { pedido, productos } = response.data.data;
+            const { pedido } = response.data.data;
+            productos = response.data.data.productos; // Asignar a variable global (accesible desde confirmarSurtidoFinanzas)
 
             // Render pedido header
             document.getElementById(
