@@ -227,12 +227,12 @@ const rechazarRemisionYReponerStock = async (req, res) => {
 };
 
 /**
- * ORIGINAL FUNCTION (Preserved for reference, but use rechazarRemisionYReponerStock for new flow):
- * Rechazar pedido y regresar a almacén (finanzas)
+ * Rechazar pedido y devolver stock al almacén (finanzas)
+ * Ruta principal: POST /api/admin/pedidos/:id/rechazar-finanzas
  *
- * Nota: Esta función original permanece para compatibilidad hacia atrás
- * pero ya NO se usa con el nuevo flujo simplificado.
- * Usar: rechazarRemisionYReponerStock() en su lugar.
+ * Requiere detalleIds para identificar los productos surtidos a revertir.
+ * Devuelve el stock descontado en surtirPedido al admin original.
+ * Cambia el pedido a "Revisión de almacén".
  */
 const rechazarPedidoFinanzas = async (req, res) => {
   const client = await db.getClient();

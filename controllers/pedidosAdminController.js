@@ -998,40 +998,39 @@ const surtirPedido = async (req, res) => {
     
     const detallesMarcadosResult = await client.query(detallesMarcadosQuery, detallesMarcadosParams);
     
-    // ⚠️ NOTA: Inserción a historial_pedidos comentada pendiente verificación de tabla
     // Insertar registro en historial_pedidos para auditoría
-    // try {
-    //   await client.query(
-    //     `INSERT INTO historial_pedidos (
-    //       pedido_id,
-    //       accion,
-    //       detalles,
-    //       usuario_id,
-    //       tenant_id
-    //     ) VALUES ($1, $2, $3, $4, $5)`,
-    //     [
-    //       pedidoId,
-    //       'SURTIDO_INVENTARIOS',
-    //       JSON.stringify({
-    //         productos_marcados: detallesMarcadosResult.rows.map(r => ({
-    //           detalle_id: r.detalleid,
-    //           variante_id: r.varianteid,
-    //           sku: r.sku,
-    //           nombre: r.nombreproducto,
-    //           cantidad_surtida: r.cantidadsurtida,
-    //           piezas_totales: r.piezastotales
-    //         })),
-    //         cantidad_productos: marcarResult.rowCount,
-    //         modo: detalleIds && detalleIds.length > 0 ? 'selectivo' : 'todos',
-    //         timestamp: new Date().toISOString()
-    //       }),
-    //       req.user?.id || req.user?.adminid || null,
-    //       tenant_id
-    //     ]
-    //   );
-    // } catch (auditError) {
-    //   logger.warn('No se pudo registrar en historial_pedidos (tabla posiblemente no existe):', { error: auditError.message });
-    // }
+    try {
+      await client.query(
+        `INSERT INTO historial_pedidos (
+          pedido_id,
+          accion,
+          detalles,
+          usuario_id,
+          tenant_id
+        ) VALUES ($1, $2, $3, $4, $5)`,
+        [
+          pedidoId,
+          'SURTIDO_INVENTARIOS',
+          JSON.stringify({
+            productos_marcados: detallesMarcadosResult.rows.map(r => ({
+              detalle_id: r.detalleid,
+              variante_id: r.varianteid,
+              sku: r.sku,
+              nombre: r.nombreproducto,
+              cantidad_surtida: r.cantidadsurtida,
+              piezas_totales: r.piezastotales
+            })),
+            cantidad_productos: marcarResult.rowCount,
+            modo: detalleIds && detalleIds.length > 0 ? 'selectivo' : 'todos',
+            timestamp: new Date().toISOString()
+          }),
+          req.user?.id || req.user?.adminid || null,
+          tenant_id
+        ]
+      );
+    } catch (auditError) {
+      logger.warn('No se pudo registrar en historial_pedidos:', { error: auditError.message });
+    }
 
     logger.info('Productos marcados para surtir:', {
       pedidoId,
