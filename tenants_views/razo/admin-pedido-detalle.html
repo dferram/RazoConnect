@@ -2484,13 +2484,26 @@
           btnRechazar.innerHTML = '<span class="spinner" style="display: inline-block;"></span> Regresando...';
 
           try {
+            // Recopilar todos los productos en estado 'Surtido' para devolver su stock
+            const productosSurtidosIds = [];
+            if (Array.isArray(productos) && productos.length > 0) {
+              productos.forEach(p => {
+                if ((p.estadoProducto || '').toLowerCase().trim() === 'surtido') {
+                  productosSurtidosIds.push(p.detalleid);
+                }
+              });
+            }
+
             const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/rechazar-finanzas`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${adminToken}`,
                 'Content-Type': 'application/json'
               },
-              body: JSON.stringify({ observaciones_finanzas: observaciones })
+              body: JSON.stringify({
+                detalleIds: productosSurtidosIds,
+                observaciones_finanzas: observaciones
+              })
             });
 
             const data = await response.json();

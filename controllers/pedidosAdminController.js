@@ -1299,7 +1299,7 @@ const setPrioritario = async (req, res) => {
 
     const pedidoResult = await client.query(
       'SELECT pedidoid, estatus, es_prioritario FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2',
-      [pedidoId, tenant_id, null, adminClienteId]
+      [pedidoId, tenant_id]
     );
 
     if (pedidoResult.rows.length === 0) {

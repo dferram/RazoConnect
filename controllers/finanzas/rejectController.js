@@ -135,7 +135,7 @@ const rechazarRemisionYReponerStock = async (req, res) => {
       await client.query(
         `INSERT INTO movimientos_inventario
          (admin_id, variante_id, tenant_id, tipo, cantidad, stock_previo, stock_posterior, motivo, observaciones)
-         VALUES ($1, $2, $3, 'DEVOLUCIÓN', $4, $5, $6, $7, $8)`,
+         VALUES ($1, $2, $3, 'ADICION', $4, $5, $6, $7, $8)`,
         [
           adminClienteId,
           varianteId,
@@ -148,14 +148,24 @@ const rechazarRemisionYReponerStock = async (req, res) => {
         ]
       );
 
-      // 4.4. Actualizar estado del detalle
+      // 4.4. Actualizar estado del detalle basado en stock actual (ya repuesto)
       await client.query(
-        `UPDATE detallesdelpedido
-         SET estado_producto = 'Pendiente',
+        `UPDATE detallesdelpedido dp
+         SET estado_producto = CASE
+               WHEN COALESCE(sa.cantidad, 0) >= dp.piezastotales THEN 'Con stock'
+               ELSE 'Bajo pedido'
+             END,
              cantidadsurtida = 0,
              cantidad_surtida_remisiones = 0
-         WHERE detalleid = $1 AND tenant_id = $2`,
-        [detalle.detalleid, tenant_id]
+         FROM (
+           SELECT variante_id, SUM(cantidad) AS cantidad
+           FROM stock_admin
+           WHERE admin_id = $3 AND tenant_id = $2
+           GROUP BY variante_id
+         ) sa
+         WHERE dp.detalleid = $1 AND dp.tenant_id = $2
+           AND sa.variante_id = dp.varianteid`,
+        [detalle.detalleid, tenant_id, adminClienteId]
       );
 
       productosRepuestos++;
@@ -388,38 +398,11 @@ const rechazarPedidoFinanzas = async (req, res) => {
       });
     }
 
-    // Cambiar estado a "Revisión de almacén"
-    const updateQuery = `
-      UPDATE pedidos
-      SET
-        estatus = 'Revisión de almacén',
-        observaciones_finanzas = $3,
-        rechazado_por_finanzas = $4,
-        fecha_rechazo_finanzas = NOW()
-      WHERE pedidoid = $1 AND tenant_id = $2
-      RETURNING *
-    `;
-
-    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, observaciones_finanzas, userId]);
-
-    await client.query('COMMIT');
-
-    logger.info('Pedido rechazado por finanzas y regresado a almacén:', {
-      pedidoId,
-      observaciones: observaciones_finanzas,
-      userId,
-      tenantId: tenant_id,
-      requestId: req.requestId
-    });
-
-    res.json({
-      success: true,
-      message: 'Pedido regresado al almacén para corrección',
-      data: {
-        pedidoId: updateResult.rows[0].pedidoid,
-        estatus: updateResult.rows[0].estatus,
-        observaciones_finanzas
-      }
+    // Sin detalleIds: no es posible devolver el stock correctamente
+    await client.query('ROLLBACK');
+    return res.status(400).json({
+      success: false,
+      message: 'Debes especificar qué productos rechazar (detalleIds) para poder devolver el stock correctamente.'
     });
 
   } catch (error) {
