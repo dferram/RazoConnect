@@ -222,11 +222,11 @@
   --theme-primary-dark: #ce93d8;
   --theme-primary-rgb: 225, 190, 231;
 
-  /* Colores Secundarios - Blanco */
-  --theme-secondary: #ffffff;
-  --theme-secondary-light: #ffffff;
-  --theme-secondary-dark: #fafafa;
-  --theme-secondary-rgb: 255, 255, 255;
+  /* Colores Secundarios - Rosa Oscuro */
+  --theme-secondary: #880e4f;
+  --theme-secondary-light: #c2185b;
+  --theme-secondary-dark: #560823;
+  --theme-secondary-rgb: 136, 14, 79;
 
   /* Colores de Acento - Magenta Vibrante */
   --theme-accent: #c2185b;
