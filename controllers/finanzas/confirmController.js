@@ -119,7 +119,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
 
     let productosConfirmados = 0;
 
-    logger.info('ℹ️ [FINANZAS] Iniciando confirmación de surtido (sin descontar stock - ya fue descuento):', {
+    logger.info('ℹ️ [FINANZAS] Iniciando confirmación de surtido (stock ya descontado en surtirPedido):', {
       pedidoId,
       userId,
       tenant_id,
