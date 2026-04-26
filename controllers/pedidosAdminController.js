@@ -792,7 +792,7 @@ const confirmarPedido = async (req, res) => {
 /**
  * Surtir pedido (marcar como listo para surtir)
  * Usado por inventarios para marcar productos como preparados
- * NO reduce stock - eso lo hace finanzas al confirmar
+ * ✅ DESCUENTA stock_admin inmediatamente al surtir
  * POST /api/admin/pedidos/:id/surtir
  */
 const surtirPedido = async (req, res) => {
@@ -838,9 +838,25 @@ const surtirPedido = async (req, res) => {
     
     if (pedidoResult.rows.length === 0) {
       await client.query('ROLLBACK');
-      return res.status(404).json({
+      // Distinguir: ¿pedido no existe vs. no asignado al admin actual?
+      const existeResult = await db.query(
+        'SELECT pedidoid, admin_asignado_id FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2',
+        [pedidoId, tenant_id]
+      );
+      if (existeResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'Pedido no encontrado'
+        });
+      }
+      return res.status(403).json({
         success: false,
-        message: 'Pedido no encontrado'
+        message: 'Este pedido no está asignado a tu inventario. Verifica que el pedido tenga un admin asignado correcto.',
+        debug: process.env.NODE_ENV === 'development' ? {
+          pedidoId,
+          admin_asignado_id: existeResult.rows[0].admin_asignado_id,
+          adminIdUser
+        } : undefined
       });
     }
 
@@ -1066,12 +1082,21 @@ const surtirPedido = async (req, res) => {
       );
 
       if (stockActualResult.rows.length === 0) {
-        logger.warn('⚠️ No se encontró registro de stock_admin para variante, saltando:', {
+        // ❌ FATAL: el producto fue marcado como surtido pero no hay stock_admin.
+        // Hacer ROLLBACK para evitar inconsistencia de datos (marcado sin descuento).
+        await client.query('ROLLBACK');
+        logger.error('❌ [SURTIR] No existe registro stock_admin — abortando para evitar inconsistencia:', {
           detalleId: detalle.detalleid,
           varianteId: detalle.varianteid,
-          adminId
+          adminId,
+          pedidoId,
+          tenantId: tenant_id
         });
-        continue;
+        return res.status(409).json({
+          success: false,
+          message: `El admin asignado no tiene inventario registrado para el producto SKU: ${detalle.sku}. Recibe el inventario primero antes de surtir.`,
+          data: { detalleId: detalle.detalleid, varianteId: detalle.varianteid, adminId }
+        });
       }
 
       const stockPrevio = parseInt(stockActualResult.rows[0].cantidad || 0, 10);

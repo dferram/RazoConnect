@@ -69,6 +69,7 @@ const blacklistCache = new NodeCache({
 let redisClient = null;
 let isConnected = false;
 let isDevelopmentMode = false;
+let initPromise = null; // Evita múltiples conexiones Redis concurrentes al arrancar
 
 /**
  * Crea un cliente mock de Redis para desarrollo local
@@ -314,12 +315,14 @@ const initRedisClient = async () => {
 
 /**
  * Obtiene el cliente Redis (inicializa si es necesario)
+ * Usa una promise compartida para evitar crear múltiples clientes en paralelo.
  */
 const getRedisClient = async () => {
-  if (!redisClient || !isConnected) {
-    return await initRedisClient();
+  if (redisClient && isConnected) return redisClient;
+  if (!initPromise) {
+    initPromise = initRedisClient().finally(() => { initPromise = null; });
   }
-  return redisClient;
+  return initPromise;
 };
 
 /**
