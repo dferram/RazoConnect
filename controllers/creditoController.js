@@ -170,7 +170,7 @@ async function aprobarSolicitud(req, res) {
     if (!solicitud) throw new Error("Solicitud no encontrada o ya procesada");
 
     // ⚠️ CRITICAL: Obtener admin_id del cliente para asignar crédito al admin correcto
-    const estadosHelper = require('../../utils/estadosHelper');
+    const estadosHelper = require('../utils/estadosHelper');
     const adminClienteId = await estadosHelper.getAdminByClienteEstado(solicitud.cliente_id, tenant_id);
     const adminId = adminClienteId || 1;
 
