@@ -13,6 +13,7 @@ const {
   obtenerMovimientosPendientes,
   enviarSolicitudCredito,
   obtenerEstadoCuentaMensual,
+  obtenerMesesDisponibles,
 } = require("../controllers/clientes/creditoController");
 const {
   actualizarPerfil,
@@ -385,6 +386,7 @@ router.get("/credito/pendientes", authenticate, verifyTenantContext, obtenerMovi
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+router.get("/estado-cuenta/meses-disponibles", authenticate, verifyTenantContext, obtenerMesesDisponibles);
 router.get("/estado-cuenta/:mes/:anio", authenticate, verifyTenantContext, obtenerEstadoCuentaMensual);
 /**
  * @swagger

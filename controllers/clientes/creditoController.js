@@ -785,6 +785,47 @@ const obtenerEstadoCuentaMensual = async (req, res) => {
   }
 };
 
+const obtenerMesesDisponibles = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "No autenticado" });
+    }
+    if (!isCliente(req)) {
+      return res.status(403).json({ success: false, message: "Acceso denegado" });
+    }
+    const clienteId = normalizeClienteId(req);
+    if (!clienteId) {
+      return res.status(400).json({ success: false, message: "Identificador de cliente inválido" });
+    }
+
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const creditoActivo = await fetchCreditoActivo(clienteId, tenant_id);
+    if (!creditoActivo) {
+      return res.json({ success: true, meses: [] });
+    }
+
+    const result = await db.query(
+      `SELECT DISTINCT
+         EXTRACT(MONTH FROM fecha_movimiento)::int AS mes,
+         EXTRACT(YEAR  FROM fecha_movimiento)::int AS anio
+       FROM credito_movimientos
+       WHERE credito_id = $1 AND tenant_id = $2
+       ORDER BY anio DESC, mes DESC
+       LIMIT 24`,
+      [creditoActivo.credito_id, tenant_id]
+    );
+
+    return res.json({ success: true, meses: result.rows });
+  } catch (error) {
+    logger.error('Error obteniendo meses disponibles:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
+    return res.status(500).json({ success: false, message: "Error al obtener meses disponibles" });
+  }
+};
+
 module.exports = {
   checkAuthCredit,
   obtenerPerfilCredito,
@@ -793,4 +834,5 @@ module.exports = {
   obtenerMovimientosPendientes,
   enviarSolicitudCredito,
   obtenerEstadoCuentaMensual,
+  obtenerMesesDisponibles,
 };
