@@ -810,64 +810,82 @@
     // ESTADOS DE CUENTA MENSUALES
     // ========================================
 
-    function generarUltimos4Meses() {
-      const meses = [];
-      const hoy = new Date();
-      
-      for (let i = 0; i < 4; i++) {
-        const fecha = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
-        const mes = fecha.getMonth() + 1;
-        const anio = fecha.getFullYear();
-        
-        const nombresMeses = [
-          'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-        ];
-        
-        meses.push({
-          mes,
-          anio,
-          nombre: `${nombresMeses[mes - 1]} ${anio}`
-        });
-      }
-      
-      return meses;
-    }
+    const nombresMeses = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
 
-    function renderEstadosCuenta() {
+    async function renderEstadosCuenta() {
       const container = document.getElementById('estadosCuentaContainer');
       if (!container) return;
-      
-      const meses = generarUltimos4Meses();
-      
-      container.innerHTML = meses.map(periodo => `
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="admin-stat-card" style="cursor: default;">
-            <div class="admin-stat-header">
-              <div class="admin-stat-content">
-                <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">${periodo.nombre}</h3>
-                <button 
-                  class="btn btn-sm btn-primary w-100 btn-descargar-estado"
-                  data-mes="${periodo.mes}"
-                  data-anio="${periodo.anio}"
-                  style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1rem; font-size: 0.9rem;"
-                >
-                  <i class="bi bi-file-earmark-pdf-fill"></i>
-                  <span>Descargar Estado de Cuenta</span>
-                </button>
+
+      try {
+        const token = localStorage.getItem('razoconnect_token') || localStorage.getItem('razoconnect_access_token');
+        if (!token) {
+          container.innerHTML = '<div class="col-12 text-center text-muted py-4">No hay sesión activa.</div>';
+          return;
+        }
+
+        const response = await fetch('/api/clientes/estado-cuenta/meses-disponibles', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Error al obtener meses disponibles');
+
+        const data = await response.json();
+        const meses = data.meses || [];
+
+        if (meses.length === 0) {
+          container.innerHTML = `
+            <div class="col-12">
+              <div class="empty-state">
+                <div class="empty-state-icon">📄</div>
+                <h3 class="empty-state-title">Sin estados de cuenta disponibles</h3>
+                <p class="empty-state-text">Aparecerán aquí cuando tengas movimientos registrados en tu crédito.</p>
+              </div>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = meses.map(periodo => `
+          <div class="col-12 col-md-6 col-lg-3">
+            <div class="admin-stat-card" style="cursor: default;">
+              <div class="admin-stat-header">
+                <div class="admin-stat-content">
+                  <h3 style="font-size: 1rem; margin-bottom: 0.5rem;">${nombresMeses[periodo.mes - 1]} ${periodo.anio}</h3>
+                  <button 
+                    class="btn btn-sm btn-primary w-100 btn-descargar-estado"
+                    data-mes="${periodo.mes}"
+                    data-anio="${periodo.anio}"
+                    style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.6rem 1rem; font-size: 0.9rem;"
+                  >
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                    <span>Descargar Estado de Cuenta</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      `).join('');
-      
-      container.querySelectorAll('.btn-descargar-estado').forEach(btn => {
-        btn.addEventListener('click', async function() {
-          const mes = this.dataset.mes;
-          const anio = this.dataset.anio;
-          await descargarEstadoCuenta(mes, anio);
+        `).join('');
+
+        container.querySelectorAll('.btn-descargar-estado').forEach(btn => {
+          btn.addEventListener('click', async function() {
+            const mes = this.dataset.mes;
+            const anio = this.dataset.anio;
+            await descargarEstadoCuenta(mes, anio);
+          });
         });
-      });
+      } catch (error) {
+        console.error('Error cargando estados de cuenta:', error);
+        container.innerHTML = `
+          <div class="col-12">
+            <div class="empty-state">
+              <div class="empty-state-icon">📄</div>
+              <h3 class="empty-state-title">Sin estados de cuenta disponibles</h3>
+              <p class="empty-state-text">Aparecerán aquí cuando tengas movimientos registrados en tu crédito.</p>
+            </div>
+          </div>`;
+      }
     }
 
     async function descargarEstadoCuenta(mes, anio) {

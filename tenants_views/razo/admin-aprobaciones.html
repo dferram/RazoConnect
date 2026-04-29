@@ -93,7 +93,6 @@
                     <th>Monto</th>
                     <th>Motivo</th>
                     <th>Score</th>
-                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody id="tablaSolicitudesBody"></tbody>
@@ -242,24 +241,7 @@
                         Ver Score
                       </button>
                     </td>
-                    <td>
-                      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                        <button
-                          type="button"
-                          class="btn btn-primary btn-sm"
-                          onclick="aprobarSolicitud(${solicitud.solicitud_id})"
-                        >
-                          Aprobar
-                        </button>
-                        <button
-                          type="button"
-                          class="btn btn-outline btn-sm"
-                          onclick="rechazarSolicitud(${solicitud.solicitud_id})"
-                        >
-                          Rechazar
-                        </button>
-                      </div>
-                    </td>
+              
                   </tr>
                 `;
               })

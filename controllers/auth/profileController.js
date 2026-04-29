@@ -126,6 +126,44 @@ const getCurrentUser = async (req, res) => {
         };
         break;
 
+      case "finanzas":
+      case "gerente_finanzas":
+      case "encargado_credito":
+      case "inventarios":
+      case "ejecutivo_cobranza": {
+        const { tenant_id: staff_tenant_id } = req.tenant;
+        const staffQuery = `
+          SELECT AdminID, Nombre, Email, Rol
+          FROM administradores
+          WHERE AdminID = $1 AND tenant_id = $2
+        `;
+        const staffResult = await db.query(staffQuery, [efectiveUserId, staff_tenant_id]);
+
+        if (staffResult.rows.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: "Usuario no encontrado",
+          });
+        }
+
+        const staff = staffResult.rows[0];
+        const roleDisplayMap = {
+          finanzas: "Finanzas",
+          gerente_finanzas: "Gerente de Finanzas",
+          encargado_credito: "Encargado de Crédito",
+          inventarios: "Inventarios",
+          ejecutivo_cobranza: "Ejecutivo de Cobranza",
+        };
+        userData = {
+          nombre: staff.nombre,
+          email: staff.email,
+          rol: roleDisplayMap[userRole] || userRole,
+          iniciales: getIniciales(staff.nombre),
+          tipo: "admin",
+        };
+        break;
+      }
+
       default:
         return res.status(400).json({
           success: false,
