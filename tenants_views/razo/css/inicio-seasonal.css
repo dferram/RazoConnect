@@ -363,7 +363,7 @@
 }
 
 .theme-diamadre #hero-banner .hero-slide::before {
-  background: linear-gradient(135deg, rgba(136, 14, 79, 0.75), transparent);
+  background: linear-gradient(135deg, rgba(194, 24, 91, 0.48), rgba(240, 98, 146, 0.20));
 }
 
 /* ============================================
@@ -376,9 +376,8 @@ body.theme-diamadre .hero-description,
 body.theme-diamadre .hero-eyebrow,
 body.theme-diamadre .welcome-subtitle,
 body.theme-diamadre .countdown-event-subtitle {
-  color: #000000 !important;
-  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5), 
-               0px 0px 3px rgba(255, 255, 255, 0.3);
+  color: #fce4ec !important;
+  text-shadow: 0 1px 4px rgba(136, 14, 79, 0.4);
 }
 
 /* Mantener títulos en blanco */
@@ -386,8 +385,20 @@ body.theme-diamadre .hero-title,
 body.theme-diamadre .welcome-title,
 body.theme-diamadre .countdown-event-title {
   color: #ffffff !important;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3), 
-               1px 1px 3px rgba(0, 0, 0, 0.2);
+  text-shadow: 0 2px 8px rgba(136, 14, 79, 0.5);
+}
+
+/* Botón CTA countdown — rosa claro que resalta */
+body.theme-diamadre .countdown-cta {
+  background: #f48fb1;
+  color: #6b1a40;
+  box-shadow: 0 0 20px rgba(244, 143, 177, 0.6), 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+body.theme-diamadre .countdown-cta:hover {
+  background: #f8bbd0;
+  color: #880e4f;
+  box-shadow: 0 0 30px rgba(244, 143, 177, 0.8), 0 12px 30px rgba(0, 0, 0, 0.3);
 }
 
 .theme-diapadre #hero-banner .hero-slide::before {
@@ -583,4 +594,39 @@ body.theme-sanvalentin .hero-description,
 body.theme-sanvalentin .welcome-subtitle,
 body.theme-sanvalentin .countdown-event-subtitle {
   font-family: "Poppins", sans-serif;
+}
+
+/* ============================================
+   GRADIENTES DEL COUNTDOWN POR TEMA
+   Override para que cada temporada tenga su gradiente distintivo
+   ============================================ */
+
+/* Día de la Madre — Rosa vibrante */
+body.theme-diamadre .countdown-container {
+  background: linear-gradient(135deg, #f06292 0%, #c2185b 100%);
+}
+
+/* San Valentín — Rojo romántico */
+body.theme-sanvalentin .countdown-container {
+  background: linear-gradient(135deg, #ff6b9d 0%, #c2185b 100%);
+}
+
+/* Navidad — Rojo navideño a verde */
+body.theme-navidad .countdown-container {
+  background: linear-gradient(135deg, #c62828 0%, #2e7d32 100%);
+}
+
+/* Día del Padre — Azul marino a gris */
+body.theme-diapadre .countdown-container {
+  background: linear-gradient(135deg, #1565c0 0%, #546e7a 100%);
+}
+
+/* Graduaciones — Negro a dorado */
+body.theme-graduaciones .countdown-container {
+  background: linear-gradient(135deg, #212121 0%, #ffd54f 100%);
+}
+
+/* Toda Ocasión (default) — Naranja RazoConnect */
+body.theme-todaocasion .countdown-container {
+  background: linear-gradient(135deg, #ff9966 0%, #ff7733 100%);
 }

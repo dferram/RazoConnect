@@ -1307,3 +1307,83 @@ body.theme-navidad .flash-subtitle {
     }
   }
 }
+
+/* ============================================================
+   TEMA DÍA DE LA MADRE — overrides de colores hardcodeados
+   Sustituye naranja/negro por tonos rosa que hacen blend
+   con el gradiente rosa/magenta del tema
+   ============================================================ */
+body.theme-diamadre {
+  --primary-gradient: linear-gradient(135deg, #f06292 0%, #c2185b 100%);
+}
+
+/* Overlay del hero: cambia marrón-naranja por rosa profundo */
+body.theme-diamadre .hero-slide::before {
+  background: linear-gradient(135deg, rgba(140, 20, 70, 0.72), transparent) !important;
+}
+
+/* Buscador focus: borde rosa */
+body.theme-diamadre .search-input:focus {
+  border-color: #c2185b;
+  box-shadow: 0 0 0 4px rgba(194, 24, 91, 0.12);
+}
+
+/* Iconos navbar hover */
+body.theme-diamadre .nav-icon-btn:hover {
+  color: #c2185b;
+}
+
+/* Categorías hover */
+body.theme-diamadre .category-card:hover .category-icon {
+  border-color: #e879a8;
+}
+
+/* Título de sección "Nuevos productos" — negro → rosa profundo */
+body.theme-diamadre .section-title {
+  color: #8b2252;
+}
+
+/* Subtítulo de sección */
+body.theme-diamadre .section-subtitle {
+  color: #a05070;
+}
+
+/* Tarjetas de nuevos arrivals */
+body.theme-diamadre .arrival-title {
+  color: #6b1a40;
+}
+
+body.theme-diamadre .arrival-price {
+  color: #c2185b;
+}
+
+body.theme-diamadre .new-badge {
+  background: linear-gradient(135deg, #e879a8 0%, #c2185b 100%);
+}
+
+/* Tarjetas de flash/ofertas */
+body.theme-diamadre .flash-product-card {
+  color: #3d1a2e;
+}
+
+body.theme-diamadre .flash-product-title {
+  color: #6b1a40;
+}
+
+body.theme-diamadre .flash-price-offer {
+  color: #c2185b;
+}
+
+body.theme-diamadre .flash-badge {
+  background: linear-gradient(135deg, #e879a8 0%, #c2185b 100%);
+}
+
+/* CTA del hero — texto oscuro en botón blanco → rosa profundo */
+body.theme-diamadre .hero-cta {
+  color: #8b2252;
+}
+
+body.theme-diamadre .hero-cta:hover {
+  background: #f9eef4;
+  color: #c2185b;
+}
