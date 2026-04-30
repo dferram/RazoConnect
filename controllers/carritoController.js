@@ -621,20 +621,12 @@ const agregarAlCarrito = async (req, res) => {
       });
     }
 
-    const masterResult = await db.query(
-      `SELECT pv.VarianteID, COALESCE(pv.Stock, 0) AS Stock
-       FROM Producto_Variantes pv
-       INNER JOIN Productos p ON p.ProductoID = pv.ProductoID
-       WHERE pv.ProductoID = $1
-         AND pv.PiezasPorPaquete = 1
-         AND p.tenant_id = $2
-       LIMIT 1`,
-      [variante.productoid, tenant_id]
-    );
-    const stockFisico =
-      masterResult.rows.length > 0
-        ? Math.max(parseInt(masterResult.rows[0].stock, 10), 0)
-        : 0;
+    const stockFisico = await SmartStockService.getStock({
+      varianteId,
+      userId: clienteId,
+      userRole: req.user.rol,
+      tenantId: tenant_id,
+    });
 
     const multiploBackorder = await obtenerMultiploBackorderDesdeReglaEmpaque({
       proveedorId: variante.proveedorid_default,
@@ -819,20 +811,12 @@ const actualizarCarrito = async (req, res) => {
 
     const variante = varianteResult.rows[0];
 
-    const masterResult = await db.query(
-      `SELECT pv.VarianteID, COALESCE(pv.Stock, 0) AS Stock
-       FROM Producto_Variantes pv
-       INNER JOIN Productos p ON p.ProductoID = pv.ProductoID
-       WHERE pv.ProductoID = $1
-         AND pv.PiezasPorPaquete = 1
-         AND p.tenant_id = $2
-       LIMIT 1`,
-      [variante.productoid, tenant_id]
-    );
-    const stockFisico =
-      masterResult.rows.length > 0
-        ? Math.max(parseInt(masterResult.rows[0].stock, 10), 0)
-        : 0;
+    const stockFisico = await SmartStockService.getStock({
+      varianteId,
+      userId: clienteId,
+      userRole: req.user.rol,
+      tenantId: tenant_id,
+    });
 
     // Obtener el carrito del cliente
     const carritoResult = await db.query(
@@ -1114,20 +1098,12 @@ const cambiarVarianteItemCarrito = async (req, res) => {
       });
     }
 
-    const masterResult = await db.query(
-      `SELECT pv.VarianteID, COALESCE(pv.Stock, 0) AS Stock
-       FROM Producto_Variantes pv
-       INNER JOIN Productos p ON p.ProductoID = pv.ProductoID
-       WHERE pv.ProductoID = $1
-         AND pv.PiezasPorPaquete = 1
-         AND p.tenant_id = $2
-       LIMIT 1`,
-      [variante.productoid, tenant_id]
-    );
-    const stockFisico =
-      masterResult.rows.length > 0
-        ? Math.max(parseInt(masterResult.rows[0].stock, 10), 0)
-        : 0;
+    const stockFisico = await SmartStockService.getStock({
+      varianteId: nuevaVarianteId,
+      userId: clienteId,
+      userRole: req.user.rol,
+      tenantId: tenant_id,
+    });
 
     // Calcular precio unitario efectivo (oferta o normal)
     const precioBase =

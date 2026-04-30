@@ -2923,6 +2923,30 @@
                 .map((item) => renderCartItem(item, null))
                 .join("");
 
+              // ── Estatus esperado del pedido ──────────────────────────
+              (function logEstatusPedido(items) {
+                const resumen = items.map((item) => ({
+                  sku: item.sku || item.varianteId,
+                  nombre: item.nombreProducto,
+                  surtida: parseInt(item.cantidadPaquetesSurtida, 10) || 0,
+                  backorder: parseInt(item.cantidadPaquetesBackorder, 10) || 0,
+                }));
+                const todosConStock  = resumen.every((i) => i.backorder === 0 && i.surtida > 0);
+                const todosSinStock  = resumen.every((i) => i.surtida === 0);
+                const estatus = todosConStock ? "Completo" : todosSinStock ? "Bajo pedido" : "Combinado";
+                console.group(`🛒 Estatus esperado del pedido: %c${estatus}`,
+                  `font-weight:700;color:${estatus === "Completo" ? "#16a34a" : estatus === "Bajo pedido" ? "#b45309" : "#0369a1"}`);
+                console.table(resumen.map((i) => ({
+                  SKU: i.sku,
+                  Producto: i.nombre,
+                  "Surtida (paq)": i.surtida,
+                  "Backorder (paq)": i.backorder,
+                  Estado: i.backorder === 0 && i.surtida > 0 ? "✅ Con stock" : i.surtida === 0 ? "⛔ Sin stock" : "⚠️ Parcial",
+                })));
+                console.groupEnd();
+              })(carritoData.items);
+              // ────────────────────────────────────────────────────────
+
               // Update summary
               summaryTotalItems.textContent = carritoData.totalItems;
               summarySubtotal.textContent = formatCurrency(
