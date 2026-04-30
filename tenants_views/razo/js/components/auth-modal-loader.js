@@ -326,9 +326,14 @@
               preview: `${token.substring(0, 20)}...${token.substring(token.length - 20)}`
             });
 
+            // Detectar si es agente (igual que login.js)
+            const rol = (response.data.data?.rol) || usuario?.rol || null;
+            const esAgenteCliente = rol === 'agente';
+            const usuarioFinal = { ...usuario, rol };
+
             finalToken = token;
-            finalUsuario = usuario;
-            userRole = 'cliente';
+            finalUsuario = usuarioFinal;
+            userRole = esAgenteCliente ? 'agente' : 'cliente';
             loginSuccessful = true;
 
             // Guardar tokens usando AuthManager
@@ -336,17 +341,21 @@
             console.log('[Auth Modal] AuthManager disponible:', typeof window.AuthManager !== 'undefined');
             console.log('[Auth Modal] Refresh token a guardar:', refreshToken ? 'SÍ' : 'NO');
             if (typeof window.AuthManager !== 'undefined' && AuthManager.saveTokens) {
-              AuthManager.saveTokens(token, refreshToken, usuario, 'cliente');
-              console.log('[Auth Modal] Tokens guardados con AuthManager para cliente');
+              AuthManager.saveTokens(token, refreshToken, usuarioFinal, userRole);
+              console.log('[Auth Modal] Tokens guardados con AuthManager para:', userRole);
             } else {
               // Fallback: guardar directamente en localStorage
-              localStorage.setItem('razoconnect_token', token);
-              localStorage.setItem('razoconnect_user', JSON.stringify(usuario));
-              // Guardar refresh token si existe
-              if (refreshToken) {
-                localStorage.setItem('razoconnect_refresh_token', refreshToken);
+              if (esAgenteCliente) {
+                localStorage.setItem('razoconnect_agent_token', token);
+                localStorage.setItem('razoconnect_agent', JSON.stringify(usuarioFinal));
+              } else {
+                localStorage.setItem('razoconnect_token', token);
+                localStorage.setItem('razoconnect_user', JSON.stringify(usuarioFinal));
               }
-              console.log('[Auth Modal] Tokens guardados con fallback para cliente');
+              if (refreshToken) {
+                localStorage.setItem(esAgenteCliente ? 'razoconnect_agent_refresh_token' : 'razoconnect_refresh_token', refreshToken);
+              }
+              console.log('[Auth Modal] Tokens guardados con fallback para:', userRole);
             }
           }
         }
@@ -402,7 +411,7 @@
             if (redirectUrl) {
               window.location.href = redirectUrl;
             } else if (userRole === 'admin') {
-              // Verificar si es agente
+              // Verificar si es agente (via /api/admin/login)
               const esAgente = finalUsuario.rol === 'agente' || 
                                finalUsuario.origen === 'agent' || 
                                finalUsuario.esAgente === true || 
@@ -413,6 +422,8 @@
               } else {
                 window.location.href = '/admin-dashboard.html';
               }
+            } else if (userRole === 'agente') {
+              window.location.href = '/agente-dashboard.html';
             } else {
               location.reload();
             }
