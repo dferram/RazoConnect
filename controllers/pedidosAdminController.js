@@ -950,7 +950,7 @@ const surtirPedido = async (req, res) => {
           AND pv.tenant_id = $2
           AND (
             CASE
-              WHEN sa.cantidad IS NOT NULL THEN (sa.cantidad - COALESCE(sa.cantidad_reservada, 0)) >= d.piezastotales
+              WHEN sa.cantidad IS NOT NULL THEN sa.cantidad >= d.piezastotales
               ELSE pv.stock >= d.piezastotales
             END
           )
@@ -1103,11 +1103,14 @@ const surtirPedido = async (req, res) => {
       const stockPosterior = stockPrevio - piezasSurtidas;
 
       // 2. Descontar stock inmediatamente al surtir
+      // ⚠️ CRÍTICO: También ajustar cantidad_reservada para mantener el constraint
+      // chk_reserva_no_excede_stock (cantidad_reservada <= cantidad)
       await client.query(
         `UPDATE stock_admin
-         SET cantidad = $1
+         SET cantidad = $1,
+             cantidad_reservada = GREATEST(0, cantidad_reservada - $5)
          WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4`,
-        [stockPosterior, detalle.varianteid, adminId, tenant_id]
+        [stockPosterior, detalle.varianteid, adminId, tenant_id, piezasSurtidas]
       );
 
       // 3. Registrar movimiento de inventario

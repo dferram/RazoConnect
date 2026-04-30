@@ -243,9 +243,12 @@ async function getStock({ varianteId, userId, userRole, tenantId, estadoId, admi
       const stock = rows.length > 0 ? parseInt(rows[0].stock, 10) : 0;
       const reservada = rows.length > 0 ? parseInt(rows[0].reservada, 10) : 0;
       
-      // Inventarios ve stock físico total, otros ven disponible
-      const isInventariosRole = context.roles?.includes('inventarios');
-      const stockFinal = isInventariosRole ? stock : Math.max(stock - reservada, 0);
+      // CONTEXTO: Panel Admin vs Tienda Online
+      // - Panel Admin (finanzas, admin, inventarios, etc.): usa stock físico directo (NO resta reservas)
+      // - Tienda Online (clientes): usa stock disponible (resta reservas)
+      const rolesAdminPanel = ['inventarios', 'finanzas', 'admin', 'compras', 'gerente_finanzas', 'gerente_operaciones', 'jefe_almacen'];
+      const isAdminPanel = context.roles?.some(r => rolesAdminPanel.includes(r));
+      const stockFinal = isAdminPanel ? stock : Math.max(stock - reservada, 0);
       
       return stockFinal;
     } catch (error) {
@@ -341,8 +344,12 @@ async function getBulkStock({ varianteIds, userId, userRole, tenantId, estadoId,
         const stock = parseInt(row.stock, 10);
         const reservada = parseInt(row.reservada, 10);
         
-        // Inventarios ve stock físico total, otros ven disponible
-        const stockFinal = isInventariosRole ? stock : Math.max(stock - reservada, 0);
+        // CONTEXTO: Panel Admin vs Tienda Online
+        // - Panel Admin (finanzas, admin, inventarios, etc.): usa stock físico directo (NO resta reservas)
+        // - Tienda Online (clientes): usa stock disponible (resta reservas)
+        const rolesAdminPanel = ['inventarios', 'finanzas', 'admin', 'compras', 'gerente_finanzas', 'gerente_operaciones', 'jefe_almacen'];
+        const isAdminPanel = context.roles?.some(r => rolesAdminPanel.includes(r));
+        const stockFinal = isAdminPanel ? stock : Math.max(stock - reservada, 0);
         
         stockMap.set(parseInt(row.variante_id, 10), stockFinal);
       });
@@ -628,6 +635,7 @@ async function getGlobalStockBreakdown(varianteId, tenantId) {
  * @param {number} params.tenantId - ID del tenant
  * @param {number} params.pedidoId - ID del pedido actual (opcional, para excluirlo de cálculos)
  * @param {number} params.piezasPorPaquete - Piezas por paquete (para convertir a unidades físicas)
+ * @param {boolean} params.isAdminPanel - Si es true, NO resta cantidad_reservada (panel admin). Si es false, SÍ resta (tienda online)
  * @returns {Promise<Object>} { 
  *   estatus: 'surtido'|'parcial'|'backorder',
  *   stockDisponible: number,
@@ -644,7 +652,8 @@ async function calculateAllocationStatus({
   adminId,
   tenantId,
   pedidoId = null,
-  piezasPorPaquete = 1
+  piezasPorPaquete = 1,
+  isAdminPanel = false
 }) {
   try {
     // VALIDACIÓN DE PARÁMETROS
@@ -757,12 +766,12 @@ async function calculateAllocationStatus({
     
 
     // PASO 3: CÁLCULO DE STOCK DISPONIBLE
-    // Stock disponible = Stock físico - Reservas activas (cantidad_reservada ya incluye deuda FIFO)
-    // cantidad_reservada se incrementa al crear cada pedido, por lo que deudaPreviaEnPiezas es redundante
-    const stockDisponibleParaEstePedido = Math.max(
-      stockFisico - cantidadReservada,
-      0
-    );
+    // CONTEXTO: Panel Admin vs Tienda Online
+    // - Panel Admin: usa stock físico directo (NO resta reservas) - isAdminPanel = true
+    // - Tienda Online: usa stock disponible (resta reservas) - isAdminPanel = false
+    const stockDisponibleParaEstePedido = isAdminPanel 
+      ? stockFisico  // Panel admin: stock físico completo
+      : Math.max(stockFisico - cantidadReservada, 0);  // Tienda online: stock - reservas
     
     
     // Convertir a paquetes
