@@ -103,6 +103,28 @@
       return;
     }
 
+    // Load states into registration dropdown
+    async function cargarEstados() {
+      const select = document.getElementById('regEstadoModal');
+      if (!select || select.options.length > 1) return;
+      try {
+        const res = await fetch('/api/estados-all');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          data.data.forEach(e => {
+            const opt = document.createElement('option');
+            opt.value = e.estadoid;
+            opt.textContent = e.nombre;
+            select.appendChild(opt);
+          });
+        }
+      } catch (err) {
+        console.error('Error cargando estados:', err);
+      }
+    }
+
+    cargarEstados();
+
     // Tab switching functions
     function switchToLogin() {
       tabLogin.classList.add('active');
@@ -446,8 +468,10 @@
       e.preventDefault();
       
       const nombre = document.getElementById('regNombreModal').value.trim();
+      const apellido = document.getElementById('regApellidoModal').value.trim();
       const email = document.getElementById('regEmailModal').value.trim();
       const telefono = document.getElementById('regTelefonoModal').value.trim();
+      const estadoId = document.getElementById('regEstadoModal').value;
       const password = document.getElementById('regPasswordModal').value;
       const passwordConfirm = document.getElementById('regPasswordConfirmModal').value;
 
@@ -463,7 +487,7 @@
         return;
       }
 
-      if (!nombre || !email || !telefono) {
+      if (!nombre || !apellido || !email || !telefono || !estadoId) {
         showToast('Por favor completa todos los campos', 'error');
         return;
       }
@@ -482,10 +506,12 @@
 
       try {
         const response = await API.registroCliente({
-          Nombre: nombre,
-          Email: email,
-          Telefono: telefono,
-          Password: password
+          nombre,
+          apellido,
+          email,
+          telefono,
+          password,
+          estado_id: parseInt(estadoId, 10)
         });
 
         if (response.ok && response.data.success) {
