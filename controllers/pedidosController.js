@@ -946,7 +946,8 @@ const crearPedido = async (req, res) => {
            monto_backorder,
            tenant_id,
            estado_id,
-           admin_asignado_id
+           admin_asignado_id,
+           admin_id
          )
          VALUES (
            $1,
@@ -970,6 +971,7 @@ const crearPedido = async (req, res) => {
            $4,
            $15,
            $16,
+           $17,
            $17
          )
          RETURNING pedidoid, fechapedido, montototal, estatus, fecha_vencimiento, es_credito, pagado, metodo_pago, transaccion_id, comprobante_url, cupon_id, monto_descuento, saldo_pendiente`,
@@ -1109,10 +1111,11 @@ const crearPedido = async (req, res) => {
       // NUEVO: Reutilizar split ya calculado en itemCalculado
       const split = itemCalculado.split;
 
-      // CRITICAL FIX: Validate and correct split BEFORE extracting to local variables
-      // This prevents the bug where stock=0 but split returns cantidadSurtida > 0
-      if (stockActual === 0 && split.cantidadSurtida > 0) {
-        logger.error('Logic error: stock 0 pero cantidadSurtida > 0', {
+      // Validar usando el stock real de la variante pedida (FIFO), no de la variante maestra
+      // La variante maestra (piezasporpaquete=1) puede no tener entrada en stock_admin
+      const fifoStockDisponible = split.fifoInfo ? (split.fifoInfo.stockDisponible || 0) : 0;
+      if (fifoStockDisponible === 0 && split.cantidadSurtida > 0) {
+        logger.error('Logic error: FIFO stock 0 pero cantidadSurtida > 0', {
           cantidadSurtida: split.cantidadSurtida,
           producto: item.nombreproducto,
           productoId: item.productoid,
@@ -1161,15 +1164,15 @@ const crearPedido = async (req, res) => {
         });
       }
 
-      // CRITICAL FIX: Prevent duplicate inserts with explicit validation
-      // Ensure that if stock is 0, we NEVER insert a surtido row
-      const stockFinalValidation = masterInfo ? masterInfo.stock : 0;
-      const puedeSerSurtido = stockFinalValidation > 0 && cantidadSurtida > 0 && piezasSurtidas <= stockFinalValidation;
+      // Usar stock FIFO de la variante real pedida (no de la variante maestra)
+      // La variante maestra puede no tener stock_admin — confiar en el FIFO allocation
+      const fifoStockValidacion = split.fifoInfo ? (split.fifoInfo.stockDisponible || 0) : 0;
+      const puedeSerSurtido = cantidadSurtida > 0 && fifoStockValidacion >= piezasSurtidas;
       
       if (!puedeSerSurtido && cantidadSurtida > 0) {
         logger.error('Duplication prevented: stock insuficiente', {
           cantidadSurtida,
-          stockDisponible: stockFinalValidation,
+          stockDisponible: fifoStockValidacion,
           piezasNecesarias: piezasSurtidas,
           accion: 'Saltando INSERT de surtido',
           requestId: req.requestId,

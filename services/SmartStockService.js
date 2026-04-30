@@ -706,10 +706,11 @@ async function calculateAllocationStatus({
     }
     
 
-    // PASO 3: CÁLCULO FIFO CON HARD-RESERVE
-    // Stock disponible = Stock físico - Reservas activas - Deuda previa
+    // PASO 3: CÁLCULO DE STOCK DISPONIBLE
+    // Stock disponible = Stock físico - Reservas activas (cantidad_reservada ya incluye deuda FIFO)
+    // cantidad_reservada se incrementa al crear cada pedido, por lo que deudaPreviaEnPiezas es redundante
     const stockDisponibleParaEstePedido = Math.max(
-      stockFisico - cantidadReservada - deudaPreviaEnPiezas, 
+      stockFisico - cantidadReservada,
       0
     );
     

@@ -59,10 +59,10 @@
 
     function normalizeTipo(movimiento) {
       const value = (movimiento?.tipo || "").toString().toLowerCase();
-      if (["cargo", "credito", "compra"].includes(value)) {
+      if (["cargo", "credito", "compra", "reserva"].includes(value)) {
         return "cargo";
       }
-      if (["abono", "pago"].includes(value)) {
+      if (["abono", "pago", "ajuste"].includes(value)) {
         return "abono";
       }
       return "otro";
