@@ -272,33 +272,39 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       });
 
       // ✅ LÓGICA DE ESTADO DEL PEDIDO en FINANZAS
-      if (facturados === totalProductos && facturados > 0) {
+      // PRIORIDAD: Si hay productos "Surtido", mantener "Listo para remisionar"
+      if (surtidos > 0) {
+        // 🔵 HAY PRODUCTOS SURTIDOS ESPERANDO CONFIRMACIÓN → Mantener "Listo para remisionar"
+        nuevoEstatusPedido = 'Listo para remisionar';
+        completamenteSurtido = false;
+        logger.info('🔵 Estado: Listo para remisionar (hay productos surtidos pendientes de confirmación)', {
+          pedidoId,
+          surtidos,
+          facturados,
+          bajosPedido,
+          conStock
+        });
+      } else if (facturados === totalProductos && facturados > 0) {
         // ✅ TODOS FACTURADOS (completamente surtidos y confirmados por finanzas)
         nuevoEstatusPedido = 'Surtido';
         completamenteSurtido = true;
         logger.info('✅ Estado: Surtido (TODOS los productos confirmados por finanzas)', { pedidoId });
-      } else if (facturados > 0 && (surtidos > 0 || bajosPedido > 0 || conStock > 0)) {
-        // ⚠️ COMBINADO: Hay algunos facturados pero otros aún en otros estados
+      } else if (facturados > 0 && (bajosPedido > 0 || conStock > 0)) {
+        // ⚠️ COMBINADO: Hay algunos facturados pero otros en bajo pedido o con stock
         nuevoEstatusPedido = 'Combinado';
         completamenteSurtido = false;
-        logger.info('🟠 Estado: Combinado (algunos confirmados, otros surtidos/con stock)', {
+        logger.info('🟠 Estado: Combinado (algunos confirmados, otros con stock/bajo pedido)', {
           pedidoId,
           facturados,
-          surtidos,
           bajosPedido,
           conStock
         });
-      } else if (facturados === 0 && surtidos === totalProductos) {
-        // 🔵 LISTO PARA REMISIONAR: Todos surtidos pero NO facturados aún
-        nuevoEstatusPedido = 'Listo para remisionar';
-        completamenteSurtido = false;
-        logger.info('🔵 Estado: Listo para remisionar (surtidos pero no confirmados)', { pedidoId });
-      } else if (conStock === totalProductos && facturados === 0 && surtidos === 0) {
+      } else if (conStock === totalProductos && facturados === 0) {
         // 🟢 CON STOCK: Todos con stock pero no surtidos
         nuevoEstatusPedido = 'Con stock';
         completamenteSurtido = false;
         logger.info('🟢 Estado: Con stock (disponible pero no procesado)', { pedidoId });
-      } else if (bajosPedido === totalProductos && facturados === 0 && surtidos === 0) {
+      } else if (bajosPedido === totalProductos && facturados === 0) {
         // 🔴 BAJO PEDIDO: Todos sin stock
         nuevoEstatusPedido = 'Bajo pedido';
         completamenteSurtido = false;
