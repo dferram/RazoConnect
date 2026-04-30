@@ -423,11 +423,12 @@ const AuthManager = (() => {
    * @returns {Promise<Response>} Response de fetch
    */
   const fetchWithAuth = async (url, options = {}) => {
+    const isPublic = options.public === true;
     const context = detectContext();
     let accessToken = getAccessToken(context);
 
-    // Verificar si el access token está expirado
-    if (accessToken && isTokenExpired(accessToken)) {
+    // Verificar si el access token está expirado (solo para endpoints privados)
+    if (!isPublic && accessToken && isTokenExpired(accessToken)) {
       console.log('⏰ [AuthManager] Access token expirado, renovando...');
       accessToken = await refreshAccessToken(context);
       
@@ -460,8 +461,8 @@ const AuthManager = (() => {
     try {
       const response = await fetch(url, config);
 
-      // Si recibimos 401, intentar renovar token y reintentar
-      if (response.status === 401) {
+      // Si recibimos 401, intentar renovar token y reintentar (solo para endpoints privados)
+      if (response.status === 401 && !isPublic) {
         console.log('🔒 [AuthManager] Error 401, intentando renovar token...');
 
         const newAccessToken = await refreshAccessToken(context);

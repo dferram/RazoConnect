@@ -629,6 +629,7 @@ const API = {
     return apiCall("/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+      public: true,
     });
   },
 

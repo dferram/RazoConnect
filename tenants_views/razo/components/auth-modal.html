@@ -34,8 +34,12 @@
     <!-- Registration Form -->
     <form id="formRegistroModal" class="auth-form">
       <div class="form-group">
-        <label for="regNombreModal" class="form-label">Nombre Completo</label>
-        <input type="text" id="regNombreModal" name="nombre" required minlength="3" maxlength="100" autocomplete="name" class="form-control" placeholder="Juan Pérez" aria-label="Nombre completo">
+        <label for="regNombreModal" class="form-label">Nombre</label>
+        <input type="text" id="regNombreModal" name="nombre" required minlength="2" maxlength="100" autocomplete="given-name" class="form-control" placeholder="Juan" aria-label="Nombre">
+      </div>
+      <div class="form-group">
+        <label for="regApellidoModal" class="form-label">Apellido</label>
+        <input type="text" id="regApellidoModal" name="apellido" required minlength="2" maxlength="100" autocomplete="family-name" class="form-control" placeholder="Pérez" aria-label="Apellido">
       </div>
       <div class="form-group">
         <label for="regEmailModal" class="form-label">Email</label>
@@ -44,6 +48,12 @@
       <div class="form-group">
         <label for="regTelefonoModal" class="form-label">Teléfono</label>
         <input type="tel" id="regTelefonoModal" name="telefono" required pattern="[0-9]{10}" maxlength="10" autocomplete="tel" class="form-control" placeholder="5512345678" aria-label="Teléfono (10 dígitos)" title="Ingresa 10 dígitos">
+      </div>
+      <div class="form-group">
+        <label for="regEstadoModal" class="form-label">Estado</label>
+        <select id="regEstadoModal" name="estado_id" required class="form-control" aria-label="Estado de la república">
+          <option value="">Selecciona tu estado</option>
+        </select>
       </div>
       <div class="form-group">
         <label for="regPasswordModal" class="form-label">Contraseña</label>
