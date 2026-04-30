@@ -2436,12 +2436,22 @@
             // Recopilar todos los productos en estado 'Surtido' para devolver su stock
             const productosSurtidosIds = [];
             if (Array.isArray(productos) && productos.length > 0) {
+              console.log('🔍 [RECHAZAR] Total productos:', productos.length);
               productos.forEach(p => {
+                console.log('🔍 [RECHAZAR] Producto:', {
+                  detalleId: p.detalleId,
+                  detalleid: p.detalleid,
+                  estadoProducto: p.estadoProducto,
+                  nombre: p.nombre
+                });
                 if ((p.estadoProducto || '').toLowerCase().trim() === 'surtido') {
-                  productosSurtidosIds.push(p.detalleid);
+                  // Usar detalleId (camelCase) que es como viene del backend
+                  productosSurtidosIds.push(p.detalleId);
                 }
               });
             }
+            
+            console.log('🔍 [RECHAZAR] IDs a enviar:', productosSurtidosIds);
 
             const response = await fetch(`${API_BASE_URL}/admin/pedidos/${selectedOrderId}/rechazar-finanzas`, {
               method: 'POST',

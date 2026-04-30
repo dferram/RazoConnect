@@ -121,9 +121,12 @@ const rechazarRemisionYReponerStock = async (req, res) => {
       const stockAnterior = parseInt(stockActualResult.rows[0].cantidad || 0, 10);
 
       // 4.2. Reponer el stock
+      // ⚠️ CRÍTICO: También ajustar cantidad_reservada para mantener el constraint
+      // chk_reserva_no_excede_stock (cantidad_reservada <= cantidad)
       const repuestaResult = await client.query(
         `UPDATE stock_admin
-         SET cantidad = cantidad + $1
+         SET cantidad = cantidad + $1,
+             cantidad_reservada = GREATEST(0, cantidad_reservada - $1)
          WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4
          RETURNING cantidad`,
         [piezasAReponer, varianteId, adminClienteId, tenant_id]
@@ -182,7 +185,7 @@ const rechazarRemisionYReponerStock = async (req, res) => {
     await client.query(
       `UPDATE pedidos
        SET estatus = 'Rechazado por Finanzas',
-           rechazado_por_finanzas = true,
+           rechazado_por_finanzas = 1,
            fecha_rechazo_finanzas = NOW(),
            observaciones_finanzas = $1
        WHERE pedidoid = $2 AND tenant_id = $3`,
@@ -295,8 +298,17 @@ const rechazarPedidoFinanzas = async (req, res) => {
     if (detalleIds && Array.isArray(detalleIds) && detalleIds.length > 0) {
 
       // 1. Obtener los detalles a rechazar con la cantidad REAL surtida (antes de modificar nada)
+      // ⚠️ CRÍTICO: Solo productos en estado "Surtido" (Facturado ya terminó su ciclo)
+      
+      logger.info('🔍 [RECHAZAR] Buscando productos para rechazar:', {
+        pedidoId,
+        detalleIds,
+        tenant_id
+      });
+      
       const productosARechazarResult = await client.query(
         `SELECT dp.detalleid, dp.varianteid, dp.cantidadsurtida, dp.piezastotales,
+                dp.estado_producto,
                 psd.admin_id AS admin_surtidor, psd.cantidad AS cantidad_psd
          FROM detallesdelpedido dp
          LEFT JOIN pedido_surtido_detalle psd
@@ -304,11 +316,35 @@ const rechazarPedidoFinanzas = async (req, res) => {
          WHERE dp.pedidoid = $1
            AND dp.detalleid = ANY($2::int[])
            AND dp.tenant_id = $3
-           AND dp.cantidadsurtida > 0`,
+           AND LOWER(dp.estado_producto) = 'surtido'`,
         [pedidoId, detalleIds, tenant_id]
       );
+      
+      logger.info('🔍 [RECHAZAR] Productos encontrados:', {
+        cantidad: productosARechazarResult.rows.length,
+        productos: productosARechazarResult.rows.map(p => ({
+          detalleid: p.detalleid,
+          estado: p.estado_producto,
+          cantidadsurtida: p.cantidadsurtida,
+          admin_surtidor: p.admin_surtidor
+        }))
+      });
 
       if (productosARechazarResult.rows.length === 0) {
+        // Log para debug: ver qué productos hay en el pedido
+        const todosLosProductos = await client.query(
+          `SELECT detalleid, estado_producto, cantidadsurtida 
+           FROM detallesdelpedido 
+           WHERE pedidoid = $1 AND tenant_id = $2`,
+          [pedidoId, tenant_id]
+        );
+        
+        logger.error('❌ [RECHAZAR] No se encontraron productos surtidos:', {
+          pedidoId,
+          detalleIdsRecibidos: detalleIds,
+          todosLosProductosDelPedido: todosLosProductos.rows
+        });
+        
         await client.query('ROLLBACK');
         return res.status(400).json({
           success: false,
@@ -330,9 +366,13 @@ const rechazarPedidoFinanzas = async (req, res) => {
           continue;
         }
 
+        // ⚠️ CRÍTICO: También ajustar cantidad_reservada para mantener el constraint
+        // chk_reserva_no_excede_stock (cantidad_reservada <= cantidad)
+        // Al devolver stock, debemos asegurarnos de que cantidad_reservada no exceda la nueva cantidad
         await client.query(
           `UPDATE stock_admin
-           SET cantidad = cantidad + $1
+           SET cantidad = cantidad + $1,
+               cantidad_reservada = GREATEST(0, cantidad_reservada - $1)
            WHERE variante_id = $2 AND admin_id = $3 AND tenant_id = $4`,
           [piezasADevolver, producto.varianteid, adminSurtidor, tenant_id]
         );
@@ -365,17 +405,30 @@ const rechazarPedidoFinanzas = async (req, res) => {
            AND sa.variante_id = dp.varianteid`,
         [pedidoId, detalleIds, tenant_id, adminClienteId]
       );
+      
+      logger.info('✅ Estados de productos actualizados:', {
+        pedidoId,
+        detalleIds,
+        adminClienteId
+      });
 
       // 4. Marcar pedido en Revisión de almacén
+      logger.info('🔄 Actualizando estado del pedido a "Revisión de almacén":', {
+        pedidoId,
+        observaciones_finanzas
+      });
+      
       await client.query(
         `UPDATE pedidos
          SET estatus = 'Revisión de almacén',
              observaciones_finanzas = $3,
-             rechazado_por_finanzas = true,
+             rechazado_por_finanzas = 1,
              fecha_rechazo_finanzas = NOW()
          WHERE pedidoid = $1 AND tenant_id = $2`,
         [pedidoId, tenant_id, observaciones_finanzas]
       );
+      
+      logger.info('✅ Estado del pedido actualizado');
 
       await client.query('COMMIT');
 
