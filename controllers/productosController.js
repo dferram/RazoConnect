@@ -1119,9 +1119,9 @@ const obtenerProductoPorId = async (req, res) => {
             tenantId: tenant_id,
             piezasPorPaquete
           });
-          // stockDisponible está en piezas, convertir a paquetes
+          // stockDisponible en piezas brutas - el frontend divide por el tamano seleccionado
           const piezasDisponibles = Math.max(allocationStatus.stockDisponible || 0, 0);
-          stockCalculado = Math.floor(piezasDisponibles / piezasPorPaquete);
+          stockCalculado = piezasDisponibles;
 
           logger.debug('📦 [PRODUCTO DETALLE] FIFO Stock calculated for variant:', {
             varianteId: row.varianteid,
