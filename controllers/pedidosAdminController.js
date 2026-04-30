@@ -152,11 +152,19 @@ const getAllPedidos = async (req, res) => {
     const isFinanzas = userRole === 'finanzas';
     const isAdmin = userRole === 'admin' || userRole === 'superadmin';
 
-    // ⚠️ CRÍTICO: Obtener admin_asignado_id del usuario para aislamiento
+    // ⚠️ CRÍTICO: Obtener admin_responsable_id del usuario para aislamiento
     let adminAsignadoId = null;
     if (isFinanzas) {
-      // Finanzas ve SOLO sus propios pedidos
-      adminAsignadoId = req.user?.adminid || null;
+      // Finanzas ve pedidos del admin al que está asignado (admin_responsable_id)
+      adminAsignadoId = req.user?.admin_responsable_id || null;
+      
+      if (!adminAsignadoId) {
+        logger.warn('⚠️ [PEDIDOS] Usuario finanzas sin admin_responsable_id asignado', {
+          userId: req.user?.id,
+          adminid: req.user?.adminid,
+          rol: userRole
+        });
+      }
     }
 
     // VALIDACIÓN: Inventarios NO puede ver históricos

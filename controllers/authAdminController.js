@@ -76,7 +76,7 @@ const loginAdmin = async (req, res) => {
     // Buscar administrador por email Y tenant_id (aislamiento multi-tenant)
     // NOTA: La tabla administradores NO tiene columna telefono
     const result = await db.query(
-      "SELECT adminid, email, nombre, apellido, rol, passwordhash, tenant_id FROM administradores WHERE email = $1 AND tenant_id = $2 AND activo = TRUE",
+      "SELECT adminid, email, nombre, apellido, rol, passwordhash, tenant_id, admin_responsable_id FROM administradores WHERE email = $1 AND tenant_id = $2 AND activo = TRUE",
       [email, tenant_id]
     );
 
@@ -92,6 +92,7 @@ const loginAdmin = async (req, res) => {
         rol: admin.rol,
         passwordHash: admin.passwordhash,
         adminSource: "admin",
+        admin_responsable_id: admin.admin_responsable_id || null,
         roles: Array.from(new Set(["admin", admin.rol].filter(Boolean))),
       };
     } else {
@@ -207,6 +208,7 @@ const loginAdmin = async (req, res) => {
       rol: rolNormalizado,
       email: cuenta.email,
       tenant_id: tenant_id,
+      admin_responsable_id: cuenta.admin_responsable_id || null,
     });
 
     const refreshToken = generateRefreshToken({
@@ -214,6 +216,7 @@ const loginAdmin = async (req, res) => {
       rol: rolNormalizado,
       email: cuenta.email,
       tenant_id: tenant_id,
+      admin_responsable_id: cuenta.admin_responsable_id || null,
     });
 
     // Guardar refresh token en Redis (30 días)
