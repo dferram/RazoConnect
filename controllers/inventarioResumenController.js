@@ -156,7 +156,8 @@ const getInventarioResumen = async (req, res) => {
           userId,
           userRole: userRoles,
           tenantId: tenant_id,
-          estadoId: req.user?.estadoId || null
+          estadoId: req.user?.estadoId || null,
+          adminResponsableId: req.user?.admin_responsable_id || null
         });
       } catch (error) {
         logger.error('[getInventarioResumen] Error al obtener stock bulk:', {
@@ -316,6 +317,16 @@ const getProductoDetalleInventario = async (req, res) => {
     const variantes = row.lista_variantes || [];
     const imagenes = row.imagenes || [];
 
+    console.log('[getProductoDetalleInventario] 📋 Variantes del producto:', {
+      productoId,
+      totalVariantes: variantes.length,
+      variantes: variantes.map(v => ({
+        varianteId: v.varianteId || v.varianteid,
+        dimensiones: v.dimensiones,
+        color: v.color_nombre
+      }))
+    });
+
     // ✅ SMART STOCK: Obtener stock dinámico para todas las variantes
     const varianteIds = variantes.map(v => v.varianteId || v.varianteid).filter(Boolean);
     let stockMap = new Map();
@@ -327,7 +338,8 @@ const getProductoDetalleInventario = async (req, res) => {
           userId,
           userRole: userRoles,
           tenantId: tenant_id,
-          estadoId: req.user?.estadoId || null
+          estadoId: req.user?.estadoId || null,
+          adminResponsableId: req.user?.admin_responsable_id || null
         });
       } catch (error) {
         logger.error('[getProductoDetalleInventario] Error al obtener stock dinámico:', {
@@ -342,6 +354,14 @@ const getProductoDetalleInventario = async (req, res) => {
     const totalStock = varianteIds.reduce((sum, varianteId) => {
       return sum + (stockMap.get(varianteId) || 0);
     }, 0);
+
+    console.log('[getProductoDetalleInventario] 📊 Stock map final:', {
+      totalStock,
+      stockPorVariante: varianteIds.map(id => ({
+        varianteId: id,
+        stock: stockMap.get(id) || 0
+      }))
+    });
 
     const productoDetalle = {
       productoId: row.productoid,
