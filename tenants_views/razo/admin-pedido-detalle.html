@@ -1193,6 +1193,9 @@
       (function () {
         "use strict";
 
+        // Variable de scope del IIFE para acceso desde múltiples funciones
+        let productos = [];
+
         // Validación crítica: Verificar que API esté disponible
         if (typeof API === 'undefined') {
           console.error('❌ [PEDIDO-DETALLE] Error crítico: api.js no se cargó correctamente');

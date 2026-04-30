@@ -229,7 +229,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         dp.estado_producto,
         COALESCE(SUM(sa.cantidad), 0) as stock_total,
         COALESCE(SUM(sa.cantidad_reservada), 0) as stock_reservado,
-        (COALESCE(SUM(sa.cantidad), 0) - COALESCE(SUM(sa.cantidad_reservada), 0)) as stock_disponible
+        COALESCE(SUM(sa.cantidad), 0) as stock_disponible
       FROM detallesdelpedido dp
       LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = dp.tenant_id AND sa.admin_id = $3
       WHERE dp.pedidoid = $1

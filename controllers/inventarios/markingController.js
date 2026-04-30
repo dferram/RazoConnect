@@ -100,7 +100,8 @@ async function validarYMarcarProductos({
           adminId: pedido.admin_asignado_id,
           tenantId: tenant_id,
           pedidoId: pedidoId,
-          piezasPorPaquete: 1  // Ya trabajamos en piezas
+          piezasPorPaquete: 1,  // Ya trabajamos en piezas
+          isAdminPanel: true  // Panel admin: NO restar cantidad_reservada
         });
 
         productosAlcanza.push({

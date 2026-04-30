@@ -25,9 +25,10 @@ const logger = require("../utils/logger");
  * @param {string|string[]} params.userRole - Rol(es) del usuario
  * @param {number} params.tenantId - ID del tenant
  * @param {number} params.estadoId - (Opcional) ID del estado del cliente (si está disponible en token)
+ * @param {number} params.adminResponsableId - (Opcional) admin_responsable_id del token (para roles subordinados)
  * @returns {Promise<Object>} { isSuperAdmin, isAdmin, adminId, clienteAdminId }
  */
-async function determineUserContext({ userId, userRole, tenantId, estadoId }) {
+async function determineUserContext({ userId, userRole, tenantId, estadoId, adminResponsableId }) {
   const roles = Array.isArray(userRole) ? userRole : [userRole];
   
   const isSuperAdmin = roles.some(r => 
@@ -70,39 +71,53 @@ async function determineUserContext({ userId, userRole, tenantId, estadoId }) {
   // CASO 2: Roles con admin_responsable_id (finanzas, inventarios, catalogo, compras, agente)
   // IMPORTANTE: Verificar ANTES que admin, porque pueden tener ambos roles
   if (necesitaAdminResponsable) {
-    try {
-      // Primero intentar desde tabla administradores
-      const { rows } = await db.query(
-        `SELECT admin_responsable_id
-         FROM administradores
-         WHERE adminid = $1 AND tenant_id = $2 AND activo = true`,
-        [userId, tenantId]
-      );
+    console.log('[SmartStockService] 🔍 Rol con admin_responsable detectado:', { roles, userId, adminResponsableId });
+    
+    // PRIORIDAD 1: Usar adminResponsableId del token si está disponible
+    if (adminResponsableId) {
+      adminId = adminResponsableId;
+      console.log('[SmartStockService] ✅ Usando admin_responsable_id del token:', adminId);
+    } else {
+      // PRIORIDAD 2: Consultar base de datos (fallback para compatibilidad)
+      console.log('[SmartStockService] ⚠️ adminResponsableId NO disponible en parámetros, consultando BD...');
+      try {
+        const { rows } = await db.query(
+          `SELECT admin_responsable_id
+           FROM administradores
+           WHERE adminid = $1 AND tenant_id = $2 AND activo = true`,
+          [userId, tenantId]
+        );
 
-      if (rows.length > 0 && rows[0].admin_responsable_id) {
-        adminId = rows[0].admin_responsable_id;
-      } else {
-        // Si no tiene admin_responsable_id asignado, usar su propio ID como fallback
+        if (rows.length > 0 && rows[0].admin_responsable_id) {
+          adminId = rows[0].admin_responsable_id;
+          console.log('[SmartStockService] ✅ admin_responsable_id desde BD:', adminId);
+        } else {
+          // Si no tiene admin_responsable_id asignado, usar su propio ID como fallback
+          adminId = userId;
+          console.log('[SmartStockService] ⚠️ Sin admin_responsable_id en BD, usando userId como fallback:', adminId);
+        }
+
+        // Si no tiene admin asignado, usar su propio ID (fallback)
+        if (!adminId) {
+          adminId = userId;
+          console.log('[SmartStockService] ⚠️ adminId null, usando userId:', adminId);
+        }
+      } catch (error) {
+        console.error('[SmartStockService] Error al obtener admin responsable:', error);
+        // Fallback: usar su propio ID
         adminId = userId;
       }
-
-      // Si no tiene admin asignado, usar su propio ID (fallback)
-      if (!adminId) {
-        adminId = userId;
-      }
-    } catch (error) {
-      console.error('[SmartStockService] Error al obtener admin responsable:', error);
-      // Fallback: usar su propio ID
-      adminId = userId;
     }
 
+    console.log('[SmartStockService] 📊 Contexto final para rol subordinado:', { adminId, roles });
     return {
       isSuperAdmin: false,
       isAdmin: true, // Tratarlos como admin para acceso a stock_admin
       isAgente: roles.includes('agente'),
       isCliente: false,
       adminId,
-      clienteAdminId: null
+      clienteAdminId: null,
+      roles // Guardar roles para lógica específica
     };
   }
 
@@ -184,15 +199,16 @@ async function determineUserContext({ userId, userRole, tenantId, estadoId }) {
  * @param {string|string[]} params.userRole - Rol(es) del usuario
  * @param {number} params.tenantId - ID del tenant
  * @param {number} params.estadoId - (Opcional) ID del estado del cliente (si está disponible en token)
+ * @param {number} params.adminResponsableId - (Opcional) admin_responsable_id del token
  * @returns {Promise<number>} Cantidad de stock disponible
  */
-async function getStock({ varianteId, userId, userRole, tenantId, estadoId }) {
+async function getStock({ varianteId, userId, userRole, tenantId, estadoId, adminResponsableId }) {
   if (!varianteId || !userId || !tenantId) {
     console.error('[SmartStockService] getStock: Parámetros inválidos', { varianteId, userId, tenantId });
     return 0;
   }
 
-  const context = await determineUserContext({ userId, userRole, tenantId, estadoId });
+  const context = await determineUserContext({ userId, userRole, tenantId, estadoId, adminResponsableId });
 
   // CASO A: Super Admin - Lee stock global
   if (context.isSuperAdmin) {
@@ -226,8 +242,15 @@ async function getStock({ varianteId, userId, userRole, tenantId, estadoId }) {
 
       const stock = rows.length > 0 ? parseInt(rows[0].stock, 10) : 0;
       const reservada = rows.length > 0 ? parseInt(rows[0].reservada, 10) : 0;
-      const disponible = Math.max(stock - reservada, 0);
-      return disponible;
+      
+      // CONTEXTO: Panel Admin vs Tienda Online
+      // - Panel Admin (finanzas, admin, inventarios, etc.): usa stock físico directo (NO resta reservas)
+      // - Tienda Online (clientes): usa stock disponible (resta reservas)
+      const rolesAdminPanel = ['inventarios', 'finanzas', 'admin', 'compras', 'gerente_finanzas', 'gerente_operaciones', 'jefe_almacen'];
+      const isAdminPanel = context.roles?.some(r => rolesAdminPanel.includes(r));
+      const stockFinal = isAdminPanel ? stock : Math.max(stock - reservada, 0);
+      
+      return stockFinal;
     } catch (error) {
       console.error('[SmartStockService] Error al leer stock de admin:', error);
       return 0;
@@ -251,14 +274,15 @@ async function getStock({ varianteId, userId, userRole, tenantId, estadoId }) {
  * @param {string|string[]} params.userRole - Rol(es) del usuario
  * @param {number} params.tenantId - ID del tenant
  * @param {number} params.estadoId - (Opcional) ID del estado del cliente (si está disponible en token)
+ * @param {number} params.adminResponsableId - (Opcional) admin_responsable_id del token
  * @returns {Promise<Map<number, number>>} Map de varianteId -> stock
  */
-async function getBulkStock({ varianteIds, userId, userRole, tenantId, estadoId }) {
+async function getBulkStock({ varianteIds, userId, userRole, tenantId, estadoId, adminResponsableId }) {
   if (!varianteIds || varianteIds.length === 0) {
     return new Map();
   }
 
-  const context = await determineUserContext({ userId, userRole, tenantId, estadoId });
+  const context = await determineUserContext({ userId, userRole, tenantId, estadoId, adminResponsableId });
   const stockMap = new Map();
 
   // CASO A: Super Admin - Lee stock global
@@ -284,6 +308,14 @@ async function getBulkStock({ varianteIds, userId, userRole, tenantId, estadoId 
 
   // CASO B: Admin/Agente/Cliente con admin asignado - Lee stock del admin
   if (context.adminId) {
+    console.log('[SmartStockService] 📦 Consultando stock_admin:', { 
+      adminId: context.adminId, 
+      tenantId, 
+      varianteIds: varianteIds.slice(0, 5),
+      totalVariantes: varianteIds.length,
+      isInventariosRole: context.roles?.includes('inventarios')
+    });
+    
     try {
       const { rows } = await db.query(
         `SELECT
@@ -295,11 +327,31 @@ async function getBulkStock({ varianteIds, userId, userRole, tenantId, estadoId 
         [varianteIds, context.adminId, tenantId]
       );
 
+      console.log('[SmartStockService] 📊 Resultados de stock_admin:', { 
+        rowsFound: rows.length,
+        allRows: rows.map(r => ({ 
+          varianteId: r.variante_id, 
+          stock: r.stock, 
+          reservada: r.reservada 
+        }))
+      });
+
+      // Para rol inventarios: mostrar stock total (físico en almacén)
+      // Para otros roles: mostrar stock disponible (total - reservado)
+      const isInventariosRole = context.roles?.includes('inventarios');
+
       rows.forEach(row => {
         const stock = parseInt(row.stock, 10);
         const reservada = parseInt(row.reservada, 10);
-        const disponible = Math.max(stock - reservada, 0);
-        stockMap.set(parseInt(row.variante_id, 10), disponible);
+        
+        // CONTEXTO: Panel Admin vs Tienda Online
+        // - Panel Admin (finanzas, admin, inventarios, etc.): usa stock físico directo (NO resta reservas)
+        // - Tienda Online (clientes): usa stock disponible (resta reservas)
+        const rolesAdminPanel = ['inventarios', 'finanzas', 'admin', 'compras', 'gerente_finanzas', 'gerente_operaciones', 'jefe_almacen'];
+        const isAdminPanel = context.roles?.some(r => rolesAdminPanel.includes(r));
+        const stockFinal = isAdminPanel ? stock : Math.max(stock - reservada, 0);
+        
+        stockMap.set(parseInt(row.variante_id, 10), stockFinal);
       });
 
       // Rellenar con 0 las variantes que no tienen registro en stock_admin
@@ -307,6 +359,11 @@ async function getBulkStock({ varianteIds, userId, userRole, tenantId, estadoId 
         if (!stockMap.has(id)) {
           stockMap.set(id, 0);
         }
+      });
+
+      console.log('[SmartStockService] ✅ Stock map construido:', { 
+        totalEntries: stockMap.size,
+        samples: Array.from(stockMap.entries()).slice(0, 3)
       });
 
       return stockMap;
@@ -578,6 +635,7 @@ async function getGlobalStockBreakdown(varianteId, tenantId) {
  * @param {number} params.tenantId - ID del tenant
  * @param {number} params.pedidoId - ID del pedido actual (opcional, para excluirlo de cálculos)
  * @param {number} params.piezasPorPaquete - Piezas por paquete (para convertir a unidades físicas)
+ * @param {boolean} params.isAdminPanel - Si es true, NO resta cantidad_reservada (panel admin). Si es false, SÍ resta (tienda online)
  * @returns {Promise<Object>} { 
  *   estatus: 'surtido'|'parcial'|'backorder',
  *   stockDisponible: number,
@@ -594,7 +652,8 @@ async function calculateAllocationStatus({
   adminId,
   tenantId,
   pedidoId = null,
-  piezasPorPaquete = 1
+  piezasPorPaquete = 1,
+  isAdminPanel = false
 }) {
   try {
     // VALIDACIÓN DE PARÁMETROS
@@ -707,12 +766,12 @@ async function calculateAllocationStatus({
     
 
     // PASO 3: CÁLCULO DE STOCK DISPONIBLE
-    // Stock disponible = Stock físico - Reservas activas (cantidad_reservada ya incluye deuda FIFO)
-    // cantidad_reservada se incrementa al crear cada pedido, por lo que deudaPreviaEnPiezas es redundante
-    const stockDisponibleParaEstePedido = Math.max(
-      stockFisico - cantidadReservada,
-      0
-    );
+    // CONTEXTO: Panel Admin vs Tienda Online
+    // - Panel Admin: usa stock físico directo (NO resta reservas) - isAdminPanel = true
+    // - Tienda Online: usa stock disponible (resta reservas) - isAdminPanel = false
+    const stockDisponibleParaEstePedido = isAdminPanel 
+      ? stockFisico  // Panel admin: stock físico completo
+      : Math.max(stockFisico - cantidadReservada, 0);  // Tienda online: stock - reservas
     
     
     // Convertir a paquetes

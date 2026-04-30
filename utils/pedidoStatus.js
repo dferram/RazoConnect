@@ -57,10 +57,10 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
         d.piezastotales,
         d.estado_producto,
         COALESCE(d.cantidadsurtida, 0) as cantidadsurtida,
-        -- Stock disponible: SOLO del admin asignado al pedido
-        COALESCE(SUM(sa.cantidad - sa.cantidad_reservada), 0) as stock_en_admin,
+        -- Stock disponible: SOLO del admin asignado al pedido (sin restar reservas - panel admin)
+        COALESCE(SUM(sa.cantidad), 0) as stock_en_admin,
         COALESCE(pv.stock, 0) as stock_global,
-        COALESCE(SUM(sa.cantidad - sa.cantidad_reservada), 0) as stock_disponible_actual,
+        COALESCE(SUM(sa.cantidad), 0) as stock_disponible_actual,
         -- Flag original (para auditoría)
         d.esbackorder as esbackorder_original
       FROM detallesdelpedido d
