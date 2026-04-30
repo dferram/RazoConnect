@@ -60,7 +60,7 @@ async function recalcularPedidosPosteriores({
       WHERE d.varianteid = $1
         AND p.fechapedido >= $2
         AND p.tenant_id = $3
-        AND p.estatus NOT IN ('Cancelado', 'Entregado')
+        AND p.estatus NOT IN ('Cancelado', 'Entregado', 'Listo para remisionar', 'Surtido completo')
       ORDER BY p.fechapedido ASC
     `;
     
@@ -295,7 +295,7 @@ async function validarConsistenciaFIFO({ tenantId, varianteId = null }) {
         INNER JOIN producto_variantes pv ON pv.varianteid = d.varianteid
         INNER JOIN productos pr ON pr.productoid = pv.productoid
         WHERE p.tenant_id = $1
-          AND p.estatus NOT IN ('Cancelado', 'Entregado')
+          AND p.estatus NOT IN ('Cancelado', 'Entregado', 'Listo para remisionar', 'Surtido completo')
           AND d.esbackorder = false
           ${varianteFilter}
       ),
