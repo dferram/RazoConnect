@@ -228,26 +228,27 @@ describe('Remisiones Workflow - Final Tests', () => {
   });
 
   describe('10. NEW: Partial Remision CXC Logic', () => {
-    test('first remision should release full reserve and create CXC for actual amount', () => {
+    test('first remision should release reserve and create CXC for actual amount', () => {
       const fs = require('fs');
       const controllerPath = require.resolve('../controllers/remisionesController');
       const code = fs.readFileSync(controllerPath, 'utf8');
       
-      // First remision logic
-      expect(code).toContain('Primera remisión: Liberar reserva');
+      // First remision logic - BOTH first and subsequent remisions now liberate reserve
+      expect(code).toContain('Primera remisión');
       expect(code).toContain('saldoSinReserva');
       expect(code).toContain('AJUSTE');
-      expect(code).toContain('remision.montototal');
+      expect(code).toContain('Liberación de reserva parcial');
     });
 
-    test('subsequent remisions should NOT release reserve', () => {
+    test('subsequent remisions should ALSO release their portion of reserve', () => {
       const fs = require('fs');
       const controllerPath = require.resolve('../controllers/remisionesController');
       const code = fs.readFileSync(controllerPath, 'utf8');
       
-      // Should NOT have AJUSTE in subsequent
-      expect(code).toContain('Remisiones subsecuentes: SOLO sumar cargo, NO liberar reserva');
-      expect(code).toContain('SIN AJUSTE DE RESERVA');
+      // BUGFIX: Subsequent remisions now ALSO liberate reserve (changed logic)
+      expect(code).toContain('Remisión adicional');
+      expect(code).toContain('AJUSTE');
+      expect(code).toContain('Liberación de reserva parcial');
     });
 
     test('each remision should generate separate CXC with cargo amount', () => {
