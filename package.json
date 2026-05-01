@@ -20,7 +20,10 @@
     "security:generate-secrets": "node scripts/generate-secrets.js",
     "dev:setup": "bash scripts/dev-setup.sh",
     "dev:logs": "tail -f logs/*.log",
-    "migrate:estados-pedidos": "node scripts/migrate-estados-pedidos-v2.js"
+    "migrate:estados-pedidos": "node scripts/migrate-estados-pedidos-v2.js",
+    "migrate": "node scripts/run-migration.js",
+    "migrate:monto-remisionado": "node scripts/run-migration.js 001_add_monto_remisionado_to_pedidos.sql",
+    "verify:monto-remisionado": "node scripts/verify-monto-remisionado.js"
   },
   "keywords": [
     "ecommerce",

@@ -453,13 +453,23 @@ exports.generarRemision = async (req, res) => {
         const saldoActual = parseFloat(creditoInfo.saldo_deudor || 0);
         const montoRemision = parseFloat(totalRemision);
         
-        // NUEVA LÓGICA: El saldo ya incluye la RESERVA del pedido completo.
-        // Ahora debemos:
-        // 1. Restar la reserva del pedido completo
-        // 2. Sumar el cargo real de la remisión
-        // Resultado neto: saldo_deudor refleja solo lo que realmente se ha entregado
+        // BUGFIX: Query monto_remisionado from pedidos table to calculate reserva restante
+        const pedidoInfoQuery = await client.query(
+          `SELECT montototal, COALESCE(monto_remisionado, 0) AS monto_remisionado
+           FROM pedidos
+           WHERE pedidoid = $1 AND tenant_id = $2`,
+          [pedido_id, tenant_id]
+        );
         
-        const saldoSinReserva = parseFloat((saldoActual - montoTotalPedido).toFixed(2));
+        const montoTotalPedido = parseFloat(pedidoInfoQuery.rows[0].montototal || 0);
+        const montoYaRemisionado = parseFloat(pedidoInfoQuery.rows[0].monto_remisionado || 0);
+        
+        // Calculate reserva_convertida and reserva_restante
+        const reservaConvertida = montoYaRemisionado;
+        const reservaRestante = montoTotalPedido - reservaConvertida;
+        
+        // BUGFIX: Liberar reserva SOLO por el monto de la remisión (no el pedido completo)
+        const saldoSinReserva = parseFloat((saldoActual - montoRemision).toFixed(2));
         const nuevoSaldo = parseFloat((saldoSinReserva + montoRemision).toFixed(2));
 
         // Actualizar saldo deudor
@@ -473,7 +483,7 @@ exports.generarRemision = async (req, res) => {
         );
 
 
-        // Registrar movimiento de AJUSTE (quitar reserva)
+        // BUGFIX: Registrar AJUSTE (quitar reserva) - SOLO por el monto de la remisión (no el pedido completo)
         await client.query(
           `INSERT INTO credito_movimientos (
              credito_id,
@@ -487,9 +497,9 @@ exports.generarRemision = async (req, res) => {
            VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6)`,
           [
             creditoInfo.credito_id,
-            (-montoTotalPedido).toFixed(2),
+            (-montoRemision).toFixed(2),
             `PED-${pedido_id}`,
-            `Liberación de reserva del pedido #${pedido_id}`,
+            `Liberación de reserva parcial del pedido #${pedido_id} (Monto: ${montoRemision.toFixed(2)})`,
             saldoSinReserva.toFixed(2),
             tenant_id
           ]
@@ -531,6 +541,14 @@ exports.generarRemision = async (req, res) => {
             tenant_id,
             adminClienteId
           ]
+        );
+
+        // BUGFIX: Update monto_remisionado after each remisión
+        await client.query(
+          `UPDATE pedidos 
+           SET monto_remisionado = COALESCE(monto_remisionado, 0) + $1
+           WHERE pedidoid = $2 AND tenant_id = $3`,
+          [montoRemision, pedido_id, tenant_id]
         );
 
       }
@@ -1465,11 +1483,11 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
     });
 
     // AHORA SÍ: Generar movimiento en CXC si es crédito
-    // ⚠️ PROTECCIÓN DE LÓGICA FINANCIERA PARA SURTIDO PARCIAL:
-    // - Se libera la RESERVA del pedido completo (montototal) SOLO EN LA PRIMERA REMISIÓN
-    // - Se genera CARGO solo por lo realmente surtido (total_remision) EN CADA REMISIÓN
-    // - Si es surtido parcial, el resto queda pendiente para futuras entregas
-    // - Esto permite entregas parciales sin cobrar de más al cliente
+    // ⚠️ PROTECCIÓN DE LÓGICA FINANCIERA PARA SURTIDO PARCIAL - BUGFIX:
+    // - Se libera la RESERVA SOLO por el monto de la remisión confirmada (NO el pedido completo)
+    // - Se genera CARGO por lo realmente surtido (total_remision) EN CADA REMISIÓN
+    // - Si es surtido parcial, el resto queda como reserva para futuras entregas
+    // - Esto permite entregas parciales sin generar saldos negativos
     
     // CRITICAL: Determinar si es la primera remisión confirmada
     // Esto se usa en la lógica de crédito AND para actualizar el pedido
@@ -1491,6 +1509,33 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
         const saldoActual = parseFloat(creditoInfo.saldo_deudor || 0);
         const montoRemision = parseFloat(remision.total_remision);
         
+        // BUGFIX: Query monto_remisionado from pedidos table to calculate reserva restante
+        const pedidoInfoQuery = await client.query(
+          `SELECT montototal, COALESCE(monto_remisionado, 0) AS monto_remisionado
+           FROM pedidos
+           WHERE pedidoid = $1 AND tenant_id = $2`,
+          [remision.pedidoid, tenant_id]
+        );
+        
+        const montoTotalPedido = parseFloat(pedidoInfoQuery.rows[0].montototal || 0);
+        const montoYaRemisionado = parseFloat(pedidoInfoQuery.rows[0].monto_remisionado || 0);
+        
+        // Calculate reserva_convertida and reserva_restante
+        const reservaConvertida = montoYaRemisionado;
+        const reservaRestante = montoTotalPedido - reservaConvertida;
+        
+        logger.info('🔍 [BUGFIX] Cálculo de reserva', {
+          remision_id: id,
+          pedido_id: remision.pedidoid,
+          monto_total_pedido: montoTotalPedido,
+          monto_ya_remisionado: montoYaRemisionado,
+          reserva_convertida: reservaConvertida,
+          reserva_restante: reservaRestante,
+          monto_remision_actual: montoRemision,
+          requestId: req.requestId,
+          tenantId: tenant_id
+        });
+        
         // CRITICAL FIX: Usar campo primera_remision_confirmada_id en lugar de consultar previas
         // Esto evita race conditions: si dos remisiones se confirman simultáneamente,
         // PostreSQL asegura que solo UNA actualizará el campo (gracias a FOR UPDATE)
@@ -1504,7 +1549,7 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
             remision_id: id,
             pedido_id: remision.pedidoid,
             folio: remision.folio,
-            monto_liberacion: remision.montototal,
+            monto_liberacion: montoRemision,
             requestId: req.requestId,
             tenantId: tenant_id
           });
@@ -1536,8 +1581,8 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
         let nuevoSaldo = saldoActual;
         
         if (isPrimeraRemision) {
-          // Primera remisión: Liberar reserva del pedido completo y sumar cargo real
-          const saldoSinReserva = parseFloat((saldoActual - remision.montototal).toFixed(2));
+          // BUGFIX: Primera remisión - Liberar reserva SOLO por el monto de la remisión (no el pedido completo)
+          const saldoSinReserva = parseFloat((saldoActual - montoRemision).toFixed(2));
           nuevoSaldo = parseFloat((saldoSinReserva + montoRemision).toFixed(2));
 
           await client.query(
@@ -1549,7 +1594,7 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
             [nuevoSaldo, creditoInfo.credito_id, adminIdForOperations, tenant_id]
           );
 
-          // Registrar AJUSTE (quitar reserva) - SOLO EN PRIMERA REMISIÓN
+          // BUGFIX: Registrar AJUSTE (quitar reserva) - SOLO por el monto de la remisión (no el pedido completo)
           await client.query(
             `INSERT INTO credito_movimientos (
                credito_id, tipo_movimiento, monto, referencia_id, 
@@ -1558,9 +1603,9 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
              VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6)`,
             [
               creditoInfo.credito_id,
-              (-remision.montototal).toFixed(2),
+              (-montoRemision).toFixed(2),
               `PED-${remision.pedidoid}`,
-              `Liberación de reserva del pedido #${remision.pedidoid} (Primera remisión)`,
+              `Liberación de reserva parcial del pedido #${remision.pedidoid} (Primera remisión - Monto: ${montoRemision.toFixed(2)})`,
               saldoSinReserva.toFixed(2),
               tenant_id
             ]
@@ -1583,8 +1628,9 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
             ]
           );
         } else {
-          // Remisiones subsecuentes: SOLO sumar cargo, NO liberar reserva
-          nuevoSaldo = parseFloat((saldoActual + montoRemision).toFixed(2));
+          // BUGFIX: Remisiones subsecuentes: Liberar reserva parcial Y sumar cargo
+          const saldoSinReserva = parseFloat((saldoActual - montoRemision).toFixed(2));
+          nuevoSaldo = parseFloat((saldoSinReserva + montoRemision).toFixed(2));
 
           await client.query(
             `UPDATE cliente_creditos
@@ -1595,7 +1641,24 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
             [nuevoSaldo, creditoInfo.credito_id, adminIdForOperations, tenant_id]
           );
 
-          // Registrar CARGO (cargo real) - SIN AJUSTE DE RESERVA
+          // BUGFIX: Registrar AJUSTE (quitar reserva) - SOLO por el monto de la remisión
+          await client.query(
+            `INSERT INTO credito_movimientos (
+               credito_id, tipo_movimiento, monto, referencia_id, 
+               descripcion, saldo_despues_movimiento, tenant_id
+             )
+             VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6)`,
+            [
+              creditoInfo.credito_id,
+              (-montoRemision).toFixed(2),
+              `PED-${remision.pedidoid}`,
+              `Liberación de reserva parcial del pedido #${remision.pedidoid} (Remisión adicional - Monto: ${montoRemision.toFixed(2)})`,
+              saldoSinReserva.toFixed(2),
+              tenant_id
+            ]
+          );
+
+          // Registrar CARGO (cargo real) - CON AJUSTE DE RESERVA
           await client.query(
             `INSERT INTO credito_movimientos (
                credito_id, tipo_movimiento, monto, referencia_id,
@@ -1658,6 +1721,22 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
           });
         }
         
+        // BUGFIX: Update monto_remisionado after each remisión
+        await client.query(
+          `UPDATE pedidos 
+           SET monto_remisionado = COALESCE(monto_remisionado, 0) + $1
+           WHERE pedidoid = $2 AND tenant_id = $3`,
+          [montoRemision, remision.pedidoid, tenant_id]
+        );
+        
+        logger.info('✅ [BUGFIX] monto_remisionado actualizado', {
+          remision_id: id,
+          pedido_id: remision.pedidoid,
+          monto_agregado: montoRemision.toFixed(2),
+          requestId: req.requestId,
+          tenantId: tenant_id
+        });
+        
         // 🔒 CRITICAL: Registrar en auditoría de liberación de reservas
         try {
           await client.query(
@@ -1668,10 +1747,10 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
               remision.pedidoid,
               id,
               isPrimeraRemision,
-              isPrimeraRemision ? remision.montototal : 0,
+              montoRemision,
               userId,
               tenant_id,
-              `Confirmación de remisión ${remision.folio}. Estado primera: ${isPrimeraRemision}`
+              `Confirmación de remisión ${remision.folio}. Estado primera: ${isPrimeraRemision}. Monto liberado: ${montoRemision.toFixed(2)}`
             ]
           );
         } catch (auditError) {
