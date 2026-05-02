@@ -388,9 +388,9 @@ describe('FIFOAllocationService - Recálculo de Pedidos Posteriores', () => {
         client: mockClient
       });
 
-      // Verificar que la query excluye pedidos Cancelados y Entregados
+      // Verificar que la query excluye pedidos Cancelados, Entregados y otros estados finales
       expect(mockClient.query).toHaveBeenCalledWith(
-        expect.stringContaining("NOT IN ('Cancelado', 'Entregado')"),
+        expect.stringContaining("NOT IN ('Cancelado', 'Entregado'"),
         expect.any(Array)
       );
     });
