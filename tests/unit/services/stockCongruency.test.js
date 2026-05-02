@@ -591,7 +591,7 @@ describe('📦 Stock Congruency Tests', () => {
       console.log(`  - Stock global: 25 unidades`);
       console.log(`  - Admin 5 pide 20 (Prioritario=true) ANTES`);
       console.log(`  - Admin 2 pide 15 DESPUÉS`);
-      console.log(`  - Admin 2 debería ver: 25 - 0(reserv) - 20(deuda prioritario) = 5 disponible\n`);
+      console.log(`  - Admin 2 debería ver: 25 - 0(reserv) = 25 disponible (deuda FIFO se usa para calcular surtible, no disponible)\n`);
 
       db.query.mockImplementation((query) => {
         if (query.includes('admin_responsable_id')) {
@@ -628,9 +628,12 @@ describe('📦 Stock Congruency Tests', () => {
       console.log(`    Backorder: ${fifo.cantidadBackorder}`);
       console.log(`    ✓ Respeta deuda de otros admins\n`);
 
-      expect(fifo.stockDisponible).toBe(5);
-      expect(fifo.cantidadSurtible).toBe(5);
-      expect(fifo.cantidadBackorder).toBe(10);
+      // CORRECCIÓN: stockDisponible NO resta deuda FIFO, solo reservas
+      // La deuda FIFO se usa internamente para calcular cantidadSurtible
+      expect(fifo.stockDisponible).toBe(25); // 25 - 0 reservas = 25
+      expect(fifo.deudaPrevia).toBe(20); // Deuda registrada
+      expect(fifo.cantidadSurtible).toBe(5); // min(15, 25 - 20 deuda) = 5
+      expect(fifo.cantidadBackorder).toBe(10); // 15 - 5 = 10
     });
   });
 
@@ -691,8 +694,8 @@ describe('📦 Stock Congruency Tests', () => {
       console.log(`  - Stock global: 40`);
       console.log(`  - Reservadas (suma de todos): 10`);
       console.log(`  - Deuda previa (prioritarios anteriores): 15`);
-      console.log(`  - Disponible: 40 - 10 - 15 = 15`);
-      console.log(`  - Cliente pide 20 → 15 surtible, 5 backorder\n`);
+      console.log(`  - Disponible: 40 - 10 = 30 (deuda FIFO se usa para calcular surtible, no disponible)`);
+      console.log(`  - Cliente pide 20 → 15 surtible (30 - 15 deuda), 5 backorder\n`);
 
       db.query.mockImplementation((query) => {
         if (query.includes('FROM producto_variantes')) {
@@ -726,9 +729,11 @@ describe('📦 Stock Congruency Tests', () => {
       console.log(`    Backorder: ${fifo.cantidadBackorder}`);
       console.log(`    ✓ Backorder incluso sin admin asignado\n`);
 
-      expect(fifo.stockDisponible).toBe(15);
-      expect(fifo.cantidadSurtible).toBe(15);
-      expect(fifo.cantidadBackorder).toBe(5);
+      // CORRECCIÓN: stockDisponible NO resta deuda FIFO, solo reservas
+      expect(fifo.stockDisponible).toBe(30); // 40 - 10 reservas = 30
+      expect(fifo.deudaPrevia).toBe(15); // Deuda registrada
+      expect(fifo.cantidadSurtible).toBe(15); // min(20, 30 - 15 deuda) = 15
+      expect(fifo.cantidadBackorder).toBe(5); // 20 - 15 = 5
     });
 
     test('✅ Sistema NO FALLA cuando no hay admin + no hay stock', async () => {
