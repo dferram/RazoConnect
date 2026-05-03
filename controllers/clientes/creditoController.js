@@ -60,6 +60,23 @@ const checkAuthCredit = async (req, res) => {
     const creditoActivo = await fetchCreditoActivo(clienteId, tenant_id);
     const creditSummary = créditoResumen(creditoActivo);
 
+    // Calcular cargo confirmado y reserva pendiente
+    if (creditSummary && creditoActivo) {
+      const balanceRow = await db.query(
+        `SELECT
+           COALESCE(SUM(CASE WHEN tipo_movimiento = 'CARGO' AND remision_id IS NOT NULL THEN monto ELSE 0 END), 0) AS cargo_confirmado,
+           COALESCE(SUM(CASE WHEN tipo_movimiento = 'ABONO' OR tipo_movimiento = 'PAGO' THEN monto ELSE 0 END), 0) AS total_abonos
+         FROM credito_movimientos
+         WHERE credito_id = $1`,
+        [creditoActivo.credito_id]
+      );
+      const row = balanceRow.rows[0] || {};
+      creditSummary.cargoConfirmado  = parseFloat(row.cargo_confirmado  || 0);
+      creditSummary.reservaPendiente = Math.max(
+        parseFloat(creditoActivo.saldo_deudor || 0) - creditSummary.cargoConfirmado, 0
+      );
+    }
+
     // Verificar si tiene una solicitud pendiente
     const checkPendiente = `
       SELECT solicitud_id, monto_solicitado, fecha_solicitud, estado
@@ -393,9 +410,14 @@ const obtenerMovimientosCredito = async (req, res) => {
         cm.referencia_id,
         cm.descripcion,
         cm.fecha_movimiento,
+        cm.remision_id,
+        cm.pedido_id,
+        r.folio              AS remision_folio,
+        r.total_remision     AS remision_monto,
         pc.pago_id,
         pc.estatus as pago_estatus
        FROM credito_movimientos cm
+       LEFT JOIN remisiones r ON r.remision_id = cm.remision_id
        LEFT JOIN pagos_clientes pc ON 
          pc.movimientos_aplicados::jsonb ? cm.movimiento_id::text
          AND pc.cliente_id = $5
@@ -415,6 +437,10 @@ const obtenerMovimientosCredito = async (req, res) => {
       referenciaId: mov.referencia_id,
       descripcion: mov.descripcion,
       fecha: mov.fecha_movimiento,
+      remisionId: mov.remision_id,
+      pedidoId: mov.pedido_id,
+      remisionFolio: mov.remision_folio,
+      remisionMonto: mov.remision_monto ? parseFloat(mov.remision_monto) : null,
       pagoId: mov.pago_id,
       pagoEstatus: mov.pago_estatus,
     }));

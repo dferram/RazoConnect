@@ -470,10 +470,36 @@
                 <h3>Saldo deudor</h3>
                 <div class="admin-stat-value" id="saldoDeudor">$0.00</div>
                 <div class="admin-stat-change danger">
-                  Actualizado en tiempo real
+                  Total adeudado
                 </div>
               </div>
               <div class="admin-stat-icon red">⚠️</div>
+            </div>
+          </article>
+
+          <article class="admin-stat-card">
+            <div class="admin-stat-header">
+              <div class="admin-stat-content">
+                <h3>Cargo facturado</h3>
+                <div class="admin-stat-value" id="cargoConfirmado" style="color: #dc2626;">$0.00</div>
+                <div class="admin-stat-change danger">
+                  Entregas confirmadas
+                </div>
+              </div>
+              <div class="admin-stat-icon red">🧾</div>
+            </div>
+          </article>
+
+          <article class="admin-stat-card">
+            <div class="admin-stat-header">
+              <div class="admin-stat-content">
+                <h3>Reserva pendiente</h3>
+                <div class="admin-stat-value" id="reservaPendiente" style="color: #f59e0b;">$0.00</div>
+                <div class="admin-stat-change credito-stat-change-warning">
+                  Pedidos en proceso
+                </div>
+              </div>
+              <div class="admin-stat-icon credito-stat-icon-warning">⏳</div>
             </div>
           </article>
 
@@ -542,7 +568,9 @@
                 <th>Fecha</th>
                 <th>Concepto</th>
                 <th>Tipo</th>
-                <th class="text-end">Monto</th>
+                <th class="text-end">Cargo</th>
+                <th class="text-end">Abono</th>
+                <th class="text-end">Saldo</th>
               </tr>
             </thead>
             <tbody id="movimientosTableBody">
