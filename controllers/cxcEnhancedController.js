@@ -239,8 +239,21 @@ async function getEstadoCuentaCliente(req, res) {
             ORDER BY p.fecha_vencimiento ASC NULLS LAST, p.fechapedido ASC
         `, [clienteId, tenantId]);
 
-        // Últimos 5 abonos/movimientos
-        const { rows: abonos } = await client.query(`
+        // Cargos confirmados (CARGO con remision_id) para calcular reserva pendiente
+        const { rows: [balanceRow] } = await client.query(`
+            SELECT
+                COALESCE(SUM(CASE WHEN tipo_movimiento = 'CARGO' AND remision_id IS NOT NULL THEN monto ELSE 0 END), 0) AS cargo_confirmado,
+                COUNT(DISTINCT CASE WHEN tipo_movimiento = 'CARGO' AND remision_id IS NOT NULL THEN remision_id END)     AS remisiones_facturadas
+            FROM credito_movimientos
+            WHERE credito_id = $1
+        `, [clienteInfo.credito_id]);
+
+        const saldoTotal     = parseFloat(clienteInfo.saldo_deudor || 0);
+        const cargoConf      = parseFloat(balanceRow.cargo_confirmado || 0);
+        const reservaPend    = Math.max(saldoTotal - cargoConf, 0);
+
+        // Últimos movimientos (CARGO por remision + ABONO/PAGO)
+        const { rows: movimientos } = await client.query(`
             SELECT
                 cm.movimiento_id,
                 cm.tipo_movimiento,
@@ -249,22 +262,33 @@ async function getEstadoCuentaCliente(req, res) {
                 cm.descripcion,
                 cm.fecha_movimiento,
                 cm.saldo_despues_movimiento,
-                COALESCE(a.nombre, 'Sistema') as registrado_por
+                cm.remision_id,
+                cm.pedido_id,
+                r.folio             AS remision_folio,
+                r.total_remision    AS remision_monto,
+                COALESCE(a.nombre, 'Sistema') AS registrado_por
             FROM credito_movimientos cm
             LEFT JOIN administradores a ON a.adminid = cm.admin_id
+            LEFT JOIN remisiones r ON r.remision_id = cm.remision_id
             WHERE cm.credito_id = $1
-              AND cm.admin_id = $2
-              AND cm.tipo_movimiento IN ('ABONO', 'PAGO')
+              AND cm.tipo_movimiento IN ('CARGO', 'ABONO', 'PAGO', 'RESERVA')
             ORDER BY cm.fecha_movimiento DESC
-            LIMIT 5
-        `, [clienteInfo.credito_id, userAdminId]);
+            LIMIT 20
+        `, [clienteInfo.credito_id]);
 
         return res.json({
             success: true,
             data: {
                 cliente: clienteInfo,
+                balance: {
+                    saldoTotal,
+                    cargoConfirmado: cargoConf,
+                    reservaPendiente: reservaPend,
+                    creditoDisponible: Math.max(parseFloat(clienteInfo.limite_credito || 0) - saldoTotal, 0),
+                    remisionesFacturadas: parseInt(balanceRow.remisiones_facturadas || 0, 10)
+                },
                 pedidos,
-                abonos
+                movimientos
             }
         });
 

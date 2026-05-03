@@ -50,14 +50,25 @@
                             <span id="clienteNombre">Cargando...</span>
                         </h2>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; padding: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; padding: 1.5rem;">
                         <div>
                             <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Límite de Crédito</div>
                             <div style="font-size: 1.25rem; font-weight: 700; color: #111827;" id="limiteCredito">$0.00</div>
                         </div>
                         <div>
-                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Saldo Deudor</div>
+                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Saldo Deudor Total</div>
                             <div style="font-size: 1.25rem; font-weight: 700; color: #dc2626;" id="saldoDeudor">$0.00</div>
+                            <div style="font-size: 0.7rem; color: #9ca3af; margin-top: 0.2rem;">Cargos + Reservas</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Cargo Confirmado</div>
+                            <div style="font-size: 1.25rem; font-weight: 700; color: #dc2626;" id="cargoConfirmado">$0.00</div>
+                            <div style="font-size: 0.7rem; color: #9ca3af; margin-top: 0.2rem;">Remisiones facturadas</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Reserva Pendiente</div>
+                            <div style="font-size: 1.25rem; font-weight: 700; color: #f59e0b;" id="reservaPendiente">$0.00</div>
+                            <div style="font-size: 0.7rem; color: #9ca3af; margin-top: 0.2rem;">Pedidos sin entregar</div>
                         </div>
                         <div>
                             <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Crédito Disponible</div>
@@ -98,9 +109,11 @@
                                     <th>Fecha</th>
                                     <th>Tipo</th>
                                     <th>Descripción</th>
-                                    <th style="text-align: right;">Monto</th>
-                                    <th style="text-align: right;">Saldo Después</th>
-                                    <th>Referencia</th>
+                                    <th style="text-align: right;">Cargo</th>
+                                    <th style="text-align: right;">Abono</th>
+                                    <th style="text-align: right;">Saldo</th>
+                                    <th>Pedido</th>
+                                    <th>Remisión</th>
                                 </tr>
                             </thead>
                             <tbody id="tablaMovimientosTbody"></tbody>

@@ -57,14 +57,28 @@
       );
     }
 
+    // ─── Clasificación contable ─────────────────────────────────────────────
+    // CARGO/RESERVA  = debita al cliente (rojo/naranja)
+    // ABONO/PAGO     = acredita al cliente (verde)
+    // AJUSTE         = movimiento interno (gris, no se muestra al cliente)
+    // ─────────────────────────────────────────────────────────────────────
+    const TIPO_CFG = {
+      CARGO:      { label: 'Cargo',    color: '#dc2626', columna: 'cargo', badge: 'danger'   },
+      RESERVA:    { label: 'Reserva',  color: '#f59e0b', columna: 'cargo', badge: 'warning'  },
+      ABONO:      { label: 'Abono',    color: '#10b981', columna: 'abono', badge: 'success'  },
+      PAGO:       { label: 'Pago',     color: '#10b981', columna: 'abono', badge: 'success'  },
+      CANCELACION:{ label: 'Cancelación', color: '#8b5cf6', columna: 'abono', badge: 'info' },
+      AJUSTE:     { label: 'Ajuste',   color: '#9ca3af', columna: null,    badge: 'secondary'},
+    };
+
+    function tipoConfig(tipo) {
+      return TIPO_CFG[(tipo || '').toUpperCase()] || { label: tipo || 'Movimiento', color: '#6b7280', columna: null, badge: 'secondary' };
+    }
+
     function normalizeTipo(movimiento) {
-      const value = (movimiento?.tipo || "").toString().toLowerCase();
-      if (["cargo", "credito", "compra", "reserva"].includes(value)) {
-        return "cargo";
-      }
-      if (["abono", "pago", "ajuste"].includes(value)) {
-        return "abono";
-      }
+      const raw = (movimiento?.tipo || movimiento?.tipo_movimiento || "").toUpperCase();
+      if (["CARGO", "RESERVA"].includes(raw)) return "cargo";
+      if (["ABONO", "PAGO", "CANCELACION"].includes(raw)) return "abono";
       return "otro";
     }
 
@@ -89,41 +103,37 @@
     }
 
     function renderStats(data) {
-      const limite = data?.limiteCredito ?? data?.limite ?? 0;
-      const saldo = data?.saldoDeudor ?? data?.saldo ?? 0;
-      const disponible =
-        data?.creditoDisponible ?? data?.disponible ?? Math.max(limite - saldo, 0);
-      const saldoEnRevision = data?.saldo_en_revision ?? 0;
-      const saldoEstimado = data?.saldo_estimado ?? Math.max(saldo - saldoEnRevision, 0);
+      const limite          = parseFloat(data?.limiteCredito  ?? data?.limite         ?? 0);
+      const saldo           = parseFloat(data?.saldoDeudor    ?? data?.saldo          ?? 0);
+      const disponible      = parseFloat(data?.creditoDisponible ?? data?.disponible  ?? Math.max(limite - saldo, 0));
+      const cargoConf       = parseFloat(data?.cargoConfirmado   ?? 0);
+      const reserva         = parseFloat(data?.reservaPendiente  ?? Math.max(saldo - cargoConf, 0));
+      const saldoEnRevision = parseFloat(data?.saldo_en_revision ?? 0);
+      const saldoEstimado   = parseFloat(data?.saldo_estimado    ?? Math.max(saldo - saldoEnRevision, 0));
 
-      if (limiteEl) {
-        limiteEl.textContent = formatCurrency(limite);
-      }
-      if (saldoEl) {
-        saldoEl.textContent = formatCurrency(saldo);
-      }
-      if (disponibleEl) {
-        const safeDisponible =
-          typeof disponible === "number" && !Number.isNaN(disponible)
-            ? disponible
-            : Math.max(limite - saldo, 0);
-        disponibleEl.textContent = formatCurrency(safeDisponible);
-      }
+      if (limiteEl)    limiteEl.textContent    = formatCurrency(limite);
+      if (saldoEl)     saldoEl.textContent     = formatCurrency(saldo);
+      if (disponibleEl) disponibleEl.textContent = formatCurrency(disponible);
+
+      const cargoConfEl   = document.getElementById("cargoConfirmado");
+      const reservaEl     = document.getElementById("reservaPendiente");
+      if (cargoConfEl)  cargoConfEl.textContent  = formatCurrency(cargoConf);
+      if (reservaEl)    reservaEl.textContent    = formatCurrency(reserva);
 
       // Mostrar/ocultar tarjetas de pagos en revisión y saldo estimado
       const cardPagosEnRevision = document.getElementById("cardPagosEnRevision");
-      const cardSaldoEstimado = document.getElementById("cardSaldoEstimado");
-      const saldoEnRevisionEl = document.getElementById("saldoEnRevision");
-      const saldoEstimadoEl = document.getElementById("saldoEstimado");
+      const cardSaldoEstimado   = document.getElementById("cardSaldoEstimado");
+      const saldoEnRevisionEl   = document.getElementById("saldoEnRevision");
+      const saldoEstimadoEl     = document.getElementById("saldoEstimado");
 
       if (saldoEnRevision > 0) {
         if (cardPagosEnRevision) cardPagosEnRevision.style.display = "";
-        if (cardSaldoEstimado) cardSaldoEstimado.style.display = "";
-        if (saldoEnRevisionEl) saldoEnRevisionEl.textContent = formatCurrency(saldoEnRevision);
-        if (saldoEstimadoEl) saldoEstimadoEl.textContent = formatCurrency(saldoEstimado);
+        if (cardSaldoEstimado)   cardSaldoEstimado.style.display   = "";
+        if (saldoEnRevisionEl)   saldoEnRevisionEl.textContent     = formatCurrency(saldoEnRevision);
+        if (saldoEstimadoEl)     saldoEstimadoEl.textContent       = formatCurrency(saldoEstimado);
       } else {
         if (cardPagosEnRevision) cardPagosEnRevision.style.display = "none";
-        if (cardSaldoEstimado) cardSaldoEstimado.style.display = "none";
+        if (cardSaldoEstimado)   cardSaldoEstimado.style.display   = "none";
       }
     }
 
@@ -132,9 +142,7 @@
     let isLoadingMovimientos = false;
 
     function renderMovimientos(movimientos) {
-      if (!movimientosBody) {
-        return;
-      }
+      if (!movimientosBody) return;
 
       movimientosBody.innerHTML = "";
       emptyState.style.display = "none";
@@ -145,36 +153,55 @@
       }
 
       const rows = movimientos
+        .filter(mov => {
+          // Ocultar AJUSTE de la vista del cliente (movimiento interno)
+          const t = (mov.tipo || mov.tipo_movimiento || '').toUpperCase();
+          return t !== 'AJUSTE';
+        })
         .map((mov) => {
-          const tipo = normalizeTipo(mov);
+          const tipoRaw  = (mov.tipo || mov.tipo_movimiento || '').toUpperCase();
+          const cfg      = tipoConfig(tipoRaw);
           const concepto = normalizeConcept(mov);
-          const fecha = mov.fecha
-            ? new Date(mov.fecha).toLocaleDateString("es-MX", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
+          const monto    = Math.abs(parseFloat(mov.monto || 0));
+          const saldo    = parseFloat(mov.saldoDespues ?? mov.saldo_despues_movimiento ?? 0);
+
+          const fechaRaw = mov.fecha || mov.fecha_movimiento;
+          const fecha    = fechaRaw
+            ? new Date(fechaRaw).toLocaleDateString("es-MX", {
+                year: "numeric", month: "short", day: "numeric"
               })
             : "—";
-          const monto = formatCurrency(Math.abs(mov.monto || 0));
+
+          // T-account: CARGO/RESERVA en columna Cargo (rojo), ABONO/PAGO en columna Abono (verde)
+          const colCargo = cfg.columna === 'cargo'
+            ? `<span class="fw-bold" style="color:${cfg.color};">${formatCurrency(monto)}</span>`
+            : '—';
+          const colAbono = cfg.columna === 'abono'
+            ? `<span class="fw-bold" style="color:#10b981;">${formatCurrency(monto)}</span>`
+            : '—';
+
+          // Detalle de remisión enlazado al concepto si existe
+          const remisionTag = mov.remisionFolio
+            ? ` <span style="font-size:0.75rem;color:#9ca3af;">(${mov.remisionFolio})</span>`
+            : '';
 
           return `
             <tr>
-              <td>${fecha}</td>
-              <td>${concepto}</td>
+              <td style="white-space:nowrap;">${fecha}</td>
+              <td>${concepto}${remisionTag}</td>
               <td>
-                <span class="badge ${tipo === "cargo" ? "bg-danger" : "bg-success"}">
-                  ${tipo === "cargo" ? "Cargo" : "Abono"}
-                </span>
+                <span class="badge bg-${cfg.badge}">${cfg.label}</span>
               </td>
-              <td class="text-end fw-bold ${tipo === "cargo" ? "text-danger" : "text-success"}">
-                ${tipo === "cargo" ? "-" : "+"}${monto}
-              </td>
+              <td class="text-end">${colCargo}</td>
+              <td class="text-end">${colAbono}</td>
+              <td class="text-end fw-bold">${saldo > 0 ? formatCurrency(saldo) : '—'}</td>
             </tr>
           `;
         })
         .join("");
 
-      movimientosBody.innerHTML = rows;
+      movimientosBody.innerHTML = rows || `
+        <tr><td colspan="6" class="table-empty-state">Sin movimientos visibles</td></tr>`;
     }
 
     function renderPagination(pagination) {

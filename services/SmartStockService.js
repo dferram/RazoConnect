@@ -772,12 +772,8 @@ async function calculateAllocationStatus({
     const stockDisponibleParaEstePedido = isAdminPanel 
       ? stockFisico  // Panel admin: stock físico completo
       : Math.max(stockFisico - cantidadReservada, 0);  // Tienda online: stock - reservas
-    
-    
-    // PASO 3.5: APLICAR DEUDA FIFO PARA CÁLCULO DE SURTIBLE
-    // La deuda FIFO representa pedidos anteriores que tienen prioridad
-    // Restamos la deuda del stock disponible SOLO para calcular cuánto se puede surtir
-    // pero NO afectamos el valor de stockDisponible que se retorna
+
+    // Stock real para surtir este pedido = stock disponible - deuda de pedidos anteriores (FIFO)
     const stockParaSurtir = Math.max(stockDisponibleParaEstePedido - deudaPreviaEnPiezas, 0);
     
     // Convertir a paquetes

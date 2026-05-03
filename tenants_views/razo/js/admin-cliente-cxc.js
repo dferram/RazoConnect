@@ -1,6 +1,25 @@
 (function() {
   'use strict';
 
+  // ─── Clasificación contable ────────────────────────────────────────────────
+  // CARGO / RESERVA  → Debita al cliente (aumenta saldo deudor) → rojo/naranja
+  // ABONO / PAGO     → Acredita al cliente (reduce saldo deudor) → verde
+  // AJUSTE           → Liberación interna de reserva             → gris
+  // ──────────────────────────────────────────────────────────────────────────
+
+  const TIPO_CONFIG = {
+    CARGO:     { label: 'Cargo',      color: '#dc2626', badge: 'danger',   icon: 'bi-receipt',            columna: 'cargo'  },
+    RESERVA:   { label: 'Reserva',    color: '#f59e0b', badge: 'warning',  icon: 'bi-hourglass-split',    columna: 'cargo'  },
+    AJUSTE:    { label: 'Ajuste',     color: '#6b7280', badge: 'secondary',icon: 'bi-arrow-left-right',   columna: null     },
+    ABONO:     { label: 'Abono',      color: '#10b981', badge: 'success',  icon: 'bi-arrow-down-circle',  columna: 'abono'  },
+    PAGO:      { label: 'Pago',       color: '#10b981', badge: 'success',  icon: 'bi-check-circle',       columna: 'abono'  },
+    CANCELACION:{ label: 'Cancelación',color: '#8b5cf6', badge: 'info',   icon: 'bi-x-circle',           columna: 'abono'  },
+  };
+
+  function tipoInfo(tipo) {
+    return TIPO_CONFIG[(tipo || '').toUpperCase()] || { label: tipo, color: '#6b7280', badge: 'secondary', icon: 'bi-question-circle', columna: null };
+  }
+
   const state = {
     clienteId: null,
     movimientos: [],
@@ -18,33 +37,28 @@
     state.clienteId = urlParams.get('id');
 
     if (!state.clienteId) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "No se especificó un cliente",
-        confirmButtonColor: "#F97316"
-      }).then(() => {
-        window.history.back();
-      });
+      Swal.fire({ icon: "error", title: "Error", text: "No se especificó un cliente", confirmButtonColor: "#F97316" })
+        .then(() => window.history.back());
       return;
     }
 
     cacheElements();
     initPagination();
-    await cargarDatosCliente();
-    await cargarMovimientos();
+    await Promise.all([cargarDatosCliente(), cargarMovimientos()]);
   });
 
   function cacheElements() {
-    elements.clienteNombre = document.getElementById("clienteNombre");
-    elements.limiteCredito = document.getElementById("limiteCredito");
-    elements.saldoDeudor = document.getElementById("saldoDeudor");
-    elements.creditoDisponible = document.getElementById("creditoDisponible");
-    elements.estadoCredito = document.getElementById("estadoCredito");
-    elements.tabla = document.getElementById("tablaMovimientos");
-    elements.tbody = document.getElementById("tablaMovimientosTbody");
-    elements.estadoCarga = document.getElementById("estadoCarga");
-    elements.estadoVacio = document.getElementById("estadoVacio");
+    elements.clienteNombre    = document.getElementById("clienteNombre");
+    elements.limiteCredito    = document.getElementById("limiteCredito");
+    elements.saldoDeudor      = document.getElementById("saldoDeudor");
+    elements.cargoConfirmado  = document.getElementById("cargoConfirmado");
+    elements.reservaPendiente = document.getElementById("reservaPendiente");
+    elements.creditoDisponible= document.getElementById("creditoDisponible");
+    elements.estadoCredito    = document.getElementById("estadoCredito");
+    elements.tabla            = document.getElementById("tablaMovimientos");
+    elements.tbody            = document.getElementById("tablaMovimientosTbody");
+    elements.estadoCarga      = document.getElementById("estadoCarga");
+    elements.estadoVacio      = document.getElementById("estadoVacio");
   }
 
   function initPagination() {
@@ -60,29 +74,38 @@
 
   async function cargarDatosCliente() {
     try {
-      const response = await API.apiCall(`/admin/cxc/cliente/${state.clienteId}`, { method: "GET" });
+      // Usa el endpoint enriquecido que devuelve balance breakdown
+      const response = await API.apiCall(`/admin/cxc/estado-cuenta/${state.clienteId}`, { method: "GET" });
 
-      if (response.ok && response.data?.success) {
-        const cliente = response.data.data;
-        
-        elements.clienteNombre.textContent = `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim();
-        elements.limiteCredito.textContent = formatCurrency(cliente.limite_credito || 0);
-        elements.saldoDeudor.textContent = formatCurrency(cliente.saldo_deudor || 0);
-        elements.creditoDisponible.textContent = formatCurrency((cliente.limite_credito || 0) - (cliente.saldo_deudor || 0));
-        
-        const estadoBadge = cliente.estado_credito === 'SUSPENDIDO' 
+      if (!response.ok || !response.data?.success) return;
+
+      const d = response.data.data;
+      const cliente  = d.cliente  || d; // compatibilidad
+      const balance  = d.balance  || {};
+
+      const nombre = [cliente.nombre, cliente.apellido].filter(Boolean).join(' ') || `Cliente #${state.clienteId}`;
+      if (elements.clienteNombre) elements.clienteNombre.textContent = nombre;
+
+      const limite       = parseFloat(balance.limiteCredito  ?? cliente.limite_credito  ?? 0);
+      const saldoTotal   = parseFloat(balance.saldoTotal     ?? cliente.saldo_deudor    ?? 0);
+      const cargoConf    = parseFloat(balance.cargoConfirmado ?? 0);
+      const reserva      = parseFloat(balance.reservaPendiente ?? 0);
+      const disponible   = parseFloat(balance.creditoDisponible ?? Math.max(limite - saldoTotal, 0));
+
+      if (elements.limiteCredito)     elements.limiteCredito.textContent    = formatCurrency(limite);
+      if (elements.saldoDeudor)       elements.saldoDeudor.textContent      = formatCurrency(saldoTotal);
+      if (elements.cargoConfirmado)   elements.cargoConfirmado.textContent  = formatCurrency(cargoConf);
+      if (elements.reservaPendiente)  elements.reservaPendiente.textContent = formatCurrency(reserva);
+      if (elements.creditoDisponible) elements.creditoDisponible.textContent= formatCurrency(disponible);
+
+      const estado = cliente.estado_credito || balance.estadoCredito || '';
+      if (elements.estadoCredito) {
+        elements.estadoCredito.innerHTML = estado === 'SUSPENDIDO'
           ? '<span class="badge bg-danger">Suspendido</span>'
           : '<span class="badge bg-success">Activo</span>';
-        elements.estadoCredito.innerHTML = estadoBadge;
       }
     } catch (error) {
       console.error("Error cargando datos del cliente:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "No se pudieron cargar los datos del cliente",
-        confirmButtonColor: "#F97316"
-      });
     }
   }
 
@@ -97,24 +120,16 @@
       }
 
       const payload = response.data.data || {};
-      state.movimientos = Array.isArray(payload.movimientos) ? payload.movimientos : [];
-      state.currentPage = payload.currentPage || 1;
-      state.totalPages = payload.totalPages || 1;
-      state.totalRecords = payload.totalRecords || 0;
+      state.movimientos  = Array.isArray(payload.movimientos)  ? payload.movimientos  : [];
+      state.currentPage  = payload.currentPage  || payload.page  || 1;
+      state.totalPages   = payload.totalPages   || 1;
+      state.totalRecords = payload.totalRecords || payload.total || 0;
 
       renderTabla();
-      
-      if (paginador) {
-        paginador.render(state.totalRecords, state.currentPage);
-      }
+      if (paginador) paginador.render(state.totalRecords, state.currentPage);
     } catch (error) {
       console.error("Error cargando movimientos:", error);
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: error.message || "No se pudieron cargar los movimientos",
-        confirmButtonColor: "#F97316"
-      });
+      Swal.fire({ icon: "error", title: "Error", text: error.message || "No se pudieron cargar los movimientos", confirmButtonColor: "#F97316" });
     } finally {
       toggleLoading(false);
     }
@@ -133,51 +148,53 @@
     elements.estadoVacio.style.display = "none";
 
     elements.tbody.innerHTML = state.movimientos.map(mov => {
-      const tipoClass = mov.tipo === 'CARGO' ? 'text-danger' : 'text-success';
-      const tipoIcon = mov.tipo === 'CARGO' ? 'bi-arrow-up-circle' : 'bi-arrow-down-circle';
-      const montoFormatted = mov.tipo === 'CARGO' 
-        ? `+${formatCurrency(mov.monto)}`
-        : `-${formatCurrency(mov.monto)}`;
+      // El API devuelve tipo_movimiento (admin endpoint) o tipo (cliente endpoint)
+      const tipoRaw = mov.tipo_movimiento || mov.tipo || '';
+      const cfg     = tipoInfo(tipoRaw);
+      const monto   = Math.abs(parseFloat(mov.monto || 0));
+      const saldo   = parseFloat(mov.saldo_despues_movimiento || mov.saldoDespues || 0);
+
+      // Columnas T-account: CARGO/RESERVA van a columna Cargo; ABONO/PAGO van a columna Abono; AJUSTE a ninguna
+      const colCargo = cfg.columna === 'cargo' ? `<strong style="color:${cfg.color};">${formatCurrency(monto)}</strong>` : '—';
+      const colAbono = cfg.columna === 'abono' ? `<strong style="color:#10b981;">${formatCurrency(monto)}</strong>` : '—';
+
+      // Folio de remisión o pedido como enlace
+      const remisionFolio = mov.remision_folio || '';
+      const pedidoId      = mov.pedido_id      || '';
 
       return `
         <tr>
-          <td style="font-size: 0.875rem;">${formatFecha(mov.fecha_movimiento)}</td>
+          <td style="font-size: 0.8rem; white-space: nowrap;">${formatFecha(mov.fecha_movimiento || mov.fecha)}</td>
           <td>
-            <span class="${tipoClass}" style="font-weight: 600;">
-              <i class="bi ${tipoIcon}"></i> ${mov.tipo}
+            <span class="badge bg-${cfg.badge}" style="font-size: 0.75rem;">
+              <i class="bi ${cfg.icon}"></i> ${cfg.label}
             </span>
           </td>
-          <td style="font-size: 0.875rem;">${mov.descripcion || 'Sin descripción'}</td>
-          <td class="text-right ${tipoClass}" style="font-weight: 700; font-size: 0.875rem;">${montoFormatted}</td>
-          <td class="text-right" style="font-weight: 600; font-size: 0.875rem;">${formatCurrency(mov.saldo_despues_movimiento)}</td>
-          <td style="font-size: 0.75rem; color: #6b7280;">${mov.referencia || '—'}</td>
+          <td style="font-size: 0.8rem; max-width: 280px;">${mov.descripcion || '—'}</td>
+          <td style="text-align: right; font-size: 0.875rem;">${colCargo}</td>
+          <td style="text-align: right; font-size: 0.875rem;">${colAbono}</td>
+          <td style="text-align: right; font-size: 0.875rem; font-weight: 600;">${formatCurrency(saldo)}</td>
+          <td style="font-size: 0.8rem;">${pedidoId ? `#${pedidoId}` : '—'}</td>
+          <td style="font-size: 0.8rem;">${remisionFolio || (mov.remision_id ? `REM-${mov.remision_id}` : '—')}</td>
         </tr>
       `;
     }).join('');
   }
 
   function formatCurrency(value) {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
-    }).format(value || 0);
+    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(value || 0);
   }
 
   function formatFecha(fecha) {
     if (!fecha) return '—';
     return new Date(fecha).toLocaleString('es-MX', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
     });
   }
 
   function toggleLoading(show) {
-    if (elements.estadoCarga) {
-      elements.estadoCarga.style.display = show ? 'flex' : 'none';
-    }
+    if (elements.estadoCarga) elements.estadoCarga.style.display = show ? 'flex' : 'none';
   }
 
 })();

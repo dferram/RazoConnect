@@ -1598,16 +1598,20 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
           await client.query(
             `INSERT INTO credito_movimientos (
                credito_id, tipo_movimiento, monto, referencia_id, 
-               descripcion, saldo_despues_movimiento, tenant_id
+               descripcion, saldo_despues_movimiento, tenant_id,
+               remision_id, pedido_id, admin_id
              )
-             VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6)`,
+             VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6, $7, $8, $9)`,
             [
               creditoInfo.credito_id,
               (-montoRemision).toFixed(2),
               `PED-${remision.pedidoid}`,
               `Liberación de reserva parcial del pedido #${remision.pedidoid} (Primera remisión - Monto: ${montoRemision.toFixed(2)})`,
               saldoSinReserva.toFixed(2),
-              tenant_id
+              tenant_id,
+              parseInt(id),
+              remision.pedidoid,
+              adminIdForOperations
             ]
           );
 
@@ -1615,16 +1619,20 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
           await client.query(
             `INSERT INTO credito_movimientos (
                credito_id, tipo_movimiento, monto, referencia_id,
-               descripcion, saldo_despues_movimiento, tenant_id
+               descripcion, saldo_despues_movimiento, tenant_id,
+               remision_id, pedido_id, admin_id
              )
-             VALUES ($1, 'CARGO', $2, $3, $4, $5, $6)`,
+             VALUES ($1, 'CARGO', $2, $3, $4, $5, $6, $7, $8, $9)`,
             [
               creditoInfo.credito_id,
               montoRemision.toFixed(2),
               `REM-${id}`,
               `Cargo confirmado por remisión ${remision.folio} (Pedido #${remision.pedidoid} - Primera remisión)`,
               nuevoSaldo.toFixed(2),
-              tenant_id
+              tenant_id,
+              parseInt(id),
+              remision.pedidoid,
+              adminIdForOperations
             ]
           );
         } else {
@@ -1645,16 +1653,20 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
           await client.query(
             `INSERT INTO credito_movimientos (
                credito_id, tipo_movimiento, monto, referencia_id, 
-               descripcion, saldo_despues_movimiento, tenant_id
+               descripcion, saldo_despues_movimiento, tenant_id,
+               remision_id, pedido_id, admin_id
              )
-             VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6)`,
+             VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6, $7, $8, $9)`,
             [
               creditoInfo.credito_id,
               (-montoRemision).toFixed(2),
               `PED-${remision.pedidoid}`,
               `Liberación de reserva parcial del pedido #${remision.pedidoid} (Remisión adicional - Monto: ${montoRemision.toFixed(2)})`,
               saldoSinReserva.toFixed(2),
-              tenant_id
+              tenant_id,
+              parseInt(id),
+              remision.pedidoid,
+              adminIdForOperations
             ]
           );
 
@@ -1662,16 +1674,20 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
           await client.query(
             `INSERT INTO credito_movimientos (
                credito_id, tipo_movimiento, monto, referencia_id,
-               descripcion, saldo_despues_movimiento, tenant_id
+               descripcion, saldo_despues_movimiento, tenant_id,
+               remision_id, pedido_id, admin_id
              )
-             VALUES ($1, 'CARGO', $2, $3, $4, $5, $6)`,
+             VALUES ($1, 'CARGO', $2, $3, $4, $5, $6, $7, $8, $9)`,
             [
               creditoInfo.credito_id,
               montoRemision.toFixed(2),
               `REM-${id}`,
               `Cargo confirmado por remisión ${remision.folio} (Pedido #${remision.pedidoid} - Remisión adicional)`,
               nuevoSaldo.toFixed(2),
-              tenant_id
+              tenant_id,
+              parseInt(id),
+              remision.pedidoid,
+              adminIdForOperations
             ]
           );
         }
@@ -1680,7 +1696,7 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
         // 🔒 CRÍTICO: Verificar que NO exista ya un CXC para esta remisión (evita doble inserción)
         // ⚠️ SEPARACIÓN POR ADMIN: Filtrar por admin_id
         const cxcExistenteQuery = await client.query(
-          `SELECT cxc_id FROM cuentas_por_cobrar
+          `SELECT cxcid FROM cuentas_por_cobrar
            WHERE remision_id = $1 AND pedido_id = $2 AND tenant_id = $3 AND admin_id = $4`,
           [id, remision.pedidoid, tenant_id, adminIdForOperations]
         );

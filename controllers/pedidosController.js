@@ -1028,16 +1028,20 @@ const crearPedido = async (req, res) => {
            referencia_id,
            descripcion,
            saldo_despues_movimiento,
-           tenant_id
+           tenant_id,
+           pedido_id,
+           admin_id
          )
-         VALUES ($1, 'RESERVA', $2, $3, $4, $5, $6)`,
+         VALUES ($1, 'RESERVA', $2, $3, $4, $5, $6, $7, $8)`,
         [
           info.creditoId,
           montoReservar.toFixed(2),
           `PED-${pedidoId}`,
           `Reserva de crédito por pedido #${pedidoId} (listo para remisionar)`,
           nuevoSaldo.toFixed(2),
-          tenant_id
+          tenant_id,
+          pedidoId,
+          adminIdCliente
         ]
       );
 

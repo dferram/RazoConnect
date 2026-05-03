@@ -1012,16 +1012,22 @@ async function getClienteCXCMovimientos(req, res) {
         const { rows } = await client.query(`
             SELECT
                 cm.movimiento_id,
-                cm.tipo_movimiento as tipo,
+                cm.tipo_movimiento        AS tipo,
                 cm.monto,
                 cm.descripcion,
                 cm.fecha_movimiento,
                 cm.saldo_despues_movimiento,
-                cm.referencia_id as referencia
+                cm.referencia_id          AS referencia,
+                cm.remision_id,
+                cm.pedido_id,
+                cm.metodo_pago,
+                r.folio                   AS remision_folio,
+                r.total_remision          AS remision_monto
             FROM credito_movimientos cm
             INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id
               AND cc.admin_id = $3
               AND cc.tenant_id = $2
+            LEFT JOIN remisiones r ON r.remision_id = cm.remision_id
             WHERE cc.cliente_id = $1
                 AND cc.tenant_id = $2
             ORDER BY cm.fecha_movimiento DESC
