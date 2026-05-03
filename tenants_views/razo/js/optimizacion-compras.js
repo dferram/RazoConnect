@@ -33,12 +33,18 @@ class OptimizacionComprasManager {
   }
 
   mostrarModal() {
-    const modal = new bootstrap.Modal(document.getElementById('modalOptimizacionCompras'));
-    
+    const modalEl = document.getElementById('modalOptimizacionCompras');
+    if (!modalEl) return;
     this.renderizarResumen();
     this.renderizarOportunidades();
-    
-    modal.show();
+    modalEl.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  }
+
+  cerrarModal() {
+    const modalEl = document.getElementById('modalOptimizacionCompras');
+    if (modalEl) modalEl.style.display = 'none';
+    document.body.style.overflow = '';
   }
 
   renderizarResumen() {
@@ -72,143 +78,117 @@ class OptimizacionComprasManager {
 
   crearTarjetaOportunidad(oportunidad, index) {
     const card = document.createElement('div');
-    card.className = 'card mb-3';
-    card.style.cssText = 'border: 2px solid #f5f1ed; border-radius: 0.75rem; overflow: hidden;';
+    card.style.cssText = 'border:2px solid #e5e7eb; border-radius:0.75rem; overflow:hidden; margin-bottom:1.5rem; background:white; box-shadow:0 2px 8px rgba(0,0,0,0.06);';
 
-    const ordenesIds = oportunidad.ordenesDetalle.map(o => o.ordenCompraId);
+    const packSize = oportunidad.packSize;
+    const desperdicioSeparado = oportunidad.totalSeparado - oportunidad.totalSolicitado;
+    const desperdicioAgrupado = oportunidad.totalAgrupado - oportunidad.totalSolicitado;
+
+    const filasOrdenes = oportunidad.ordenesDetalle.map(orden => {
+      const desperdicio = orden.piezasAComprar - orden.cantidadSolicitada;
+      return `
+        <tr style="border-bottom:1px solid #f3f4f6;">
+          <td style="padding:0.5rem 0.75rem;"><strong style="color:#F97316;">#${orden.ordenCompraId}</strong></td>
+          <td style="padding:0.5rem 0.75rem; text-align:center;">${orden.cantidadSolicitada} pzas</td>
+          <td style="padding:0.5rem 0.75rem; text-align:center; color:#6b7280;">${orden.paquetesNecesarios} paq &times; ${packSize} pzas</td>
+          <td style="padding:0.5rem 0.75rem; text-align:center; font-weight:700; color:#DC2626;">${orden.piezasAComprar} pzas</td>
+          <td style="padding:0.5rem 0.75rem; text-align:center; font-weight:600; color:${desperdicio > 0 ? '#DC2626' : '#16A34A'};">${desperdicio > 0 ? '+' + desperdicio + ' sobrantes' : 'Exacto ✓'}</td>
+          <td style="padding:0.5rem 0.75rem; font-size:0.8rem; color:#9ca3af;">${new Date(orden.fechaCreacion).toLocaleDateString('es-MX', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td>
+        </tr>
+      `;
+    }).join('');
 
     card.innerHTML = `
-      <div class="card-header" style="background: #FFF7ED; border-bottom: 2px solid #F97316; padding: 1rem;">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <h6 class="mb-1" style="color: #F97316; font-weight: 600;">
-              <i class="bi bi-box-seam me-2"></i>
-              ${oportunidad.productoNombre} - ${oportunidad.dimensionesFisicas || 'N/A'}
-            </h6>
-            <small style="color: #6b5d57;">
-              <strong>SKU:</strong> ${oportunidad.sku} • 
-              <strong>Proveedor:</strong> ${oportunidad.proveedorNombre} • 
-              <strong>Pack Size:</strong> ${oportunidad.packSize} piezas
-            </small>
+      <div style="background:#FFF7ED; border-bottom:2px solid #F97316; padding:1rem 1.5rem; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.75rem;">
+        <div>
+          <div style="font-weight:800; color:#F97316; font-size:1rem; margin-bottom:0.25rem;">
+            <i class="bi bi-box-seam me-1"></i>${oportunidad.productoNombre}${oportunidad.dimensionesFisicas ? ' — ' + oportunidad.dimensionesFisicas : ''}
           </div>
-          <div class="text-end">
-            <span class="badge" style="background: #16A34A; font-size: 1rem; padding: 0.5rem 1rem; border-radius: 0.5rem;">
-              <i class="bi bi-piggy-bank me-1"></i>
-              Ahorro: ${oportunidad.ahorroPiezas} piezas (${oportunidad.porcentajeAhorro}%)
-            </span>
+          <div style="color:#6b5d57; font-size:0.875rem;">
+            <strong>SKU:</strong> ${oportunidad.sku} &nbsp;|&nbsp;
+            <strong>Proveedor:</strong> ${oportunidad.proveedorNombre} &nbsp;|&nbsp;
+            <strong>Pack Size:</strong> ${packSize} pzas/paquete
           </div>
         </div>
+        <span style="background:#16A34A; color:white; font-size:0.95rem; font-weight:700; padding:0.5rem 1rem; border-radius:0.5rem; white-space:nowrap;">
+          <i class="bi bi-piggy-bank me-1"></i>Ahorro: ${oportunidad.ahorroPiezas} pzas (${oportunidad.porcentajeAhorro}%)
+        </span>
       </div>
 
-      <div class="card-body" style="padding: 1.5rem;">
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <div class="p-3" style="background: #FEE2E2; border-radius: 0.5rem; border-left: 4px solid #DC2626;">
-              <h6 style="color: #DC2626; font-weight: 600; margin-bottom: 0.5rem;">
-                <i class="bi bi-x-circle me-1"></i>
-                Compra Separada (Actual)
-              </h6>
-              <p class="mb-1" style="color: #6b5d57;">
-                <strong>${oportunidad.numOrdenes}</strong> órdenes separadas
-              </p>
-              <p class="mb-1" style="color: #6b5d57;">
-                Total solicitado: <strong>${oportunidad.totalSolicitado}</strong> piezas
-              </p>
-              <p class="mb-0" style="color: #DC2626; font-weight: 600; font-size: 1.1rem;">
-                A comprar: <strong>${oportunidad.totalSeparado}</strong> piezas
-              </p>
-            </div>
-          </div>
-
-          <div class="col-md-6">
-            <div class="p-3" style="background: #D1FAE5; border-radius: 0.5rem; border-left: 4px solid #16A34A;">
-              <h6 style="color: #16A34A; font-weight: 600; margin-bottom: 0.5rem;">
-                <i class="bi bi-check-circle me-1"></i>
-                Compra Agrupada (Optimizada)
-              </h6>
-              <p class="mb-1" style="color: #6b5d57;">
-                <strong>1</strong> orden consolidada
-              </p>
-              <p class="mb-1" style="color: #6b5d57;">
-                Total solicitado: <strong>${oportunidad.totalSolicitado}</strong> piezas
-              </p>
-              <p class="mb-0" style="color: #16A34A; font-weight: 600; font-size: 1.1rem;">
-                A comprar: <strong>${oportunidad.totalAgrupado}</strong> piezas
-              </p>
-            </div>
-          </div>
+      <div style="background:#EFF6FF; border-left:4px solid #3B82F6; padding:0.875rem 1.5rem;">
+        <div style="font-weight:700; color:#1D4ED8; margin-bottom:0.375rem; font-size:0.875rem;">
+          <i class="bi bi-question-circle-fill me-1"></i>¿Por qué se ahorra comprando en grupo?
         </div>
+        <p style="color:#1e40af; font-size:0.875rem; margin:0; line-height:1.6;">
+          Las órdenes de compra se procesan por <strong>paquetes completos de ${packSize} piezas</strong>.
+          Cuando cada orden compra por separado, cada una debe <strong>redondear al siguiente paquete completo</strong>,
+          generando piezas sobrantes. Al consolidarlas en una sola compra, el redondeo ocurre
+          <strong>una única vez sobre el total</strong>, reduciendo el sobrante de
+          <span style="color:#DC2626; font-weight:700;">+${desperdicioSeparado} pzas</span> a
+          <span style="color:#16A34A; font-weight:700;">+${desperdicioAgrupado} pzas</span>.
+        </p>
+      </div>
 
-        <div class="alert alert-info mb-3" style="background: #E0F2FE; border: 1px solid #0EA5E9; border-radius: 0.5rem;">
-          <h6 style="color: #0369A1; font-weight: 600; margin-bottom: 0.5rem;">
-            <i class="bi bi-info-circle me-2"></i>
-            Desglose de Órdenes (Se mantiene la separación)
-          </h6>
-          <p class="mb-0" style="color: #075985; font-size: 0.9rem;">
-            Al agrupar, cada orden mantiene su identidad individual. El admin podrá ver quién pidió qué en el detalle del grupo.
-          </p>
+      <div style="padding:1.5rem;">
+        <div style="font-weight:700; color:#374151; margin-bottom:0.75rem; font-size:0.875rem;">
+          <i class="bi bi-table me-1"></i>Detalle por Orden — Compra Separada (situación actual)
         </div>
-
-        <div class="table-responsive mb-3">
-          <table class="table table-sm" style="border: 1px solid #f5f1ed; border-radius: 0.5rem; overflow: hidden;">
-            <thead style="background: #f5f1ed;">
-              <tr>
-                <th style="color: #6b5d57; font-weight: 600;">Orden ID</th>
-                <th style="color: #6b5d57; font-weight: 600;">Solicitado</th>
-                <th style="color: #6b5d57; font-weight: 600;">A Comprar (Separado)</th>
-                <th style="color: #6b5d57; font-weight: 600;">Fecha</th>
+        <div style="overflow-x:auto; margin-bottom:1.25rem;">
+          <table style="width:100%; border-collapse:collapse; font-size:0.875rem; border:1px solid #e5e7eb;">
+            <thead>
+              <tr style="background:#f9fafb; border-bottom:2px solid #e5e7eb;">
+                <th style="padding:0.5rem 0.75rem; color:#6b7280; font-weight:700; text-align:left;">Orden</th>
+                <th style="padding:0.5rem 0.75rem; color:#6b7280; font-weight:700; text-align:center;">Necesita</th>
+                <th style="padding:0.5rem 0.75rem; color:#6b7280; font-weight:700; text-align:center;">Paquetes requeridos</th>
+                <th style="padding:0.5rem 0.75rem; color:#DC2626; font-weight:700; text-align:center;">Debe comprar (sep.)</th>
+                <th style="padding:0.5rem 0.75rem; color:#DC2626; font-weight:700; text-align:center;">Piezas sobrantes</th>
+                <th style="padding:0.5rem 0.75rem; color:#6b7280; font-weight:700; text-align:left;">Fecha</th>
               </tr>
             </thead>
-            <tbody>
-              ${oportunidad.ordenesDetalle.map(orden => `
-                <tr>
-                  <td>
-                    <strong style="color: #F97316;">#${orden.ordenCompraId}</strong>
-                  </td>
-                  <td>
-                    <strong>${orden.cantidadSolicitada}</strong> pzas
-                    <br>
-                    <small style="color: #999;">(${orden.paquetesNecesarios} paquetes)</small>
-                  </td>
-                  <td>
-                    <span style="color: #DC2626; font-weight: 600;">${orden.piezasAComprar} pzas</span>
-                    <br>
-                    <small style="color: #999;">Desperdicio: ${orden.piezasAComprar - orden.cantidadSolicitada} pzas</small>
-                  </td>
-                  <td>
-                    <small>${new Date(orden.fechaCreacion).toLocaleDateString('es-MX', { 
-                      day: '2-digit', 
-                      month: 'short',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}</small>
-                  </td>
-                </tr>
-              `).join('')}
-              <tr style="background: #D1FAE5; font-weight: 600;">
-                <td colspan="2" style="text-align: right; color: #16A34A;">
-                  <i class="bi bi-check-circle me-1"></i>
-                  Total Agrupado:
-                </td>
-                <td colspan="2" style="color: #16A34A;">
-                  ${oportunidad.totalAgrupado} pzas
-                  <small style="color: #059669; margin-left: 0.5rem;">
-                    (Ahorro: ${oportunidad.ahorroPiezas} pzas)
-                  </small>
-                </td>
+            <tbody>${filasOrdenes}</tbody>
+            <tfoot>
+              <tr style="background:#FEE2E2; border-top:2px solid #DC2626;">
+                <td style="padding:0.6rem 0.75rem; font-weight:700; color:#DC2626;">❌ Total Separado</td>
+                <td style="padding:0.6rem 0.75rem; font-weight:700; text-align:center;">${oportunidad.totalSolicitado} pzas</td>
+                <td style="padding:0.6rem 0.75rem; text-align:center; color:#6b7280;">—</td>
+                <td style="padding:0.6rem 0.75rem; font-weight:700; color:#DC2626; text-align:center;">${oportunidad.totalSeparado} pzas</td>
+                <td style="padding:0.6rem 0.75rem; font-weight:700; color:#DC2626; text-align:center;">+${desperdicioSeparado} pzas</td>
+                <td></td>
               </tr>
-            </tbody>
+              <tr style="background:#D1FAE5; border-top:2px solid #16A34A;">
+                <td style="padding:0.6rem 0.75rem; font-weight:700; color:#16A34A;">✅ Total Agrupado</td>
+                <td style="padding:0.6rem 0.75rem; font-weight:700; text-align:center;">${oportunidad.totalSolicitado} pzas</td>
+                <td style="padding:0.6rem 0.75rem; text-align:center; color:#065f46;">1 compra consolidada</td>
+                <td style="padding:0.6rem 0.75rem; font-weight:700; color:#16A34A; text-align:center;">${oportunidad.totalAgrupado} pzas</td>
+                <td style="padding:0.6rem 0.75rem; font-weight:700; color:#16A34A; text-align:center;">+${desperdicioAgrupado} pzas</td>
+                <td></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
 
-        <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-outline-secondary" onclick="window.optimizacionManager.descartarOportunidad(${index})" style="border-radius: 0.5rem;">
-            <i class="bi bi-x-circle me-1"></i>
-            Descartar
+        <div style="background:linear-gradient(135deg,#D1FAE5 0%,#ECFDF5 100%); border:2px solid #16A34A; border-radius:0.75rem; padding:1rem 1.25rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+          <i class="bi bi-piggy-bank-fill" style="font-size:2rem; color:#16A34A; flex-shrink:0;"></i>
+          <div>
+            <div style="font-weight:800; color:#16A34A; font-size:0.95rem;">
+              Al agrupar ${oportunidad.numOrdenes} órdenes en una sola compra: ahorro de ${oportunidad.ahorroPiezas} piezas (${oportunidad.porcentajeAhorro}%)
+            </div>
+            <div style="color:#065f46; font-size:0.85rem; margin-top:0.2rem;">
+              Compra separada: <strong>${oportunidad.totalSeparado} pzas</strong>
+              &nbsp;→&nbsp;
+              Compra agrupada: <strong>${oportunidad.totalAgrupado} pzas</strong>
+              &nbsp;=&nbsp;
+              <strong>${oportunidad.ahorroPiezas} pzas menos</strong>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:0.75rem; flex-wrap:wrap;">
+          <button class="btn btn-outline-secondary" onclick="window.optimizacionManager.descartarOportunidad(${index})" style="border-radius:0.5rem;">
+            <i class="bi bi-x-circle me-1"></i>Descartar
           </button>
-          <button class="btn btn-success" onclick="window.optimizacionManager.agruparOportunidad(${index})" style="border-radius: 0.5rem; font-weight: 600;">
-            <i class="bi bi-check-circle me-1"></i>
-            ⚡ Agrupar y Optimizar Ahora
+          <button class="btn btn-success" onclick="window.optimizacionManager.agruparOportunidad(${index})" style="border-radius:0.5rem; font-weight:700; padding:0.5rem 1.5rem;">
+            <i class="bi bi-lightning-charge-fill me-1"></i>Agrupar y Optimizar
           </button>
         </div>
       </div>
@@ -281,7 +261,7 @@ class OptimizacionComprasManager {
       confirmButtonColor: '#F97316'
     });
 
-    bootstrap.Modal.getInstance(document.getElementById('modalOptimizacionCompras')).hide();
+    this.cerrarModal();
 
     if (typeof loadOrdenes === 'function') {
       loadOrdenes();
@@ -317,7 +297,7 @@ class OptimizacionComprasManager {
           confirmButtonColor: '#F97316'
         });
 
-        bootstrap.Modal.getInstance(document.getElementById('modalOptimizacionCompras')).hide();
+        this.cerrarModal();
 
         if (typeof loadOrdenes === 'function') {
           loadOrdenes();
