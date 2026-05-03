@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>RecepciÛn de Inventario - Admin RazoConnect</title>
+    <title>Recepci√≥n de Inventario - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png" />
     
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -34,7 +34,7 @@
         <div class="admin-content" style="display: grid; gap: 1.5rem">
           <div id="instructionalBanner" class="instructional-banner">
             <p>
-              ?? <strong>RecepciÛn de Inventario:</strong> Registra la llegada de productos de tus proveedores. Selecciona la orden de compra, verifica las cantidades recibidas y asigna costos. El sistema actualizar· autom·ticamente tu inventario disponible.
+              üì¶ <strong>Recepci√≥n de Inventario:</strong> Registra la llegada de productos de tus proveedores. Selecciona la orden de compra, verifica las cantidades recibidas y asigna costos. El sistema actualizar√° autom√°ticamente tu inventario disponible.
             </p>
             <button class="instructional-banner-close" title="Cerrar">
               &times;
@@ -57,10 +57,10 @@
               
               <div id="superAdminControls" style="display: none; gap: 0.5rem;">
                 <button id="btnReasignarSesion" class="btn btn-sm" style="background: #3B82F6; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
-                  <i class="bi bi-arrow-left-right"></i> Reasignar SesiÛn
+                  <i class="bi bi-arrow-left-right"></i> Reasignar Sesi√≥n
                 </button>
                 <button id="btnLiberarSesion" class="btn btn-sm" style="background: #DC2626; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;">
-                  <i class="bi bi-unlock"></i> Liberar SesiÛn
+                  <i class="bi bi-unlock"></i> Liberar Sesi√≥n
                 </button>
               </div>
             </div>
@@ -82,21 +82,21 @@
                   id="ocSearch"
                   type="text"
                   class="form-input"
-                  placeholder="Ej: 120 ? Proveedor..."
+                  placeholder="Ej: 120 ‚Äî Proveedor..."
                 />
               </div>
 
               <div style="min-width: 320px; flex: 1">
                 <label for="ocSelect" class="form-label">Orden de Compra</label>
                 <select id="ocSelect" class="form-input" disabled>
-                  <option value="">Cargando ”rdenes...</option>
+                  <option value="">Cargando √≥rdenes...</option>
                 </select>
               </div>
 
               <div style="display: grid; gap: 0.25rem; min-width: 240px">
                 <div style="font-size: 0.85rem; color: #6b7280">Proveedor</div>
-                <div id="ocProveedor" style="font-weight: 700; color: #111827">?</div>
-                <div id="ocMeta" style="font-size: 0.85rem; color: #6b7280">?</div>
+                <div id="ocProveedor" style="font-weight: 700; color: #111827">‚Äî</div>
+                <div id="ocMeta" style="font-size: 0.85rem; color: #6b7280">‚Äî</div>
               </div>
             </div>
           </section>
@@ -113,10 +113,10 @@
               "
             >
               <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                <h2 style="margin: 0; font-size: 1.1rem">AuditorÌa de RecepciÛn</h2>
+                <h2 style="margin: 0; font-size: 1.1rem">Auditor√≠a de Recepci√≥n</h2>
                 <span id="tipoBadge" style="display: none;"></span>
               </div>
-              <span id="ocBadge" class="admin-badge secondary">?</span>
+              <span id="ocBadge" class="admin-badge secondary">‚Äî</span>
             </div>
 
             <div id="botonesGestion" style="display: none; margin-bottom: 1rem; padding: 0.75rem; background: white; border-radius: 0.75rem; border: 1px solid rgba(0,0,0,0.1);">
@@ -143,9 +143,9 @@
                   />
                 </div>
                 <div>
-                  <label for="filtroCategoria" class="form-label" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">Filtrar por CategorÌa</label>
+                  <label for="filtroCategoria" class="form-label" style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.25rem;">Filtrar por Categor√≠a</label>
                   <select id="filtroCategoria" class="form-input" style="font-size: 0.875rem;">
-                    <option value="">Todas las categorÌas</option>
+                    <option value="">Todas las categor√≠as</option>
                   </select>
                 </div>
                 <div>
@@ -208,7 +208,7 @@
                       <tr>
                         <th style="width: 60px">Imagen</th>
                         <th style="min-width: 200px">Producto</th>
-                        <th style="min-width: 110px">CategorÌa</th>
+                        <th style="min-width: 110px">Categor√≠a</th>
                         <th style="min-width: 110px">Color</th>
                         <th style="min-width: 110px">Medidas</th>
                         <th style="text-align: center; width: 110px">Solicitado (pzas)</th>
@@ -244,13 +244,13 @@
                     "
                   >
                     <div style="font-weight: 800; color: #111827">
-                      Resumen de SesiÛn
+                      Resumen de Sesi√≥n
                     </div>
-                    <div id="sesionBadge" class="admin-badge secondary">0 ÕTEMS</div>
+                    <div id="sesionBadge" class="admin-badge secondary">0 √çTEMS</div>
                   </div>
 
                   <div id="sesionEmpty" style="color: #6b7280; font-size: 0.95rem; padding: 0.75rem; border: 1px dashed rgba(107, 114, 128, 0.35); border-radius: 0.75rem;">
-                    Agrega cantidades a la sesiÛn para finalizar la recepciÛn en un solo paso.
+                    Agrega cantidades a la sesi√≥n para finalizar la recepci√≥n en un solo paso.
                   </div>
 
                   <div id="sesionTableWrap" class="table-responsive" style="display:none;">
@@ -259,7 +259,7 @@
                         <tr>
                           <th>Producto</th>
                           <th style="width: 140px;">SKU</th>
-                          <th style="width: 120px;">CategorÌa</th>
+                          <th style="width: 120px;">Categor√≠a</th>
                           <th style="width: 100px;">Color</th>
                           <th style="width: 120px;">Medida</th>
                           <th style="text-align:center; width: 140px;">Cantidad (pzas)</th>
@@ -295,7 +295,7 @@
                       class="btn btn-primary w-100"
                       disabled
                     >
-                      Finalizar RecepciÛn y Generar Cuenta por Pagar
+                      Finalizar Recepci√≥n y Generar Cuenta por Pagar
                     </button>
                     <button
                       id="btnCerrarSesion"
@@ -303,7 +303,7 @@
                       class="btn w-100"
                       style="display: none; background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); color: white; font-weight: 600; border: none; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); transition: all 0.3s ease;"
                     >
-                      <i class="bi bi-x-octagon-fill"></i> Cerrar SesiÛn y Marcar Pendientes como No Recibidos
+                      <i class="bi bi-x-octagon-fill"></i> Cerrar Sesi√≥n y Marcar Pendientes como No Recibidos
                     </button>
                   </div>
                 </div>
@@ -344,7 +344,7 @@
         </div>
 
         <div style="margin-bottom: 1rem; padding: 0.75rem; background: #dbeafe; border-left: 4px solid #3b82f6; border-radius: 0.375rem;">
-          <strong>?? InformaciÛn:</strong> Las cantidades se ingresan en <strong>paquetes</strong>. Cada producto muestra cu·ntas piezas contiene por paquete.
+          <strong>‚ÑπÔ∏è Informaci√≥n:</strong> Las cantidades se ingresan en <strong>paquetes</strong>. Cada producto muestra cu√°ntas piezas contiene por paquete.
         </div>
 
         <div style="max-height: 500px; overflow-y: auto; margin-bottom: 1.5rem;">
@@ -354,7 +354,7 @@
                 <th style="width: 60px;">Imagen</th>
                 <th>Producto / Variante</th>
                 <th style="width: 120px;">SKU</th>
-                <th style="width: 120px;">CategorÌa</th>
+                <th style="width: 120px;">Categor√≠a</th>
                 <th style="width: 80px;">Stock</th>
                 <th style="width: 120px;">Paquetes</th>
                 <th style="width: 100px;"></th>
@@ -390,7 +390,7 @@
         </div>
 
         <div style="margin-bottom: 1rem; padding: 0.75rem; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 0.375rem;">
-          <strong>?? Advertencia:</strong> Solo puedes quitar productos que NO hayan sido recibidos a˙n.
+          <strong>‚ö†Ô∏è Advertencia:</strong> Solo puedes quitar productos que NO hayan sido recibidos a√∫n.
         </div>
 
         <div style="max-height: 400px; overflow-y: auto; margin-bottom: 1.5rem;">
@@ -426,6 +426,7 @@
     </div>
 
 
+    <div id="modal-optimizacion-container"></div>
     <script src="js/pdfGeneratorEntradaAlmacen.js"></script>
     <script src="js/admin-recibir-inventario.js" defer></script>
     <script src="js/admin-recibir-inventario-enhanced.js" defer></script>
@@ -433,7 +434,8 @@
     <script src="js/recepcion-grupos.js" defer></script>
     <script src="js/layout.js" defer></script>
     <script src="js/sidebar-toggle.js" defer></script>
-    <script src="js/auth-manager.js"></script><script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth-manager.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script src="js/shared/network-status.js"></script>
     <script src="js/shared/api-client.js"></script>
@@ -448,7 +450,7 @@
         .then(html => {
           document.getElementById('modal-optimizacion-container').innerHTML = html;
         })
-        .catch(error => console.error('Error cargando modal de optimizaciÛn:', error));
+        .catch(error => console.error('Error cargando modal de optimizaci√≥n:', error));
     </script>
     <script>
       const ocSearch = document.getElementById("ocSearch");
@@ -497,13 +499,13 @@
           (x) => String(x.detalleId) === String(detalleId)
         );
         if (!item) {
-          showToastError("No se encontrÛ el Ìtem");
+          showToastError("No se encontr√≥ el √≠tem");
           return;
         }
 
-        const input = inputEl || (tbodyPendiente ? tbodyPendiente.querySelector(`.input-qty-recibida[data-detalle-id="${detalleId}"]`) : null);
+        const input = inputEl || (tbodyPendiente ? tbodyPendiente.querySelector(`.cantidad-hoy[data-detalle-id="${detalleId}"]`) : null);
         if (!input) {
-          showToastError("No se encontrÛ el campo de cantidad");
+          showToastError("No se encontr√≥ el campo de cantidad");
           return;
         }
 
@@ -512,7 +514,7 @@
         const max = Number.parseInt(input.dataset.pendiente, 10) || 0;
 
         if (!Number.isInteger(cantidad) || cantidad <= 0) {
-          showToastError("Ingresa una cantidad v·lida");
+          showToastError("Ingresa una cantidad v√°lida");
           return;
         }
 
@@ -523,7 +525,7 @@
         const totalAcumulado = enSesion + cantidad;
         
         if (max > 0 && totalAcumulado > max) {
-          showToastError(`No puedes recibir m·s de lo solicitado. Solicitado: ${max} pzas, Ya en sesiÛn: ${enSesion} pzas, Intentando agregar: ${cantidad} pzas`);
+          showToastError(`No puedes recibir m√°s de lo solicitado. Solicitado: ${max} pzas, Ya en sesi√≥n: ${enSesion} pzas, Intentando agregar: ${cantidad} pzas`);
           return;
         }
 
@@ -554,7 +556,7 @@
           });
         }
 
-        showToastSuccess("Agregado a sesiÛn");
+        showToastSuccess("Agregado a sesi√≥n");
         persistSesionRecepcion();
         renderizarTablaSesion();
         actualizarContadorPorRecibir(item.detalleId);
@@ -675,7 +677,7 @@
         ordenes.forEach(oc => {
           const opt = document.createElement("option");
           opt.value = oc.ordenCompraId;
-          opt.textContent = `OC #${oc.ordenCompraId} ? ${oc.proveedorNombre} (${oc.estatus})`;
+          opt.textContent = `OC #${oc.ordenCompraId} ‚Äî ${oc.proveedorNombre} (${oc.estatus})`;
           opt.dataset.proveedorNombre = oc.proveedorNombre;
           ocSelect.appendChild(opt);
         });
@@ -687,7 +689,7 @@
           const resp = await apiCall("/admin/ordenes-compra?estatus=Pendiente,Parcial", { method: "GET" });
           state.ordenes = resp.data?.data?.ordenes || [];
           renderOrdenes(ocSearch.value);
-        } catch (error) { setEmpty("Error al cargar Ûrdenes"); }
+        } catch (error) { setEmpty("Error al cargar √≥rdenes"); }
       };
 
       const solicitadoPzasValue = (item) => {
@@ -728,7 +730,7 @@
             <td style="text-align:center;">${solicitadoPzasValue(item)}</td>
             <td style="text-align:center;" class="td-por-recibir" data-detalle-id="${item.detalleId}"><strong>${pendiente}</strong></td>
             <td><input type="number" class="form-input input-mini-tabla cantidad-hoy" data-detalle-id="${item.detalleId}" data-pendiente="${pendiente}" data-piezas="${piezas}" placeholder="0"></td>
-            <td><button type="button" class="btn btn-primary btn-sm btn-agregar-sesion" data-detalle-id="${item.detalleId}">?? Agregar</button></td>
+            <td><button type="button" class="btn btn-primary btn-sm btn-agregar-sesion" data-detalle-id="${item.detalleId}">‚ûï Agregar</button></td>
           `;
           tbodyPendiente.appendChild(tr);
         });
@@ -736,7 +738,7 @@
 
       const renderizarTablaSesion = () => {
         const items = sesionRecepcion || [];
-        if (sesionBadge) sesionBadge.textContent = `${items.length} ÕTEMS`;
+        if (sesionBadge) sesionBadge.textContent = `${items.length} √çTEMS`;
         if (sesionEmpty) sesionEmpty.style.display = items.length ? "none" : "block";
         if (sesionTableWrap) sesionTableWrap.style.display = items.length ? "block" : "none";
         if (tbodySesion) {
@@ -775,14 +777,14 @@
 
       const finalizarRecepcion = async () => {
         const result = await Swal.fire({
-          title: '?? Finalizar RecepciÛn',
-          html: '<input id="swalRef" class="swal2-input" placeholder="N˙mero de RemisiÛn">',
+          title: 'üì¶ Finalizar Recepci√≥n',
+          html: '<input id="swalRef" class="swal2-input" placeholder="N√∫mero de Remisi√≥n">',
           showCancelButton: true,
           confirmButtonText: 'Finalizar',
           confirmButtonColor: '#F97316',
           preConfirm: () => {
             const ref = document.getElementById('swalRef').value;
-            if (!ref) return Swal.showValidationMessage('La remisiÛn es obligatoria');
+            if (!ref) return Swal.showValidationMessage('La remisi√≥n es obligatoria');
             return ref;
           }
         });
@@ -799,7 +801,7 @@
           if (resp.ok) {
             clearSesionRecepcionStorage(state.orden.ordenCompraId);
             sesionRecepcion = [];
-            showToastSuccess("°…xito!");
+            showToastSuccess("¬°√âxito!");
             await loadRecepcion(state.orden.ordenCompraId);
           }
         } catch (e) { showToastError("Error al procesar"); }
@@ -816,8 +818,9 @@
           sesionRecepcion = stored.length ? normalizeRestoredSesion(stored) : [];
           
           if (ocProveedor) ocProveedor.textContent = state.orden.proveedorNombre;
-          if (ocBadge) ocBadge.textContent = `OC #${id} ? ${state.orden.estatus}`;
+          if (ocBadge) ocBadge.textContent = `OC #${id} ‚Äî ${state.orden.estatus}`;
           
+          recepcionEmpty.style.display = "none";
           recepcionSplit.style.display = "block";
           renderSplit();
           renderizarTablaSesion();
@@ -826,9 +829,39 @@
         setLoading(false);
       };
 
+      const actualizarBotonesGestion = () => {
+        const el = document.getElementById('botonesGestion');
+        if (el) el.style.display = state.orden ? 'block' : 'none';
+      };
+
+      const actualizarContadorPorRecibir = (detalleId) => {
+        const item = (Array.isArray(state.items) ? state.items : [])
+          .find(x => String(x.detalleId) === String(detalleId));
+        if (!item) return;
+        const enSesion = sesionRecepcion
+          .filter(x => String(x.detalleId) === String(detalleId))
+          .reduce((acc, x) => acc + (Number.parseInt(x.cantidadPiezas || x.cantidad, 10) || 0), 0);
+        const pendiente = Math.max(solicitadoPzasValue(item) - recibidoPzasValue(item) - enSesion, 0);
+        const cell = document.querySelector(`.td-por-recibir[data-detalle-id="${detalleId}"]`);
+        if (cell) cell.innerHTML = `<strong>${pendiente}</strong>`;
+        const input = tbodyPendiente?.querySelector(`.cantidad-hoy[data-detalle-id="${detalleId}"]`);
+        if (input) { input.dataset.pendiente = String(pendiente); input.value = ''; }
+      };
+
+      if (ocSearch) ocSearch.addEventListener('input', () => renderOrdenes(ocSearch.value));
       if (ocSelect) ocSelect.addEventListener("change", () => loadRecepcion(ocSelect.value));
       if (btnConfirmarGenerarCxp) btnConfirmarGenerarCxp.addEventListener("click", finalizarRecepcion);
-      
+
+      if (tbodyPendiente) {
+        tbodyPendiente.addEventListener('click', (e) => {
+          const btn = e.target.closest('.btn-agregar-sesion');
+          if (!btn) return;
+          const id = btn.dataset.detalleId;
+          const input = tbodyPendiente.querySelector(`.cantidad-hoy[data-detalle-id="${id}"]`);
+          agregarItemASesion(id, input);
+        });
+      }
+
       loadOrdenes();
     </script>
   </body>
