@@ -56,7 +56,7 @@ const addItemToOrder = async (req, res) => {
     await client.query("BEGIN");
 
     const ordenCheck = await client.query(
-      `SELECT OrdenCompraID, Estatus, usuario_creador_id 
+      `SELECT OrdenCompraID, Estatus, admin_creador_id 
        FROM OrdenesDeCompra 
        WHERE OrdenCompraID = $1`,
       [ordenCompraId]
@@ -72,7 +72,7 @@ const addItemToOrder = async (req, res) => {
 
     const orden = ordenCheck.rows[0];
 
-    if (req.user.rol !== 'superadmin' && orden.usuario_creador_id !== req.user.id) {
+    if (req.user.rol !== 'superadmin' && req.user.rol !== 'super_admin' && orden.admin_creador_id !== req.user.id) {
       await client.query("ROLLBACK");
       return res.status(403).json({
         success: false,
@@ -214,7 +214,7 @@ const removeItemFromOrder = async (req, res) => {
     await client.query("BEGIN");
 
     const ordenCheck = await client.query(
-      `SELECT OrdenCompraID, Estatus, usuario_creador_id
+      `SELECT OrdenCompraID, Estatus, admin_creador_id
        FROM OrdenesDeCompra
        WHERE OrdenCompraID = $1 AND tenant_id = $2`,
       [ordenCompraId, tenant_id]
@@ -230,7 +230,7 @@ const removeItemFromOrder = async (req, res) => {
 
     const orden = ordenCheck.rows[0];
 
-    if (req.user.rol !== 'superadmin' && orden.usuario_creador_id !== req.user.id) {
+    if (req.user.rol !== 'superadmin' && req.user.rol !== 'super_admin' && orden.admin_creador_id !== req.user.id) {
       await client.query("ROLLBACK");
       return res.status(403).json({
         success: false,

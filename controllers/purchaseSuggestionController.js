@@ -270,8 +270,8 @@ const autoGenerarOrdenes = async (req, res) => {
 
         const insertOC = await client.query(
           `INSERT INTO ordenesdecompra
-            (proveedorid, fechasolicitud, estatus, total, origenoc, usuario_creador_id, tenant_id)
-           VALUES ($1, NOW(), 'Pendiente', $2, $3, $4, $5)
+            (proveedorid, fechasolicitud, estatus, total, origenoc, usuario_creador_id, tenant_id, admin_creador_id)
+           VALUES ($1, NOW(), 'Pendiente', $2, $3, $4, $5, $4)
            RETURNING ordencompraid`,
           [grupo.proveedorId, total, "sugerencia_stock", usuarioCreadorId, tenant_id]
         );
@@ -481,8 +481,8 @@ const generarOrdenCompra = async (req, res) => {
 
       const insertOC = await client.query(
         `INSERT INTO ordenesdecompra
-          (proveedorid, fechasolicitud, estatus, total, origenoc, usuario_creador_id, tenant_id)
-         VALUES ($1, NOW(), 'Pendiente', $2, $3, $4, $5)
+          (proveedorid, fechasolicitud, estatus, total, origenoc, usuario_creador_id, tenant_id, admin_creador_id)
+         VALUES ($1, NOW(), 'Pendiente', $2, $3, $4, $5, $4)
          RETURNING ordencompraid`,
         [proveedorId, total, "sugerencia_stock", usuarioCreadorId, tenant_id]
       );

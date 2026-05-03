@@ -63,12 +63,12 @@ const getAllOrdenesCompra = async (req, res) => {
     const values = [tenant_id];
     let paramIndex = 2;
 
-    // REGLA DE VISIBILIDAD: Admin solo ve sus órdenes, SuperAdmin ve todas
-    if (userRole === 'admin') {
-      query += ` AND oc.admin_creador_id = $${paramIndex}`;
+    // REGLA DE VISIBILIDAD: Admin/SuperAdmin solo ve sus órdenes (+ huérfanas sin admin asignado)
+    if (userRole === 'admin' || userRole === 'super_admin') {
+      query += ` AND (oc.admin_creador_id = $${paramIndex} OR oc.admin_creador_id IS NULL)`;
       values.push(userId);
       paramIndex++;
-    } else if (userRole === 'superadmin' && adminId) {
+    } else if ((userRole === 'superadmin' || userRole === 'super_admin') && adminId) {
       query += ` AND oc.admin_creador_id = $${paramIndex}`;
       values.push(parseInt(adminId));
       paramIndex++;

@@ -1468,7 +1468,7 @@ const crearPedido = async (req, res) => {
         null, // usuarioCreadorId (NULL para backorders generados por clientes)
         pedidoId, // pedidoOrigenId - Trazabilidad al pedido
         tenant_id, // tenant_id - Aislamiento multi-tenant
-        null // admin_creador_id (NULL para backorders de clientes - super admin los asignará)
+        clienteAdminId // admin_creador_id - Admin dueño del cliente para que aparezca en su lista de OCs
       );
 
       // Mapear resultados para el array de backordersGenerados
