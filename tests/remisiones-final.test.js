@@ -211,7 +211,7 @@ describe('Remisiones Workflow - Final Tests', () => {
       const code = fs.readFileSync(controllerPath, 'utf8');
       
       // Should verify CXC doesn't exist before creating
-      expect(code).toContain('cxc_id FROM cuentas_por_cobrar');
+      expect(code).toContain('cxcid FROM cuentas_por_cobrar');
       expect(code).toContain('WHERE remision_id = $1');
       expect(code).toContain('cxcExistenteQuery');
     });

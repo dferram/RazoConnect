@@ -772,6 +772,9 @@ async function calculateAllocationStatus({
     const stockDisponibleParaEstePedido = isAdminPanel 
       ? stockFisico  // Panel admin: stock físico completo
       : Math.max(stockFisico - cantidadReservada, 0);  // Tienda online: stock - reservas
+
+    // Stock real para surtir este pedido = stock disponible - deuda de pedidos anteriores (FIFO)
+    const stockParaSurtir = Math.max(stockDisponibleParaEstePedido - deudaPreviaEnPiezas, 0);
     
     // Convertir a paquetes
     const paquetesDisponibles = Math.floor(stockParaSurtir / piezasPorPaq);
