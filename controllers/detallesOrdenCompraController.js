@@ -223,10 +223,10 @@ const getRecepcionOrdenCompra = async (req, res) => {
     let queryParams = [ordenCompraId];
     let paramIndex = 2;
 
-    // REGLA DE VISIBILIDAD: Admin solo puede acceder a sus propias órdenes
-    if (userRole === 'admin') {
+    // REGLA DE VISIBILIDAD: Admin/SuperAdmin solo puede acceder a sus propias órdenes
+    if (userRole === 'admin' || userRole === 'super_admin') {
       queryParams.push(userId);
-      whereConditions.push(`oc.usuario_creador_id = $${paramIndex}`);
+      whereConditions.push(`oc.admin_creador_id = $${paramIndex}`);
       paramIndex++;
     }
 

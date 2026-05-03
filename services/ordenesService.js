@@ -297,13 +297,14 @@ async function generarBackorderProveedor(
        WHERE proveedorid = $1 
          AND estatus NOT IN ('RECIBIDA_ALMACEN', 'CANCELADA', 'COMPLETADA')
          AND tenant_id = $2
+         AND ($3::int IS NULL OR admin_creador_id = $3)
        ORDER BY fechacreacion ASC
        LIMIT 1`,
-      [proveedorID, tenantId]
+      [proveedorID, tenantId, adminCreadorId]
     );
 
     if (ordenAbiertalResult.rows.length > 0) {
-      // Consolidar en orden existente
+      // Consolidar en orden existente del mismo admin
       ordenCompraID = ordenAbiertalResult.rows[0].ordencompraid;
     } else {
       // Crear nueva orden de compra
@@ -458,13 +459,14 @@ async function generarBackordersAgrupados(
          WHERE proveedorid = $1 
            AND estatus NOT IN ('RECIBIDA_ALMACEN', 'CANCELADA', 'COMPLETADA')
            AND tenant_id = $2
+           AND ($3::int IS NULL OR admin_creador_id = $3)
          ORDER BY fechacreacion ASC
          LIMIT 1`,
-        [proveedorID, tenantId]
+        [proveedorID, tenantId, adminCreadorId]
       );
 
       if (ordenAbiertalResult.rows.length > 0) {
-        // Consolidar en orden existente
+        // Consolidar en orden existente del mismo admin
         ordenCompraID = ordenAbiertalResult.rows[0].ordencompraid;
       } else {
         // Crear nueva orden de compra
