@@ -426,6 +426,7 @@
     </div>
 
 
+    <div id="modal-optimizacion-container"></div>
     <script src="js/pdfGeneratorEntradaAlmacen.js"></script>
     <script src="js/admin-recibir-inventario.js" defer></script>
     <script src="js/admin-recibir-inventario-enhanced.js" defer></script>
@@ -502,7 +503,7 @@
           return;
         }
 
-        const input = inputEl || (tbodyPendiente ? tbodyPendiente.querySelector(`.input-qty-recibida[data-detalle-id="${detalleId}"]`) : null);
+        const input = inputEl || (tbodyPendiente ? tbodyPendiente.querySelector(`.cantidad-hoy[data-detalle-id="${detalleId}"]`) : null);
         if (!input) {
           showToastError("No se encontró el campo de cantidad");
           return;
@@ -819,6 +820,7 @@
           if (ocProveedor) ocProveedor.textContent = state.orden.proveedorNombre;
           if (ocBadge) ocBadge.textContent = `OC #${id} — ${state.orden.estatus}`;
           
+          recepcionEmpty.style.display = "none";
           recepcionSplit.style.display = "block";
           renderSplit();
           renderizarTablaSesion();
@@ -827,9 +829,39 @@
         setLoading(false);
       };
 
+      const actualizarBotonesGestion = () => {
+        const el = document.getElementById('botonesGestion');
+        if (el) el.style.display = state.orden ? 'block' : 'none';
+      };
+
+      const actualizarContadorPorRecibir = (detalleId) => {
+        const item = (Array.isArray(state.items) ? state.items : [])
+          .find(x => String(x.detalleId) === String(detalleId));
+        if (!item) return;
+        const enSesion = sesionRecepcion
+          .filter(x => String(x.detalleId) === String(detalleId))
+          .reduce((acc, x) => acc + (Number.parseInt(x.cantidadPiezas || x.cantidad, 10) || 0), 0);
+        const pendiente = Math.max(solicitadoPzasValue(item) - recibidoPzasValue(item) - enSesion, 0);
+        const cell = document.querySelector(`.td-por-recibir[data-detalle-id="${detalleId}"]`);
+        if (cell) cell.innerHTML = `<strong>${pendiente}</strong>`;
+        const input = tbodyPendiente?.querySelector(`.cantidad-hoy[data-detalle-id="${detalleId}"]`);
+        if (input) { input.dataset.pendiente = String(pendiente); input.value = ''; }
+      };
+
+      if (ocSearch) ocSearch.addEventListener('input', () => renderOrdenes(ocSearch.value));
       if (ocSelect) ocSelect.addEventListener("change", () => loadRecepcion(ocSelect.value));
       if (btnConfirmarGenerarCxp) btnConfirmarGenerarCxp.addEventListener("click", finalizarRecepcion);
-      
+
+      if (tbodyPendiente) {
+        tbodyPendiente.addEventListener('click', (e) => {
+          const btn = e.target.closest('.btn-agregar-sesion');
+          if (!btn) return;
+          const id = btn.dataset.detalleId;
+          const input = tbodyPendiente.querySelector(`.cantidad-hoy[data-detalle-id="${id}"]`);
+          agregarItemASesion(id, input);
+        });
+      }
+
       loadOrdenes();
     </script>
   </body>
