@@ -22,7 +22,7 @@ async function getSugerenciasOptimizacion(req, res) {
     const userId = req.user.id;
     const userRol = req.user.rol;
 
-    const adminId = userRol === 'admin' ? userId : null;
+    const adminId = (userRol === 'admin' || userRol === 'super_admin') ? userId : null;
 
     const resultado = await OptimizationService.detectConsolidationOpportunities(tenant_id, adminId);
 
