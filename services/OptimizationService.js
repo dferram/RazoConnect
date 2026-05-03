@@ -98,15 +98,20 @@ class OptimizationService {
         productoNombre: row.producto_nombre,
         sku: row.sku,
         dimensionesFisicas: row.dimensionesfisicas,
-        packSize: row.pack_size,
+        packSize: parseInt(row.pack_size, 10),
         reglaId: row.reglaid,
-        numOrdenes: row.num_ordenes,
-        totalSolicitado: row.total_solicitado,
-        totalSeparado: row.total_separado,
-        totalAgrupado: row.total_agrupado,
-        ahorroPiezas: row.ahorro_piezas,
+        numOrdenes: parseInt(row.num_ordenes, 10),
+        totalSolicitado: parseInt(row.total_solicitado, 10),
+        totalSeparado: parseInt(row.total_separado, 10),
+        totalAgrupado: parseInt(row.total_agrupado, 10),
+        ahorroPiezas: parseInt(row.ahorro_piezas, 10),
         porcentajeAhorro: parseFloat(row.porcentaje_ahorro),
-        ordenesDetalle: row.ordenes_detalle
+        ordenesDetalle: (row.ordenes_detalle || []).map(o => ({
+          ...o,
+          cantidadSolicitada: parseInt(o.cantidadSolicitada, 10),
+          paquetesNecesarios: parseInt(o.paquetesNecesarios, 10),
+          piezasAComprar:     parseInt(o.piezasAComprar,     10),
+        }))
       }));
 
       const resumen = {
