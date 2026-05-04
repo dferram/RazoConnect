@@ -111,15 +111,19 @@ async function validarYMarcarProductos({
           status: allocationStatus
         });
 
-        // Clasificar basado en FIFO result
-        if (allocationStatus.estatus === 'surtido' && allocationStatus.cantidadSurtible >= piezasRequeridas) {
-          // ✅ COMPLETO: FIFO permite surtir TODO lo requerido
+        // Clasificar basado en STOCK FÍSICO del admin (no en FIFO-ajustado)
+        // Inventarios tiene control total: si hay stock físico, puede surtir.
+        // La prioridad entre pedidos la decide inventarios, no el sistema.
+        const stockDisponible = allocationStatus.stockDisponible ?? allocationStatus.stockFisico ?? 0;
+
+        if (stockDisponible >= piezasRequeridas) {
+          // ✅ COMPLETO: hay stock físico suficiente
           productosCompletos.push(p);
-        } else if (allocationStatus.cantidadSurtible > 0) {
-          // ⚠️ PARCIAL: FIFO permite surtir ALGO pero no todo (respetando deuda previa)
+        } else if (stockDisponible > 0) {
+          // ⚠️ PARCIAL: hay algo de stock pero no alcanza para todo el pedido
           productosParciales.push({
             ...p,
-            piezasParaSurtir: allocationStatus.cantidadSurtible,
+            piezasParaSurtir: stockDisponible,
             fifoInfo: {
               deudaPrevia: allocationStatus.deudaPrevia,
               stockFisico: allocationStatus.stockFisico,
@@ -128,7 +132,7 @@ async function validarYMarcarProductos({
             }
           });
         }
-        // estatus 'backorder' = 0 surtible → no se agrega a ninguna lista
+        // stockDisponible === 0 → sin stock físico real → no se puede surtir
 
       } catch (err) {
         logger.error('Error al calcular FIFO para producto:', {
@@ -159,14 +163,17 @@ async function validarYMarcarProductos({
           pedidosAnteriores: p.status.numPedidosAnteriores
         }));
 
+      // Retornar los IDs que son FIFO-backorder para que el caller los actualice
+      // a 'Bajo pedido' DESPUÉS del ROLLBACK (en una operación separada)
+      const idsParaMarcarBajoPedido = detalleProductos.rows.map(p => p.detalleid);
+
       return {
         success: false,
         marcarResult: { rowCount: 0 },
-        message: 'Ninguno de los productos seleccionados tiene stock disponible (validación FIFO)',
-        razon: deudaInfo.length > 0
-          ? 'Stock reservado para pedidos anteriores. El FIFO impide overselling.'
-          : 'Stock insuficiente en inventario.',
+        message: 'Ninguno de los productos seleccionados tiene stock físico disponible',
+        razon: 'Stock insuficiente en inventario. Revisa las existencias en el módulo de inventario.',
         detalles_fifo: deudaInfo,
+        idsParaMarcarBajoPedido,
         analisis: {
           totalSeleccionados: detalleProductos.rows.length,
           completosSin_Deuda: productosCompletos.length,
@@ -288,6 +295,34 @@ async function validarYMarcarProductos({
       },
       tenantId: tenant_id
     });
+
+    // STEP 4: Reclasificar items FIFO-backorder de 'Con stock' → 'Bajo pedido'
+    // Son los items seleccionados que FIFO determinó con cantidadSurtible=0
+    // Sin este paso el pedido queda atascado en 'Combinado' porque el cálculo
+    // de estatus sigue viendo items 'Con stock' sin procesar.
+    const idsCompletosSet = new Set(productosCompletos.map(p => p.detalleid));
+    const idsParcialesSet = new Set(productosParciales.map(p => p.detalleid));
+    const idsBackorder = detalleProductos.rows
+      .filter(p => !idsCompletosSet.has(p.detalleid) && !idsParcialesSet.has(p.detalleid))
+      .map(p => p.detalleid);
+
+    if (idsBackorder.length > 0) {
+      await client.query(
+        `UPDATE detallesdelpedido
+         SET estado_producto = 'Bajo pedido'
+         WHERE pedidoid = $1
+           AND detalleid = ANY($2::int[])
+           AND tenant_id = $3
+           AND cantidadsurtida = 0`,
+        [pedidoId, idsBackorder, tenant_id]
+      );
+      logger.info('📦 Items reclasificados a Bajo pedido (FIFO sin stock disponible):', {
+        pedidoId,
+        count: idsBackorder.length,
+        idsBackorder,
+        tenantId: tenant_id
+      });
+    }
 
     return {
       success: true,

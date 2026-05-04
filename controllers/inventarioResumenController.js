@@ -387,7 +387,7 @@ const getProductoDetalleInventario = async (req, res) => {
           : 0;
         
         const medida = v.dimensiones || null;
-        const color = v.colorNombre || v.colornombre || null;
+        const color = v.color_nombre || v.colorNombre || v.colornombre || null;
         
         // ✅ SMART STOCK: Usar stock dinámico del mapa
         const stockDinamico = stockMap.get(varianteId) || 0;
