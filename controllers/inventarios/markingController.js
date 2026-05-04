@@ -159,6 +159,10 @@ async function validarYMarcarProductos({
           pedidosAnteriores: p.status.numPedidosAnteriores
         }));
 
+      // Retornar los IDs que son FIFO-backorder para que el caller los actualice
+      // a 'Bajo pedido' DESPUÉS del ROLLBACK (en una operación separada)
+      const idsParaMarcarBajoPedido = detalleProductos.rows.map(p => p.detalleid);
+
       return {
         success: false,
         marcarResult: { rowCount: 0 },
@@ -167,6 +171,7 @@ async function validarYMarcarProductos({
           ? 'Stock reservado para pedidos anteriores. El FIFO impide overselling.'
           : 'Stock insuficiente en inventario.',
         detalles_fifo: deudaInfo,
+        idsParaMarcarBajoPedido,
         analisis: {
           totalSeleccionados: detalleProductos.rows.length,
           completosSin_Deuda: productosCompletos.length,
@@ -288,6 +293,34 @@ async function validarYMarcarProductos({
       },
       tenantId: tenant_id
     });
+
+    // STEP 4: Reclasificar items FIFO-backorder de 'Con stock' → 'Bajo pedido'
+    // Son los items seleccionados que FIFO determinó con cantidadSurtible=0
+    // Sin este paso el pedido queda atascado en 'Combinado' porque el cálculo
+    // de estatus sigue viendo items 'Con stock' sin procesar.
+    const idsCompletosSet = new Set(productosCompletos.map(p => p.detalleid));
+    const idsParcialesSet = new Set(productosParciales.map(p => p.detalleid));
+    const idsBackorder = detalleProductos.rows
+      .filter(p => !idsCompletosSet.has(p.detalleid) && !idsParcialesSet.has(p.detalleid))
+      .map(p => p.detalleid);
+
+    if (idsBackorder.length > 0) {
+      await client.query(
+        `UPDATE detallesdelpedido
+         SET estado_producto = 'Bajo pedido'
+         WHERE pedidoid = $1
+           AND detalleid = ANY($2::int[])
+           AND tenant_id = $3
+           AND cantidadsurtida = 0`,
+        [pedidoId, idsBackorder, tenant_id]
+      );
+      logger.info('📦 Items reclasificados a Bajo pedido (FIFO sin stock disponible):', {
+        pedidoId,
+        count: idsBackorder.length,
+        idsBackorder,
+        tenantId: tenant_id
+      });
+    }
 
     return {
       success: true,

@@ -901,6 +901,36 @@ const surtirPedido = async (req, res) => {
 
       if (!markingResult.success) {
         await client.query('ROLLBACK');
+
+        // Si FIFO bloqueó todos los items seleccionados, marcarlos como 'Bajo pedido'
+        // en una operación separada (fuera de la transacción rollbackeada) para
+        // desbloquear el pedido del estado 'Combinado'.
+        const idsBackorder = markingResult.idsParaMarcarBajoPedido || [];
+        if (idsBackorder.length > 0) {
+          try {
+            await db.query(
+              `UPDATE detallesdelpedido
+               SET estado_producto = 'Bajo pedido'
+               WHERE pedidoid = $1
+                 AND detalleid = ANY($2::int[])
+                 AND tenant_id = $3
+                 AND cantidadsurtida = 0`,
+              [pedidoId, idsBackorder, tenant_id]
+            );
+            await updatePedidoStatus(pedidoId, tenant_id);
+            logger.info('📦 Items FIFO-backorder reclasificados a Bajo pedido (post-ROLLBACK):', {
+              pedidoId,
+              idsBackorder,
+              tenantId: tenant_id
+            });
+          } catch (rescueError) {
+            logger.warn('No se pudo reclasificar items backorder:', {
+              error: rescueError.message,
+              pedidoId
+            });
+          }
+        }
+
         return res.status(400).json({
           success: false,
           message: markingResult.message,
