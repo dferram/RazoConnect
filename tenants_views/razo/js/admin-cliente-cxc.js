@@ -8,12 +8,13 @@
   // ──────────────────────────────────────────────────────────────────────────
 
   const TIPO_CONFIG = {
-    CARGO:     { label: 'Cargo',      color: '#dc2626', badge: 'danger',   icon: 'bi-receipt',            columna: 'cargo'  },
-    RESERVA:   { label: 'Reserva',    color: '#f59e0b', badge: 'warning',  icon: 'bi-hourglass-split',    columna: 'cargo'  },
-    AJUSTE:    { label: 'Ajuste',     color: '#6b7280', badge: 'secondary',icon: 'bi-arrow-left-right',   columna: null     },
-    ABONO:     { label: 'Abono',      color: '#10b981', badge: 'success',  icon: 'bi-arrow-down-circle',  columna: 'abono'  },
-    PAGO:      { label: 'Pago',       color: '#10b981', badge: 'success',  icon: 'bi-check-circle',       columna: 'abono'  },
-    CANCELACION:{ label: 'Cancelación',color: '#8b5cf6', badge: 'info',   icon: 'bi-x-circle',           columna: 'abono'  },
+    CARGO:      { label: 'Cargo',        color: '#dc2626', badge: 'danger',   icon: 'bi-receipt',           columna: 'cargo'  },
+    RESERVA:    { label: 'Reserva',      color: '#f59e0b', badge: 'warning',  icon: 'bi-hourglass-split',   columna: 'cargo'  },
+    AJUSTE:     { label: 'Lib. Reserva', color: '#6366f1', badge: 'secondary',icon: 'bi-arrow-counterclockwise', columna: 'ajuste' },
+    ABONO:      { label: 'Abono',        color: '#10b981', badge: 'success',  icon: 'bi-arrow-down-circle', columna: 'abono'  },
+    PAGO:       { label: 'Pago',         color: '#10b981', badge: 'success',  icon: 'bi-check-circle',      columna: 'abono'  },
+    CREDITO:    { label: 'Crédito',      color: '#10b981', badge: 'success',  icon: 'bi-gift',              columna: 'abono'  },
+    CANCELACION:{ label: 'Cancelación',  color: '#8b5cf6', badge: 'info',     icon: 'bi-x-circle',          columna: 'abono'  },
   };
 
   function tipoInfo(tipo) {
@@ -199,10 +200,16 @@
       const saldo    = parseFloat(mov.saldo_despues_movimiento || mov.saldoDespues || 0);
       const rowClass = `row-${tipoRaw.toLowerCase()}`;
 
+      const rawMonto = parseFloat(mov.monto || 0);
       const colCargo = cfg.columna === 'cargo'
         ? `<span class="amount-cargo td-mono">${formatCurrency(monto)}</span>` : '<span style="color:#d1d5db;">—</span>';
       const colAbono = cfg.columna === 'abono'
         ? `<span class="amount-abono td-mono">${formatCurrency(monto)}</span>` : '<span style="color:#d1d5db;">—</span>';
+      const isAjuste = cfg.columna === 'ajuste';
+      const ajusteSign = rawMonto < 0 ? '−' : '+';
+      const ajusteCell = isAjuste
+        ? `<span style="color:#6366f1;font-size:0.75rem;font-style:italic;">${ajusteSign}${formatCurrency(monto)}</span>`
+        : null;
 
       const pedidoId     = mov.pedido_id  || '';
       const remisionFolio = mov.remision_folio || (mov.remision_id ? `REM-${mov.remision_id}` : '');
@@ -224,8 +231,8 @@
             </span>
           </td>
           <td style="max-width:260px; line-height:1.4;">${mov.descripcion || '—'}</td>
-          <td class="td-right">${colCargo}</td>
-          <td class="td-right">${colAbono}</td>
+          <td class="td-right">${isAjuste ? ajusteCell : colCargo}</td>
+          <td class="td-right">${isAjuste ? '<span style="color:#d1d5db;">—</span>' : colAbono}</td>
           <td class="td-right"><span class="amount-saldo td-mono">${formatCurrency(saldo)}</span></td>
           <td>${pedidoCell}</td>
           <td>${remisionCell}</td>
