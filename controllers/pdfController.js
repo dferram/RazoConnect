@@ -61,29 +61,11 @@ async function generarPDFPedido(req, res) {
     // ⚡ ROLE-BASED MODE ENFORCEMENT
     let finalMode = requestedMode;
     
-    // Finanzas: ALWAYS force surtido_only (they only see/charge what's ready)
-    if (userRoles.some(r => ['finanzas', 'gerente_finanzas'].includes(r))) {
-        finalMode = 'surtido_only';
-        logger.info('PDF: Finanzas role detected - forcing surtido_only mode', {
-            pedidoId,
-            userId,
-            requestId: req.requestId
-        });
-    }
-    
-    // Inventarios: ALWAYS show full (to know what's missing), but without prices
+    // Inventarios: hide prices — all other roles see prices
     if (userRoles.some(r => r === 'inventarios')) {
-        finalMode = 'full';
-        mostrarPrecios = false; // CRITICAL: Force hide prices, ignore client request
-        logger.info('PDF: Inventarios role detected - forcing full mode without prices', {
-            pedidoId,
-            userId,
-            requestId: req.requestId
-        });
+        mostrarPrecios = false;
     }
-    
-    // Admin/Super Admin: Default to full, but allow override
-    // Cliente: Allow mode selection (respect their choice)
+
     logger.info('PDF: Mode determined', {
         requestedMode,
         finalMode,
@@ -329,168 +311,59 @@ async function generarPDFPedido(req, res) {
         // Render header on first page manually
         renderHeader(doc, pedido, logoPath, logoExists);
 
-        // ⚡ THREE-TABLE CATEGORIZATION (NEW LOGIC)
-        // For inventarios role: Use selectedItemIds if available (from current session)
-        // Otherwise use cantidadsurtida (from database)
-        // CRITICAL: Use current session selection (selectedItemIds) first if provided
-        // EXCLUDE: Products from orders with status "Facturado" (already invoiced)
-        
-        // 🚨 DIAGNOSTIC LOG: Verificar estatus del pedido
-        logger.info('🔍 PDF DIAGNOSTIC - Pedido status check', {
+        // 5-TABLE UNIVERSAL CATEGORIZATION — same rules for all roles
+        // Role difference: only mostrarPrecios (false for inventarios, true for others)
+        const esFacturado = item => (item.estado_producto || '').toLowerCase().trim() === 'facturado';
+
+        // 1. Facturado (negro) — confirmed by finanzas
+        const itemsFacturados = detalles.filter(item => esFacturado(item));
+
+        // 2. Surtido (naranja) — cantidadsurtida > 0, not yet invoiced
+        const itemsSurtidos = detalles.filter(item => {
+            if (esFacturado(item)) return false;
+            return parseInt(item.cantidadsurtida || 0) > 0;
+        });
+
+        // 3. Con stock - Marcado por inventarios (verde) — selected in current session
+        const itemsMarcados = detalles.filter(item => {
+            if (esFacturado(item)) return false;
+            if (parseInt(item.cantidadsurtida || 0) > 0) return false;
+            if (!selectedItemIds || selectedItemIds.length === 0) return false;
+            return selectedItemIds.includes(item.detalleid);
+        });
+
+        // 4. Con stock - Sin marcar (azul) — has stock, not selected, not surtido
+        const itemsConStock = detalles.filter(item => {
+            if (esFacturado(item)) return false;
+            if (parseInt(item.cantidadsurtida || 0) > 0) return false;
+            if (selectedItemIds && selectedItemIds.length > 0 && selectedItemIds.includes(item.detalleid)) return false;
+            const stock = parseInt(item.stock_actual_variante) || 0;
+            const piezas = (parseInt(item.cantidad) || 0) * (parseInt(item.tamano_cantidad || 1));
+            return stock >= piezas;
+        });
+
+        // 5. Bajo pedido (rojo) — no stock, not surtido, not marcado
+        const itemsBajoPedido = detalles.filter(item => {
+            if (esFacturado(item)) return false;
+            if (parseInt(item.cantidadsurtida || 0) > 0) return false;
+            if (selectedItemIds && selectedItemIds.length > 0 && selectedItemIds.includes(item.detalleid)) return false;
+            const stock = parseInt(item.stock_actual_variante) || 0;
+            const piezas = (parseInt(item.cantidad) || 0) * (parseInt(item.tamano_cantidad || 1));
+            return stock < piezas;
+        });
+
+        logger.info('PDF: Items categorized (5-table universal)', {
             pedidoId,
-            pedidoEstatus: pedido.estatus,
-            pedidoEstatusLower: pedido.estatus ? pedido.estatus.toLowerCase() : 'NULL',
+            surtidos: itemsSurtidos.length,
+            marcados: itemsMarcados.length,
+            conStock: itemsConStock.length,
+            bajoPedido: itemsBajoPedido.length,
+            facturados: itemsFacturados.length,
             requestId: req.requestId
         });
-        
-        let itemsSurtidos = detalles.filter(item => {
-            // 🚫 CRITICAL FILTER: Exclude Facturado orders - they are already completed
-            if (pedido.estatus && pedido.estatus.toLowerCase() === 'facturado') {
-                logger.debug('📦 Item excluded - order is Facturado', {
-                    detalleid: item.detalleid,
-                    producto: item.producto_nombre,
-                    pedidoEstatus: pedido.estatus
-                });
-                return false;
-            }
-
-            const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
-            const estadoProducto = (item.estado_producto || '').toLowerCase().trim();
-
-            // If selectedItemIds are provided (current session), use those for categorization
-            if (selectedItemIds && selectedItemIds.length > 0) {
-                const isSelected = selectedItemIds.includes(item.detalleid);
-                logger.debug('📦 Item categorization check', {
-                    detalleid: item.detalleid,
-                    producto: item.producto_nombre,
-                    isSelected,
-                    selectedItemIds: selectedItemIds.slice(0, 3)
-                });
-                return isSelected;
-            } else {
-                // Fallback to cantidadsurtida for backward compatibility
-                // Include items that have been shipped OR marked as Facturado
-                return cantidadSurtida > 0 || estadoProducto === 'facturado';
-            }
-        });
-
-        logger.info('✅ Items categorized for Surtidos', {
-            count: itemsSurtidos.length,
-            selectedItemIds: selectedItemIds.slice(0, 3),
-            pedidoId,
-            requestId: req.requestId
-        });
-
-        let itemsConStock = detalles.filter(item => {
-            // 🚫 CRITICAL FILTER: Exclude Facturado orders - they are already completed
-            if (pedido.estatus && pedido.estatus.toLowerCase() === 'facturado') {
-                return false;
-            }
-
-            const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
-            const stockActual = parseInt(item.stock_actual_variante) || 0;
-            const cantidadRequerida = parseInt(item.cantidad) || 0;
-            const tamanoCantidad = parseInt(item.tamano_cantidad || 1);
-            const piezasRequeridas = cantidadRequerida * tamanoCantidad;
-
-            // If selectedItemIds are provided, exclude selected items from this category
-            if (selectedItemIds && selectedItemIds.length > 0) {
-                // Only include items that are NOT selected AND have stock
-                return !selectedItemIds.includes(item.detalleid) && stockActual >= piezasRequeridas;
-            } else {
-                // Fallback to original logic
-                return cantidadSurtida === 0 && stockActual >= piezasRequeridas;
-            }
-        });
-
-        let itemsBajoPedido = detalles.filter(item => {
-            // 🚫 CRITICAL FILTER: Exclude Facturado orders - they are already completed
-            if (pedido.estatus && pedido.estatus.toLowerCase() === 'facturado') {
-                return false;
-            }
-
-            const cantidadSurtida = parseInt(item.cantidadsurtida || 0);
-            const stockActual = parseInt(item.stock_actual_variante) || 0;
-            const cantidadRequerida = parseInt(item.cantidad) || 0;
-            const tamanoCantidad = parseInt(item.tamano_cantidad || 1);
-            const piezasRequeridas = cantidadRequerida * tamanoCantidad;
-
-            // If selectedItemIds are provided, exclude selected items from this category
-            if (selectedItemIds && selectedItemIds.length > 0) {
-                // Only include items that are NOT selected AND don't have stock
-                return !selectedItemIds.includes(item.detalleid) && stockActual < piezasRequeridas;
-            } else {
-                // Fallback to original logic
-                return cantidadSurtida === 0 && stockActual < piezasRequeridas;
-            }
-        });
-
-        // 🚨 DIAGNOSTIC LOG: Resultados del filtrado (NOW AFTER initialization)
-        logger.info('🔍 PDF DIAGNOSTIC - Filtering results', {
-            pedidoId,
-            pedidoEstatus: pedido.estatus,
-            totalDetalles: detalles.length,
-            itemsSurtidos: itemsSurtidos.length,
-            itemsConStock: itemsConStock.length,
-            itemsBajoPedido: itemsBajoPedido.length,
-            requestId: req.requestId
-        });
-
-        // Apply mode filtering and role-specific logic
-        if (finalMode === 'surtido_only') {
-            // Mode: surtido_only - Only show items with cantidadsurtida > 0
-            // Used by Finanzas (only charge what's ready to ship)
-            const hiddenCountConStock = itemsConStock.length;
-            const hiddenCountBajoPedido = itemsBajoPedido.length;
-            itemsConStock = []; // Hide con stock items
-            itemsBajoPedido = []; // Hide backorder items
-            logger.info('PDF: Applying surtido_only filter', {
-                itemsShown: itemsSurtidos.length,
-                itemsHiddenConStock: hiddenCountConStock,
-                itemsHiddenBajoPedido: hiddenCountBajoPedido,
-                pedidoId,
-                requestId: req.requestId
-            });
-        } else if (userRoles.some(r => r === 'inventarios')) {
-            // Mode: inventarios - Show MARCADOS (cantidadsurtida > 0) and SIN MARCAR (available but not selected)
-            let itemsMarcados = itemsSurtidos;  // Items with cantidadsurtida > 0 (user selected)
-            let itemsSinMarcar = itemsConStock; // Items with stock but cantidadsurtida = 0
-            
-            // Replace tables for inventory view
-            itemsSurtidos = itemsMarcados;      // Reuse for "PRODUCTOS MARCADOS PARA SURTIR"
-            itemsConStock = itemsSinMarcar;     // Reuse for "DISPONIBLE - SIN MARCAR"
-            itemsBajoPedido = itemsBajoPedido;  // Keep bajo pedido
-            
-            logger.info('PDF: Applying inventarios filter', {
-                itemsMarcados: itemsMarcados.length,
-                itemsSinMarcar: itemsSinMarcar.length,
-                itemsBajoPedido: itemsBajoPedido.length,
-                pedidoId,
-                requestId: req.requestId
-            });
-        } else {
-            // Mode: full - Show ALL items (default for Admin/Cliente)
-            // Used by Admin, Cliente (need to see everything)
-            logger.info('PDF: Showing full remision with three tables', {
-                itemsSurtidos: itemsSurtidos.length,
-                itemsConStock: itemsConStock.length,
-                itemsBajoPedido: itemsBajoPedido.length,
-                pedidoId,
-                requestId: req.requestId
-            });
-        }
 
         let yPosition = 260;
         const rowHeight = 25;
-
-        // Determine table titles based on role
-        let titleSurtidos = 'PRODUCTOS SURTIDOS';
-        let titleConStock = 'PRODUCTOS CON STOCK';
-        
-        if (userRoles.some(r => r === 'inventarios')) {
-            titleSurtidos = 'PRODUCTOS MARCADOS PARA SURTIR';
-            titleConStock = 'DISPONIBLE - SIN MARCAR';
-        }
 
         // Helper function to render table header (SMART PAGINATION)
         const renderTableHeader = (title, yPos, headerColor = '#F97316') => {
@@ -597,24 +470,38 @@ const renderItems = (items, startY, alternateColor = '#F9F9F9', pedidoEstatus = 
     return currentY;
 };
 
-// Render SURTIDO items section (products with cantidadsurtida > 0) - NARANJA
+// SURTIDO (naranja)
 if (itemsSurtidos.length > 0) {
-    yPosition = renderTableHeader(titleSurtidos, yPosition, '#10B981');
-    yPosition = renderItems(itemsSurtidos, yPosition, '#F0FDF4', pedido.estatus, mostrarPrecios);
+    yPosition = renderTableHeader('SURTIDO', yPosition, '#F97316');
+    yPosition = renderItems(itemsSurtidos, yPosition, '#FFF7ED', pedido.estatus, mostrarPrecios);
     yPosition += 10;
 }
 
-// Render CON STOCK items section (products with stock but not surtido yet) - AZUL/VERDE  
+// CON STOCK - MARCADO POR INVENTARIOS (verde)
+if (itemsMarcados.length > 0) {
+    yPosition = renderTableHeader('CON STOCK - MARCADO POR INVENTARIOS', yPosition, '#10B981');
+    yPosition = renderItems(itemsMarcados, yPosition, '#F0FDF4', pedido.estatus, mostrarPrecios);
+    yPosition += 10;
+}
+
+// CON STOCK - SIN MARCAR (azul)
 if (itemsConStock.length > 0) {
-    yPosition = renderTableHeader(titleConStock, yPosition, '#3B82F6');
+    yPosition = renderTableHeader('CON STOCK - SIN MARCAR', yPosition, '#3B82F6');
     yPosition = renderItems(itemsConStock, yPosition, '#EFF6FF', pedido.estatus, mostrarPrecios);
     yPosition += 10;
 }
 
-// Render BAJO PEDIDO items section (products without sufficient stock) - ROJO
+// BAJO PEDIDO (rojo)
 if (itemsBajoPedido.length > 0) {
     yPosition = renderTableHeader('BAJO PEDIDO - SIN STOCK', yPosition, '#DC2626');
     yPosition = renderItems(itemsBajoPedido, yPosition, '#FEF2F2', pedido.estatus, mostrarPrecios);
+    yPosition += 10;
+}
+
+// FACTURADO (negro)
+if (itemsFacturados.length > 0) {
+    yPosition = renderTableHeader('FACTURADO', yPosition, '#1F2937');
+    yPosition = renderItems(itemsFacturados, yPosition, '#F3F4F6', pedido.estatus, mostrarPrecios);
     yPosition += 10;
 }
 
@@ -651,14 +538,7 @@ if (!mostrarPrecios) {
 
 // CRITICAL FIX: Calculate totals from VISIBLE items only (not all detalles)
 // Choose items array based on current display mode
-let chosenItems;
-if (finalMode === 'surtido_only') {
-    // Only calculate from items actually shown (surtido items)
-    chosenItems = itemsSurtidos;
-} else {
-    // Full mode: combine all three visible arrays
-    chosenItems = [...itemsSurtidos, ...itemsConStock, ...itemsBajoPedido];
-}
+const chosenItems = [...itemsSurtidos, ...itemsMarcados, ...itemsConStock, ...itemsBajoPedido, ...itemsFacturados];
 
 let totalEnStock = 0;
 let totalSinStock = 0;
