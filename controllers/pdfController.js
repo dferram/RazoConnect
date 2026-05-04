@@ -332,24 +332,22 @@ async function generarPDFPedido(req, res) {
             return selectedItemIds.includes(item.detalleid);
         });
 
-        // 4. Con stock - Sin marcar (azul) — has stock, not selected, not surtido
+        // 4. Con stock - Sin marcar (azul) — esbackorder=false, not selected, not surtido
+        // esbackorder is set at order-split time and correctly identifies stock availability
+        // even when the same variant has two rows (partial fulfillment scenario)
         const itemsConStock = detalles.filter(item => {
             if (esFacturado(item)) return false;
             if (parseInt(item.cantidadsurtida || 0) > 0) return false;
             if (selectedItemIds && selectedItemIds.length > 0 && selectedItemIds.includes(item.detalleid)) return false;
-            const stock = parseInt(item.stock_actual_variante) || 0;
-            const piezas = (parseInt(item.cantidad) || 0) * (parseInt(item.tamano_cantidad || 1));
-            return stock >= piezas;
+            return !item.esbackorder;
         });
 
-        // 5. Bajo pedido (rojo) — no stock, not surtido, not marcado
+        // 5. Bajo pedido (rojo) — esbackorder=true, not surtido, not marcado
         const itemsBajoPedido = detalles.filter(item => {
             if (esFacturado(item)) return false;
             if (parseInt(item.cantidadsurtida || 0) > 0) return false;
             if (selectedItemIds && selectedItemIds.length > 0 && selectedItemIds.includes(item.detalleid)) return false;
-            const stock = parseInt(item.stock_actual_variante) || 0;
-            const piezas = (parseInt(item.cantidad) || 0) * (parseInt(item.tamano_cantidad || 1));
-            return stock < piezas;
+            return !!item.esbackorder;
         });
 
         logger.info('PDF: Items categorized (5-table universal)', {
@@ -361,6 +359,71 @@ async function generarPDFPedido(req, res) {
             facturados: itemsFacturados.length,
             requestId: req.requestId
         });
+
+        // DEBUG MODE: ?debug=true returns an HTML page instead of the PDF
+        if (req.query.debug === 'true') {
+            const categorizar = item => esFacturado(item)
+                ? 'FACTURADO'
+                : parseInt(item.cantidadsurtida || 0) > 0
+                    ? 'SURTIDO'
+                    : item.esbackorder ? 'BAJO_PEDIDO' : 'CON_STOCK';
+
+            const colorMap = {
+                FACTURADO:   { bg: '#1F2937', text: '#fff' },
+                SURTIDO:     { bg: '#F97316', text: '#fff' },
+                BAJO_PEDIDO: { bg: '#DC2626', text: '#fff' },
+                CON_STOCK:   { bg: '#3B82F6', text: '#fff' },
+                MARCADO:     { bg: '#10B981', text: '#fff' },
+            };
+
+            const rows = detalles.map(item => {
+                const cat = categorizar(item);
+                const isMarcado = itemsMarcados.some(m => m.detalleid === item.detalleid);
+                const finalCat = isMarcado ? 'MARCADO' : cat;
+                const c = colorMap[finalCat];
+                return `<tr>
+                    <td>${item.detalleid}</td>
+                    <td>${item.producto_nombre}</td>
+                    <td>${item.sku || '-'}</td>
+                    <td>${item.cantidad}</td>
+                    <td>${item.piezastotales}</td>
+                    <td>${item.cantidadsurtida}</td>
+                    <td>${item.esbackorder}</td>
+                    <td>${item.estado_producto}</td>
+                    <td>${item.stock_actual_variante}</td>
+                    <td style="background:${c.bg};color:${c.text};font-weight:bold;text-align:center">${finalCat}</td>
+                </tr>`;
+            }).join('');
+
+            const summary = [
+                { label: 'SURTIDO', color: '#F97316', count: itemsSurtidos.length },
+                { label: 'MARCADO POR INV.', color: '#10B981', count: itemsMarcados.length },
+                { label: 'CON STOCK - SIN MARCAR', color: '#3B82F6', count: itemsConStock.length },
+                { label: 'BAJO PEDIDO', color: '#DC2626', count: itemsBajoPedido.length },
+                { label: 'FACTURADO', color: '#1F2937', count: itemsFacturados.length },
+            ].map(s => `<span style="background:${s.color};color:#fff;padding:6px 14px;border-radius:6px;font-weight:bold;margin-right:8px">${s.label}: ${s.count}</span>`).join('');
+
+            const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+            <title>DEBUG PDF — Pedido ${pedidoId}</title>
+            <style>body{font-family:sans-serif;padding:24px;background:#f8f9fa}
+            h1{color:#F97316}table{border-collapse:collapse;width:100%;font-size:13px}
+            th{background:#374151;color:#fff;padding:8px 10px;text-align:left}
+            td{padding:7px 10px;border-bottom:1px solid #e5e7eb}
+            tr:nth-child(even) td{background:#f3f4f6}
+            .summary{margin:16px 0}</style></head><body>
+            <h1>🔍 DEBUG — Remisión Pedido #${pedidoId}</h1>
+            <p>Role: <strong>${userRole}</strong> | selectedItemIds: <strong>[${selectedItemIds.join(', ') || 'ninguno'}]</strong> | Total items: <strong>${detalles.length}</strong></p>
+            <div class="summary">${summary}</div>
+            <table><thead><tr>
+                <th>ID</th><th>Producto</th><th>SKU</th><th>Cant.</th>
+                <th>Piezas Total</th><th>Cant. Surtida</th><th>esBackorder</th>
+                <th>Estado Producto</th><th>Stock Variante</th><th>CATEGORÍA</th>
+            </tr></thead><tbody>${rows}</tbody></table>
+            </body></html>`;
+
+            res.setHeader('Content-Type', 'text/html; charset=utf-8');
+            return res.send(html);
+        }
 
         let yPosition = 260;
         const rowHeight = 25;
