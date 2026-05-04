@@ -646,6 +646,21 @@ const getPedidoDetalle = async (req, res) => {
             tamanoInfo.numeropiezas ||
             null;
 
+          // Estado dinámico: 'Facturado' y 'Surtido' se respetan del DB.
+          // Para todo lo demás se calcula en tiempo real: stock actual vs piezas requeridas.
+          const stockActual = row.stock !== null ? parseInt(row.stock, 10) : 0;
+          const piezasTot = parseInt(row.piezastotales, 10) || 0;
+          const estadoCacheado = (row.estado_producto || '').trim();
+          const esFacturado = estadoCacheado.toLowerCase() === 'facturado';
+          const esSurtido = parseInt(row.cantidadsurtida, 10) > 0 && !esFacturado;
+          const estadoProductoDinamico = esFacturado
+            ? 'Facturado'
+            : esSurtido
+              ? 'Surtido'
+              : stockActual >= piezasTot
+                ? 'Con stock'
+                : 'Bajo pedido';
+
           return {
             detalleId: row.detalleid,
             productoId: row.productoid,
@@ -655,7 +670,7 @@ const getPedidoDetalle = async (req, res) => {
             sku: row.sku,
             cantidadPaquetes: parseInt(row.cantidadpaquetes, 10),
             cantidadSurtida: row.cantidadsurtida !== null ? parseInt(row.cantidadsurtida, 10) : 0,
-            estadoProducto: row.estado_producto || 'Pendiente',
+            estadoProducto: estadoProductoDinamico,
             piezasPorPaquete,
             precioPorPaquete: row.precioporpaquete
               ? parseFloat(row.precioporpaquete)
