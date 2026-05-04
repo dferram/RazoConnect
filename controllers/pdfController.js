@@ -315,6 +315,30 @@ async function generarPDFPedido(req, res) {
         // Role difference: only mostrarPrecios (false for inventarios, true for others)
         const esFacturado = item => (item.estado_producto || '').toLowerCase().trim() === 'facturado';
 
+        // DEBUG: log raw values for every item before categorization
+        logger.info('PDF DEBUG - Raw item values before categorization', {
+            pedidoId,
+            totalItems: detalles.length,
+            items: detalles.map(item => ({
+                detalleid: item.detalleid,
+                producto: item.producto_nombre,
+                estado_producto: item.estado_producto,
+                cantidadsurtida: item.cantidadsurtida,
+                esbackorder: item.esbackorder,
+                stock_actual_variante: item.stock_actual_variante,
+                cantidad: item.cantidad,
+                piezastotales: item.piezastotales,
+                categoria_esperada: esFacturado(item)
+                    ? 'FACTURADO'
+                    : parseInt(item.cantidadsurtida || 0) > 0
+                        ? 'SURTIDO'
+                        : item.esbackorder
+                            ? 'BAJO_PEDIDO'
+                            : 'CON_STOCK'
+            })),
+            requestId: req.requestId
+        });
+
         // 1. Facturado (negro) — confirmed by finanzas
         const itemsFacturados = detalles.filter(item => esFacturado(item));
 
@@ -332,24 +356,22 @@ async function generarPDFPedido(req, res) {
             return selectedItemIds.includes(item.detalleid);
         });
 
-        // 4. Con stock - Sin marcar (azul) — has stock, not selected, not surtido
+        // 4. Con stock - Sin marcar (azul) — esbackorder=false, not selected, not surtido
+        // esbackorder is set at order-split time and correctly identifies stock availability
+        // even when the same variant has two rows (partial fulfillment scenario)
         const itemsConStock = detalles.filter(item => {
             if (esFacturado(item)) return false;
             if (parseInt(item.cantidadsurtida || 0) > 0) return false;
             if (selectedItemIds && selectedItemIds.length > 0 && selectedItemIds.includes(item.detalleid)) return false;
-            const stock = parseInt(item.stock_actual_variante) || 0;
-            const piezas = (parseInt(item.cantidad) || 0) * (parseInt(item.tamano_cantidad || 1));
-            return stock >= piezas;
+            return !item.esbackorder;
         });
 
-        // 5. Bajo pedido (rojo) — no stock, not surtido, not marcado
+        // 5. Bajo pedido (rojo) — esbackorder=true, not surtido, not marcado
         const itemsBajoPedido = detalles.filter(item => {
             if (esFacturado(item)) return false;
             if (parseInt(item.cantidadsurtida || 0) > 0) return false;
             if (selectedItemIds && selectedItemIds.length > 0 && selectedItemIds.includes(item.detalleid)) return false;
-            const stock = parseInt(item.stock_actual_variante) || 0;
-            const piezas = (parseInt(item.cantidad) || 0) * (parseInt(item.tamano_cantidad || 1));
-            return stock < piezas;
+            return !!item.esbackorder;
         });
 
         logger.info('PDF: Items categorized (5-table universal)', {
