@@ -5,115 +5,373 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalle CXC Cliente - Admin RazoConnect</title>
     <link rel="icon" type="image/png" href="/icon/Logo_Razo.png">
-    
-    <!-- External Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!-- Core Scripts - ORDEN CRÍTICO: api.js debe cargarse primero -->
     <script src="js/api.js"></script>
     <script src="js/auth-guard-admin.js"></script>
-    
-    
-    <link rel="stylesheet" href="css/styles.css" />
     <script src="js/components/back-button-loader.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/admin.css">
     <link rel="stylesheet" href="css/mobile-responsive.css">
+    <style>
+        /* ── Cliente Hero ── */
+        .cxc-hero {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+        .cxc-hero::before {
+            content: '';
+            position: absolute;
+            top: -40px; right: -40px;
+            width: 200px; height: 200px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+        }
+        .cxc-hero::after {
+            content: '';
+            position: absolute;
+            bottom: -60px; left: -20px;
+            width: 250px; height: 250px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.04);
+        }
+        .cxc-avatar {
+            width: 64px; height: 64px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: 800;
+            border: 2px solid rgba(255,255,255,0.3);
+            flex-shrink: 0;
+        }
+        .cxc-hero-name {
+            font-size: 1.5rem; font-weight: 800;
+            margin: 0 0 0.25rem;
+            line-height: 1.2;
+        }
+        .cxc-hero-meta {
+            font-size: 0.8rem;
+            opacity: 0.75;
+            display: flex; gap: 1rem; flex-wrap: wrap;
+            margin-top: 0.35rem;
+        }
+        .cxc-hero-meta span { display: flex; align-items: center; gap: 0.3rem; }
+        .cxc-estado-badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.3rem 0.75rem; border-radius: 999px;
+            font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em;
+        }
+        .cxc-estado-activo   { background: #d1fae5; color: #065f46; }
+        .cxc-estado-suspendido { background: #fee2e2; color: #991b1b; }
+
+        /* ── Metric Cards ── */
+        .cxc-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .cxc-metric-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.25rem 1.5rem;
+            position: relative;
+            overflow: hidden;
+            transition: box-shadow .2s;
+        }
+        .cxc-metric-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); }
+        .cxc-metric-card .metric-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+        }
+        .cxc-metric-card .metric-label {
+            font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.05em; color: #6b7280;
+            margin-bottom: 0.3rem;
+        }
+        .cxc-metric-card .metric-value {
+            font-size: 1.35rem; font-weight: 800; line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+        .cxc-metric-card .metric-sub {
+            font-size: 0.7rem; color: #9ca3af;
+        }
+        .metric-icon-blue   { background: #eff6ff; color: #2563eb; }
+        .metric-icon-red    { background: #fef2f2; color: #dc2626; }
+        .metric-icon-orange { background: #fff7ed; color: #ea580c; }
+        .metric-icon-amber  { background: #fffbeb; color: #d97706; }
+        .metric-icon-green  { background: #f0fdf4; color: #16a34a; }
+        .metric-color-dark  { color: #111827; }
+        .metric-color-red   { color: #dc2626; }
+        .metric-color-orange{ color: #ea580c; }
+        .metric-color-amber { color: #d97706; }
+        .metric-color-green { color: #16a34a; }
+
+        /* ── Credit Utilization Bar ── */
+        .cxc-utilization {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .utilization-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        .utilization-title { font-size: 0.8rem; font-weight: 700; color: #374151; }
+        .utilization-pct   { font-size: 0.8rem; font-weight: 800; }
+        .utilization-track {
+            height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden;
+        }
+        .utilization-fill {
+            height: 100%; border-radius: 999px;
+            transition: width 0.6s ease;
+        }
+        .utilization-legend {
+            display: flex; gap: 1.5rem; margin-top: 0.6rem; flex-wrap: wrap;
+        }
+        .utilization-legend span {
+            font-size: 0.7rem; color: #6b7280;
+            display: flex; align-items: center; gap: 0.35rem;
+        }
+        .legend-dot {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+        }
+
+        /* ── Movements Section ── */
+        .cxc-movements-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+        .cxc-movements-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .cxc-movements-title {
+            font-size: 1rem; font-weight: 700; color: #111827;
+            display: flex; align-items: center; gap: 0.5rem; margin: 0;
+        }
+        .cxc-movements-count {
+            background: #f3f4f6; color: #374151;
+            font-size: 0.7rem; font-weight: 700;
+            padding: 0.2rem 0.6rem; border-radius: 999px;
+        }
+
+        /* Table */
+        .cxc-table { width: 100%; border-collapse: collapse; }
+        .cxc-table thead th {
+            background: #f9fafb;
+            padding: 0.65rem 1rem;
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.04em; color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+        .cxc-table tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: background .15s;
+        }
+        .cxc-table tbody tr:hover { background: #fafafa; }
+        .cxc-table tbody tr:last-child { border-bottom: none; }
+        .cxc-table td {
+            padding: 0.8rem 1rem;
+            font-size: 0.8rem; color: #374151;
+            vertical-align: middle;
+        }
+        .cxc-table .td-right { text-align: right; }
+        .cxc-table .td-mono { font-variant-numeric: tabular-nums; }
+
+        /* Row accents */
+        .row-cargo    { border-left: 3px solid #dc2626; }
+        .row-reserva  { border-left: 3px solid #f59e0b; }
+        .row-abono,
+        .row-pago     { border-left: 3px solid #10b981; }
+        .row-cancelacion { border-left: 3px solid #8b5cf6; }
+        .row-ajuste   { border-left: 3px solid #9ca3af; }
+
+        /* Tipo badge */
+        .tipo-badge {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.2rem 0.6rem; border-radius: 999px;
+            font-size: 0.7rem; font-weight: 700; white-space: nowrap;
+        }
+        .tipo-cargo       { background: #fef2f2; color: #dc2626; }
+        .tipo-reserva     { background: #fffbeb; color: #d97706; }
+        .tipo-abono,
+        .tipo-pago        { background: #f0fdf4; color: #15803d; }
+        .tipo-cancelacion { background: #faf5ff; color: #7c3aed; }
+        .tipo-ajuste      { background: #f3f4f6; color: #6b7280; }
+
+        /* Amount cells */
+        .amount-cargo  { color: #dc2626; font-weight: 700; }
+        .amount-abono  { color: #16a34a; font-weight: 700; }
+        .amount-saldo  { color: #1e40af; font-weight: 700; }
+
+        /* Folio links */
+        .folio-link {
+            display: inline-flex; align-items: center; gap: 0.25rem;
+            color: #4f46e5; font-weight: 600; text-decoration: none;
+            font-size: 0.75rem;
+        }
+        .folio-link:hover { text-decoration: underline; }
+
+        /* Loading state */
+        .cxc-loading {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 3rem; gap: 1rem; color: #6b7280;
+        }
+        .cxc-spinner {
+            width: 36px; height: 36px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #f97316;
+            border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Empty state */
+        .cxc-empty {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 3.5rem 1.5rem; gap: 0.75rem; color: #9ca3af;
+        }
+        .cxc-empty i { font-size: 2.5rem; }
+        .cxc-empty strong { color: #374151; font-size: 1rem; }
+        .cxc-empty p { font-size: 0.85rem; margin: 0; }
+
+        /* Pagination wrapper */
+        #paginationWrapper { padding: 0.75rem 1rem; border-top: 1px solid #f3f4f6; }
+    </style>
 </head>
 <body data-sidebar="admin" data-page-title="Detalle CXC cliente">
     <div class="admin-layout">
         <div id="admin-sidebar-container"></div>
-        
+
         <main class="admin-main">
             <div id="admin-header-container"></div>
-            
+
             <div class="admin-content">
-                <div id="back-button-container"></div>
+                <div id="back-button-container" style="margin-bottom: 1rem;"></div>
+
                 <!-- Instructional Banner -->
                 <div id="instructionalBanner" class="instructional-banner">
-                    <p>
-                        💡 <strong>Detalle CXC Cliente:</strong> Consulta el estado de cuenta detallado de un cliente específico. Visualiza su límite de crédito, saldo deudor, historial de movimientos y pagos. Usa esta vista para dar seguimiento personalizado a la cuenta del cliente.
-                    </p>
-                    <button class="instructional-banner-close" title="Cerrar">
-                        ×
-                    </button>
+                    <p>💡 <strong>Detalle CXC Cliente:</strong> Consulta el estado de cuenta detallado de un cliente específico. Visualiza su límite de crédito, saldo deudor, historial de movimientos y pagos.</p>
+                    <button class="instructional-banner-close" title="Cerrar">×</button>
                 </div>
 
-
-                <!-- Client Info Card -->
-                <section class="admin-card" style="margin-bottom: 1.5rem;">
-                    <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
-                        <h2 style="margin: 0; font-size: 1.25rem; font-weight: 700;">
-                            <i class="bi bi-person-circle" style="color: var(--razo-orange);"></i>
-                            <span id="clienteNombre">Cargando...</span>
-                        </h2>
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; padding: 1.5rem;">
-                        <div>
-                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Límite de Crédito</div>
-                            <div style="font-size: 1.25rem; font-weight: 700; color: #111827;" id="limiteCredito">$0.00</div>
+                <!-- ── Hero ── -->
+                <div class="cxc-hero">
+                    <div style="display:flex; align-items:center; gap:1.25rem; position:relative; z-index:1;">
+                        <div class="cxc-avatar" id="clienteAvatar">?</div>
+                        <div style="flex:1; min-width:0;">
+                            <h1 class="cxc-hero-name" id="clienteNombre">Cargando…</h1>
+                            <div class="cxc-hero-meta" id="clienteMeta"></div>
                         </div>
-                        <div>
-                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Saldo Deudor Total</div>
-                            <div style="font-size: 1.25rem; font-weight: 700; color: #dc2626;" id="saldoDeudor">$0.00</div>
-                            <div style="font-size: 0.7rem; color: #9ca3af; margin-top: 0.2rem;">Cargos + Reservas</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Cargo Confirmado</div>
-                            <div style="font-size: 1.25rem; font-weight: 700; color: #dc2626;" id="cargoConfirmado">$0.00</div>
-                            <div style="font-size: 0.7rem; color: #9ca3af; margin-top: 0.2rem;">Remisiones facturadas</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Reserva Pendiente</div>
-                            <div style="font-size: 1.25rem; font-weight: 700; color: #f59e0b;" id="reservaPendiente">$0.00</div>
-                            <div style="font-size: 0.7rem; color: #9ca3af; margin-top: 0.2rem;">Pedidos sin entregar</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Crédito Disponible</div>
-                            <div style="font-size: 1.25rem; font-weight: 700; color: #10b981;" id="creditoDisponible">$0.00</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.75rem; color: #6b7280; margin-bottom: 0.25rem;">Estado</div>
-                            <div id="estadoCredito">
-                                <span class="badge bg-secondary">Cargando...</span>
+                        <div style="text-align:right; flex-shrink:0;">
+                            <div style="font-size:0.7rem; opacity:.7; margin-bottom:0.3rem;">LÍMITE DE CRÉDITO</div>
+                            <div style="font-size:1.75rem; font-weight:900;" id="limiteCredito">—</div>
+                            <div style="margin-top:0.4rem;" id="estadoCredito">
+                                <span class="cxc-estado-badge" style="background:rgba(255,255,255,.15);color:#fff;">
+                                    <i class="bi bi-hourglass-split"></i> Cargando…
+                                </span>
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <!-- Movements Table -->
-                <section class="admin-card">
-                    <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
-                        <h3 style="margin: 0; font-size: 1.125rem; font-weight: 700;">
-                            <i class="bi bi-list-ul" style="color: var(--razo-orange);"></i>
+                <!-- ── Metric Cards ── -->
+                <div class="cxc-metrics">
+                    <div class="cxc-metric-card">
+                        <div class="metric-icon metric-icon-red"><i class="bi bi-receipt-cutoff"></i></div>
+                        <div class="metric-label">Saldo Deudor Total</div>
+                        <div class="metric-value metric-color-red" id="saldoDeudor">$0.00</div>
+                        <div class="metric-sub">Cargos + Reservas</div>
+                    </div>
+                    <div class="cxc-metric-card">
+                        <div class="metric-icon metric-icon-orange"><i class="bi bi-file-earmark-check"></i></div>
+                        <div class="metric-label">Cargo Confirmado</div>
+                        <div class="metric-value metric-color-orange" id="cargoConfirmado">$0.00</div>
+                        <div class="metric-sub">Remisiones facturadas</div>
+                    </div>
+                    <div class="cxc-metric-card">
+                        <div class="metric-icon metric-icon-amber"><i class="bi bi-hourglass-split"></i></div>
+                        <div class="metric-label">Reserva Pendiente</div>
+                        <div class="metric-value metric-color-amber" id="reservaPendiente">$0.00</div>
+                        <div class="metric-sub">Pedidos sin entregar</div>
+                    </div>
+                    <div class="cxc-metric-card">
+                        <div class="metric-icon metric-icon-green"><i class="bi bi-wallet2"></i></div>
+                        <div class="metric-label">Crédito Disponible</div>
+                        <div class="metric-value metric-color-green" id="creditoDisponible">$0.00</div>
+                        <div class="metric-sub">Límite – saldo deudor</div>
+                    </div>
+                </div>
+
+                <!-- ── Credit Utilization Bar ── -->
+                <div class="cxc-utilization">
+                    <div class="utilization-header">
+                        <span class="utilization-title"><i class="bi bi-bar-chart-fill" style="color:#f97316;"></i> &nbsp;Utilización del Crédito</span>
+                        <span class="utilization-pct" id="utilizacionPct" style="color:#111827;">—</span>
+                    </div>
+                    <div class="utilization-track">
+                        <div class="utilization-fill" id="utilizacionBar" style="width:0%; background:#e5e7eb;"></div>
+                    </div>
+                    <div class="utilization-legend">
+                        <span><span class="legend-dot" style="background:#dc2626;"></span> Cargo confirmado</span>
+                        <span><span class="legend-dot" style="background:#f59e0b;"></span> Reserva pendiente</span>
+                        <span><span class="legend-dot" style="background:#d1fae5;border:1px solid #6ee7b7;"></span> Disponible</span>
+                    </div>
+                </div>
+
+                <!-- ── Movements ── -->
+                <div class="cxc-movements-card">
+                    <div class="cxc-movements-header">
+                        <h3 class="cxc-movements-title">
+                            <i class="bi bi-clock-history" style="color:#f97316;"></i>
                             Historial de Movimientos
                         </h3>
+                        <span class="cxc-movements-count" id="movimientosCount" style="display:none;"></span>
                     </div>
 
-                    <div id="estadoCarga" class="loading" style="display: none;">
-                        <div class="spinner"></div>
+                    <!-- Loading -->
+                    <div id="estadoCarga" class="cxc-loading" style="display:none;">
+                        <div class="cxc-spinner"></div>
+                        <span>Cargando movimientos…</span>
                     </div>
 
-                    <div id="estadoVacio" class="empty-state" style="display: none;">
-                        <div class="empty-state-icon">📋</div>
-                        <h3 class="empty-state-title">No hay movimientos</h3>
-                        <p class="empty-state-text">Este cliente no tiene movimientos registrados</p>
+                    <!-- Empty -->
+                    <div id="estadoVacio" class="cxc-empty" style="display:none;">
+                        <i class="bi bi-inbox"></i>
+                        <strong>Sin movimientos</strong>
+                        <p>Este cliente no tiene movimientos CXC registrados</p>
                     </div>
 
-                    <div class="table-wrapper">
-                        <table id="tablaMovimientos" class="admin-table" style="display: none;">
+                    <!-- Table -->
+                    <div style="overflow-x:auto;">
+                        <table id="tablaMovimientos" class="cxc-table" style="display:none;">
                             <thead>
                                 <tr>
-                                    <th>Fecha</th>
-                                    <th>Tipo</th>
+                                    <th style="width:145px;">Fecha</th>
+                                    <th style="width:110px;">Tipo</th>
                                     <th>Descripción</th>
-                                    <th style="text-align: right;">Cargo</th>
-                                    <th style="text-align: right;">Abono</th>
-                                    <th style="text-align: right;">Saldo</th>
-                                    <th>Pedido</th>
-                                    <th>Remisión</th>
+                                    <th class="td-right" style="width:120px;">Cargo</th>
+                                    <th class="td-right" style="width:120px;">Abono</th>
+                                    <th class="td-right" style="width:120px;">Saldo</th>
+                                    <th style="width:80px;">Pedido</th>
+                                    <th style="width:100px;">Remisión</th>
                                 </tr>
                             </thead>
                             <tbody id="tablaMovimientosTbody"></tbody>
@@ -121,27 +379,28 @@
                     </div>
 
                     <div id="paginationWrapper"></div>
-                </section>
-            </div>
+                </div>
+
+            </div><!-- /admin-content -->
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="js/layout.js" defer></script>
     <script src="js/sidebar-toggle.js" defer></script>
-    <script src="js/auth-manager.js"></script><script src="js/admin-header-dropdown.js"></script>
+    <script src="js/auth-manager.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
     <script src="js/components/admin-header-loader.js"></script>
     <script src="js/components/admin-sidebar-loader.js"></script>
     <script src="js/components/user-profile.js"></script>
     <script src="js/pagination-component.js"></script>
     <script src="js/instructional-banner.js"></script>
     <script src="js/admin-cliente-cxc.js" defer></script>
-    
+
     <script>
-      // Cargar botón de volver
       window.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
-        const clienteId = urlParams.get('clienteId');
-        
+        const clienteId = urlParams.get('clienteId') || urlParams.get('id');
         loadBackButton({
           backUrl: clienteId ? `/admin-cliente-detalle.html?id=${clienteId}` : '/admin-clientes.html',
           backText: 'Volver'

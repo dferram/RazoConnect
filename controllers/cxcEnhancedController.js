@@ -197,9 +197,8 @@ async function getEstadoCuentaCliente(req, res) {
             FROM clientes c
             INNER JOIN cliente_creditos cc ON cc.cliente_id = c.clienteid
             WHERE c.clienteid = $1
-              AND cc.admin_id = $2
-              AND cc.tenant_id = $3
-        `, [clienteId, userAdminId, tenantId]);
+              AND cc.tenant_id = $2
+        `, [clienteId, tenantId]);
 
         if (!clienteInfo) {
             return res.status(404).json({

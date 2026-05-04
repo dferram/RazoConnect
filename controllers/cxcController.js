@@ -1025,25 +1025,23 @@ async function getClienteCXCMovimientos(req, res) {
                 r.total_remision          AS remision_monto
             FROM credito_movimientos cm
             INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id
-              AND cc.admin_id = $3
               AND cc.tenant_id = $2
             LEFT JOIN remisiones r ON r.remision_id = cm.remision_id
             WHERE cc.cliente_id = $1
                 AND cc.tenant_id = $2
             ORDER BY cm.fecha_movimiento DESC
-            LIMIT $4 OFFSET $5
-        `, [clienteId, tenant_id, adminId, limit, offset]);
+            LIMIT $3 OFFSET $4
+        `, [clienteId, tenant_id, limit, offset]);
 
         // Contar total de registros
         const { rows: [count] } = await client.query(`
             SELECT COUNT(*) as total
             FROM credito_movimientos cm
             INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id
-              AND cc.admin_id = $3
               AND cc.tenant_id = $2
             WHERE cc.cliente_id = $1
                 AND cc.tenant_id = $2
-        `, [clienteId, tenant_id, adminId]);
+        `, [clienteId, tenant_id]);
 
         const totalPages = Math.ceil(parseInt(count.total) / limit);
 
