@@ -1702,13 +1702,13 @@
             variantes: variantes.map(v => ({
               varianteId: v.varianteId,
               sku: v.sku,
-              dimensiones: v.dimensiones || v.caracteristica || '',
-              color_nombre: v.color_nombre || '',
+              dimensiones: v.dimensiones || v.medida || v.caracteristica || '',
+              color_nombre: v.color || v.color_nombre || '',
               color_hex: v.color_hex || '',
-              precio: v.precioUnitario || 0,
+              precio: v.precio || v.precioUnitario || 0,
               stock: v.stock,
-              precioUnitario: v.precioUnitario,
-              precioPaquete: v.precioUnitario,
+              precioUnitario: v.precio || v.precioUnitario,
+              precioPaquete: v.precio || v.precioUnitario,
               activo: v.activo,
               stock_distribucion: v.stock_distribucion || []
             })),
@@ -1802,7 +1802,15 @@
           thPrecioPaquete.style.display = isInventarios ? 'none' : 'table-cell';
         }
 
-        tablaVariantesBody.innerHTML = variantes
+        const variantesOrdenadas = [...variantes].sort((a, b) => {
+          const ca = (a.color_nombre || 'Sin color').toLowerCase();
+          const cb = (b.color_nombre || 'Sin color').toLowerCase();
+          if (ca === 'sin color' && cb !== 'sin color') return 1;
+          if (ca !== 'sin color' && cb === 'sin color') return -1;
+          return ca.localeCompare(cb, 'es');
+        });
+
+        tablaVariantesBody.innerHTML = variantesOrdenadas
           .map((variant) => {
             const precio = formatCurrency(variant.precio || 0);
             const stock = variant.stock || 0;
