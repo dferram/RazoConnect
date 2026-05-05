@@ -619,9 +619,9 @@ const getEstadoCuentaCliente = async (req, res) => {
        LEFT JOIN (
          SELECT credito_id,
                 SUM(monto)             AS total_cargos,
-                COUNT(DISTINCT remision_id) AS cantidad_remisiones
+                COUNT(*)               AS cantidad_remisiones
          FROM credito_movimientos
-         WHERE tipo_movimiento = 'CARGO' AND remision_id IS NOT NULL
+         WHERE tipo_movimiento = 'CARGO'
          GROUP BY credito_id
        ) cargos ON cargos.credito_id = cc.credito_id
        LEFT JOIN (

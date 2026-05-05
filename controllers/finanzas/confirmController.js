@@ -202,6 +202,22 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       }
     }
 
+    // === Monto a confirmar: solo productos en estado 'Surtido' (idempotencia) ===
+    let montoConfirmado = 0;
+    if (pedido.es_credito) {
+      const { rows: [precioRow] } = await client.query(
+        `SELECT COALESCE(SUM(dp.precio_unitario * dp.cantidadsurtida), 0) AS monto_confirmado
+         FROM detallesdelpedido dp
+         WHERE dp.pedidoid = $1
+           AND dp.detalleid = ANY($2::int[])
+           AND dp.estado_producto = 'Surtido'
+           AND dp.cantidadsurtida > 0
+           AND dp.tenant_id = $3`,
+        [pedidoId, detalleIds, tenant_id]
+      );
+      montoConfirmado = parseFloat(precioRow?.monto_confirmado || 0);
+    }
+
     // ✅ ACTUALIZAR estado_producto A "Facturado" DESPUÉS DE CONFIRMAR STOCK EN FINANZAS
     for (const detalleId of detalleIds) {
       try {
@@ -348,6 +364,70 @@ const confirmarSurtidoFinanzas = async (req, res) => {
         message: 'Error: No se pudo actualizar el estado del pedido'
       });
     }
+
+    // === CXC GENERATION: Cargo para pedidos a crédito ===
+    if (pedido.es_credito && montoConfirmado > 0) {
+      const { rows: [creditoInfo] } = await client.query(
+        `SELECT credito_id, saldo_deudor
+         FROM cliente_creditos
+         WHERE cliente_id = $1 AND tenant_id = $2
+         FOR UPDATE`,
+        [pedido.clienteid, tenant_id]
+      );
+
+      if (creditoInfo) {
+        const saldoActual = parseFloat(creditoInfo.saldo_deudor || 0);
+
+        await client.query(
+          `INSERT INTO credito_movimientos
+             (credito_id, tipo_movimiento, monto, referencia_id, descripcion,
+              saldo_despues_movimiento, tenant_id, pedido_id, admin_id)
+           VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            creditoInfo.credito_id,
+            (-montoConfirmado).toFixed(2),
+            `PED-${pedidoId}`,
+            `Lib. reserva parcial - Pedido #${pedidoId} (${productosConfirmados} prods. facturados)`,
+            (saldoActual - montoConfirmado).toFixed(2),
+            tenant_id, pedidoId, userId
+          ]
+        );
+
+        await client.query(
+          `INSERT INTO credito_movimientos
+             (credito_id, tipo_movimiento, monto, referencia_id, descripcion,
+              saldo_despues_movimiento, tenant_id, pedido_id, admin_id)
+           VALUES ($1, 'CARGO', $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            creditoInfo.credito_id,
+            montoConfirmado.toFixed(2),
+            `PED-${pedidoId}`,
+            `Cargo confirmado finanzas - Pedido #${pedidoId} (${productosConfirmados} prods.)`,
+            saldoActual.toFixed(2),
+            tenant_id, pedidoId, userId
+          ]
+        );
+
+        await client.query(
+          `INSERT INTO cuentas_por_cobrar
+             (pedido_id, cliente_id, remision_id, tipo_movimiento, monto, descripcion, tenant_id, admin_id)
+           VALUES ($1, $2, NULL, 'CARGO', $3, $4, $5, $6)`,
+          [
+            pedidoId,
+            pedido.clienteid,
+            montoConfirmado.toFixed(2),
+            `Facturado por finanzas - Pedido #${pedidoId}`,
+            tenant_id, userId
+          ]
+        );
+
+        logger.info('✅ [CXC] Cargo generado por confirmación de finanzas', {
+          pedidoId, clienteId: pedido.clienteid,
+          montoConfirmado, productosConfirmados, tenantId: tenant_id
+        });
+      }
+    }
+    // === FIN CXC GENERATION ===
 
     await client.query('COMMIT');
 

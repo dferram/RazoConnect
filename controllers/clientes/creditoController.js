@@ -64,7 +64,7 @@ const checkAuthCredit = async (req, res) => {
     if (creditSummary && creditoActivo) {
       const balanceRow = await db.query(
         `SELECT
-           COALESCE(SUM(CASE WHEN tipo_movimiento = 'CARGO' AND remision_id IS NOT NULL THEN monto ELSE 0 END), 0) AS cargo_confirmado,
+           COALESCE(SUM(CASE WHEN tipo_movimiento = 'CARGO' THEN monto ELSE 0 END), 0) AS cargo_confirmado,
            COALESCE(SUM(CASE WHEN tipo_movimiento = 'ABONO' OR tipo_movimiento = 'PAGO' THEN monto ELSE 0 END), 0) AS total_abonos
          FROM credito_movimientos
          WHERE credito_id = $1`,

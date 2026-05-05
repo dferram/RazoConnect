@@ -241,8 +241,8 @@ async function getEstadoCuentaCliente(req, res) {
         // Cargos confirmados (CARGO con remision_id) para calcular reserva pendiente
         const { rows: [balanceRow] } = await client.query(`
             SELECT
-                COALESCE(SUM(CASE WHEN tipo_movimiento = 'CARGO' AND remision_id IS NOT NULL THEN monto ELSE 0 END), 0) AS cargo_confirmado,
-                COUNT(DISTINCT CASE WHEN tipo_movimiento = 'CARGO' AND remision_id IS NOT NULL THEN remision_id END)     AS remisiones_facturadas
+                COALESCE(SUM(CASE WHEN tipo_movimiento = 'CARGO' THEN monto ELSE 0 END), 0) AS cargo_confirmado,
+                COUNT(CASE WHEN tipo_movimiento = 'CARGO' THEN 1 END)                         AS remisiones_facturadas
             FROM credito_movimientos
             WHERE credito_id = $1
         `, [clienteInfo.credito_id]);
@@ -270,7 +270,7 @@ async function getEstadoCuentaCliente(req, res) {
             LEFT JOIN administradores a ON a.adminid = cm.admin_id
             LEFT JOIN remisiones r ON r.remision_id = cm.remision_id
             WHERE cm.credito_id = $1
-              AND cm.tipo_movimiento IN ('CARGO', 'ABONO', 'PAGO', 'RESERVA')
+              AND cm.tipo_movimiento IN ('CARGO', 'ABONO', 'PAGO', 'RESERVA', 'AJUSTE')
             ORDER BY cm.fecha_movimiento DESC
             LIMIT 20
         `, [clienteInfo.credito_id]);
