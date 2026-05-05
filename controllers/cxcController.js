@@ -314,32 +314,32 @@ async function getMetricasCobranza(req, res) {
     try {
         // Ejecutar consultas en paralelo
         const [porCobrar, enGestion, clientesMora] = await Promise.all([
-            // Saldo total pendiente (foto actual de toda la deuda) - ⚠️ CRITICAL: Filter by admin_id
             client.query(`
-                SELECT COALESCE(SUM(saldo_deudor), 0) as total
-                FROM cliente_creditos
-                WHERE saldo_deudor > 0
-                    AND tenant_id = $1
-                    AND admin_id = $2
+                SELECT COALESCE(SUM(cc.saldo_deudor), 0) as total
+                FROM cliente_creditos cc
+                INNER JOIN clientes c ON c.clienteid = cc.cliente_id AND c.tenant_id = $1
+                INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id AND ae.admin_id = $2
+                WHERE cc.saldo_deudor > 0
+                    AND cc.tenant_id = $1
             `, [tenant_id, adminId]),
 
-            // Saldo en gestión (exportado este mes) - ⚠️ CRITICAL: Filter by admin_id
             client.query(`
-                SELECT COALESCE(SUM(saldo_deudor), 0) as total
-                FROM cliente_creditos
-                WHERE saldo_deudor > 0
-                    AND ultima_actualizacion >= date_trunc('month', CURRENT_DATE)
-                    AND tenant_id = $1
-                    AND admin_id = $2
+                SELECT COALESCE(SUM(cc.saldo_deudor), 0) as total
+                FROM cliente_creditos cc
+                INNER JOIN clientes c ON c.clienteid = cc.cliente_id AND c.tenant_id = $1
+                INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id AND ae.admin_id = $2
+                WHERE cc.saldo_deudor > 0
+                    AND cc.ultima_actualizacion >= date_trunc('month', CURRENT_DATE)
+                    AND cc.tenant_id = $1
             `, [tenant_id, adminId]),
 
-            // Clientes en mora - ⚠️ CRITICAL: Filter by admin_id
             client.query(`
                 SELECT COUNT(*) as total
-                FROM cliente_creditos
-                WHERE estado_credito = 'SUSPENDIDO'
-                    AND tenant_id = $1
-                    AND admin_id = $2
+                FROM cliente_creditos cc
+                INNER JOIN clientes c ON c.clienteid = cc.cliente_id AND c.tenant_id = $1
+                INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id AND ae.admin_id = $2
+                WHERE cc.estado_credito = 'SUSPENDIDO'
+                    AND cc.tenant_id = $1
             `, [tenant_id, adminId])
         ]);
 
@@ -601,7 +601,6 @@ async function getSummaryAging(req, res) {
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
                 AND ae.admin_id = $2
-                AND cc.admin_id = $2
             GROUP BY cc.credito_id, c.clienteid, c.nombre, c.apellido, c.email,
                      cc.limite_credito, cc.saldo_deudor, cc.estado_credito, cc.ultima_actualizacion
             ORDER BY cc.saldo_deudor DESC
@@ -647,7 +646,6 @@ async function getSummaryAging(req, res) {
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
                 AND ae.admin_id = $2
-                AND cc.admin_id = $2
                 ${countFilters}
         `, countQueryParams);
 
@@ -693,7 +691,6 @@ async function getSummaryAging(req, res) {
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
                 AND ae.admin_id = $2
-                AND cc.admin_id = $2
                 ${metricsFilters}
         `, metricsParams);
 
@@ -962,10 +959,9 @@ async function getClienteCXCDetail(req, res) {
             FROM clientes c
             INNER JOIN cliente_creditos cc ON cc.cliente_id = c.clienteid
               AND cc.tenant_id = $2
-              AND cc.admin_id = $3
             WHERE c.clienteid = $1
                 AND c.tenant_id = $2
-        `, [clienteId, tenant_id, adminId]);
+        `, [clienteId, tenant_id]);
 
         if (rows.length === 0) {
             return res.status(404).json({
@@ -1025,25 +1021,23 @@ async function getClienteCXCMovimientos(req, res) {
                 r.total_remision          AS remision_monto
             FROM credito_movimientos cm
             INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id
-              AND cc.admin_id = $3
               AND cc.tenant_id = $2
             LEFT JOIN remisiones r ON r.remision_id = cm.remision_id
             WHERE cc.cliente_id = $1
                 AND cc.tenant_id = $2
             ORDER BY cm.fecha_movimiento DESC
-            LIMIT $4 OFFSET $5
-        `, [clienteId, tenant_id, adminId, limit, offset]);
+            LIMIT $3 OFFSET $4
+        `, [clienteId, tenant_id, limit, offset]);
 
         // Contar total de registros
         const { rows: [count] } = await client.query(`
             SELECT COUNT(*) as total
             FROM credito_movimientos cm
             INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id
-              AND cc.admin_id = $3
               AND cc.tenant_id = $2
             WHERE cc.cliente_id = $1
                 AND cc.tenant_id = $2
-        `, [clienteId, tenant_id, adminId]);
+        `, [clienteId, tenant_id]);
 
         const totalPages = Math.ceil(parseInt(count.total) / limit);
 

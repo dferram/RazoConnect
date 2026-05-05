@@ -1498,10 +1498,9 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
         `SELECT credito_id, saldo_deudor, limite_credito
          FROM cliente_creditos
          WHERE cliente_id = $1
-           AND admin_id = $2
-           AND tenant_id = $3
+           AND tenant_id = $2
          FOR UPDATE`,
-        [remision.clienteid, adminIdForOperations, tenant_id]
+        [remision.clienteid, tenant_id]
       );
 
       if (creditoQuery.rows.length > 0) {
@@ -1589,9 +1588,8 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
             `UPDATE cliente_creditos
              SET saldo_deudor = $1, ultima_actualizacion = NOW()
              WHERE credito_id = $2
-               AND admin_id = $3
-               AND tenant_id = $4`,
-            [nuevoSaldo, creditoInfo.credito_id, adminIdForOperations, tenant_id]
+               AND tenant_id = $3`,
+            [nuevoSaldo, creditoInfo.credito_id, tenant_id]
           );
 
           // BUGFIX: Registrar AJUSTE (quitar reserva) - SOLO por el monto de la remisión (no el pedido completo)
@@ -1644,9 +1642,8 @@ exports.confirmarRemisionFinanzas = async (req, res) => {
             `UPDATE cliente_creditos
              SET saldo_deudor = $1, ultima_actualizacion = NOW()
              WHERE credito_id = $2
-               AND admin_id = $3
-               AND tenant_id = $4`,
-            [nuevoSaldo, creditoInfo.credito_id, adminIdForOperations, tenant_id]
+               AND tenant_id = $3`,
+            [nuevoSaldo, creditoInfo.credito_id, tenant_id]
           );
 
           // BUGFIX: Registrar AJUSTE (quitar reserva) - SOLO por el monto de la remisión
