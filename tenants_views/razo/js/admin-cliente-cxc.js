@@ -4,7 +4,8 @@
   // ─── Clasificación contable ────────────────────────────────────────────────
   // CARGO / RESERVA  → Debita al cliente (aumenta saldo deudor) → rojo/naranja
   // ABONO / PAGO     → Acredita al cliente (reduce saldo deudor) → verde
-  // AJUSTE           → Liberación interna de reserva             → gris
+  // AJUSTE           → Lib. de reserva al confirmar remisión     → índigo
+  // CREDITO          → Crédito a favor (ej. devolución)          → verde
   // ──────────────────────────────────────────────────────────────────────────
 
   const TIPO_CONFIG = {
