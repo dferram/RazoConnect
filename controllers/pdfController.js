@@ -315,6 +315,15 @@ async function generarPDFPedido(req, res) {
         // Role difference: only mostrarPrecios (false for inventarios, true for others)
         const esFacturado = item => (item.estado_producto || '').toLowerCase().trim() === 'facturado';
 
+        // 🔧 FIX: Helper function to check if item has sufficient stock based on real-time data
+        // This replaces reliance on the stale esbackorder flag
+        // The esbackorder flag is set at order creation but NOT updated when stock arrives later
+        const hasRealStock = (item) => {
+            const requiredQuantity = parseInt(item.cantidad || 0) * parseInt(item.tamano_cantidad || 1);
+            const actualStock = parseInt(item.stock_actual_variante || 0);
+            return actualStock >= requiredQuantity;
+        };
+
         // 1. Facturado (negro) — confirmed by finanzas
         const itemsFacturados = detalles.filter(item => esFacturado(item));
 
@@ -325,29 +334,32 @@ async function generarPDFPedido(req, res) {
         });
 
         // 3. Con stock - Marcado por inventarios (verde) — selected in current session
+        // 🔧 FIX: Added hasRealStock check to ensure marked items actually have stock
         const itemsMarcados = detalles.filter(item => {
             if (esFacturado(item)) return false;
             if (parseInt(item.cantidadsurtida || 0) > 0) return false;
             if (!selectedItemIds || selectedItemIds.length === 0) return false;
-            return selectedItemIds.includes(item.detalleid);
+            return selectedItemIds.includes(item.detalleid) && hasRealStock(item);
         });
 
-        // 4. Con stock - Sin marcar (azul) — esbackorder=false, not selected, not surtido
-        // esbackorder is set at order-split time and correctly identifies stock availability
-        // even when the same variant has two rows (partial fulfillment scenario)
+        // 4. Con stock - Sin marcar (azul) — real stock available, not selected, not surtido
+        // 🔧 FIX: Changed from !item.esbackorder to hasRealStock(item)
+        // Now uses real-time stock comparison instead of stale esbackorder flag
         const itemsConStock = detalles.filter(item => {
             if (esFacturado(item)) return false;
             if (parseInt(item.cantidadsurtida || 0) > 0) return false;
             if (selectedItemIds && selectedItemIds.length > 0 && selectedItemIds.includes(item.detalleid)) return false;
-            return !item.esbackorder;
+            return hasRealStock(item);
         });
 
-        // 5. Bajo pedido (rojo) — esbackorder=true, not surtido, not marcado
+        // 5. Bajo pedido (rojo) — insufficient real stock, not surtido, not marcado
+        // 🔧 FIX: Changed from !!item.esbackorder to !hasRealStock(item)
+        // Now only classifies as backorder if real stock is insufficient
         const itemsBajoPedido = detalles.filter(item => {
             if (esFacturado(item)) return false;
             if (parseInt(item.cantidadsurtida || 0) > 0) return false;
             if (selectedItemIds && selectedItemIds.length > 0 && selectedItemIds.includes(item.detalleid)) return false;
-            return !!item.esbackorder;
+            return !hasRealStock(item);
         });
 
         logger.info('PDF: Items categorized (5-table universal)', {
@@ -360,13 +372,33 @@ async function generarPDFPedido(req, res) {
             requestId: req.requestId
         });
 
+        // 🔧 FIX: Log items with stale esbackorder flags for debugging
+        const itemsWithStaleFlags = detalles.filter(item => 
+            item.esbackorder && hasRealStock(item)
+        );
+        if (itemsWithStaleFlags.length > 0) {
+            logger.info('PDF: Real-time stock classification applied - stale flags detected', {
+                pedidoId,
+                itemsWithStaleFlags: itemsWithStaleFlags.length,
+                staleFlagDetails: itemsWithStaleFlags.map(item => ({
+                    detalleid: item.detalleid,
+                    producto: item.producto_nombre,
+                    esbackorder: item.esbackorder,
+                    stock_actual: item.stock_actual_variante,
+                    cantidad_requerida: item.cantidad * item.tamano_cantidad,
+                    reclassified_to: 'CON_STOCK'
+                })),
+                requestId: req.requestId
+            });
+        }
+
         // DEBUG MODE: ?debug=true returns an HTML page instead of the PDF
         if (req.query.debug === 'true') {
             const categorizar = item => esFacturado(item)
                 ? 'FACTURADO'
                 : parseInt(item.cantidadsurtida || 0) > 0
                     ? 'SURTIDO'
-                    : item.esbackorder ? 'BAJO_PEDIDO' : 'CON_STOCK';
+                    : hasRealStock(item) ? 'CON_STOCK' : 'BAJO_PEDIDO';
 
             const colorMap = {
                 FACTURADO:   { bg: '#1F2937', text: '#fff' },
