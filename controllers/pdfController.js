@@ -155,6 +155,9 @@ async function generarPDFPedido(req, res) {
             isAgenteAutorizado = agenteClienteCheck.rows.length > 0;
         }
 
+        // Clientes y agentes ven una vista simplificada: sin etiquetas internas del almacén
+        const isClienteOrAgente = isClienteOwner || isAgenteAutorizado;
+
         if (!isAdmin && !isClienteOwner && !isAgenteAutorizado) {
             logger.warn('PDF acceso denegado - detalle completo', {
                 userId,
@@ -572,18 +575,27 @@ if (itemsSurtidos.length > 0) {
     yPosition += 10;
 }
 
-// CON STOCK - MARCADO POR INVENTARIOS (verde)
-if (itemsMarcados.length > 0) {
-    yPosition = renderTableHeader('CON STOCK - MARCADO POR INVENTARIOS', yPosition, '#10B981');
-    yPosition = renderItems(itemsMarcados, yPosition, '#F0FDF4', pedido.estatus, mostrarPrecios);
-    yPosition += 10;
-}
-
-// CON STOCK - SIN MARCAR (azul)
-if (itemsConStock.length > 0) {
-    yPosition = renderTableHeader('CON STOCK - SIN MARCAR', yPosition, '#3B82F6');
-    yPosition = renderItems(itemsConStock, yPosition, '#EFF6FF', pedido.estatus, mostrarPrecios);
-    yPosition += 10;
+// CON STOCK — vista según rol
+if (isClienteOrAgente) {
+    // Clientes/agentes: una sola sección sin etiquetas internas del almacén
+    const itemsConStockCliente = [...itemsMarcados, ...itemsConStock];
+    if (itemsConStockCliente.length > 0) {
+        yPosition = renderTableHeader('CON STOCK', yPosition, '#3B82F6');
+        yPosition = renderItems(itemsConStockCliente, yPosition, '#EFF6FF', pedido.estatus, mostrarPrecios);
+        yPosition += 10;
+    }
+} else {
+    // Admin/inventarios: vista completa con distinción de marcado interno
+    if (itemsMarcados.length > 0) {
+        yPosition = renderTableHeader('CON STOCK - MARCADO POR INVENTARIOS', yPosition, '#10B981');
+        yPosition = renderItems(itemsMarcados, yPosition, '#F0FDF4', pedido.estatus, mostrarPrecios);
+        yPosition += 10;
+    }
+    if (itemsConStock.length > 0) {
+        yPosition = renderTableHeader('CON STOCK - SIN MARCAR', yPosition, '#3B82F6');
+        yPosition = renderItems(itemsConStock, yPosition, '#EFF6FF', pedido.estatus, mostrarPrecios);
+        yPosition += 10;
+    }
 }
 
 // BAJO PEDIDO (rojo)
