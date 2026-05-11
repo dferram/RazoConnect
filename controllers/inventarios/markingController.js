@@ -81,6 +81,34 @@ async function validarYMarcarProductos({
 
     const detalleProductos = await client.query(detalleProductosQuery, [pedidoId, detalleIds, tenant_id, adminIdUser]);
 
+    // ✅ VALIDACIÓN: Detectar productos con cantidadsurtida > 0 pero estado_producto != 'Surtido'
+    // Esto indica datos huérfanos de transacciones fallidas
+    const productosHuerfanos = detalleProductos.rows.filter(p => 
+      parseInt(p.cantidadsurtida || 0, 10) > 0 && 
+      (p.estado_producto || '').toLowerCase() !== 'surtido' &&
+      (p.estado_producto || '').toLowerCase() !== 'facturado'
+    );
+
+    if (productosHuerfanos.length > 0) {
+      logger.error('❌ [MARKING] Productos con datos huérfanos detectados (cantidadsurtida > 0 pero no Surtido):', {
+        pedidoId,
+        productosHuerfanos: productosHuerfanos.map(p => ({
+          detalleid: p.detalleid,
+          cantidadsurtida: p.cantidadsurtida,
+          estado_producto: p.estado_producto,
+          producto: p.nombreproducto
+        })),
+        tenantId: tenant_id
+      });
+      
+      return {
+        success: false,
+        error: 'DATOS_HUERFANOS',
+        message: `Algunos productos tienen datos inconsistentes (cantidadsurtida > 0 pero no están marcados como Surtido). Esto indica una transacción fallida anterior. Ejecuta el script de limpieza fix_orphaned_cantidadsurtida.sql para corregir el pedido #${pedidoId}.`,
+        productosHuerfanos: productosHuerfanos.map(p => p.detalleid)
+      };
+    }
+
     // STEP 2: Clasificar productos en COMPLETOS, PARCIALES, o SIN STOCK
     // ✅ NUEVO: Usar FIFO (calculateAllocationStatus) para validar stock respetando deuda de pedidos anteriores
     // ⚠️ IMPORTANTE: cantidadsurtida se guarda en PIEZAS (no paquetes) para consistencia con finanzas

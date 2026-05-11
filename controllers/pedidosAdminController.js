@@ -918,6 +918,23 @@ const surtirPedido = async (req, res) => {
       if (!markingResult.success) {
         await client.query('ROLLBACK');
 
+        // ❌ ERROR CRÍTICO: Datos huérfanos detectados
+        if (markingResult.error === 'DATOS_HUERFANOS') {
+          logger.error('❌ [SURTIR] Datos huérfanos detectados - requiere limpieza manual:', {
+            pedidoId,
+            productosHuerfanos: markingResult.productosHuerfanos,
+            tenantId: tenant_id
+          });
+          
+          return res.status(409).json({
+            success: false,
+            error: 'DATOS_HUERFANOS',
+            message: markingResult.message,
+            productosAfectados: markingResult.productosHuerfanos,
+            solucion: `Ejecuta el script SQL: scripts/fix_orphaned_cantidadsurtida.sql para limpiar el pedido #${pedidoId}`
+          });
+        }
+
         // Si FIFO bloqueó todos los items seleccionados, marcarlos como 'Bajo pedido'
         // en una operación separada (fuera de la transacción rollbackeada) para
         // desbloquear el pedido del estado 'Combinado'.
