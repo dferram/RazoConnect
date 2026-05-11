@@ -206,7 +206,7 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     let montoConfirmado = 0;
     if (pedido.es_credito) {
       const { rows: [precioRow] } = await client.query(
-        `SELECT COALESCE(SUM(dp.precio_unitario * dp.cantidadsurtida), 0) AS monto_confirmado
+        `SELECT COALESCE(SUM(dp.preciounitario * dp.cantidadsurtida), 0) AS monto_confirmado
          FROM detallesdelpedido dp
          WHERE dp.pedidoid = $1
            AND dp.detalleid = ANY($2::int[])
