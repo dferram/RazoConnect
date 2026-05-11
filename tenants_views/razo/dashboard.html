@@ -341,6 +341,18 @@
         background-color: #fee2e2;
         color: #dc2626;
       }
+
+      /* Surtido - Naranja */
+      .badge-stock.surtido {
+        background-color: #fff7ed;
+        color: #ea580c;
+      }
+
+      /* Facturado - Azul oscuro */
+      .badge-stock.facturado {
+        background-color: #eff6ff;
+        color: #1d4ed8;
+      }
     </style>
     <link rel="stylesheet" href="css/mobile-responsive.css" />
   </head>
@@ -1145,14 +1157,26 @@
                           (item) => {
                             console.log('🔍 Datos del item recibido:', item);
 
-                            // 🔧 CORRECCIÓN: Mostrar SOLO "Con Stock" o "Bajo Pedido"
-                            // "SURTIDO" es estado administrativo - solo se muestra cuando inventarios confirma
-                            // esBackorder: false = "Con Stock" (se surtió de admin's stock)
-                            // esBackorder: true = "Bajo Pedido" (se pidió con backorder)
-                            const conStock = !item.esBackorder;
-
-                            const badgeClass = conStock ? 'badge-stock con-stock' : 'badge-stock bajo-pedido';
-                            const badgeText = conStock ? 'Con Stock' : 'Bajo Pedido';
+                            // Estado del producto desde la base de datos
+                            const estadoDb = (item.estadoProducto || '').toLowerCase().trim();
+                            let badgeClass, badgeText;
+                            if (estadoDb === 'facturado') {
+                              badgeClass = 'badge-stock facturado';
+                              badgeText = 'Facturado';
+                            } else if (estadoDb === 'surtido') {
+                              badgeClass = 'badge-stock surtido';
+                              badgeText = 'Surtido';
+                            } else if (estadoDb === 'con stock') {
+                              badgeClass = 'badge-stock con-stock';
+                              badgeText = 'Con Stock';
+                            } else if (estadoDb === 'bajo pedido') {
+                              badgeClass = 'badge-stock bajo-pedido';
+                              badgeText = 'Bajo Pedido';
+                            } else {
+                              // Fallback a esBackorder si no hay estado en DB
+                              badgeClass = item.esBackorder ? 'badge-stock bajo-pedido' : 'badge-stock con-stock';
+                              badgeText = item.esBackorder ? 'Bajo Pedido' : 'Con Stock';
+                            }
                             
                             return `
                         <div class="pedido-item">
