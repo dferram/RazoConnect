@@ -1113,7 +1113,8 @@ async function reallocateStockForVariant(varianteId, tenantId) {
          d.detalleid,
          d.cantidadpaquetes,
          d.piezastotales,
-         d.esbackorder as es_backorder_actual
+         d.esbackorder as es_backorder_actual,
+         d.estado_producto
        FROM pedidos p
        INNER JOIN detallesdelpedido d ON d.pedidoid = p.pedidoid
        WHERE d.varianteid = $1
@@ -1151,12 +1152,23 @@ async function reallocateStockForVariant(varianteId, tenantId) {
       
       // Solo actualizar si el estatus cambió
       if (esBackorderActual !== nuevoEstatus) {
+        // Solo actualizar estado_producto si el producto aún no fue marcado por inventarios
+        // (es decir, no está Surtido ni Facturado — esos estados son irreversibles aquí)
+        const estadoActual = (detalle.estado_producto || '').toLowerCase();
+        const esIrreversible = estadoActual === 'surtido' || estadoActual === 'facturado';
+        const nuevoEstadoProducto = nuevoEstatus ? 'Bajo pedido' : 'Con stock';
+
         await client.query(
-          `UPDATE detallesdelpedido
-           SET esbackorder = $1
-           WHERE detalleid = $2`,
+          `UPDATE detallesdelpedido SET esbackorder = $1 WHERE detalleid = $2`,
           [nuevoEstatus, detalle.detalleid]
         );
+
+        if (!esIrreversible) {
+          await client.query(
+            `UPDATE detallesdelpedido SET estado_producto = $1 WHERE detalleid = $2`,
+            [nuevoEstadoProducto, detalle.detalleid]
+          );
+        }
         
         const cambio = {
           pedidoId: detalle.pedidoid,

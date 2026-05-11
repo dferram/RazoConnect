@@ -1292,6 +1292,33 @@ const surtirPedido = async (req, res) => {
 
     await client.query('COMMIT');
 
+    // 🔥 FIFO PROPAGATION: Recalcular esbackorder + estado_producto de otros pedidos
+    // que comparten las mismas variantes, ya que el stock acaba de decrementarse.
+    const variantesAfectadasSurtido = [
+      ...new Set(detallesMarcadosResult.rows.map(r => r.varianteid))
+    ];
+    if (variantesAfectadasSurtido.length > 0) {
+      setImmediate(async () => {
+        try {
+          const SmartStockSvc = require('../services/SmartStockService');
+          for (const varianteId of variantesAfectadasSurtido) {
+            await SmartStockSvc.reallocateStockForVariant(varianteId, tenant_id);
+          }
+          logger.info('[Surtir] FIFO propagado para variantes:', {
+            pedidoId,
+            variantes: variantesAfectadasSurtido,
+            tenantId: tenant_id
+          });
+        } catch (fifoErr) {
+          logger.warn('[Surtir] Error en propagación FIFO post-surtido (no crítico):', {
+            error: fifoErr.message,
+            pedidoId,
+            tenantId: tenant_id
+          });
+        }
+      });
+    }
+
     // Obtener datos actualizados de productos marcados
     const productosActualizadosQuery = `
       SELECT 
