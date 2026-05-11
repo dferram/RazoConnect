@@ -652,7 +652,8 @@ const getPedidoDetalle = async (req, res) => {
           const piezasTot = parseInt(row.piezastotales, 10) || 0;
           const estadoCacheado = (row.estado_producto || '').trim();
           const esFacturado = estadoCacheado.toLowerCase() === 'facturado';
-          const esSurtido = parseInt(row.cantidadsurtida, 10) > 0 && !esFacturado;
+          const esSurtido = parseInt(row.cantidadsurtida, 10) > 0 && !esFacturado
+                            && estadoCacheado.toLowerCase() === 'surtido';
           const estadoProductoDinamico = esFacturado
             ? 'Facturado'
             : esSurtido
