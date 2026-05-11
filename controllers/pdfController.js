@@ -580,8 +580,8 @@ if (isClienteOrAgente) {
     // Clientes/agentes: una sola sección sin etiquetas internas del almacén
     const itemsConStockCliente = [...itemsMarcados, ...itemsConStock];
     if (itemsConStockCliente.length > 0) {
-        yPosition = renderTableHeader('CON STOCK', yPosition, '#3B82F6');
-        yPosition = renderItems(itemsConStockCliente, yPosition, '#EFF6FF', pedido.estatus, mostrarPrecios);
+        yPosition = renderTableHeader('CON STOCK', yPosition, '#10B981');
+        yPosition = renderItems(itemsConStockCliente, yPosition, '#F0FDF4', pedido.estatus, mostrarPrecios);
         yPosition += 10;
     }
 } else {
