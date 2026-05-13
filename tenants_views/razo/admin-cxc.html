@@ -128,57 +128,6 @@
                     <div id="paginationWrapper"></div>
                 </section>
 
-                <!-- Export Section -->
-                <section class="admin-card">
-                    <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb;">
-                        <h3 style="margin: 0; font-size: 1.125rem; font-weight: 700;">
-                            <i class="bi bi-file-earmark-excel" style="color: #10b981;"></i>
-                            Exportar a Excel
-                        </h3>
-                    </div>
-                    <div style="padding: 1.5rem;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
-                            <div>
-                                <label for="filtroFechaDesde" class="form-label">Fecha Desde</label>
-                                <input type="date" id="filtroFechaDesde" class="form-input" aria-label="Fecha desde">
-                            </div>
-                            <div>
-                                <label for="filtroFechaHasta" class="form-label">Fecha Hasta</label>
-                                <input type="date" id="filtroFechaHasta" class="form-input" aria-label="Fecha hasta">
-                            </div>
-                            <div>
-                                <label for="filtroCliente" class="form-label">Cliente</label>
-                                <select id="filtroCliente" class="form-input" aria-label="Seleccionar cliente">
-                                    <option value="">Todos los clientes</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="filtroEstadoExport" class="form-label">Estado</label>
-                                <select id="filtroEstadoExport" class="form-input" aria-label="Seleccionar estado">
-                                    <option value="">Todos</option>
-                                    <option value="ACTIVO">Activo</option>
-                                    <option value="SUSPENDIDO">Suspendido</option>
-                                </select>
-                            </div>
-                        </div>
-                        <button id="btnExportar" class="btn btn-success">
-                            <i class="bi bi-file-earmark-excel"></i>
-                            Exportar a Excel
-                        </button>
-                        <button id="btnExportarPDF" class="btn btn-danger" style="margin-left: 0.5rem;">
-                            <i class="bi bi-file-earmark-pdf"></i>
-                            Exportar a PDF
-                        </button>
-                        <button id="btnAdminSecuencias" class="btn btn-primary" style="margin-left: 0.5rem;" title="Administrar secuencias de remisión">
-                            <i class="bi bi-hash"></i>
-                            Secuencias
-                        </button>
-                    </div>
-                </section>
-            </div>
-        </main>
-    </div>
-
     <!-- Modal de Administración de Secuencias -->
     <div class="modal fade" id="modalAdminSecuencias" tabindex="-1">
         <div class="modal-dialog modal-lg">

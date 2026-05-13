@@ -24,6 +24,7 @@ const { authenticate } = require("../middlewares/authMiddleware");
 const verifyTenantContext = require("../middlewares/verifyTenantContext");
 const { generarPDFEstadoCuenta } = require("../controllers/pdfController");
 const { heavyOperationLimiter } = require("../middlewares/rateLimiter");
+const estadoCuentaController = require("../controllers/estadoCuentaController");
 
 /**
  * @swagger
@@ -559,5 +560,68 @@ router.post("/solicitar-credito", authenticate, verifyTenantContext, enviarSolic
  *         description: Error del servidor
  */
 router.post("/asignar-estado", authenticate, verifyTenantContext, asignarEstado);
+
+/**
+ * @swagger
+ * /api/cliente/mi-estado-cuenta:
+ *   get:
+ *     summary: Obtener estado de cuenta mensual tipo banco (nuevo formato)
+ *     tags: [Cliente - Crédito]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: mes
+ *         schema:
+ *           type: integer
+ *         description: Mes (1-12)
+ *       - in: query
+ *         name: anio
+ *         schema:
+ *           type: integer
+ *         description: Año (ej. 2026)
+ *     responses:
+ *       200:
+ *         description: Estado de cuenta obtenido exitosamente
+ *       401:
+ *         description: No autenticado
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/mi-estado-cuenta", authenticate, verifyTenantContext, estadoCuentaController.getEstadoCuentaCliente);
+
+/**
+ * @swagger
+ * /api/cliente/mi-estado-cuenta/pdf:
+ *   get:
+ *     summary: Generar PDF del estado de cuenta tipo banco
+ *     tags: [Cliente - Crédito]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: mes
+ *         schema:
+ *           type: integer
+ *         description: Mes (1-12)
+ *       - in: query
+ *         name: anio
+ *         schema:
+ *           type: integer
+ *         description: Año (ej. 2026)
+ *     responses:
+ *       200:
+ *         description: PDF generado exitosamente
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *       401:
+ *         description: No autenticado
+ *       500:
+ *         description: Error del servidor
+ */
+router.get("/mi-estado-cuenta/pdf", authenticate, verifyTenantContext, heavyOperationLimiter, estadoCuentaController.generarPDFEstadoCuentaCliente);
 
 module.exports = router;

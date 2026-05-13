@@ -21,6 +21,7 @@ const purchaseSuggestionController = require("../controllers/purchaseSuggestionC
 const cxcController = require("../controllers/cxcController");
 const cxcDetalladoController = require("../controllers/cxcDetalladoController");
 const cxcEnhancedController = require("../controllers/cxcEnhancedController");
+const estadoCuentaController = require("../controllers/estadoCuentaController");
 const cxpController = require("../controllers/cxpController");
 const pagosController = require("../controllers/admin/pagosController");
 const inventarioController = require("../controllers/inventarioController");
@@ -1288,6 +1289,23 @@ router.post(
   authenticate,
   authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'ejecutivo_cobranza']),
   cxcEnhancedController.registrarPagoManual
+);
+
+// ========================================
+// ESTADO DE CUENTA MENSUAL (TIPO BANCO)
+// ========================================
+router.get(
+  "/cxc/estado-cuenta-mensual/:clienteId",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'ejecutivo_cobranza', 'encargado_credito', 'soporte_cliente', 'contador', 'auditor_interno']),
+  estadoCuentaController.getEstadoCuentaMensual
+);
+
+router.get(
+  "/cxc/estado-cuenta-mensual/:clienteId/pdf",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'ejecutivo_cobranza', 'encargado_credito', 'soporte_cliente', 'contador', 'auditor_interno']),
+  estadoCuentaController.generarPDFEstadoCuenta
 );
 
 router.get(
