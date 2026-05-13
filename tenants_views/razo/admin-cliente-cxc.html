@@ -255,6 +255,102 @@
 
         /* Pagination wrapper */
         #paginationWrapper { padding: 0.75rem 1rem; border-top: 1px solid #f3f4f6; }
+
+        /* ── Month Tabs (Tipo Banco) ── */
+        .month-tabs-container {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .month-tabs {
+            display: flex;
+            gap: 0.5rem;
+            flex: 1;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+        .month-tab {
+            padding: 0.625rem 1.25rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            color: #374151;
+        }
+        .month-tab:hover {
+            border-color: #f97316;
+            background: #fff7ed;
+        }
+        .month-tab.active {
+            background: #f97316;
+            color: white;
+            border-color: #f97316;
+        }
+        .btn-download-pdf {
+            padding: 0.625rem 1.25rem;
+            background: #dc2626;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8125rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+        .btn-download-pdf:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+        }
+        .btn-download-pdf:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Period Summary */
+        .period-summary {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1.5rem;
+        }
+        .period-summary-item {
+            text-align: center;
+        }
+        .period-summary-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+        .period-summary-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #111827;
+        }
+        .period-summary-value.red { color: #dc2626; }
+        .period-summary-value.green { color: #16a34a; }
     </style>
 </head>
 <body data-sidebar="admin" data-page-title="Detalle CXC cliente">
@@ -318,6 +414,37 @@
                         <div class="metric-label">Crédito Disponible</div>
                         <div class="metric-value metric-color-green" id="creditoDisponible">$0.00</div>
                         <div class="metric-sub">Límite – saldo deudor</div>
+                    </div>
+                </div>
+
+                <!-- ── Month Selector (Tipo Banco) ── -->
+                <div class="month-tabs-container">
+                    <div class="month-tabs" id="monthTabs">
+                        <!-- Se llenarán dinámicamente -->
+                    </div>
+                    <button id="btnDescargarPDF" class="btn-download-pdf" disabled>
+                        <i class="bi bi-file-pdf"></i>
+                        Descargar PDF
+                    </button>
+                </div>
+
+                <!-- ── Period Summary ── -->
+                <div class="period-summary">
+                    <div class="period-summary-item">
+                        <div class="period-summary-label">Saldo Inicial</div>
+                        <div id="saldoInicial" class="period-summary-value">$0.00</div>
+                    </div>
+                    <div class="period-summary-item">
+                        <div class="period-summary-label">Total Cargos</div>
+                        <div id="totalCargos" class="period-summary-value red">$0.00</div>
+                    </div>
+                    <div class="period-summary-item">
+                        <div class="period-summary-label">Total Abonos</div>
+                        <div id="totalAbonos" class="period-summary-value green">$0.00</div>
+                    </div>
+                    <div class="period-summary-item">
+                        <div class="period-summary-label">Saldo Final</div>
+                        <div id="saldoFinal" class="period-summary-value">$0.00</div>
                     </div>
                 </div>
 

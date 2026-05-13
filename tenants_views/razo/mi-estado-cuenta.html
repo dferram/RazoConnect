@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Estado de Cuenta - RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth-guard-cliente.js"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/cliente.css">
+    
+    <style>
+        .bank-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+        
+        .bank-header {
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C61 100%);
+            color: white;
+            padding: 2.5rem 2rem;
+        }
+        
+        .credit-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem;
+            background: #f8f9fa;
+        }
+        
+        .summary-item {
+            text-align: center;
+        }
+        
+        .summary-label {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #212529;
+        }
+        
+        .summary-value.green {
+            color: #10b981;
+        }
+        
+        .summary-value.red {
+            color: #ef4444;
+        }
+        
+        .month-selector {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1.5rem;
+            background: white;
+            border-bottom: 2px solid #e9ecef;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+        
+        .month-btn {
+            padding: 0.875rem 1.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-weight: 600;
+            font-size: 0.9375rem;
+            color: #495057;
+        }
+        
+        .month-btn:hover {
+            border-color: #FF6B35;
+            background: #fff5f0;
+            transform: translateY(-2px);
+        }
+        
+        .month-btn.active {
+            background: #FF6B35;
+            color: white;
+            border-color: #FF6B35;
+            box-shadow: 0 4px 8px rgba(255, 107, 53, 0.3);
+        }
+        
+        .period-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            padding: 2rem;
+            background: white;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .movements-container {
+            padding: 2rem;
+        }
+        
+        .movement-row {
+            display: grid;
+            grid-template-columns: 100px 100px 1fr 120px 120px 120px;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        
+        .movement-row:hover {
+            background: #f8f9fa;
+        }
+        
+        .movement-header {
+            background: #f8f9fa;
+            font-weight: 700;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .movement-date {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .movement-type {
+            display: inline-block;
+            padding: 0.375rem 0.875rem;
+            border-radius: 20px;
+            font-size: 0.8125rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .type-cargo {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .type-abono {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .type-pago {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .movement-amount {
+            font-weight: 700;
+            text-align: right;
+        }
+        
+        .amount-cargo {
+            color: #ef4444;
+        }
+        
+        .amount-abono {
+            color: #10b981;
+        }
+        
+        .amount-saldo {
+            color: #212529;
+            font-size: 1.0625rem;
+        }
+        
+        .empty-movements {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #6c757d;
+        }
+        
+        .empty-movements i {
+            font-size: 5rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.2;
+        }
+        
+        .download-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #FF6B35;
+            color: white;
+            border: none;
+            box-shadow: 0 8px 16px rgba(255, 107, 53, 0.4);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            z-index: 1000;
+        }
+        
+        .download-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 24px rgba(255, 107, 53, 0.5);
+        }
+        
+        @media (max-width: 768px) {
+            .movement-row {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            
+            .movement-header {
+                display: none;
+            }
+            
+            .summary-value {
+                font-size: 1.5rem;
+            }
+            
+            .download-btn {
+                width: 56px;
+                height: 56px;
+                bottom: 1rem;
+                right: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-container"></div>
+    
+    <div class="container" style="max-width: 1400px; padding: 2rem 1rem;">
+        <div class="mb-4">
+            <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="bi bi-bank2" style="color: #FF6B35;"></i>
+                Mi Estado de Cuenta
+            </h1>
+            <p style="color: #6c757d; margin: 0;">Consulta tus movimientos de crédito mes a mes</p>
+        </div>
+
+        <!-- Tarjeta Principal -->
+        <div class="bank-card">
+            <!-- Encabezado -->
+            <div class="bank-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 id="clienteNombre" style="margin: 0 0 0.5rem 0; font-size: 2rem; font-weight: 700;">Cargando...</h2>
+                        <p id="clienteEmail" style="margin: 0; opacity: 0.9; font-size: 1.0625rem;">-</p>
+                    </div>
+                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                        <div style="font-size: 0.9375rem; opacity: 0.9;">Límite de Crédito</div>
+                        <div id="limiteCredito" style="font-size: 2rem; font-weight: 700;">$0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumen de Crédito -->
+            <div class="credit-summary">
+                <div class="summary-item">
+                    <div class="summary-label">Saldo Actual</div>
+                    <div id="saldoActual" class="summary-value red">$0.00</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Crédito Disponible</div>
+                    <div id="creditoDisponible" class="summary-value green">$0.00</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Estado</div>
+                    <div id="estadoCredito">
+                        <span class="badge bg-success" style="font-size: 1rem; padding: 0.5rem 1rem;">ACTIVO</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selector de Mes -->
+            <div class="month-selector" id="monthSelector">
+                <!-- Se llenará dinámicamente -->
+            </div>
+
+            <!-- Resumen del Periodo -->
+            <div class="period-summary">
+                <div class="summary-item">
+                    <div class="summary-label">Saldo Inicial</div>
+                    <div id="saldoInicial" class="summary-value">$0.00</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Total Cargos</div>
+                    <div id="totalCargos" class="summary-value red">$0.00</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Total Abonos</div>
+                    <div id="totalAbonos" class="summary-value green">$0.00</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Saldo Final</div>
+                    <div id="saldoFinal" class="summary-value">$0.00</div>
+                </div>
+            </div>
+
+            <!-- Tabla de Movimientos -->
+            <div class="movements-container">
+                <h3 style="margin-bottom: 1.5rem; font-size: 1.25rem; font-weight: 700;">
+                    <i class="bi bi-list-ul" style="color: #FF6B35;"></i>
+                    Movimientos del Mes
+                </h3>
+                
+                <div class="movement-row movement-header">
+                    <div>Fecha</div>
+                    <div>Tipo</div>
+                    <div>Descripción</div>
+                    <div style="text-align: right;">Cargo</div>
+                    <div style="text-align: right;">Abono</div>
+                    <div style="text-align: right;">Saldo</div>
+                </div>
+                
+                <div id="movimientosContainer">
+                    <!-- Se llenará dinámicamente -->
+                </div>
+
+                <div id="emptyMovements" class="empty-movements" style="display: none;">
+                    <i class="bi bi-inbox"></i>
+                    <h4>No hay movimientos en este periodo</h4>
+                    <p>Selecciona otro mes para ver tus movimientos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón de descarga flotante -->
+    <button id="btnDescargarPDF" class="download-btn" title="Descargar PDF">
+        <i class="bi bi-file-pdf"></i>
+    </button>
+
+    <div id="footer-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/shared/network-status.js"></script>
+    <script src="js/shared/api-client.js"></script>
+    <script src="js/shared/ui-helpers.js"></script>
+    <script src="js/components/navbar-loader.js"></script>
+    <script src="js/components/footer-loader.js"></script>
+    
+    <script>
+        let currentMes = new Date().getMonth() + 1;
+        let currentAnio = new Date().getFullYear();
+        let estadoCuentaData = null;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await cargarEstadoCuenta(currentMes, currentAnio);
+            
+            document.getElementById('btnDescargarPDF').addEventListener('click', descargarPDF);
+        });
+
+        async function cargarEstadoCuenta(mes, anio) {
+            try {
+                const response = await fetch(`/api/cliente/mi-estado-cuenta?mes=${mes}&anio=${anio}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    estadoCuentaData = result.data;
+                    renderizarEstadoCuenta(result.data);
+                } else {
+                    Swal.fire('Error', result.message || 'No se pudo cargar el estado de cuenta', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire('Error', 'Error de conexión', 'error');
+            }
+        }
+
+        function renderizarEstadoCuenta(data) {
+            // Información del cliente
+            document.getElementById('clienteNombre').textContent = data.cliente.nombre;
+            document.getElementById('clienteEmail').textContent = data.cliente.email || 'Sin email';
+            document.getElementById('limiteCredito').textContent = `$${data.credito.limiteCredito.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            
+            // Saldos generales
+            document.getElementById('saldoActual').textContent = `$${data.credito.saldoActual.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            document.getElementById('creditoDisponible').textContent = `$${data.credito.creditoDisponible.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            
+            const estadoBadge = document.getElementById('estadoCredito');
+            if (data.credito.estadoCredito === 'ACTIVO') {
+                estadoBadge.innerHTML = '<span class="badge bg-success" style="font-size: 1rem; padding: 0.5rem 1rem;">ACTIVO</span>';
+            } else {
+                estadoBadge.innerHTML = '<span class="badge bg-danger" style="font-size: 1rem; padding: 0.5rem 1rem;">SUSPENDIDO</span>';
+            }
+            
+            // Saldos del periodo
+            document.getElementById('saldoInicial').textContent = `$${data.saldos.saldoInicial.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            document.getElementById('totalCargos').textContent = `$${data.saldos.totalCargos.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            document.getElementById('totalAbonos').textContent = `$${data.saldos.totalAbonos.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            document.getElementById('saldoFinal').textContent = `$${data.saldos.saldoFinal.toLocaleString('es-MX', {minimumFractionDigits: 2})}`;
+            
+            // Selector de meses
+            renderizarMeses(data.mesesDisponibles, data.periodo.mes, data.periodo.anio);
+            
+            // Movimientos
+            renderizarMovimientos(data.movimientos);
+        }
+
+        function renderizarMeses(meses, mesActual, anioActual) {
+            const container = document.getElementById('monthSelector');
+            container.innerHTML = '';
+            
+            if (meses.length === 0) {
+                container.innerHTML = '<div style="padding: 1rem; color: #6c757d;">No hay meses disponibles</div>';
+                return;
+            }
+            
+            meses.forEach(mes => {
+                const btn = document.createElement('button');
+                btn.className = 'month-btn';
+                if (mes.mes === mesActual && mes.anio === anioActual) {
+                    btn.classList.add('active');
+                }
+                btn.textContent = mes.nombreMes;
+                btn.onclick = () => {
+                    currentMes = mes.mes;
+                    currentAnio = mes.anio;
+                    cargarEstadoCuenta(mes.mes, mes.anio);
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        function renderizarMovimientos(movimientos) {
+            const container = document.getElementById('movimientosContainer');
+            const emptyState = document.getElementById('emptyMovements');
+            
+            if (movimientos.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            container.innerHTML = movimientos.map(mov => {
+                const fecha = new Date(mov.fecha).toLocaleDateString('es-MX', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+                
+                const tipoClass = getTipoClass(mov.tipo);
+                const tipoLabel = getTipoLabel(mov.tipo);
+                const cargo = mov.cargo ? `$${mov.cargo.toLocaleString('es-MX', {minimumFractionDigits: 2})}` : '-';
+                const abono = mov.abono ? `$${mov.abono.toLocaleString('es-MX', {minimumFractionDigits: 2})}` : '-';
+                
+                return `
+                    <div class="movement-row">
+                        <div class="movement-date">${fecha}</div>
+                        <div><span class="movement-type ${tipoClass}">${tipoLabel}</span></div>
+                        <div style="color: #495057;">${mov.descripcion || 'Sin descripción'}</div>
+                        <div class="movement-amount amount-cargo">${cargo}</div>
+                        <div class="movement-amount amount-abono">${abono}</div>
+                        <div class="movement-amount amount-saldo">$${mov.saldo.toLocaleString('es-MX', {minimumFractionDigits: 2})}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getTipoClass(tipo) {
+            const classes = {
+                'CARGO': 'type-cargo',
+                'ABONO': 'type-abono',
+                'PAGO': 'type-pago',
+                'AJUSTE': 'type-abono',
+                'RESERVA': 'type-cargo'
+            };
+            return classes[tipo] || 'type-cargo';
+        }
+
+        function getTipoLabel(tipo) {
+            const labels = {
+                'CARGO': 'Cargo',
+                'ABONO': 'Abono',
+                'PAGO': 'Pago',
+                'AJUSTE': 'Ajuste',
+                'RESERVA': 'Reserva'
+            };
+            return labels[tipo] || tipo;
+        }
+
+        async function descargarPDF() {
+            try {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Generando PDF...',
+                    text: 'Por favor espera',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const url = `/api/cliente/mi-estado-cuenta/pdf?mes=${currentMes}&anio=${currentAnio}`;
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/pdf'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al generar el PDF');
+                }
+
+                // Convertir respuesta a blob
+                const blob = await response.blob();
+                
+                // Crear URL temporal y descargar
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `Mi_Estado_Cuenta_${currentMes}_${currentAnio}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+
+                Swal.close();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire('Error', 'No se pudo generar el PDF', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

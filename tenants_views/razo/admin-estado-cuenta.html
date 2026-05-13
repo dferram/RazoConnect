@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estado de Cuenta - Admin RazoConnect</title>
+    <link rel="icon" type="image/png" href="/icon/Logo_Razo.png">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth-guard-admin.js"></script>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/mobile-responsive.css">
+    
+    <style>
+        .bank-statement-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .bank-header {
+            background: linear-gradient(135deg, #FF6B35 0%, #FF8C61 100%);
+            color: white;
+            padding: 2rem;
+        }
+        
+        .bank-balance {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .balance-item {
+            text-align: center;
+        }
+        
+        .balance-label {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .balance-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #212529;
+        }
+        
+        .balance-value.positive {
+            color: #10b981;
+        }
+        
+        .balance-value.negative {
+            color: #ef4444;
+        }
+        
+        .month-tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: white;
+            border-bottom: 2px solid #e9ecef;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+        }
+        
+        .month-tab {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        
+        .month-tab:hover {
+            border-color: #FF6B35;
+            background: #fff5f0;
+        }
+        
+        .month-tab.active {
+            background: #FF6B35;
+            color: white;
+            border-color: #FF6B35;
+        }
+        
+        .movements-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .movements-table thead {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .movements-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .movements-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 0.9375rem;
+        }
+        
+        .movements-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .movement-cargo {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        
+        .movement-abono {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        .movement-saldo {
+            font-weight: 700;
+            color: #212529;
+        }
+        
+        .movement-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-cargo {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .badge-abono {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge-pago {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .totals-row {
+            background: #f8f9fa;
+            font-weight: 700;
+            border-top: 3px solid #FF6B35;
+        }
+        
+        .totals-row td {
+            padding: 1.25rem 1rem;
+            font-size: 1.125rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+        
+        @media (max-width: 768px) {
+            .movements-table {
+                font-size: 0.875rem;
+            }
+            
+            .movements-table th,
+            .movements-table td {
+                padding: 0.75rem 0.5rem;
+            }
+            
+            .balance-value {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body data-sidebar="admin" data-page-title="Estado de Cuenta">
+    <div class="admin-layout">
+        <div id="admin-sidebar-container"></div>
+        
+        <main class="admin-main">
+            <div id="admin-header-container"></div>
+            
+            <div class="admin-content" style="padding: 1.5rem;">
+                <!-- Selector de Cliente -->
+                <div class="bank-statement-card mb-4">
+                    <div style="padding: 1.5rem; border-bottom: 1px solid #e9ecef;">
+                        <h2 style="margin: 0 0 1rem 0; font-size: 1.5rem; font-weight: 700;">
+                            <i class="bi bi-bank2" style="color: var(--razo-orange);"></i>
+                            Estado de Cuenta - Tipo Banco
+                        </h2>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="selectCliente" class="form-label">Seleccionar Cliente</label>
+                                <select id="selectCliente" class="form-select">
+                                    <option value="">Cargando clientes...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end">
+                                <button id="btnBuscar" class="btn btn-primary me-2">
+                                    <i class="bi bi-search"></i> Buscar
+                                </button>
+                                <button id="btnDescargarPDF" class="btn btn-danger" disabled>
+                                    <i class="bi bi-file-pdf"></i> Descargar PDF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado de Cuenta -->
+                <div id="estadoCuentaContainer" style="display: none;">
+                    <div class="bank-statement-card mb-4">
+                        <!-- Encabezado con info del cliente -->
+                        <div class="bank-header">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h3 id="clienteNombre" style="margin: 0 0 0.5rem 0; font-size: 1.75rem;">Cliente</h3>
+                                    <p id="clienteInfo" style="margin: 0; opacity: 0.9;">ID: - | Email: -</p>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <div style="font-size: 0.875rem; opacity: 0.9;">Límite de Crédito</div>
+                                    <div id="limiteCredito" style="font-size: 1.5rem; font-weight: 700;">$0.00</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resumen de Saldos -->
+                        <div class="bank-balance">
+                            <div class="balance-item">
+                                <div class="balance-label">Saldo Actual</div>
+                                <div id="saldoActual" class="balance-value negative">$0.00</div>
+                            </div>
+                            <div class="balance-item">
+                                <div class="balance-label">Crédito Disponible</div>
+                                <div id="creditoDisponible" class="balance-value positive">$0.00</div>
+                            </div>
+                            <div class="balance-item">
+                                <div class="balance-label">Estado</div>
+                                <div id="estadoCredito" class="balance-value">
+                                    <span class="badge bg-success">ACTIVO</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabs de Meses -->
+                        <div class="month-tabs" id="monthTabs">
+                            <!-- Se llenarán dinámicamente -->
+                        </div>
+
+                        <!-- Resumen del Periodo -->
+                        <div class="bank-balance" style="background: white;">
+                            <div class="balance-item">
+                                <div class="balance-label">Saldo Inicial</div>
+                                <div id="saldoInicial" class="balance-value">$0.00</div>
+                            </div>
+                            <div class="balance-item">
+                                <div class="balance-label">Total Cargos</div>
+                                <div id="totalCargos" class="balance-value negative">$0.00</div>
+                            </div>
+                            <div class="balance-item">
+                                <div class="balance-label">Total Abonos</div>
+                                <div id="totalAbonos" class="balance-value positive">$0.00</div>
+                            </div>
+                            <div class="balance-item">
+                                <div class="balance-label">Saldo Final</div>
+                                <div id="saldoFinal" class="balance-value">$0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Movimientos -->
+                        <div style="overflow-x: auto;">
+                            <table class="movements-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 110px;">Fecha</th>
+                                        <th style="width: 100px;">Tipo</th>
+                                        <th>Descripción</th>
+                                        <th style="width: 120px;">Referencia</th>
+                                        <th style="width: 120px; text-align: right;">Cargo</th>
+                                        <th style="width: 120px; text-align: right;">Abono</th>
+                                        <th style="width: 120px; text-align: right;">Saldo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="movimientosBody">
+                                    <!-- Se llenarán dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Estado vacío -->
+                        <div id="emptyState" class="empty-state" style="display: none;">
+                            <i class="bi bi-inbox"></i>
+                            <h4>No hay movimientos en este periodo</h4>
+                            <p>Selecciona otro mes para ver movimientos</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado inicial -->
+                <div id="initialState" class="bank-statement-card">
+                    <div class="empty-state" style="padding: 4rem;">
+                        <i class="bi bi-bank2"></i>
+                        <h3>Selecciona un cliente</h3>
+                        <p>Elige un cliente del menú superior para ver su estado de cuenta</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/shared/network-status.js"></script>
+    <script src="js/shared/api-client.js"></script>
+    <script src="js/shared/ui-helpers.js"></script>
+    <script src="js/layout.js" defer></script>
+    <script src="js/sidebar-toggle.js" defer></script>
+    <script src="js/auth-manager.js"></script>
+    <script src="js/admin-header-dropdown.js"></script>
+    <script src="js/components/admin-header-loader.js"></script>
+    <script src="js/components/admin-sidebar-loader.js"></script>
+    <script src="js/components/user-profile.js"></script>
+    
+    <script>
+        let currentClienteId = null;
+        let currentMes = new Date().getMonth() + 1;
+        let currentAnio = new Date().getFullYear();
+        let estadoCuentaData = null;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            await cargarClientes();
+            
+            document.getElementById('btnBuscar').addEventListener('click', buscarEstadoCuenta);
+            document.getElementById('btnDescargarPDF').addEventListener('click', descargarPDF);
+            document.getElementById('selectCliente').addEventListener('change', function() {
+                document.getElementById('btnDescargarPDF').disabled = !this.value;
+            });
+        });
+
+        async function cargarClientes() {
+            try {
+                const response = await fetch('/api/admin/cxc/summary-aging?limit=1000');
+                const result = await response.json();
+                
+                if (result.success && result.data.cartera) {
+                    const select = document.getElementById('selectCliente');
+                    select.innerHTML = '<option value="">Seleccione un cliente...</option>';
+                    
+                    result.data.cartera.forEach(cliente => {
+                        const option = document.createElement('option');
+                        option.value = cliente.clienteId;
+                        option.textContent = `${cliente.clienteNombre} ${cliente.apellido || ''} - Saldo: $${parseFloat(cliente.saldoDeudor).toFixed(2)}`;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error cargando clientes:', error);
+                Swal.fire('Error', 'No se pudieron cargar los clientes', 'error');
+            }
+        }
+
+        async function buscarEstadoCuenta() {
+            const clienteId = document.getElementById('selectCliente').value;
+            
+            if (!clienteId) {
+                Swal.fire('Atención', 'Por favor seleccione un cliente', 'warning');
+                return;
+            }
+            
+            currentClienteId = clienteId;
+            await cargarEstadoCuenta(clienteId, currentMes, currentAnio);
+        }
+
+        async function cargarEstadoCuenta(clienteId, mes, anio) {
+            try {
+                const response = await fetch(`/api/admin/cxc/estado-cuenta-mensual/${clienteId}?mes=${mes}&anio=${anio}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    estadoCuentaData = result.data;
+                    renderizarEstadoCuenta(result.data);
+                    document.getElementById('initialState').style.display = 'none';
+                    document.getElementById('estadoCuentaContainer').style.display = 'block';
+                } else {
+                    Swal.fire('Error', result.message || 'No se pudo cargar el estado de cuenta', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire('Error', 'Error de conexión', 'error');
+            }
+        }
+
+        function renderizarEstadoCuenta(data) {
+            // Información del cliente
+            document.getElementById('clienteNombre').textContent = data.cliente.nombre;
+            document.getElementById('clienteInfo').textContent = `ID: ${data.cliente.id} | Email: ${data.cliente.email || 'N/A'}`;
+            document.getElementById('limiteCredito').textContent = `$${data.credito.limiteCredito.toFixed(2)}`;
+            
+            // Saldos
+            document.getElementById('saldoActual').textContent = `$${data.credito.saldoActual.toFixed(2)}`;
+            document.getElementById('creditoDisponible').textContent = `$${data.credito.creditoDisponible.toFixed(2)}`;
+            
+            const estadoBadge = document.getElementById('estadoCredito');
+            if (data.credito.estadoCredito === 'ACTIVO') {
+                estadoBadge.innerHTML = '<span class="badge bg-success">ACTIVO</span>';
+            } else {
+                estadoBadge.innerHTML = '<span class="badge bg-danger">SUSPENDIDO</span>';
+            }
+            
+            // Saldos del periodo
+            document.getElementById('saldoInicial').textContent = `$${data.saldos.saldoInicial.toFixed(2)}`;
+            document.getElementById('totalCargos').textContent = `$${data.saldos.totalCargos.toFixed(2)}`;
+            document.getElementById('totalAbonos').textContent = `$${data.saldos.totalAbonos.toFixed(2)}`;
+            document.getElementById('saldoFinal').textContent = `$${data.saldos.saldoFinal.toFixed(2)}`;
+            
+            // Tabs de meses
+            renderizarMeses(data.mesesDisponibles, data.periodo.mes, data.periodo.anio);
+            
+            // Movimientos
+            renderizarMovimientos(data.movimientos);
+        }
+
+        function renderizarMeses(meses, mesActual, anioActual) {
+            const container = document.getElementById('monthTabs');
+            container.innerHTML = '';
+            
+            meses.forEach(mes => {
+                const tab = document.createElement('div');
+                tab.className = 'month-tab';
+                if (mes.mes === mesActual && mes.anio === anioActual) {
+                    tab.classList.add('active');
+                }
+                tab.textContent = mes.nombreMes;
+                tab.onclick = () => {
+                    currentMes = mes.mes;
+                    currentAnio = mes.anio;
+                    cargarEstadoCuenta(currentClienteId, mes.mes, mes.anio);
+                };
+                container.appendChild(tab);
+            });
+        }
+
+        function renderizarMovimientos(movimientos) {
+            const tbody = document.getElementById('movimientosBody');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (movimientos.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            tbody.innerHTML = movimientos.map(mov => {
+                const fecha = new Date(mov.fecha).toLocaleDateString('es-MX', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+                
+                const tipoBadge = getTipoBadge(mov.tipo);
+                const cargo = mov.cargo ? `$${mov.cargo.toFixed(2)}` : '-';
+                const abono = mov.abono ? `$${mov.abono.toFixed(2)}` : '-';
+                
+                return `
+                    <tr>
+                        <td>${fecha}</td>
+                        <td>${tipoBadge}</td>
+                        <td>${mov.descripcion || 'Sin descripción'}</td>
+                        <td><small>${mov.referencia || '-'}</small></td>
+                        <td style="text-align: right;" class="movement-cargo">${cargo}</td>
+                        <td style="text-align: right;" class="movement-abono">${abono}</td>
+                        <td style="text-align: right;" class="movement-saldo">$${mov.saldo.toFixed(2)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getTipoBadge(tipo) {
+            const badges = {
+                'CARGO': '<span class="movement-badge badge-cargo">Cargo</span>',
+                'ABONO': '<span class="movement-badge badge-abono">Abono</span>',
+                'PAGO': '<span class="movement-badge badge-pago">Pago</span>',
+                'AJUSTE': '<span class="movement-badge badge-abono">Ajuste</span>',
+                'RESERVA': '<span class="movement-badge badge-cargo">Reserva</span>'
+            };
+            return badges[tipo] || `<span class="movement-badge">${tipo}</span>`;
+        }
+
+        async function descargarPDF() {
+            if (!currentClienteId) {
+                Swal.fire('Atención', 'Por favor seleccione un cliente', 'warning');
+                return;
+            }
+            
+            try {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Generando PDF...',
+                    text: 'Por favor espera',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const url = `/api/admin/cxc/estado-cuenta-mensual/${currentClienteId}/pdf?mes=${currentMes}&anio=${currentAnio}`;
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/pdf'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al generar el PDF');
+                }
+
+                // Convertir respuesta a blob
+                const blob = await response.blob();
+                
+                // Crear URL temporal y descargar
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `Estado_Cuenta_Cliente_${currentClienteId}_${currentMes}_${currentAnio}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+
+                Swal.close();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire('Error', 'No se pudo generar el PDF', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
