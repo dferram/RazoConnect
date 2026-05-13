@@ -159,9 +159,9 @@ exports.obtenerDetallePedido = async (req, res) => {
         pv.stock as stock_actual,
         t.cantidad as tamano_cantidad
       FROM detallesdelpedido dp
-      INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
-      INNER JOIN productos p ON pv.productoid = p.productoid
-      LEFT JOIN cat_tamanopaquetes t ON dp.tamanoid = t.tamanoid
+      INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid AND pv.tenant_id = dp.tenant_id
+      INNER JOIN productos p ON pv.productoid = p.productoid AND p.tenant_id = dp.tenant_id
+      LEFT JOIN cat_tamanopaquetes t ON dp.tamanoid = t.tamanoid AND t.tenant_id = dp.tenant_id
       WHERE dp.pedidoid = $1
         AND dp.tenant_id = $2
       ORDER BY dp.detalleid

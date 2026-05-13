@@ -319,7 +319,7 @@ exports.surtirProductos = async (req, res) => {
     }
 
     // Actualizar estado del pedido
-    const nuevoEstatus = await calcularEstadoPedidoCorrect(pedidoId, tenant_id, client);
+    const nuevoEstatus = await calcularEstadoPedidoCorrect(client, pedidoId);
     
     await client.query(
       `UPDATE pedidos SET estatus = $1 WHERE pedidoid = $2 AND tenant_id = $3`,
@@ -430,7 +430,7 @@ exports.marcarBajoPedido = async (req, res) => {
     }
 
     // Actualizar estado del pedido
-    const nuevoEstatus = await calcularEstadoPedidoCorrect(pedidoId, tenant_id);
+    const nuevoEstatus = await calcularEstadoPedidoCorrect(db, pedidoId);
     
     await db.query(
       `UPDATE pedidos SET estatus = $1 WHERE pedidoid = $2 AND tenant_id = $3`,
