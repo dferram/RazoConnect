@@ -28,7 +28,10 @@
     currentPage: 1,
     itemsPerPage: 15,
     totalPages: 1,
-    totalRecords: 0
+    totalRecords: 0,
+    currentMes: new Date().getMonth() + 1,
+    currentAnio: new Date().getFullYear(),
+    estadoCuentaData: null
   };
 
   const elements = {};
@@ -46,7 +49,12 @@
 
     cacheElements();
     initPagination();
-    await Promise.all([cargarDatosCliente(), cargarMovimientos()]);
+    await Promise.all([cargarDatosCliente(), cargarEstadoCuentaMensual()]);
+    
+    // Event listener para botón de PDF
+    if (elements.btnDescargarPDF) {
+      elements.btnDescargarPDF.addEventListener('click', descargarPDF);
+    }
   });
 
   function cacheElements() {
@@ -66,6 +74,12 @@
     elements.estadoCarga      = document.getElementById("estadoCarga");
     elements.estadoVacio      = document.getElementById("estadoVacio");
     elements.movimientosCount = document.getElementById("movimientosCount");
+    elements.monthTabs        = document.getElementById("monthTabs");
+    elements.btnDescargarPDF  = document.getElementById("btnDescargarPDF");
+    elements.saldoInicial     = document.getElementById("saldoInicial");
+    elements.totalCargos      = document.getElementById("totalCargos");
+    elements.totalAbonos      = document.getElementById("totalAbonos");
+    elements.saldoFinal       = document.getElementById("saldoFinal");
   }
 
   function initPagination() {
@@ -197,23 +211,23 @@
     elements.tbody.innerHTML = state.movimientos.map(mov => {
       const tipoRaw  = (mov.tipo_movimiento || mov.tipo || '').toUpperCase();
       const cfg      = tipoInfo(tipoRaw);
-      const monto    = Math.abs(parseFloat(mov.monto || 0));
-      const saldo    = parseFloat(mov.saldo_despues_movimiento || mov.saldoDespues || 0);
+      
+      // Manejar datos del estado de cuenta mensual (cargo/abono separados)
+      const cargo = mov.cargo ? parseFloat(mov.cargo) : null;
+      const abono = mov.abono ? parseFloat(mov.abono) : null;
+      const monto = cargo || abono || Math.abs(parseFloat(mov.monto || 0));
+      const saldo = parseFloat(mov.saldo_despues_movimiento || mov.saldo || 0);
       const rowClass = `row-${tipoRaw.toLowerCase()}`;
 
-      const rawMonto = parseFloat(mov.monto || 0);
-      const colCargo = cfg.columna === 'cargo'
-        ? `<span class="amount-cargo td-mono">${formatCurrency(monto)}</span>` : '<span style="color:#d1d5db;">—</span>';
-      const colAbono = cfg.columna === 'abono'
-        ? `<span class="amount-abono td-mono">${formatCurrency(monto)}</span>` : '<span style="color:#d1d5db;">—</span>';
-      const isAjuste = cfg.columna === 'ajuste';
-      const ajusteSign = rawMonto < 0 ? '−' : '+';
-      const ajusteCell = isAjuste
-        ? `<span style="color:#6366f1;font-size:0.75rem;font-style:italic;">${ajusteSign}${formatCurrency(monto)}</span>`
-        : null;
+      const colCargo = cargo 
+        ? `<span class="amount-cargo td-mono">${formatCurrency(cargo)}</span>` 
+        : '<span style="color:#d1d5db;">—</span>';
+      const colAbono = abono
+        ? `<span class="amount-abono td-mono">${formatCurrency(abono)}</span>` 
+        : '<span style="color:#d1d5db;">—</span>';
 
-      const pedidoId     = mov.pedido_id  || '';
-      const remisionFolio = mov.remision_folio || (mov.remision_id ? `REM-${mov.remision_id}` : '');
+      const pedidoId     = mov.pedido_id || mov.pedidoNumero || '';
+      const remisionFolio = mov.remision_folio || mov.remisionFolio || (mov.remision_id ? `REM-${mov.remision_id}` : '');
 
       const pedidoCell = pedidoId
         ? `<a href="/admin-pedido-detalle.html?id=${pedidoId}" class="folio-link" target="_blank"><i class="bi bi-box-seam"></i>#${pedidoId}</a>`
@@ -232,8 +246,8 @@
             </span>
           </td>
           <td style="max-width:260px; line-height:1.4;">${mov.descripcion || '—'}</td>
-          <td class="td-right">${isAjuste ? ajusteCell : colCargo}</td>
-          <td class="td-right">${isAjuste ? '<span style="color:#d1d5db;">—</span>' : colAbono}</td>
+          <td class="td-right">${colCargo}</td>
+          <td class="td-right">${colAbono}</td>
           <td class="td-right"><span class="amount-saldo td-mono">${formatCurrency(saldo)}</span></td>
           <td>${pedidoCell}</td>
           <td>${remisionCell}</td>
@@ -259,6 +273,108 @@
       elements.estadoCarga.style.display = show ? 'flex' : 'none';
       if (show && elements.tabla)       elements.tabla.style.display       = 'none';
       if (show && elements.estadoVacio) elements.estadoVacio.style.display = 'none';
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FUNCIONALIDAD TIPO BANCO - ESTADO DE CUENTA MENSUAL
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async function cargarEstadoCuentaMensual() {
+    try {
+      const url = `/admin/cxc/estado-cuenta-mensual/${state.clienteId}?mes=${state.currentMes}&anio=${state.currentAnio}`;
+      const response = await API.apiCall(url, { method: "GET" });
+
+      if (!response.ok || !response.data?.success) {
+        console.warn("No se pudo cargar el estado de cuenta mensual:", response.data?.message);
+        return;
+      }
+
+      state.estadoCuentaData = response.data.data;
+      renderizarEstadoCuentaMensual(response.data.data);
+      
+      // Habilitar botón de PDF
+      if (elements.btnDescargarPDF) {
+        elements.btnDescargarPDF.disabled = false;
+      }
+
+    } catch (error) {
+      console.error("Error cargando estado de cuenta mensual:", error);
+    }
+  }
+
+  function renderizarEstadoCuentaMensual(data) {
+    // Renderizar tabs de meses
+    if (elements.monthTabs && data.mesesDisponibles) {
+      elements.monthTabs.innerHTML = data.mesesDisponibles.map(mes => {
+        const isActive = mes.mes === state.currentMes && mes.anio === state.currentAnio;
+        return `
+          <div class="month-tab ${isActive ? 'active' : ''}" 
+               onclick="window.cambiarMes(${mes.mes}, ${mes.anio})">
+            ${mes.nombreMes}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Renderizar resumen del periodo
+    if (data.saldos) {
+      if (elements.saldoInicial) elements.saldoInicial.textContent = formatCurrency(data.saldos.saldoInicial);
+      if (elements.totalCargos)  elements.totalCargos.textContent  = formatCurrency(data.saldos.totalCargos);
+      if (elements.totalAbonos)  elements.totalAbonos.textContent  = formatCurrency(data.saldos.totalAbonos);
+      if (elements.saldoFinal)   elements.saldoFinal.textContent   = formatCurrency(data.saldos.saldoFinal);
+    }
+
+    // Renderizar movimientos del mes
+    if (data.movimientos) {
+      state.movimientos = data.movimientos;
+      state.totalRecords = data.movimientos.length;
+      renderTabla();
+      
+      // Ocultar paginación si usamos vista mensual
+      const paginationWrapper = document.getElementById('paginationWrapper');
+      if (paginationWrapper) {
+        paginationWrapper.style.display = 'none';
+      }
+    }
+  }
+
+  // Función global para cambiar de mes (llamada desde onclick en HTML)
+  window.cambiarMes = async function(mes, anio) {
+    state.currentMes = mes;
+    state.currentAnio = anio;
+    await cargarEstadoCuentaMensual();
+  };
+
+  async function descargarPDF() {
+    if (!state.clienteId) {
+      Swal.fire({ icon: "warning", title: "Atención", text: "No se ha seleccionado un cliente", confirmButtonColor: "#F97316" });
+      return;
+    }
+
+    Swal.fire({ title: 'Generando PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+      const url = `/admin/cxc/estado-cuenta-mensual/${state.clienteId}/pdf?mes=${state.currentMes}&anio=${state.currentAnio}`;
+      const response = await API.apiCall(url, { method: 'GET', responseType: 'blob' });
+      
+      if (!response.ok) {
+        throw new Error(response.status === 401 ? 'Sesión expirada' : 'Error al generar PDF');
+      }
+      
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = `Estado_Cuenta_${state.clienteId}_${state.currentMes}_${state.currentAnio}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(downloadUrl);
+      Swal.close();
+    } catch (error) {
+      console.error('Error:', error);
+      Swal.fire({ icon: "error", title: "Error", text: error.message || "No se pudo generar el PDF", confirmButtonColor: "#F97316" });
     }
   }
 
