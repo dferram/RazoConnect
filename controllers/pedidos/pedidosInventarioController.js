@@ -16,6 +16,7 @@ const logger = require('../../utils/logger');
 const { validarYMarcarProductos } = require('../inventarios/markingController');
 const { calcularEstadoPedidoCorrect } = require('../../utils/pedidoStatus');
 const SmartStockService = require('../../services/SmartStockService');
+// const EstadosPedidoService = require('../../services/EstadosPedidoService'); // DESACTIVADO TEMPORALMENTE
 
 /**
  * GET /api/inventarios/pedidos
@@ -318,7 +319,7 @@ exports.surtirProductos = async (req, res) => {
       );
     }
 
-    // Actualizar estado del pedido
+    // Actualizar estado del pedido usando cálculo directo (sin actualización automática de productos)
     const nuevoEstatus = await calcularEstadoPedidoCorrect(client, pedidoId);
     
     await client.query(
@@ -429,7 +430,7 @@ exports.marcarBajoPedido = async (req, res) => {
       });
     }
 
-    // Actualizar estado del pedido
+    // Actualizar estado del pedido usando cálculo directo
     const nuevoEstatus = await calcularEstadoPedidoCorrect(db, pedidoId);
     
     await db.query(
