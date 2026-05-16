@@ -11,6 +11,8 @@
 
 const db = require('../../db');
 const logger = require('../../utils/logger');
+const { calcularEstadoPedidoCorrect } = require('../../utils/pedidoStatus');
+// const EstadosPedidoService = require('../../services/EstadosPedidoService'); // DESACTIVADO TEMPORALMENTE
 
 /**
  * Confirmar surtido y reducir inventario (finanzas)
@@ -235,135 +237,35 @@ const confirmarSurtidoFinanzas = async (req, res) => {
       }
     }
 
-    // Verificar estado de TODOS los productos del pedido
-    // ⚠️ CRÍTICO: Solo considerar stock del admin del cliente, NO suma de todos
+    // Actualizar estado del pedido usando cálculo directo
+    const nuevoEstatusPedido = await calcularEstadoPedidoCorrect(client, pedidoId);
+
+    // Determinar si está completamente surtido
     const estadosQuery = `
-      SELECT
-        dp.detalleid,
-        dp.varianteid,
-        dp.piezastotales,
-        dp.estado_producto,
-        COALESCE(SUM(sa.cantidad), 0) as stock_total,
-        COALESCE(SUM(sa.cantidad_reservada), 0) as stock_reservado,
-        COALESCE(SUM(sa.cantidad), 0) as stock_disponible
-      FROM detallesdelpedido dp
-      LEFT JOIN stock_admin sa ON sa.variante_id = dp.varianteid AND sa.tenant_id = dp.tenant_id AND sa.admin_id = $3
-      WHERE dp.pedidoid = $1
-        AND dp.tenant_id = $2
-      GROUP BY dp.detalleid, dp.varianteid, dp.piezastotales, dp.estado_producto
-      ORDER BY dp.detalleid
-    `;
-    const estadosResult = await client.query(estadosQuery, [pedidoId, tenant_id, adminClienteId]);
-
-    // Determinar nuevo estado del pedido
-    // ✅ NUEVA LÓGICA: Calcular estado dinámicamente
-    // Nota: 'Parcialmente Surtido' se calcula en lectura, no se guarda
-    let nuevoEstatusPedido = 'Facturado'; // por defecto cuando finanzas confirma
-    let completamenteSurtido = false;
-
-    if (estadosResult.rows.length > 0) {
-      // Contar productos por estado (guardado en BD)
-      const facturados = estadosResult.rows.filter(p => p.estado_producto === 'Facturado').length;
-      const surtidos = estadosResult.rows.filter(p => p.estado_producto === 'Surtido').length;
-      const bajosPedido = estadosResult.rows.filter(p => p.estado_producto === 'Bajo pedido').length;
-      const conStock = estadosResult.rows.filter(p => p.estado_producto === 'Con stock').length;
-      const pendientes = estadosResult.rows.filter(p => p.estado_producto === 'Pendiente').length;
-      const totalProductos = estadosResult.rows.length;
-
-      logger.info('📊 [ESTADO] Analizando estado de productos después de confirmar', {
-        pedidoId,
-        facturados,
-        surtidos,
-        bajosPedido,
-        conStock,
-        pendientes,
-        totalProductos,
-        tenantId: tenant_id,
-        detalles: estadosResult.rows.map(r => ({
-          detalleid: r.detalleid,
-          estado_producto: r.estado_producto,
-          cantidadsurtida: r.cantidadsurtida,
-          cantidadpaquetes: r.cantidadpaquetes
-        }))
-      });
-
-      // ✅ LÓGICA DE ESTADO DEL PEDIDO en FINANZAS
-      // PRIORIDAD: Si hay productos "Surtido", mantener "Listo para remisionar"
-      if (surtidos > 0) {
-        // 🔵 HAY PRODUCTOS SURTIDOS ESPERANDO CONFIRMACIÓN → Mantener "Listo para remisionar"
-        nuevoEstatusPedido = 'Listo para remisionar';
-        completamenteSurtido = false;
-        logger.info('🔵 Estado: Listo para remisionar (hay productos surtidos pendientes de confirmación)', {
-          pedidoId,
-          surtidos,
-          facturados,
-          bajosPedido,
-          conStock
-        });
-      } else if (facturados === totalProductos && facturados > 0) {
-        // ✅ TODOS FACTURADOS (completamente surtidos y confirmados por finanzas)
-        nuevoEstatusPedido = 'Surtido';
-        completamenteSurtido = true;
-        logger.info('✅ Estado: Surtido (TODOS los productos confirmados por finanzas)', { pedidoId });
-      } else if (facturados > 0 && (bajosPedido > 0 || conStock > 0)) {
-        // ⚠️ COMBINADO: Hay algunos facturados pero otros en bajo pedido o con stock
-        nuevoEstatusPedido = 'Combinado';
-        completamenteSurtido = false;
-        logger.info('🟠 Estado: Combinado (algunos confirmados, otros con stock/bajo pedido)', {
-          pedidoId,
-          facturados,
-          bajosPedido,
-          conStock
-        });
-      } else if (conStock === totalProductos && facturados === 0) {
-        // 🟢 CON STOCK: Todos con stock pero no surtidos
-        nuevoEstatusPedido = 'Con stock';
-        completamenteSurtido = false;
-        logger.info('🟢 Estado: Con stock (disponible pero no procesado)', { pedidoId });
-      } else if (bajosPedido === totalProductos && facturados === 0) {
-        // 🔴 BAJO PEDIDO: Todos sin stock
-        nuevoEstatusPedido = 'Bajo pedido';
-        completamenteSurtido = false;
-        logger.info('🔴 Estado: Bajo pedido (sin stock disponible)', { pedidoId });
-      } else {
-        // Fallback: estado indeterminado → Combinado
-        nuevoEstatusPedido = 'Combinado';
-        completamenteSurtido = false;
-        logger.warn('⚠️ Estado: Combinado (estado indeterminado - mezcla confusa)', {
-          pedidoId,
-          facturados,
-          surtidos,
-          bajosPedido,
-          conStock
-        });
-      }
-    }
-
-    // Actualizar pedido con el nuevo estado
-    const updateQuery = `
-      UPDATE pedidos
-      SET
-        estatus = $3,
-        completamente_surtido = $4,
-        fecha_confirmacion = NOW()
+      SELECT COUNT(*) as total,
+             SUM(CASE WHEN LOWER(estado_producto) = 'facturado' THEN 1 ELSE 0 END) as facturados
+      FROM detallesdelpedido
       WHERE pedidoid = $1 AND tenant_id = $2
-      RETURNING pedidoid, estatus, completamente_surtido
     `;
+    const estadosResult = await client.query(estadosQuery, [pedidoId, tenant_id]);
+    const completamenteSurtido = estadosResult.rows[0].total === estadosResult.rows[0].facturados && estadosResult.rows[0].total > 0;
 
-    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, nuevoEstatusPedido, completamenteSurtido]);
+    // Actualizar pedido con nuevo estado
+    await client.query(
+      `UPDATE pedidos 
+       SET estatus = $1, 
+           completamente_surtido = $2, 
+           fecha_confirmacion = NOW() 
+       WHERE pedidoid = $3 AND tenant_id = $4`,
+      [nuevoEstatusPedido, completamenteSurtido, pedidoId, tenant_id]
+    );
 
-    if (!updateResult.rows || updateResult.rows.length === 0) {
-      await client.query('ROLLBACK');
-      logger.error('❌ [ERROR] El UPDATE del estado del pedido no retornó filas', {
-        pedidoId,
-        nuevoEstatusPedido,
-        tenantId: tenant_id
-      });
-      return res.status(500).json({
-        success: false,
-        message: 'Error: No se pudo actualizar el estado del pedido'
-      });
-    }
+    logger.info('✅ Estado del pedido actualizado por finanzas', {
+      pedidoId,
+      nuevoEstatusPedido,
+      completamenteSurtido,
+      tenantId: tenant_id
+    });
 
     // === CXC GENERATION: Cargo para pedidos a crédito ===
     if (pedido.es_credito && montoConfirmado > 0) {
