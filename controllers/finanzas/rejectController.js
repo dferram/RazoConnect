@@ -11,6 +11,7 @@
 
 const db = require('../../db');
 const logger = require('../../utils/logger');
+// const EstadosPedidoService = require('../../services/EstadosPedidoService'); // DESACTIVADO TEMPORALMENTE
 
 /**
  * Rechazar remisión y REPONER stock (nuevo flujo: surtimiento descuenta inmediatamente)
@@ -151,24 +152,13 @@ const rechazarRemisionYReponerStock = async (req, res) => {
         ]
       );
 
-      // 4.4. Actualizar estado del detalle basado en stock actual (ya repuesto)
+      // 4.4. Resetear cantidadsurtida
       await client.query(
-        `UPDATE detallesdelpedido dp
-         SET estado_producto = CASE
-               WHEN COALESCE(sa.cantidad, 0) >= dp.piezastotales THEN 'Con stock'
-               ELSE 'Bajo pedido'
-             END,
-             cantidadsurtida = 0,
+        `UPDATE detallesdelpedido
+         SET cantidadsurtida = 0,
              cantidad_surtida_remisiones = 0
-         FROM (
-           SELECT variante_id, SUM(cantidad) AS cantidad
-           FROM stock_admin
-           WHERE admin_id = $3 AND tenant_id = $2
-           GROUP BY variante_id
-         ) sa
-         WHERE dp.detalleid = $1 AND dp.tenant_id = $2
-           AND sa.variante_id = dp.varianteid`,
-        [detalle.detalleid, tenant_id, adminClienteId]
+         WHERE detalleid = $1 AND tenant_id = $2`,
+        [detalle.detalleid, tenant_id]
       );
 
       productosRepuestos++;
@@ -181,7 +171,10 @@ const rechazarRemisionYReponerStock = async (req, res) => {
       });
     }
 
-    // 5. Actualizar estado del pedido
+    // 5. NO actualizar estados automáticamente - mantener estados manuales
+    // Los estados de productos se actualizarán cuando almacén los revise
+
+    // 6. Actualizar estado del pedido
     await client.query(
       `UPDATE pedidos
        SET estatus = 'Rechazado por Finanzas',
@@ -385,34 +378,20 @@ const rechazarPedidoFinanzas = async (req, res) => {
         });
       }
 
-      // 3. Actualizar estado_producto basado en el NUEVO stock (ya devuelto) y poner cantidadsurtida=0
+      // 3. Resetear cantidadsurtida
       await client.query(
-        `UPDATE detallesdelpedido dp
-         SET estado_producto = CASE
-               WHEN COALESCE(sa.cantidad, 0) >= dp.piezastotales THEN 'Con stock'
-               ELSE 'Bajo pedido'
-             END,
-             cantidadsurtida = 0
-         FROM (
-           SELECT variante_id, SUM(cantidad) AS cantidad
-           FROM stock_admin
-           WHERE admin_id = $4 AND tenant_id = $3
-           GROUP BY variante_id
-         ) sa
-         WHERE dp.pedidoid = $1
-           AND dp.detalleid = ANY($2::int[])
-           AND dp.tenant_id = $3
-           AND sa.variante_id = dp.varianteid`,
-        [pedidoId, detalleIds, tenant_id, adminClienteId]
+        `UPDATE detallesdelpedido
+         SET cantidadsurtida = 0
+         WHERE pedidoid = $1
+           AND detalleid = ANY($2::int[])
+           AND tenant_id = $3`,
+        [pedidoId, detalleIds, tenant_id]
       );
-      
-      logger.info('✅ Estados de productos actualizados:', {
-        pedidoId,
-        detalleIds,
-        adminClienteId
-      });
 
-      // 4. Marcar pedido en Revisión de almacén
+      // 4. NO actualizar estados automáticamente - mantener estados manuales
+      // Los estados de productos se actualizarán cuando almacén los revise
+      
+      // 5. Marcar pedido en Revisión de almacén
       logger.info('🔄 Actualizando estado del pedido a "Revisión de almacén":', {
         pedidoId,
         observaciones_finanzas
