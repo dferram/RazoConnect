@@ -198,33 +198,43 @@ async function surtirProductosLote(req, res) {
           continue;
         }
 
-      const { estado_producto, piezastotales } = detalleResult.rows[0];
+        const { estado_producto, piezastotales } = detalleResult.rows[0];
 
-      // 2. Validar que la transición sea permitida
-      if (!OrderStateEngine.canTransitionToSurtido(estado_producto)) {
+        // 2. Validar que la transición sea permitida
+        if (!OrderStateEngine.canTransitionToSurtido(estado_producto)) {
+          resultados.push({
+            detalleId,
+            success: false,
+            error: `Estado actual '${estado_producto}' no permite transición a 'Surtido'`
+          });
+          continue;
+        }
+
+        // 3. Marcar el producto como 'Surtido'
+        await client.query(
+          `UPDATE detallesdelpedido 
+           SET estado_producto = 'Surtido', cantidadsurtida = piezastotales 
+           WHERE detalleid = $1 AND tenant_id = $2`,
+          [detalleId, tenantId]
+        );
+
+        resultados.push({
+          detalleId,
+          success: true,
+          estadoAnterior: estado_producto,
+          estadoNuevo: 'Surtido',
+          cantidadSurtida: piezastotales
+        });
+      } catch (detalleError) {
+        console.error(`[SurtidoController] Error procesando detalle ${detalleId}:`, detalleError);
+        await client.query(`ROLLBACK TO SAVEPOINT detalle_${detalleId}`);
         resultados.push({
           detalleId,
           success: false,
-          error: `Estado actual '${estado_producto}' no permite transición a 'Surtido'`
+          error: 'Error al procesar detalle',
+          details: detalleError.message
         });
-        continue;
       }
-
-      // 3. Marcar el producto como 'Surtido'
-      await client.query(
-        `UPDATE detallesdelpedido 
-         SET estado_producto = 'Surtido', cantidadsurtida = piezastotales 
-         WHERE detalleid = $1 AND tenant_id = $2`,
-        [detalleId, tenantId]
-      );
-
-      resultados.push({
-        detalleId,
-        success: true,
-        estadoAnterior: estado_producto,
-        estadoNuevo: 'Surtido',
-        cantidadSurtida: piezastotales
-      });
     }
 
     // 4. Recalcular el estado del pedido

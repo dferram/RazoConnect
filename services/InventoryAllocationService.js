@@ -177,7 +177,7 @@ class InventoryAllocationService {
           // Actualizar el detalle original con la cantidad que tiene stock
           await client.query(
             `UPDATE detallesdelpedido 
-             SET piezastotales = $1, estado_producto = 'Con stock', esbackorder = false
+             SET piezastotales = $1, estado_producto = 'Con stock', esbackorder = false 
              WHERE detalleid = $2 AND tenant_id = $3`,
             [cantidadConStock, detalleid, tenantId]
           );
