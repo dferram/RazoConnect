@@ -1700,16 +1700,14 @@
               totalVariantes: producto.totalVariantes,
             },
             variantes: variantes.map(v => ({
-              varianteId: v.varianteId,
+              varianteId: v.varianteId || v.varianteid,
               sku: v.sku,
-              dimensiones: v.dimensiones || v.medida || v.caracteristica || '',
-              color_nombre: v.color || v.color_nombre || '',
-              color_hex: v.color_hex || '',
-              precio: v.precio || v.precioUnitario || 0,
-              stock: v.stock,
-              precioUnitario: v.precio || v.precioUnitario,
-              precioPaquete: v.precio || v.precioUnitario,
-              activo: v.activo,
+              dimensiones: v.dimensiones || "",
+              color_nombre: v.color_nombre || "",
+              color_hex: v.color_hex || "",
+              precio: v.precio || v.precioUnitario || v.preciounitario || 0,
+              stock: v.stock || 0,
+              activo: v.activo !== false,
               stock_distribucion: v.stock_distribucion || []
             })),
           };
