@@ -487,6 +487,8 @@ app.use("/api/inventario", inventarioRoutes);
 app.use("/api", devolucionesRoutes);
 app.use("/api/favoritos", favoritosRoutes);
 app.use("/api/mantenimiento", mantenimientoRoutes);
+app.use("/api/almacen", almacenRoutes);
+app.use("/api/finanzas", finanzasRoutes);
 
 // Manejo de rutas no encontradas solo para API
 app.use("/api/*", (req, res) => {
