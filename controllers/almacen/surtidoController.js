@@ -2,19 +2,43 @@
  * @file controllers/almacen/surtidoController.js
  * @description Controlador para rol Inventarios - Transición a 'Surtido'
  * Solo ejecutable si el estado_producto actual es 'Con stock'
+ * 
+ * SEGURIDAD: Este controlador debe estar protegido por middleware requireRole(['inventarios', 'admin'])
  */
 
 const OrderStateEngine = require('../../services/OrderStateEngine');
 const db = require('../../db');
 
 /**
+ * Valida que el usuario tenga el rol correcto
+ * Esta es una validación adicional de seguridad en profundidad
+ */
+function validateInventoryRole(req, res) {
+  const userRole = req.user?.rol?.toLowerCase();
+  
+  if (!userRole || !['inventarios', 'admin'].includes(userRole)) {
+    res.status(403).json({
+      error: 'Acceso denegado',
+      message: 'Este recurso requiere rol Inventarios o Admin',
+      userRole: req.user?.rol
+    });
+    return false;
+  }
+  
+  return true;
+}
+
+/**
  * Marca un producto como 'Surtido'
  * Solo permitido para productos en estado 'Con stock'
  * 
  * @route POST /api/almacen/surtir
- * @access Rol: Inventarios
+ * @access Rol: Inventarios, Admin
  */
 async function surtirProducto(req, res) {
+  // Validación de rol (defensa en profundidad)
+  if (!validateInventoryRole(req, res)) return;
+
   const { detalleId, pedidoId } = req.body;
   const tenantId = req.user?.tenant_id;
 
@@ -115,9 +139,12 @@ async function surtirProducto(req, res) {
  * Marca múltiples productos como 'Surtido' en una sola transacción
  * 
  * @route POST /api/almacen/surtir-lote
- * @access Rol: Inventarios
+ * @access Rol: Inventarios, Admin
  */
 async function surtirProductosLote(req, res) {
+  // Validación de rol (defensa en profundidad)
+  if (!validateInventoryRole(req, res)) return;
+
   const { detalleIds, pedidoId } = req.body;
   const tenantId = req.user?.tenant_id;
 

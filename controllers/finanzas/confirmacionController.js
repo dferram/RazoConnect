@@ -164,47 +164,55 @@ async function confirmarFacturacionLote(req, res) {
 
     // Procesar cada detalle
     for (const detalleId of detalleIds) {
-      // 1. Verificar que el detalle existe
-      const detalleResult = await client.query(
-        `SELECT estado_producto, piezastotales, varianteid 
-         FROM detallesdelpedido 
-         WHERE detalleid = $1 AND tenant_id = $2`,
-        [detalleId, tenantId]
-      );
+      // Usar SAVEPOINT para permitir rollback parcial
+      await client.query(`SAVEPOINT detalle_${detalleId}`);
 
-      if (detalleResult.rows.length === 0) {
-        resultados.push({
-          detalleId,
-          success: false,
-          error: 'Detalle no encontrado'
-        });
-        continue;
-      }
-
-      const { estado_producto, piezastotales, varianteid } = detalleResult.rows[0];
-
-      // 2. Validar que no esté ya facturado
-      if (estado_producto === 'Facturado') {
-        resultados.push({
-          detalleId,
-          success: false,
-          error: 'Ya está facturado',
-          idempotent: true
-        });
-        continue;
-      }
-
-      // 3. Marcar como facturado
-      await client.query(
-        `UPDATE detallesdelpedido 
-         SET estado_producto = 'Facturado' 
-         WHERE detalleid = $1 AND tenant_id = $2`,
-        [detalleId, tenantId]
-      );
-
-      // 4. Generar CxC
       try {
+        // 1. Verificar que el detalle existe
+        const detalleResult = await client.query(
+          `SELECT estado_producto, piezastotales, varianteid 
+           FROM detallesdelpedido 
+           WHERE detalleid = $1 AND tenant_id = $2`,
+          [detalleId, tenantId]
+        );
+
+        if (detalleResult.rows.length === 0) {
+          resultados.push({
+            detalleId,
+            success: false,
+            error: 'Detalle no encontrado'
+          });
+          await client.query(`ROLLBACK TO SAVEPOINT detalle_${detalleId}`);
+          continue;
+        }
+
+        const { estado_producto, piezastotales, varianteid } = detalleResult.rows[0];
+
+        // 2. Validar que no esté ya facturado
+        if (estado_producto === 'Facturado') {
+          resultados.push({
+            detalleId,
+            success: false,
+            error: 'Ya está facturado',
+            idempotent: true
+          });
+          await client.query(`ROLLBACK TO SAVEPOINT detalle_${detalleId}`);
+          continue;
+        }
+
+        // 3. Marcar como facturado
+        await client.query(
+          `UPDATE detallesdelpedido 
+           SET estado_producto = 'Facturado' 
+           WHERE detalleid = $1 AND tenant_id = $2`,
+          [detalleId, tenantId]
+        );
+
+        // 4. Generar CxC (CRÍTICO: si falla, hacer rollback del UPDATE)
         await generarCxC(client, detalleId, pedidoId, tenantId, piezastotales, varianteid);
+        
+        // Si llegamos aquí, todo fue exitoso
+        await client.query(`RELEASE SAVEPOINT detalle_${detalleId}`);
         
         resultados.push({
           detalleId,
@@ -213,13 +221,17 @@ async function confirmarFacturacionLote(req, res) {
           estadoNuevo: 'Facturado',
           cxcGenerada: true
         });
-      } catch (cxcError) {
-        console.error(`[ConfirmacionController] Error generando CxC para detalle ${detalleId}:`, cxcError);
+
+      } catch (detalleError) {
+        // Si falla CUALQUIER operación (UPDATE o CxC), hacer rollback de este detalle
+        console.error(`[ConfirmacionController] Error procesando detalle ${detalleId}:`, detalleError);
+        await client.query(`ROLLBACK TO SAVEPOINT detalle_${detalleId}`);
+        
         resultados.push({
           detalleId,
           success: false,
-          error: 'Error al generar CxC',
-          details: cxcError.message
+          error: 'Error al procesar detalle',
+          details: detalleError.message
         });
       }
     }
