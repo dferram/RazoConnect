@@ -95,7 +95,7 @@ class InventoryAllocationService {
       
       if (varianteIds.length > 0) {
         // Bloquear las filas de stock_admin para estas variantes
-        // CRÍTICO: Calcular stock disponible = stock físico - stock ya asignado a otros pedidos
+        // CRÍTICO: Calcular stock disponible = stock físico - stock ya asignado a otros pedidos del MISMO admin
         const stockResult = await client.query(`
           SELECT 
             sa.variante_id,
@@ -117,6 +117,9 @@ class InventoryAllocationService {
           FROM stock_admin sa
           LEFT JOIN detallesdelpedido dp ON dp.varianteid = sa.variante_id 
             AND dp.tenant_id = sa.tenant_id
+          LEFT JOIN pedidos p ON dp.pedidoid = p.pedidoid 
+            AND p.tenant_id = dp.tenant_id
+            AND p.admin_asignado_id = sa.admin_id
           WHERE sa.variante_id = ANY($1::int[])
             AND sa.admin_id = $3
             AND sa.tenant_id = $4

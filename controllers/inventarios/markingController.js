@@ -81,8 +81,8 @@ async function validarYMarcarProductos({
 
     const detalleProductos = await client.query(detalleProductosQuery, [pedidoId, detalleIds, tenant_id, adminIdUser]);
 
-    // ✅ VALIDACIÓN: Detectar productos con cantidadsurtida > 0 pero estado_producto != 'Surtido'
-    // Esto indica datos huérfanos de transacciones fallidas
+    // ✅ RECONCILIACIÓN AUTOMÁTICA: Detectar productos con cantidadsurtida > 0 pero estado_producto != 'Surtido'
+    // Esto indica datos huérfanos de transacciones fallidas previas.
     const productosHuerfanos = detalleProductos.rows.filter(p => 
       parseInt(p.cantidadsurtida || 0, 10) > 0 && 
       (p.estado_producto || '').toLowerCase() !== 'surtido' &&
@@ -90,23 +90,29 @@ async function validarYMarcarProductos({
     );
 
     if (productosHuerfanos.length > 0) {
-      logger.error('❌ [MARKING] Productos con datos huérfanos detectados (cantidadsurtida > 0 pero no Surtido):', {
+      logger.info('🔍 [MARKING] Reconciliando datos huérfanos detectados:', {
         pedidoId,
         productosHuerfanos: productosHuerfanos.map(p => ({
           detalleid: p.detalleid,
           cantidadsurtida: p.cantidadsurtida,
-          estado_producto: p.estado_producto,
-          producto: p.nombreproducto
-        })),
-        tenantId: tenant_id
+          estado_producto: p.estado_producto
+        }))
       });
+
+      const huerfanosIds = productosHuerfanos.map(p => p.detalleid);
+      await client.query(
+        `UPDATE detallesdelpedido
+         SET cantidadsurtida = 0
+         WHERE detalleid = ANY($1::int[]) AND tenant_id = $2`,
+        [huerfanosIds, tenant_id]
+      );
       
-      return {
-        success: false,
-        error: 'DATOS_HUERFANOS',
-        message: `Algunos productos tienen datos inconsistentes (cantidadsurtida > 0 pero no están marcados como Surtido). Esto indica una transacción fallida anterior. Ejecuta el script de limpieza fix_orphaned_cantidadsurtida.sql para corregir el pedido #${pedidoId}.`,
-        productosHuerfanos: productosHuerfanos.map(p => p.detalleid)
-      };
+      // Actualizar localmente los datos para continuar el proceso
+      detalleProductos.rows.forEach(p => {
+        if (huerfanosIds.includes(p.detalleid)) {
+          p.cantidadsurtida = 0;
+        }
+      });
     }
 
     // STEP 2: Clasificar productos en COMPLETOS, PARCIALES, o SIN STOCK

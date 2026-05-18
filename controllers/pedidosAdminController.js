@@ -918,23 +918,6 @@ const surtirPedido = async (req, res) => {
       if (!markingResult.success) {
         await client.query('ROLLBACK');
 
-        // ❌ ERROR CRÍTICO: Datos huérfanos detectados
-        if (markingResult.error === 'DATOS_HUERFANOS') {
-          logger.error('❌ [SURTIR] Datos huérfanos detectados - requiere limpieza manual:', {
-            pedidoId,
-            productosHuerfanos: markingResult.productosHuerfanos,
-            tenantId: tenant_id
-          });
-          
-          return res.status(409).json({
-            success: false,
-            error: 'DATOS_HUERFANOS',
-            message: markingResult.message,
-            productosAfectados: markingResult.productosHuerfanos,
-            solucion: `Ejecuta el script SQL: scripts/fix_orphaned_cantidadsurtida.sql para limpiar el pedido #${pedidoId}`
-          });
-        }
-
         // Si FIFO bloqueó todos los items seleccionados, marcarlos como 'Bajo pedido'
         // en una operación separada (fuera de la transacción rollbackeada) para
         // desbloquear el pedido del estado 'Combinado'.
@@ -1238,76 +1221,13 @@ const surtirPedido = async (req, res) => {
       ORDER BY detalleid
     `;
 
-    const estadosDetallesResult = await client.query(estadosDetallesQuery, [pedidoId, tenant_id]);
-    const detalles = estadosDetallesResult.rows;
-
-    // Contar estados de productos
-    const surtidos = detalles.filter(d => d.estado_producto === 'Surtido').length;
-    const bajosPedido = detalles.filter(d => d.estado_producto === 'Bajo pedido').length;
-    const conStock = detalles.filter(d => d.estado_producto === 'Con stock').length;
-    const totalDetalles = detalles.length;
-
-    // Calcular nuevo estado del pedido basado en estado de detalles
-    let nuevoEstatus = 'Bajo pedido'; // default
-    let completamenteSurtido = false;
-
-    if (surtidos === totalDetalles && surtidos > 0) {
-      // ✅ TODOS surtidos por inventarios → Listo para que finanzas confirme
-      nuevoEstatus = 'Listo para remisionar';
-      completamenteSurtido = false;
-    } else if (surtidos > 0 && (bajosPedido > 0 || conStock > 0)) {
-      // ⚠️ MIX: algunos surtidos + otros pending/con stock → Combinado
-      nuevoEstatus = 'Combinado';
-      completamenteSurtido = false;
-    } else if (conStock === totalDetalles && surtidos === 0 && bajosPedido === 0) {
-      // 🟢 TODOS con stock pero NO surtidos aún
-      nuevoEstatus = 'Con stock';
-      completamenteSurtido = false;
-    } else if (bajosPedido === totalDetalles && surtidos === 0 && conStock === 0) {
-      // 🔴 TODOS bajo pedido, nada surtido
-      nuevoEstatus = 'Bajo pedido';
-      completamenteSurtido = false;
-    }
-
-    logger.info('✅ [ESTADO] Calculado estado del pedido dinámicamente', {
-      pedidoId,
-      productosActualizados: marcarResult.rowCount,
-      surtidos,
-      bajosPedido,
-      conStock,
-      totalDetalles,
-      nuevoEstatus,
-      completamenteSurtido,
-      tenantId: tenant_id,
-      detalles: detalles.map(d => ({
-        detalleid: d.detalleid,
-        estado_producto: d.estado_producto,
-        cantidadsurtida: d.cantidadsurtida,
-        piezastotales: d.piezastotales
-      }))
-    });
-    
-    const updateQuery = `
-      UPDATE pedidos 
-      SET 
-        estatus = $3,
-        completamente_surtido = $4
-      WHERE pedidoid = $1 AND tenant_id = $2
-      RETURNING pedidoid, estatus, completamente_surtido
-    `;
-    
-    const updateResult = await client.query(updateQuery, [pedidoId, tenant_id, nuevoEstatus, completamenteSurtido]);
-    
-    if (!updateResult.rows || updateResult.rows.length === 0) {
-      logger.error('❌ [ERROR] El UPDATE del estado del pedido no retornó filas', {
-        pedidoId,
-        nuevoEstatus,
-        tenantId: tenant_id
-      });
-      throw new Error('No se pudo actualizar el estado del pedido');
-    }
+    // 🔥 CRÍTICO: Recalcular el estado del pedido usando el servicio centralizado
+    const { recalcularEstadoPedido } = require('../utils/pedidoStatus');
+    const resultRecalculo = await recalcularEstadoPedido(client, pedidoId, tenant_id);
+    const nuevoEstatus = resultRecalculo.estadoNuevo;
 
     await client.query('COMMIT');
+
 
     // 🔥 FIFO PROPAGATION: Recalcular esbackorder + estado_producto de otros pedidos
     // que comparten las mismas variantes, ya que el stock acaba de decrementarse.

@@ -179,23 +179,6 @@ exports.surtirProductos = async (req, res) => {
     if (!markingResult.success) {
       await client.query('ROLLBACK');
 
-      // Manejo específico de datos huérfanos
-      if (markingResult.error === 'DATOS_HUERFANOS') {
-        logger.error('❌ [SURTIR] Datos huérfanos detectados', {
-          pedidoId,
-          productosHuerfanos: markingResult.productosHuerfanos,
-          tenantId: tenant_id
-        });
-        
-        return res.status(409).json({
-          success: false,
-          error: 'DATOS_HUERFANOS',
-          message: markingResult.message,
-          productosAfectados: markingResult.productosHuerfanos,
-          solucion: `Ejecuta el script SQL para limpiar el pedido #${pedidoId}`
-        });
-      }
-
       return res.status(400).json({
         success: false,
         message: markingResult.message,
