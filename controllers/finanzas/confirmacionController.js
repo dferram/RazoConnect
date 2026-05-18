@@ -2,19 +2,43 @@
  * @file controllers/finanzas/confirmacionController.js
  * @description Controlador para rol Finanzas - Transición a 'Facturado'
  * Genera CxC y reevalúa la máquina de estados ignorando el ítem recién cerrado
+ * 
+ * SEGURIDAD: Este controlador debe estar protegido por middleware requireRole(['finanzas', 'admin'])
  */
 
 const OrderStateEngine = require('../../services/OrderStateEngine');
 const db = require('../../db');
 
 /**
+ * Valida que el usuario tenga el rol correcto
+ * Esta es una validación adicional de seguridad en profundidad
+ */
+function validateFinanceRole(req, res) {
+  const userRole = req.user?.rol?.toLowerCase();
+  
+  if (!userRole || !['finanzas', 'admin'].includes(userRole)) {
+    res.status(403).json({
+      error: 'Acceso denegado',
+      message: 'Este recurso requiere rol Finanzas o Admin',
+      userRole: req.user?.rol
+    });
+    return false;
+  }
+  
+  return true;
+}
+
+/**
  * Confirma la facturación de un producto
  * Marca el producto como 'Facturado', genera CxC y recalcula el estado del pedido
  * 
  * @route POST /api/finanzas/confirmar-facturacion
- * @access Rol: Finanzas
+ * @access Rol: Finanzas, Admin
  */
 async function confirmarFacturacion(req, res) {
+  // Validación de rol (defensa en profundidad)
+  if (!validateFinanceRole(req, res)) return;
+
   const { detalleId, pedidoId } = req.body;
   const tenantId = req.user?.tenant_id;
 
@@ -132,9 +156,12 @@ async function confirmarFacturacion(req, res) {
  * Confirma la facturación de múltiples productos en una sola transacción
  * 
  * @route POST /api/finanzas/confirmar-facturacion-lote
- * @access Rol: Finanzas
+ * @access Rol: Finanzas, Admin
  */
 async function confirmarFacturacionLote(req, res) {
+  // Validación de rol (defensa en profundidad)
+  if (!validateFinanceRole(req, res)) return;
+
   const { detalleIds, pedidoId } = req.body;
   const tenantId = req.user?.tenant_id;
 

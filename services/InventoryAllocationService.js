@@ -17,13 +17,14 @@ class InventoryAllocationService {
    * @param {Object} client - Cliente de base de datos (pg)
    * @param {number} pedidoId - ID del pedido
    * @param {number} tenantId - ID del tenant
+   * @param {number} userId - ID del usuario que ejecuta la operación (opcional)
    * @returns {Promise<Object>} Resultado de la asignación
    */
-  static async calculateAllocation(client, pedidoId, tenantId) {
+  static async calculateAllocation(client, pedidoId, tenantId, userId = null) {
     try {
       // 1. Obtener admin asignado al pedido
       const pedidoResult = await client.query(
-        `SELECT admin_asignado_id FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2`,
+        `SELECT admin_asignado_id, clienteid FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2`,
         [pedidoId, tenantId]
       );
 
@@ -31,13 +32,44 @@ class InventoryAllocationService {
         throw new Error(`Pedido ${pedidoId} no encontrado`);
       }
 
-      const adminAsignadoId = pedidoResult.rows[0].admin_asignado_id;
+      let adminAsignadoId = pedidoResult.rows[0].admin_asignado_id;
+      const clienteId = pedidoResult.rows[0].clienteid;
 
+      // FALLBACK: Si no hay admin asignado, intentar obtener el admin del cliente
+      if (!adminAsignadoId && clienteId) {
+        console.warn(`[InventoryAllocationService] Pedido ${pedidoId} sin admin_asignado_id. Intentando obtener del cliente ${clienteId}`);
+        
+        const clienteResult = await client.query(
+          `SELECT admin_asignado_id FROM clientes WHERE clienteid = $1 AND tenant_id = $2`,
+          [clienteId, tenantId]
+        );
+
+        if (clienteResult.rows.length > 0 && clienteResult.rows[0].admin_asignado_id) {
+          adminAsignadoId = clienteResult.rows[0].admin_asignado_id;
+          
+          // Actualizar el pedido con el admin del cliente
+          await client.query(
+            `UPDATE pedidos SET admin_asignado_id = $1 WHERE pedidoid = $2 AND tenant_id = $3`,
+            [adminAsignadoId, pedidoId, tenantId]
+          );
+          
+          console.info(`[InventoryAllocationService] Admin ${adminAsignadoId} asignado automáticamente al pedido ${pedidoId}`);
+        }
+      }
+
+      // Si aún no hay admin asignado, retornar error descriptivo pero no fatal
       if (!adminAsignadoId) {
-        throw new Error(`Pedido ${pedidoId} sin admin_asignado_id`);
+        return {
+          success: false,
+          error: 'NO_ADMIN_ASSIGNED',
+          message: `Pedido ${pedidoId} sin admin asignado. Debe asignarse un administrador antes de calcular stock.`,
+          pedidoId,
+          requiresManualIntervention: true
+        };
       }
 
       // 2. Obtener detalles del pedido con stock disponible
+      // CRÍTICO: Usar SELECT FOR UPDATE para bloquear las filas y prevenir race conditions
       const detallesResult = await client.query(`
         SELECT
           d.detalleid,
@@ -52,6 +84,7 @@ class InventoryAllocationService {
         WHERE d.pedidoid = $1 AND d.tenant_id = $3
         GROUP BY d.detalleid, d.varianteid, d.piezastotales, d.estado_producto
         ORDER BY d.detalleid
+        FOR UPDATE OF d  -- Bloquear las filas de detallesdelpedido para prevenir race conditions
       `, [pedidoId, adminAsignadoId, tenantId]);
 
       const detalles = detallesResult.rows;
@@ -103,18 +136,32 @@ class InventoryAllocationService {
           );
 
           // Insertar nuevo detalle con la cantidad restante en 'Bajo pedido'
+          // CRÍTICO: Copiar TODAS las columnas del registro original para no perder datos
           const insertResult = await client.query(`
             INSERT INTO detallesdelpedido (
               pedidoid, varianteid, piezastotales, estado_producto, 
-              esbackorder, tenant_id, cantidadsurtida
+              esbackorder, tenant_id, cantidadsurtida,
+              precio_unitario, descuento, notas_cliente, 
+              promocion_id, fecha_creacion, usuario_creacion
             )
             SELECT 
-              pedidoid, varianteid, $1, 'Bajo pedido',
-              true, tenant_id, 0
+              pedidoid, 
+              varianteid, 
+              $1 as piezastotales,  -- Cantidad restante
+              'Bajo pedido' as estado_producto,
+              true as esbackorder, 
+              tenant_id, 
+              0 as cantidadsurtida,
+              precio_unitario,      -- Preservar precio
+              descuento,            -- Preservar descuento
+              notas_cliente,        -- Preservar notas
+              promocion_id,         -- Preservar promoción
+              NOW() as fecha_creacion,
+              $4 as usuario_creacion
             FROM detallesdelpedido
             WHERE detalleid = $2 AND tenant_id = $3
             RETURNING detalleid
-          `, [cantidadBajoPedido, detalleid, tenantId]);
+          `, [cantidadBajoPedido, detalleid, tenantId, userId]);
 
           splitResults.push({
             originalDetalleid: detalleid,

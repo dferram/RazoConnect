@@ -47,6 +47,8 @@ const devolucionesRoutes = require("./routes/devoluciones");
 const favoritosRoutes = require("./routes/favoritos");
 const healthRoutes = require("./routes/health");
 const mantenimientoRoutes = require("./routes/mantenimientoRoutes");
+const almacenRoutes = require("./routes/almacen");
+const finanzasRoutes = require("./routes/finanzas");
 
 // Importar middlewares de seguridad
 const tenantGuard = require("./middlewares/tenantGuard");
