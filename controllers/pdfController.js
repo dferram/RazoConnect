@@ -314,58 +314,39 @@ async function generarPDFPedido(req, res) {
         // Render header on first page manually
         renderHeader(doc, pedido, logoPath, logoExists);
 
-        // 5-TABLE UNIVERSAL CATEGORIZATION — same rules for all roles
-        // Role difference: only mostrarPrecios (false for inventarios, true for others)
-        const esFacturado = item => (item.estado_producto || '').toLowerCase().trim() === 'facturado';
+        // 5-TABLE UNIVERSAL CATEGORIZATION — strictly using database estado_producto
+        // 1. Facturado (negro)
+        const itemsFacturados = detalles.filter(item => 
+            (item.estado_producto || '').toLowerCase().trim() === 'facturado'
+        );
 
-        // 🔧 FIX: Helper function to check if item has sufficient stock based on real-time data
-        // This replaces reliance on the stale esbackorder flag
-        // The esbackorder flag is set at order creation but NOT updated when stock arrives later
-        const hasRealStock = (item) => {
-            const requiredQuantity = parseInt(item.cantidad || 0) * parseInt(item.tamano_cantidad || 1);
-            const actualStock = parseInt(item.stock_actual_variante || 0);
-            return actualStock >= requiredQuantity;
-        };
+        // 2. Surtido (naranja)
+        const itemsSurtidos = detalles.filter(item => 
+            (item.estado_producto || '').toLowerCase().trim() === 'surtido'
+        );
 
-        // 1. Facturado (negro) — confirmed by finanzas
-        const itemsFacturados = detalles.filter(item => esFacturado(item));
-
-        // 2. Surtido (naranja) — cantidadsurtida > 0, not yet invoiced
-        const itemsSurtidos = detalles.filter(item => {
-            if (esFacturado(item)) return false;
-            return parseInt(item.cantidadsurtida || 0) > 0;
-        });
-
-        // 3. Con stock - Marcado por inventarios (verde) — selected in current session
-        // 🔧 FIX: Added hasRealStock check to ensure marked items actually have stock
+        // 3. Con stock - Marcado por inventarios (verde)
+        // Note: For 'Con stock' items, we still use selectedItemIds to highlight current session selection if needed
         const itemsMarcados = detalles.filter(item => {
-            if (esFacturado(item)) return false;
-            if (parseInt(item.cantidadsurtida || 0) > 0) return false;
-            if (!selectedItemIds || selectedItemIds.length === 0) return false;
-            return selectedItemIds.includes(item.detalleid) && hasRealStock(item);
+            const estado = (item.estado_producto || '').toLowerCase().trim();
+            if (estado !== 'con stock') return false;
+            return selectedItemIds && selectedItemIds.length > 0 && selectedItemIds.includes(item.detalleid);
         });
 
-        // 4. Con stock - Sin marcar (azul) — real stock available, not selected, not surtido
-        // 🔧 FIX: Changed from !item.esbackorder to hasRealStock(item)
-        // Now uses real-time stock comparison instead of stale esbackorder flag
+        // 4. Con stock - Sin marcar (azul)
         const itemsConStock = detalles.filter(item => {
-            if (esFacturado(item)) return false;
-            if (parseInt(item.cantidadsurtida || 0) > 0) return false;
+            const estado = (item.estado_producto || '').toLowerCase().trim();
+            if (estado !== 'con stock') return false;
             if (selectedItemIds && selectedItemIds.length > 0 && selectedItemIds.includes(item.detalleid)) return false;
-            return hasRealStock(item);
+            return true;
         });
 
-        // 5. Bajo pedido (rojo) — insufficient real stock, not surtido, not marcado
-        // 🔧 FIX: Changed from !!item.esbackorder to !hasRealStock(item)
-        // Now only classifies as backorder if real stock is insufficient
-        const itemsBajoPedido = detalles.filter(item => {
-            if (esFacturado(item)) return false;
-            if (parseInt(item.cantidadsurtida || 0) > 0) return false;
-            if (selectedItemIds && selectedItemIds.length > 0 && selectedItemIds.includes(item.detalleid)) return false;
-            return !hasRealStock(item);
-        });
+        // 5. Bajo pedido (rojo)
+        const itemsBajoPedido = detalles.filter(item => 
+            (item.estado_producto || '').toLowerCase().trim() === 'bajo pedido'
+        );
 
-        logger.info('PDF: Items categorized (5-table universal)', {
+        logger.info('PDF: Items categorized (Strict database states)', {
             pedidoId,
             surtidos: itemsSurtidos.length,
             marcados: itemsMarcados.length,
