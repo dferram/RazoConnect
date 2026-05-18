@@ -61,17 +61,18 @@ async function confirmarFacturacion(req, res) {
     await client.query('BEGIN');
 
     // 1. Verificar que el detalle existe y obtener su estado actual
+    // CRÍTICO: Validar que el detalle pertenezca al pedido especificado
     const detalleResult = await client.query(
       `SELECT estado_producto, piezastotales, varianteid 
        FROM detallesdelpedido 
-       WHERE detalleid = $1 AND tenant_id = $2`,
-      [detalleId, tenantId]
+       WHERE detalleid = $1 AND pedidoid = $2 AND tenant_id = $3`,
+      [detalleId, pedidoId, tenantId]
     );
 
     if (detalleResult.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({
-        error: `Detalle ${detalleId} no encontrado`
+        error: `Detalle ${detalleId} no encontrado o no pertenece al pedido ${pedidoId}`
       });
     }
 
@@ -208,18 +209,19 @@ async function confirmarFacturacionLote(req, res) {
 
       try {
         // 1. Verificar que el detalle existe
+        // CRÍTICO: Validar que el detalle pertenezca al pedido especificado
         const detalleResult = await client.query(
           `SELECT estado_producto, piezastotales, varianteid 
            FROM detallesdelpedido 
-           WHERE detalleid = $1 AND tenant_id = $2`,
-          [detalleId, tenantId]
+           WHERE detalleid = $1 AND pedidoid = $2 AND tenant_id = $3`,
+          [detalleId, pedidoId, tenantId]
         );
 
         if (detalleResult.rows.length === 0) {
           resultados.push({
             detalleId,
             success: false,
-            error: 'Detalle no encontrado'
+            error: 'Detalle no encontrado o no pertenece al pedido especificado'
           });
           await client.query(`ROLLBACK TO SAVEPOINT detalle_${detalleId}`);
           continue;

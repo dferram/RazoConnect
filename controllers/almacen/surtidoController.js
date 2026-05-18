@@ -60,17 +60,18 @@ async function surtirProducto(req, res) {
     await client.query('BEGIN');
 
     // 1. Obtener el estado actual del producto
+    // CRÍTICO: Validar que el detalle pertenezca al pedido especificado
     const detalleResult = await client.query(
       `SELECT estado_producto, piezastotales 
        FROM detallesdelpedido 
-       WHERE detalleid = $1 AND tenant_id = $2`,
-      [detalleId, tenantId]
+       WHERE detalleid = $1 AND pedidoid = $2 AND tenant_id = $3`,
+      [detalleId, pedidoId, tenantId]
     );
 
     if (detalleResult.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({
-        error: `Detalle ${detalleId} no encontrado`
+        error: `Detalle ${detalleId} no encontrado o no pertenece al pedido ${pedidoId}`
       });
     }
 
@@ -174,22 +175,28 @@ async function surtirProductosLote(req, res) {
 
     // Procesar cada detalle
     for (const detalleId of detalleIds) {
-      // 1. Obtener el estado actual del producto
-      const detalleResult = await client.query(
-        `SELECT estado_producto, piezastotales 
-         FROM detallesdelpedido 
-         WHERE detalleid = $1 AND tenant_id = $2`,
-        [detalleId, tenantId]
-      );
+      // Usar SAVEPOINT para permitir rollback parcial
+      await client.query(`SAVEPOINT detalle_${detalleId}`);
 
-      if (detalleResult.rows.length === 0) {
-        resultados.push({
-          detalleId,
-          success: false,
-          error: 'Detalle no encontrado'
-        });
-        continue;
-      }
+      try {
+        // 1. Obtener el estado actual del producto
+        // CRÍTICO: Validar que el detalle pertenezca al pedido especificado
+        const detalleResult = await client.query(
+          `SELECT estado_producto, piezastotales 
+           FROM detallesdelpedido 
+           WHERE detalleid = $1 AND pedidoid = $2 AND tenant_id = $3`,
+          [detalleId, pedidoId, tenantId]
+        );
+
+        if (detalleResult.rows.length === 0) {
+          resultados.push({
+            detalleId,
+            success: false,
+            error: 'Detalle no encontrado o no pertenece al pedido especificado'
+          });
+          await client.query(`ROLLBACK TO SAVEPOINT detalle_${detalleId}`);
+          continue;
+        }
 
       const { estado_producto, piezastotales } = detalleResult.rows[0];
 

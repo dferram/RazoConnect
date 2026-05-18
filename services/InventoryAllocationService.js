@@ -68,26 +68,19 @@ class InventoryAllocationService {
         };
       }
 
-      // 2. Obtener detalles del pedido con stock disponible
-      // CRÍTICO: Usar SELECT FOR UPDATE para bloquear las filas y prevenir race conditions
-      // Bloqueamos TANTO los detalles del pedido COMO el stock_admin
+      // 2. Obtener detalles del pedido (sin agregaciones para poder usar FOR UPDATE)
+      // CRÍTICO: No podemos usar SUM() con FOR UPDATE, así que obtenemos solo los detalles
       const detallesResult = await client.query(`
         SELECT
           d.detalleid,
           d.varianteid,
           d.piezastotales,
-          d.estado_producto,
-          COALESCE(SUM(sa.cantidad), 0) as stock_disponible
+          d.estado_producto
         FROM detallesdelpedido d
-        LEFT JOIN stock_admin sa ON d.varianteid = sa.variante_id
-          AND d.tenant_id = sa.tenant_id
-          AND sa.admin_id = $2
-        WHERE d.pedidoid = $1 AND d.tenant_id = $3
-        GROUP BY d.detalleid, d.varianteid, d.piezastotales, d.estado_producto
+        WHERE d.pedidoid = $1 AND d.tenant_id = $2
         ORDER BY d.detalleid
         FOR UPDATE OF d  -- Bloquear las filas de detallesdelpedido
-        -- NOTA: Para bloquear stock_admin también, necesitaríamos un query separado
-      `, [pedidoId, adminAsignadoId, tenantId]);
+      `, [pedidoId, tenantId]);
 
       const detalles = detallesResult.rows;
       const splitResults = [];
@@ -96,24 +89,44 @@ class InventoryAllocationService {
       // Esto previene sobre-asignación cuando el mismo producto aparece múltiples veces en el pedido
       const stockVirtual = {}; // { varianteid: stock_restante }
 
-      // 3. Bloquear las filas de stock_admin para prevenir race conditions inter-pedido
+      // 3. Obtener el stock disponible REAL de stock_admin
       // Obtener todas las variantes únicas del pedido
       const varianteIds = [...new Set(detalles.map(d => d.varianteid))];
       
       if (varianteIds.length > 0) {
         // Bloquear las filas de stock_admin para estas variantes
+        // CRÍTICO: Calcular stock disponible = stock físico - stock ya asignado a otros pedidos
         const stockResult = await client.query(`
-          SELECT variante_id, cantidad
-          FROM stock_admin
-          WHERE variante_id = ANY($1::int[])
-            AND admin_id = $2
-            AND tenant_id = $3
-          FOR UPDATE  -- Bloquear el stock para prevenir race conditions
-        `, [varianteIds, adminAsignadoId, tenantId]);
+          SELECT 
+            sa.variante_id,
+            sa.cantidad as stock_fisico,
+            COALESCE(SUM(
+              CASE 
+                WHEN dp.estado_producto = 'Con stock' AND dp.pedidoid != $2
+                THEN dp.piezastotales 
+                ELSE 0 
+              END
+            ), 0) as stock_reservado_otros_pedidos,
+            (sa.cantidad - COALESCE(SUM(
+              CASE 
+                WHEN dp.estado_producto = 'Con stock' AND dp.pedidoid != $2
+                THEN dp.piezastotales 
+                ELSE 0 
+              END
+            ), 0)) as stock_disponible
+          FROM stock_admin sa
+          LEFT JOIN detallesdelpedido dp ON dp.varianteid = sa.variante_id 
+            AND dp.tenant_id = sa.tenant_id
+          WHERE sa.variante_id = ANY($1::int[])
+            AND sa.admin_id = $3
+            AND sa.tenant_id = $4
+          GROUP BY sa.variante_id, sa.cantidad
+          FOR UPDATE OF sa  -- Bloquear el stock para prevenir race conditions inter-pedido
+        `, [varianteIds, pedidoId, adminAsignadoId, tenantId]);
 
-        // Inicializar el stock virtual con el stock real bloqueado
+        // Inicializar el stock virtual con el stock disponible real
         stockResult.rows.forEach(row => {
-          stockVirtual[row.variante_id] = row.cantidad;
+          stockVirtual[row.variante_id] = Math.max(0, row.stock_disponible);
         });
       }
 
@@ -140,7 +153,7 @@ class InventoryAllocationService {
         if (stockDisponibleVirtual >= piezastotales) {
           await client.query(
             `UPDATE detallesdelpedido 
-             SET estado_producto = 'Con stock' 
+             SET estado_producto = 'Con stock', esbackorder = false
              WHERE detalleid = $1 AND tenant_id = $2`,
             [detalleid, tenantId]
           );
@@ -164,7 +177,7 @@ class InventoryAllocationService {
           // Actualizar el detalle original con la cantidad que tiene stock
           await client.query(
             `UPDATE detallesdelpedido 
-             SET piezastotales = $1, estado_producto = 'Con stock' 
+             SET piezastotales = $1, estado_producto = 'Con stock', esbackorder = false
              WHERE detalleid = $2 AND tenant_id = $3`,
             [cantidadConStock, detalleid, tenantId]
           );
@@ -213,7 +226,7 @@ class InventoryAllocationService {
         else {
           await client.query(
             `UPDATE detallesdelpedido 
-             SET estado_producto = 'Bajo pedido' 
+             SET estado_producto = 'Bajo pedido', esbackorder = true
              WHERE detalleid = $1 AND tenant_id = $2`,
             [detalleid, tenantId]
           );
@@ -249,9 +262,9 @@ class InventoryAllocationService {
    */
   static async applyFIFORetroceso(client, detalleIdRobado, tenantId) {
     try {
-      // Obtener el detalle actual
+      // Obtener el detalle actual y su pedido padre
       const detalleResult = await client.query(
-        `SELECT estado_producto, piezastotales FROM detallesdelpedido 
+        `SELECT estado_producto, piezastotales, pedidoid FROM detallesdelpedido 
          WHERE detalleid = $1 AND tenant_id = $2`,
         [detalleIdRobado, tenantId]
       );
@@ -260,7 +273,7 @@ class InventoryAllocationService {
         throw new Error(`Detalle ${detalleIdRobado} no encontrado`);
       }
 
-      const { estado_producto } = detalleResult.rows[0];
+      const { estado_producto, pedidoid } = detalleResult.rows[0];
 
       // Solo aplicar retroceso si el estado actual es 'Con stock'
       if (estado_producto !== 'Con stock') {
@@ -273,16 +286,40 @@ class InventoryAllocationService {
       // Bajar el estado a 'Bajo pedido'
       await client.query(
         `UPDATE detallesdelpedido 
-         SET estado_producto = 'Bajo pedido' 
+         SET estado_producto = 'Bajo pedido', esbackorder = true
          WHERE detalleid = $1 AND tenant_id = $2`,
         [detalleIdRobado, tenantId]
+      );
+
+      // CRÍTICO: Recalcular el estado del pedido padre
+      // Obtener todos los items del pedido actualizados
+      const { rows: items } = await client.query(
+        `SELECT estado_producto, piezastotales 
+         FROM detallesdelpedido 
+         WHERE pedidoid = $1 AND tenant_id = $2`,
+        [pedidoid, tenantId]
+      );
+
+      // Usar OrderStateEngine para calcular el nuevo estado
+      const OrderStateEngine = require('./OrderStateEngine');
+      const nuevoEstadoPedido = OrderStateEngine.calculateOrderState(items);
+
+      // Actualizar el estado del pedido
+      await client.query(
+        `UPDATE pedidos 
+         SET estatus = $1 
+         WHERE pedidoid = $2 AND tenant_id = $3`,
+        [nuevoEstadoPedido, pedidoid, tenantId]
       );
 
       return {
         success: true,
         detalleId: detalleIdRobado,
+        pedidoId: pedidoid,
         estadoAnterior: 'Con stock',
-        estadoNuevo: 'Bajo pedido'
+        estadoNuevo: 'Bajo pedido',
+        estadoPedidoAnterior: null, // No lo tenemos, pero podríamos guardarlo
+        estadoPedidoNuevo: nuevoEstadoPedido
       };
     } catch (error) {
       console.error(`[InventoryAllocationService] Error en applyFIFORetroceso:`, error);
