@@ -386,8 +386,8 @@ const getProductoDetalleInventario = async (req, res) => {
           ? parseFloat(precioRaw) 
           : 0;
         
-        const medida = v.dimensiones || null;
-        const color = v.color_nombre || v.colorNombre || v.colornombre || null;
+        const dimensiones = v.dimensiones || null;
+        const color_nombre = v.color_nombre || v.colorNombre || v.colornombre || v.color || null;
         
         // ✅ SMART STOCK: Usar stock dinámico del mapa
         const stockDinamico = stockMap.get(varianteId) || 0;
@@ -395,9 +395,9 @@ const getProductoDetalleInventario = async (req, res) => {
         return {
           varianteId,
           sku: v.sku || "Sin SKU",
-          medida: medida,
-          color: color,
-          caracteristica: color || medida || "Sin especificar",
+          dimensiones: dimensiones,
+          color_nombre: color_nombre,
+          caracteristica: color_nombre || dimensiones || "Sin especificar",
           precio: precio,
           stock: stockDinamico,
           activo: v.activo !== false
