@@ -3,6 +3,8 @@
  * Basado en estructura de 6 estados + 2 excepciones
  * @module utils/pedidoStatus
  * @date 2026-04-04
+ * 
+ * REFACTORIZADO: Ahora delega la lógica de negocio al OrderStateEngine (SRP)
  */
 
 const { 
@@ -10,25 +12,23 @@ const {
   ESTADOS_PRINCIPALES,
   normalizarEstado 
 } = require('./pedidoEstados');
+const OrderStateEngine = require('../services/OrderStateEngine');
 
 /**
  * Calcula el estado correcto de un pedido basado en:
  * 1. Estado de productos (estado_producto) - Marca de finanzas
  * 2. Estado de disponibilidad (esbackorder) - Stock disponible
  *
- * PRIORIDAD 1: Estados de Surtimiento (basados en estado_producto)
- * - Si TODOS los productos = 'Facturado' → SURTIDO_COMPLETO 🟢
- * - Si AL MENOS 1 facturado/surtido (pero no todos) → COMBINADO 🟠
- * - Si AL MENOS 1 = 'Surtido' (y ninguno Facturado) → LISTO_PARA_REMISIONAR 🔵
- *
- * PRIORIDAD 2: Estados de Disponibilidad (si NO hay productos surtidos/facturados)
- * - Si TODOS sin stock → BAJO_PEDIDO 🔴
- * - Si TODOS con stock → COMPLETO 🟡
- * - Si MIX backorder+stock → COMBINADO 🟠
+ * REFACTORIZADO: Ahora usa OrderStateEngine para la lógica de negocio pura.
+ * Este método solo se encarga de:
+ * - Obtener datos de la BD
+ * - Transformar datos al formato esperado por OrderStateEngine
+ * - Delegar cálculo de estado al motor puro
+ * - Actualizar la BD con el resultado
  */
 async function calcularEstadoPedidoCorrect(client, pedidoId) {
   try {
-    // 🔧 FIX: Obtener admin_asignado_id del pedido PRIMERO
+    // 🔧 Obtener admin_asignado_id del pedido
     const pedidoResult = await client.query(
       `SELECT admin_asignado_id FROM pedidos WHERE pedidoid = $1`,
       [pedidoId]
@@ -41,15 +41,12 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
 
     const adminAsignadoId = pedidoResult.rows[0].admin_asignado_id;
 
-    // ⚠️ CRÍTICO: Si admin_asignado_id es NULL, el cliente NO tiene admin asignado
-    // Esto es un error administrativo grave - registrar y retornar error
     if (!adminAsignadoId) {
-      console.error(`[ESTADO] ⚠️ GRAVE: Pedido ${pedidoId} sin admin_asignado_id. Cliente sin estado/admin válido.`);
+      console.error(`[ESTADO] ⚠️ GRAVE: Pedido ${pedidoId} sin admin_asignado_id.`);
       return ESTADOS_PEDIDO.BAJO_PEDIDO;
     }
 
     // 1. Obtener detalles CON stock actual en tiempo real
-    // CRÍTICO: Filtrar stock_admin SOLO del admin asignado al pedido (NO NULL)
     const detallesResult = await client.query(`
       SELECT
         d.detalleid,
@@ -57,11 +54,7 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
         d.piezastotales,
         d.estado_producto,
         COALESCE(d.cantidadsurtida, 0) as cantidadsurtida,
-        -- Stock disponible: SOLO del admin asignado al pedido (sin restar reservas - panel admin)
-        COALESCE(SUM(sa.cantidad), 0) as stock_en_admin,
-        COALESCE(pv.stock, 0) as stock_global,
         COALESCE(SUM(sa.cantidad), 0) as stock_disponible_actual,
-        -- Flag original (para auditoría)
         d.esbackorder as esbackorder_original
       FROM detallesdelpedido d
       LEFT JOIN stock_admin sa ON d.varianteid = sa.variante_id
@@ -69,186 +62,64 @@ async function calcularEstadoPedidoCorrect(client, pedidoId) {
         AND sa.admin_id = $2
       LEFT JOIN producto_variantes pv ON d.varianteid = pv.varianteid AND d.tenant_id = pv.tenant_id
       WHERE d.pedidoid = $1
-      GROUP BY d.detalleid, d.varianteid, d.piezastotales, d.estado_producto, d.cantidadsurtida, d.esbackorder, d.tenant_id, pv.stock
+      GROUP BY d.detalleid, d.varianteid, d.piezastotales, d.estado_producto, d.cantidadsurtida, d.esbackorder, d.tenant_id
       ORDER BY d.detalleid
     `, [pedidoId, adminAsignadoId]);
 
     const detalles = detallesResult.rows;
     if (detalles.length === 0) {
-      // ❌ Crítico: Pedido sin detalles - esto NO debería pasar
       console.error(`[ESTADO] Pedido ${pedidoId} sin detalles - retornando BAJO_PEDIDO como fallback`);
       return ESTADOS_PEDIDO.BAJO_PEDIDO;
     }
 
-    const totalProductos = detalles.length;
+    // 2. Transformar datos al formato esperado por OrderStateEngine
+    // Si estado_producto es NULL, evaluarlo dinámicamente basado en stock
+    const items = detalles.map(d => {
+      let estadoProducto = d.estado_producto;
 
-    // ============================================================
-    // PRIORIDAD TIENDA: Si NO hay productos Facturados
-    // En la tienda, calcular SIEMPRE basado en esbackorder ORIGINAL
-    // (determinado al momento de crear el pedido)
-    // ============================================================
-    const productosFacturadosCount = detalles.filter(d => d.estado_producto === 'Facturado').length;
-
-    if (productosFacturadosCount === 0) {
-      // 🛍️ TIENDA: Ningún producto facturado aún - usar esbackorder ORIGINAL
-      let productosConStock = 0;
-      let productosBackorder = 0;
-
-      detalles.forEach(d => {
-        // Usar esbackorder_original que fue asignado al crear el pedido
-        if (d.esbackorder_original === true || d.esbackorder_original === 'true') {
-          productosBackorder++;
-        } else {
-          productosConStock++;
-        }
-      });
-
-      // Aplicar lógica de disponibilidad (TIENDA)
-      if (productosBackorder === totalProductos && productosConStock === 0) {
-        return ESTADOS_PEDIDO.BAJO_PEDIDO; // 🔴 Todos sin stock
+      // Si el estado es NULL, calcularlo basado en stock disponible
+      if (estadoProducto === null) {
+        estadoProducto = OrderStateEngine.evaluateProductStockState(
+          null,
+          d.piezastotales,
+          d.stock_disponible_actual
+        );
       }
-      if (productosConStock === totalProductos && productosBackorder === 0) {
-        return ESTADOS_PEDIDO.COMPLETO; // 🟡 Todos con stock
-      }
-      if (productosBackorder > 0 && productosConStock > 0) {
-        return ESTADOS_PEDIDO.COMBINADO; // 🟠 Mix de stock/backorder
-      }
-    }
 
-    // ============================================================
-    // PRIORIDAD CERO: Si TODOS tienen estado_producto = NULL
-    // Significa que el pedido acaba de crearse y no ha sido procesado por Finanzas
-    // En este caso, IGNORAR estado_producto y calcular SOLO basado en stock disponible
-    // ============================================================
-    const todosEstadoNulo = detalles.every(d => d.estado_producto === null);
-
-    if (todosEstadoNulo) {
-      // 🔄 Recién creado - calcular basado SOLO en stock disponible
-      let productosConStockActual = 0;
-      let productosBackorderActual = 0;
-
-      detalles.forEach(d => {
-        const tieneStockDisponible = d.stock_disponible_actual >= d.piezastotales;
-        if (tieneStockDisponible) {
-          productosConStockActual++;
-        } else {
-          productosBackorderActual++;
-        }
-      });
-
-      // Aplicar lógica de disponibilidad
-      if (productosBackorderActual === totalProductos && productosConStockActual === 0) {
-        return ESTADOS_PEDIDO.BAJO_PEDIDO; // 🔴 Todos sin stock
-      }
-      if (productosConStockActual === totalProductos && productosBackorderActual === 0) {
-        return ESTADOS_PEDIDO.COMPLETO; // 🟡 Todos con stock
-      }
-      if (productosBackorderActual > 0 && productosConStockActual > 0) {
-        return ESTADOS_PEDIDO.COMBINADO; // 🟠 Mix de stock/backorder
-      }
-    }
-
-    // ============================================================
-    // PRIORIDAD 1: Verificar si TODOS están facturados
-    // ============================================================
-    const productosFacturados = detalles.filter(d => d.estado_producto === 'Facturado').length;
-
-    if (productosFacturados === totalProductos && productosFacturados > 0) {
-      return ESTADOS_PEDIDO.SURTIDO_COMPLETO; // 🟢 - Ciclo completado
-    }
-
-    // ============================================================
-    // PRIORIDAD 2: Si hay productos facturados pero NO todos
-    // NUEVO FLUJO: Recalcular estado basado SOLO en NO FACTURADOS
-    // ============================================================
-    if (productosFacturados > 0 && productosFacturados < totalProductos) {
-      // Filtrar solo los productos NO FACTURADOS para recalcular estado
-      const productosNoFacturados = detalles.filter(d => d.estado_producto !== 'Facturado');
-      const totalNoFacturados = productosNoFacturados.length;
-
-      // Calcular stock disponible SOLO para no facturados
-      let conStockActual = 0;
-      let backorderActual = 0;
-
-      productosNoFacturados.forEach(d => {
-        const tieneStock = d.stock_disponible_actual >= d.piezastotales;
-        if (tieneStock) {
-          conStockActual++;
-        } else {
-          backorderActual++;
-        }
-      });
-
-      // Retornar al estado original según stock de lo NO facturado
-      if (backorderActual === totalNoFacturados && conStockActual === 0) {
-        return ESTADOS_PEDIDO.BAJO_PEDIDO;      // 🔴 Todos sin stock
-      }
-      if (conStockActual === totalNoFacturados && backorderActual === 0) {
-        return ESTADOS_PEDIDO.COMPLETO;          // 🟡 Todos con stock
-      }
-      if (backorderActual > 0 && conStockActual > 0) {
-        return ESTADOS_PEDIDO.COMBINADO;         // 🟠 Mix de stock/backorder
-      }
-    }
-
-    // ============================================================
-    // PRIORIDAD 3: Hay surtidos pero NINGUNO facturado
-    // ⚠️ CRÍTICO: SOLO si estado_producto no es NULL
-    // Si es NULL, significa que aún no fue procesado por finanzas
-    // ============================================================
-    const productosSurtidos = detalles.filter(d =>
-      d.estado_producto === 'Surtido' && d.estado_producto !== null
-    ).length;
-
-    if (productosSurtidos > 0 && productosFacturados === 0) {
-      // ✅ Hay productos marcados como 'Surtido' por finanzas
-      return ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR; // 🔵 Waiting finanzas confirmation
-    }
-
-    // ============================================================
-    // PRIORIDAD 4: Ningún producto surtido/facturado
-    // Calcular estado de disponibilidad dinámico
-    // ============================================================
-    let productosConStockActual = 0;
-    let productosBackorderActual = 0;
-
-    detalles.forEach(d => {
-      const tieneStockDisponible = d.stock_disponible_actual >= d.piezastotales;
-      if (tieneStockDisponible) {
-        productosConStockActual++;
-      } else {
-        productosBackorderActual++;
-      }
+      return {
+        estado_producto: estadoProducto,
+        piezastotales: d.piezastotales
+      };
     });
 
-    // 🔴 BAJO PEDIDO: Todos sin stock disponible
-    if (productosBackorderActual === totalProductos && productosConStockActual === 0) {
-      return ESTADOS_PEDIDO.BAJO_PEDIDO;
-    }
+    // 3. ✨ DELEGAR al OrderStateEngine (lógica de negocio pura)
+    const nuevoEstado = OrderStateEngine.calculateOrderState(items);
 
-    // 🟡 COMPLETO: Todos con stock disponible
-    if (productosConStockActual === totalProductos && productosBackorderActual === 0) {
-      return ESTADOS_PEDIDO.COMPLETO;
-    }
+    // 4. Mapear el resultado del OrderStateEngine a los estados legacy
+    return mapearEstadoEngineALegacy(nuevoEstado);
 
-    // 🟠 COMBINADO: Mix de stock y backorder
-    if (productosBackorderActual > 0 && productosConStockActual > 0) {
-      return ESTADOS_PEDIDO.COMBINADO;
-    }
-
-    // ❌ Crítico: No debería llegar aquí - alguna condición falta
-    console.error(`[ESTADO] Pedido ${pedidoId} sin condición coincidente - retornando BAJO_PEDIDO como fallback`, {
-      totalProductos,
-      productosConStockActual,
-      productosBackorderActual,
-      productosFacturados
-    });
-    return ESTADOS_PEDIDO.BAJO_PEDIDO;
   } catch (error) {
     console.error('❌ Error calculating order state:', error.message, { pedidoId });
-    // Fallback seguro: BAJO_PEDIDO (conservador - asume sin stock)
     return ESTADOS_PEDIDO.BAJO_PEDIDO;
   }
+}
+
+/**
+ * Mapea los estados del OrderStateEngine a los estados legacy de ESTADOS_PEDIDO
+ * 
+ * @param {string} estadoEngine - Estado retornado por OrderStateEngine
+ * @returns {string} Estado legacy compatible con ESTADOS_PEDIDO
+ */
+function mapearEstadoEngineALegacy(estadoEngine) {
+  const mapeo = {
+    'Bajo pedido': ESTADOS_PEDIDO.BAJO_PEDIDO,
+    'Completo': ESTADOS_PEDIDO.COMPLETO,
+    'Combinado': ESTADOS_PEDIDO.COMBINADO,
+    'Listo para remisionar': ESTADOS_PEDIDO.LISTO_PARA_REMISIONAR,
+    'Surtido completo': ESTADOS_PEDIDO.SURTIDO_COMPLETO
+  };
+
+  return mapeo[estadoEngine] || ESTADOS_PEDIDO.BAJO_PEDIDO;
 }
 
 /**
