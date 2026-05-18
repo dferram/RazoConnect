@@ -32,7 +32,12 @@ class OrderStateEngine {
 
     // 3. Regla Vista Inventarios:
     // Si la orden aún tiene vida y al menos UN producto ha sido marcado como 'Surtido'
-    const surtidos = activeItems.filter(i => i.estado_producto === 'Surtido');
+    // REGLA CRÍTICA: Debe tener cantidadsurtida > 0 para evitar transiciones prematuras
+    const surtidos = activeItems.filter(i => 
+      i.estado_producto === 'Surtido' && 
+      parseInt(i.cantidadsurtida || 0, 10) > 0
+    );
+    
     if (surtidos.length > 0) {
       return 'Listo para remisionar';
     }
