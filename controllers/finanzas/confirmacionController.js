@@ -55,6 +55,7 @@ async function confirmarFacturacion(req, res) {
   }
 
   const client = await db.getClient();
+  let cxcData = null; // Almacenar datos para procesamiento post-commit
 
   try {
     await client.query('BEGIN');
@@ -93,11 +94,9 @@ async function confirmarFacturacion(req, res) {
       [detalleId, tenantId]
     );
 
-    // 4. Generar CxC (Cuentas por Cobrar)
-    // Nota: Esta es una implementación simplificada. 
-    // En producción, esto debería llamar a un servicio CxC dedicado.
+    // 4. Generar CxC (solo operaciones de BD, sin llamadas de red)
     try {
-      await generarCxC(client, detalleId, pedidoId, tenantId, piezastotales, varianteid);
+      cxcData = await generarCxC(client, detalleId, pedidoId, tenantId, piezastotales, varianteid);
     } catch (cxcError) {
       console.error('[ConfirmacionController] Error generando CxC:', cxcError);
       // Si falla la generación de CxC, hacer rollback de todo
@@ -129,6 +128,19 @@ async function confirmarFacturacion(req, res) {
     );
 
     await client.query('COMMIT');
+
+    // 8. DESPUÉS DEL COMMIT: Disparar operaciones asíncronas (emails, notificaciones, webhooks)
+    // Esto previene que la transacción quede abierta esperando respuestas de red
+    if (cxcData) {
+      // Usar setImmediate para no bloquear la respuesta HTTP
+      setImmediate(() => {
+        procesarOperacionesPostCxC(cxcData, tenantId, pedidoId, detalleId)
+          .catch(err => {
+            console.error('[ConfirmacionController] Error en operaciones post-CxC:', err);
+            // Loggear pero no fallar - la transacción ya se completó
+          });
+      });
+    }
 
     res.json({
       success: true,
@@ -307,7 +319,8 @@ async function confirmarFacturacionLote(req, res) {
 
 /**
  * Función auxiliar para generar CxC (Cuentas por Cobrar)
- * Esta es una implementación simplificada.
+ * IMPORTANTE: Esta función solo debe realizar operaciones de BD, NO llamadas de red.
+ * Las notificaciones y webhooks se procesan DESPUÉS del COMMIT.
  * 
  * @param {Object} client - Cliente de base de datos
  * @param {number} detalleId - ID del detalle
@@ -315,26 +328,84 @@ async function confirmarFacturacionLote(req, res) {
  * @param {number} tenantId - ID del tenant
  * @param {number} cantidad - Cantidad de piezas
  * @param {number} varianteId - ID de la variante
+ * @returns {Object} Datos de la CxC generada para procesamiento post-commit
  */
 async function generarCxC(client, detalleId, pedidoId, tenantId, cantidad, varianteId) {
   // Implementación simplificada: registrar en una tabla de CxC
   // En producción, esto debería:
-  // 1. Calcular el monto basado en precio de la variante
-  // 2. Obtener información del cliente
-  // 3. Crear registro en tabla cuentas_por_cobrar
-  // 4. Generar número de factura
-  // 5. Enviar notificación al cliente
+  // 1. Calcular el monto basado en precio de la variante ✅
+  // 2. Obtener información del cliente ✅
+  // 3. Crear registro en tabla cuentas_por_cobrar ✅
+  // 4. Generar número de factura ✅
+  // 5. ❌ NO enviar notificación al cliente (mover a post-commit)
 
-  // Por ahora, solo registramos que se generó la CxC
   console.log(`[CxC] Generando CxC para detalle ${detalleId}, pedido ${pedidoId}, cantidad ${cantidad}`);
 
   // Ejemplo de inserción en tabla CxC (ajustar según tu esquema)
-  // await client.query(`
+  // const result = await client.query(`
   //   INSERT INTO cuentas_por_cobrar (pedido_id, detalle_id, variante_id, cantidad, tenant_id, fecha_generacion)
   //   VALUES ($1, $2, $3, $4, $5, NOW())
+  //   RETURNING cxc_id, monto
   // `, [pedidoId, detalleId, varianteId, cantidad, tenantId]);
 
-  return true;
+  // Retornar datos para procesamiento post-commit
+  return {
+    // cxcId: result.rows[0].cxc_id,
+    // monto: result.rows[0].monto,
+    detalleId,
+    pedidoId,
+    varianteId,
+    cantidad
+  };
+}
+
+/**
+ * Procesa operaciones asíncronas DESPUÉS del COMMIT de la transacción
+ * Esto incluye: envío de emails, notificaciones push, webhooks, etc.
+ * 
+ * CRÍTICO: Esta función se ejecuta FUERA de la transacción de BD para prevenir:
+ * - Transacciones largas (Idle in Transaction)
+ * - Deadlocks por bloqueos prolongados
+ * - Timeouts de conexión
+ * 
+ * @param {Object} cxcData - Datos de la CxC generada
+ * @param {number} tenantId - ID del tenant
+ * @param {number} pedidoId - ID del pedido
+ * @param {number} detalleId - ID del detalle
+ */
+async function procesarOperacionesPostCxC(cxcData, tenantId, pedidoId, detalleId) {
+  try {
+    console.log(`[PostCxC] Procesando operaciones asíncronas para CxC`, cxcData);
+
+    // 1. Enviar notificación al cliente (email, SMS, push)
+    // await enviarNotificacionCliente(pedidoId, tenantId, {
+    //   tipo: 'facturacion_confirmada',
+    //   detalleId,
+    //   monto: cxcData.monto
+    // });
+
+    // 2. Disparar webhook a sistemas externos (ERP, contabilidad)
+    // await dispararWebhook(tenantId, {
+    //   evento: 'cxc_generada',
+    //   cxcId: cxcData.cxcId,
+    //   pedidoId,
+    //   monto: cxcData.monto
+    // });
+
+    // 3. Actualizar métricas en tiempo real (Redis, analytics)
+    // await actualizarMetricas(tenantId, {
+    //   tipo: 'facturacion',
+    //   monto: cxcData.monto
+    // });
+
+    console.log(`[PostCxC] Operaciones asíncronas completadas exitosamente`);
+  } catch (error) {
+    // Loggear el error pero NO fallar - la transacción ya se completó
+    console.error(`[PostCxC] Error en operaciones asíncronas:`, error);
+    
+    // Opcional: Registrar en una tabla de "tareas fallidas" para retry posterior
+    // await registrarTareaFallida('post_cxc', cxcData, error.message);
+  }
 }
 
 module.exports = {

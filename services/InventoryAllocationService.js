@@ -70,6 +70,7 @@ class InventoryAllocationService {
 
       // 2. Obtener detalles del pedido con stock disponible
       // CRÍTICO: Usar SELECT FOR UPDATE para bloquear las filas y prevenir race conditions
+      // Bloqueamos TANTO los detalles del pedido COMO el stock_admin
       const detallesResult = await client.query(`
         SELECT
           d.detalleid,
@@ -84,21 +85,50 @@ class InventoryAllocationService {
         WHERE d.pedidoid = $1 AND d.tenant_id = $3
         GROUP BY d.detalleid, d.varianteid, d.piezastotales, d.estado_producto
         ORDER BY d.detalleid
-        FOR UPDATE OF d  -- Bloquear las filas de detallesdelpedido para prevenir race conditions
+        FOR UPDATE OF d  -- Bloquear las filas de detallesdelpedido
+        -- NOTA: Para bloquear stock_admin también, necesitaríamos un query separado
       `, [pedidoId, adminAsignadoId, tenantId]);
 
       const detalles = detallesResult.rows;
       const splitResults = [];
 
-      // 3. Procesar cada detalle y realizar Line Splitting si es necesario
-      for (const detalle of detalles) {
-        const { detalleid, varianteid, piezastotales, estado_producto, stock_disponible } = detalle;
+      // CRÍTICO: Mantener un registro en memoria del stock virtual asignado
+      // Esto previene sobre-asignación cuando el mismo producto aparece múltiples veces en el pedido
+      const stockVirtual = {}; // { varianteid: stock_restante }
 
-        // Evaluar el estado del producto basado en stock disponible
+      // 3. Bloquear las filas de stock_admin para prevenir race conditions inter-pedido
+      // Obtener todas las variantes únicas del pedido
+      const varianteIds = [...new Set(detalles.map(d => d.varianteid))];
+      
+      if (varianteIds.length > 0) {
+        // Bloquear las filas de stock_admin para estas variantes
+        const stockResult = await client.query(`
+          SELECT variante_id, cantidad
+          FROM stock_admin
+          WHERE variante_id = ANY($1::int[])
+            AND admin_id = $2
+            AND tenant_id = $3
+          FOR UPDATE  -- Bloquear el stock para prevenir race conditions
+        `, [varianteIds, adminAsignadoId, tenantId]);
+
+        // Inicializar el stock virtual con el stock real bloqueado
+        stockResult.rows.forEach(row => {
+          stockVirtual[row.variante_id] = row.cantidad;
+        });
+      }
+
+      // 4. Procesar cada detalle y realizar Line Splitting si es necesario
+      for (const detalle of detalles) {
+        const { detalleid, varianteid, piezastotales, estado_producto } = detalle;
+
+        // Obtener el stock disponible VIRTUAL (descontando asignaciones previas en este pedido)
+        const stockDisponibleVirtual = stockVirtual[varianteid] || 0;
+
+        // Evaluar el estado del producto basado en stock disponible VIRTUAL
         const nuevoEstado = OrderStateEngine.evaluateProductStockState(
           estado_producto,
           piezastotales,
-          stock_disponible
+          stockDisponibleVirtual
         );
 
         // Si el estado ya es 'Surtido' o 'Facturado', no hacer nada
@@ -107,7 +137,7 @@ class InventoryAllocationService {
         }
 
         // Caso 1: Stock suficiente - actualizar estado a 'Con stock'
-        if (stock_disponible >= piezastotales) {
+        if (stockDisponibleVirtual >= piezastotales) {
           await client.query(
             `UPDATE detallesdelpedido 
              SET estado_producto = 'Con stock' 
@@ -115,17 +145,21 @@ class InventoryAllocationService {
             [detalleid, tenantId]
           );
 
+          // CRÍTICO: Restar del stock virtual para el siguiente detalle del mismo producto
+          stockVirtual[varianteid] = stockDisponibleVirtual - piezastotales;
+
           splitResults.push({
             detalleid,
             action: 'updated',
             estado: 'Con stock',
-            cantidad: piezastotales
+            cantidad: piezastotales,
+            stockRestante: stockVirtual[varianteid]
           });
         }
         // Caso 2: Stock parcial - realizar Line Splitting
-        else if (stock_disponible > 0 && stock_disponible < piezastotales) {
-          const cantidadConStock = stock_disponible;
-          const cantidadBajoPedido = piezastotales - stock_disponible;
+        else if (stockDisponibleVirtual > 0 && stockDisponibleVirtual < piezastotales) {
+          const cantidadConStock = stockDisponibleVirtual;
+          const cantidadBajoPedido = piezastotales - stockDisponibleVirtual;
 
           // Actualizar el detalle original con la cantidad que tiene stock
           await client.query(
@@ -163,12 +197,16 @@ class InventoryAllocationService {
             RETURNING detalleid
           `, [cantidadBajoPedido, detalleid, tenantId, userId]);
 
+          // CRÍTICO: Agotar el stock virtual (ya se asignó todo)
+          stockVirtual[varianteid] = 0;
+
           splitResults.push({
             originalDetalleid: detalleid,
             nuevoDetalleid: insertResult.rows[0].detalleid,
             action: 'split',
             conStock: cantidadConStock,
-            bajoPedido: cantidadBajoPedido
+            bajoPedido: cantidadBajoPedido,
+            stockRestante: 0
           });
         }
         // Caso 3: Sin stock - actualizar estado a 'Bajo pedido'
@@ -184,7 +222,8 @@ class InventoryAllocationService {
             detalleid,
             action: 'updated',
             estado: 'Bajo pedido',
-            cantidad: piezastotales
+            cantidad: piezastotales,
+            stockRestante: stockVirtual[varianteid] || 0
           });
         }
       }
