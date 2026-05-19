@@ -522,14 +522,16 @@ router.post(
   pedidosAdminController.setPrioritario
 );
 
-// Generar PDF de remisión para pedido (admin)
+// Generar PDF de remisión para pedido (admin) - Vista administrativa completa
 // Supports ?mostrarPrecios=false query param for inventarios role
+// Supports ?selectedItems=1,2,3 para marcar items específicos
+const pdfAdminController = require('../controllers/pdf/pdfAdminController');
 router.get(
   "/pedidos/:id/pdf",
   authenticate,
   authorizeRole(['super_admin', 'admin', 'inventarios', 'finanzas', 'gerente_comercial', 'gerente_finanzas']),
   heavyOperationLimiter,
-  pdfController.generarPDFPedido
+  pdfAdminController.generarPDFAdmin
 );
 
 // Generar PDF de verificación PRE-CONFIRMACIÓN para inventarios

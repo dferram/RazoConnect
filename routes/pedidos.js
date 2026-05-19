@@ -440,12 +440,14 @@ router.get(
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+// PDF para clientes y agentes (vista simplificada)
+const pdfClienteController = require('../controllers/pdf/pdfClienteController');
 router.get(
   "/pedidos/:id/pdf",
   authenticate,
-  authorize(["cliente", "admin", "agente", "superadmin", "super_admin"]),
+  authorize(["cliente", "agente"]),
   heavyOperationLimiter,
-  pdfController.generarPDFPedido
+  pdfClienteController.generarPDFCliente
 );
 
 // ==========================================
