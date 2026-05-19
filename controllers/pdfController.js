@@ -356,33 +356,17 @@ async function generarPDFPedido(req, res) {
             requestId: req.requestId
         });
 
-        // 🔧 FIX: Log items with stale esbackorder flags for debugging
-        const itemsWithStaleFlags = detalles.filter(item => 
-            item.esbackorder && hasRealStock(item)
-        );
-        if (itemsWithStaleFlags.length > 0) {
-            logger.info('PDF: Real-time stock classification applied - stale flags detected', {
-                pedidoId,
-                itemsWithStaleFlags: itemsWithStaleFlags.length,
-                staleFlagDetails: itemsWithStaleFlags.map(item => ({
-                    detalleid: item.detalleid,
-                    producto: item.producto_nombre,
-                    esbackorder: item.esbackorder,
-                    stock_actual: item.stock_actual_variante,
-                    cantidad_requerida: item.cantidad * item.tamano_cantidad,
-                    reclassified_to: 'CON_STOCK'
-                })),
-                requestId: req.requestId
-            });
-        }
-
         // DEBUG MODE: ?debug=true returns an HTML page instead of the PDF
         if (req.query.debug === 'true') {
-            const categorizar = item => esFacturado(item)
-                ? 'FACTURADO'
-                : parseInt(item.cantidadsurtida || 0) > 0
-                    ? 'SURTIDO'
-                    : hasRealStock(item) ? 'CON_STOCK' : 'BAJO_PEDIDO';
+            // Categorizar basado ESTRICTAMENTE en estado_producto de BD
+            const categorizar = item => {
+                const estado = (item.estado_producto || '').toLowerCase().trim();
+                if (estado === 'facturado') return 'FACTURADO';
+                if (estado === 'surtido') return 'SURTIDO';
+                if (estado === 'con stock') return 'CON_STOCK';
+                if (estado === 'bajo pedido') return 'BAJO_PEDIDO';
+                return 'PENDIENTE';
+            };
 
             const colorMap = {
                 FACTURADO:   { bg: '#1F2937', text: '#fff' },
@@ -390,6 +374,7 @@ async function generarPDFPedido(req, res) {
                 BAJO_PEDIDO: { bg: '#DC2626', text: '#fff' },
                 CON_STOCK:   { bg: '#3B82F6', text: '#fff' },
                 MARCADO:     { bg: '#10B981', text: '#fff' },
+                PENDIENTE:   { bg: '#6B7280', text: '#fff' },
             };
 
             const rows = detalles.map(item => {
