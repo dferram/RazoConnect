@@ -313,27 +313,107 @@ async function generarPDFCliente(req, res) {
             yPosition += 15;
         }
 
-        // Total
-        if (yPosition + 80 > 730) {
+        // Resumen Financiero
+        yPosition += 5;
+
+        const boxX = 350;
+        const boxWidth = 212;
+        let boxHeight = 28; // Base height for title
+
+        // Calculate dynamic height
+        boxHeight += 12; // Subtotal
+        if (pedido.costoenvio > 0) boxHeight += 12;
+        boxHeight += 6;  // Separator before total
+        boxHeight += 14; // Total final
+
+        // Check if we need a new page
+        const spaceNeeded = boxHeight + 50;
+        if (yPosition + spaceNeeded > 750) {
             doc.addPage();
-            yPosition = 50;
+            yPosition = 260;
         }
 
-        yPosition += 20;
+        doc.save();
+        doc.roundedRect(boxX, yPosition, boxWidth, boxHeight, 5)
+           .fillAndStroke('#FFF7ED', '#F97316');
+        doc.restore();
 
+        // Box Title
         doc.fontSize(11)
            .font('Helvetica-Bold')
-           .fillColor('#333333')
-           .text('RESUMEN', 50, yPosition);
+           .fillColor('#F97316')
+           .text('RESUMEN FINANCIERO', boxX + 5, yPosition + 8, { width: boxWidth - 10, align: 'center' });
 
-        yPosition += 20;
+        // Separator line
+        doc.moveTo(boxX + 10, yPosition + 22)
+           .lineTo(boxX + boxWidth - 10, yPosition + 22)
+           .strokeColor('#F97316')
+           .lineWidth(0.5)
+           .stroke();
 
-        doc.fontSize(10)
+        let lineY = yPosition + 28;
+
+        // Subtotal
+        doc.fontSize(9)
            .font('Helvetica')
-           .text(`Subtotal: $${parseFloat(pedido.montototal - (pedido.costoenvio || 0)).toFixed(2)}`, 350, yPosition)
-           .text(`Envío: $${parseFloat(pedido.costoenvio || 0).toFixed(2)}`, 350, yPosition + 15)
+           .fillColor('#666666')
+           .text('Subtotal:', boxX + 10, lineY);
+
+        doc.font('Helvetica-Bold')
+           .fillColor('#333333')
+           .text(`$${parseFloat(pedido.montototal - (pedido.costoenvio || 0)).toFixed(2)}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+
+        lineY += 12;
+
+        // Shipping (if applicable)
+        if (pedido.costoenvio > 0) {
+            doc.fontSize(9)
+               .font('Helvetica')
+               .fillColor('#666666')
+               .text('Envío:', boxX + 10, lineY);
+            
+            doc.font('Helvetica-Bold')
+               .fillColor('#333333')
+               .text(`$${parseFloat(pedido.costoenvio || 0).toFixed(2)}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+            
+            lineY += 12;
+        }
+
+        // Separator before total
+        doc.moveTo(boxX + 10, lineY)
+           .lineTo(boxX + boxWidth - 10, lineY)
+           .strokeColor('#F97316')
+           .lineWidth(1)
+           .stroke();
+
+        lineY += 8;
+
+        // Total
+        doc.fontSize(11)
            .font('Helvetica-Bold')
-           .text(`TOTAL: $${parseFloat(pedido.montototal).toFixed(2)}`, 350, yPosition + 35);
+           .fillColor('#F97316')
+           .text('TOTAL:', boxX + 10, lineY);
+
+        doc.fontSize(12)
+           .fillColor('#F97316')
+           .text(`$${parseFloat(pedido.montototal).toFixed(2)} MXN`, boxX + boxWidth - 110, lineY, { width: 100, align: 'right' });
+
+        yPosition += boxHeight + 25;
+
+        // Footer
+        doc.fontSize(8)
+           .font('Helvetica')
+           .fillColor('#666666')
+           .text('Este documento es una remisión de venta. Conserve este comprobante para cualquier aclaración.', 50, yPosition, {
+               width: 512,
+               align: 'center'
+           });
+
+        yPosition += 15;
+        doc.text('Gracias por su preferencia.', 50, yPosition, {
+            width: 512,
+            align: 'center'
+        });
 
         doc.end();
 
