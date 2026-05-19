@@ -534,7 +534,6 @@ const getPedidoDetalle = async (req, res) => {
         pv.color_hex,
         COALESCE(
           (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND admin_id = $3 AND tenant_id = $2 LIMIT 1),
-          pv.stock,
           0
         ) as stock,
         pr.nombreproducto,
@@ -578,7 +577,6 @@ const getPedidoDetalle = async (req, res) => {
             pv.color_hex,
             COALESCE(
               (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND admin_id = $3 AND tenant_id = $2 LIMIT 1),
-              pv.stock,
               0
             ) as stock,
             pr.nombreproducto,
@@ -1226,6 +1224,12 @@ const surtirPedido = async (req, res) => {
     const resultRecalculo = await recalcularEstadoPedido(client, pedidoId, tenant_id);
     const nuevoEstatus = resultRecalculo.estadoNuevo;
 
+    // Obtener datos actualizados del pedido después del recálculo
+    const updateResult = await client.query(
+      `SELECT pedidoid, estatus, completamente_surtido FROM pedidos WHERE pedidoid = $1 AND tenant_id = $2`,
+      [pedidoId, tenant_id]
+    );
+
     await client.query('COMMIT');
 
 
@@ -1304,8 +1308,7 @@ const surtirPedido = async (req, res) => {
     });
     res.status(500).json({
       success: false,
-      message: 'Error al surtir el pedido',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      message: 'Error al procesar el surtido del pedido. Por favor, verifica el stock disponible e intenta nuevamente.'
     });
   } finally {
     client.release();
