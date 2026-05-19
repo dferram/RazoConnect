@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const pedidosController = require("../controllers/pedidosController");
-const pdfController = require("../controllers/pdfController");
 const facturaController = require("../controllers/facturaController");
 const { authenticate, authorize } = require("../middlewares/authMiddleware");
 const checkCreditStatus = require("../middlewares/checkCreditStatus");
@@ -440,7 +439,7 @@ router.get(
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-// PDF para clientes y agentes (vista simplificada)
+// PDF para clientes y agentes
 const pdfClienteController = require('../controllers/pdf/pdfClienteController');
 router.get(
   "/pedidos/:id/pdf",
