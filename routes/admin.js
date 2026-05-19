@@ -1279,6 +1279,14 @@ router.get(
   cxcController.getClienteCXCMovimientos
 );
 
+// ✅ NUEVO: CxC agrupadas por remisión (arquitectura basada en remisiones)
+router.get(
+  "/cxc/cliente/:clienteId/remisiones",
+  authenticate,
+  authorizeRole(['super_admin', 'admin', 'finanzas', 'gerente_finanzas', 'ejecutivo_cobranza', 'encargado_credito', 'soporte_cliente']),
+  cxcAdminController.getCxCPorRemision
+);
+
 router.get(
   "/cxc/estado-cuenta/:clienteId",
   authenticate,

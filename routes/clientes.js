@@ -14,6 +14,7 @@ const {
   enviarSolicitudCredito,
   obtenerEstadoCuentaMensual,
   obtenerMesesDisponibles,
+  obtenerCxCPorRemision,
 } = require("../controllers/clientes/creditoController");
 const {
   actualizarPerfil,
@@ -339,6 +340,18 @@ router.get("/credito", authenticate, verifyTenantContext, obtenerMovimientosCred
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get("/credito/pendientes", authenticate, verifyTenantContext, obtenerMovimientosPendientes);
+
+/**
+ * @swagger
+ * /api/cliente/credito/remisiones:
+ *   get:
+ *     summary: Obtener CxC agrupadas por remisión
+ *     tags: [Cliente - Crédito]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get("/credito/remisiones", authenticate, verifyTenantContext, obtenerCxCPorRemision);
+
 /**
  * @swagger
  * /api/cliente/estado-cuenta/{mes}/{anio}:

@@ -667,6 +667,160 @@ const getEstadoCuentaCliente = async (req, res) => {
   }
 };
 
+/**
+ * Obtener CxC de un cliente agrupadas por remisión
+ * Muestra cada remisión como una fila independiente con su desglose proporcional
+ * @route GET /api/admin/cxc/cliente/:clienteId/remisiones
+ */
+const getCxCPorRemision = async (req, res) => {
+  try {
+    const clienteId = parseInt(req.params.clienteId, 10);
+    const tenantId = req.tenant?.tenant_id || 1;
+    const { page = 1, limit = 50, incluir_pagadas = 'false' } = req.query;
+    const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+
+    const estadosHelper = require('../utils/estadosHelper');
+    const { adminId, shouldFilter } = estadosHelper.getAdminIdFromContext(req.user);
+
+    if (!Number.isInteger(clienteId) || clienteId <= 0) {
+      return res.status(400).json({ success: false, message: 'clienteId inválido' });
+    }
+
+    const adminFilter = shouldFilter ? 'AND cxc.admin_id = $3' : '';
+    const params = shouldFilter
+      ? [clienteId, tenantId, adminId]
+      : [clienteId, tenantId];
+    let paramIdx = params.length + 1;
+
+    // Filtro de pagadas/no pagadas
+    const pagoFilter = incluir_pagadas === 'true' 
+      ? '' 
+      : `AND COALESCE(cxc.pagado, false) = false`;
+
+    const query = `
+      SELECT 
+        cxc.cxcid,
+        cxc.pedido_id,
+        cxc.remision_id,
+        cxc.tipo_movimiento,
+        cxc.monto,
+        cxc.descripcion,
+        cxc.fecha_movimiento,
+        cxc.pagado,
+        cxc.fecha_pago,
+        cxc.monto_pagado,
+        cxc.numero_factura,
+        r.folio AS remision_folio,
+        r.fecha_emision AS remision_fecha,
+        r.total_remision,
+        r.estado AS remision_estado,
+        p.montototal AS pedido_total,
+        p.costoenvio AS pedido_envio,
+        p.monto_descuento AS pedido_descuento,
+        p.cupon_id AS pedido_cupon_id,
+        p.fecha_vencimiento,
+        -- Calcular días de atraso
+        CASE 
+          WHEN p.fecha_vencimiento IS NOT NULL AND p.fecha_vencimiento < CURRENT_DATE 
+          THEN CURRENT_DATE - p.fecha_vencimiento::date
+          ELSE 0
+        END AS dias_atraso,
+        -- Calcular proporción (monto CxC / total pedido)
+        CASE 
+          WHEN p.montototal > 0 
+          THEN ROUND((cxc.monto / p.montototal) * 100, 2)
+          ELSE 0
+        END AS porcentaje_pedido
+      FROM cuentas_por_cobrar cxc
+      INNER JOIN remisiones r ON r.remision_id = cxc.remision_id
+      INNER JOIN pedidos p ON p.pedidoid = cxc.pedido_id
+      WHERE cxc.cliente_id = $1
+        AND cxc.tenant_id = $2
+        AND cxc.tipo_movimiento = 'CARGO'
+        AND cxc.remision_id IS NOT NULL
+        ${adminFilter}
+        ${pagoFilter}
+      ORDER BY cxc.fecha_movimiento DESC
+      LIMIT ${parseInt(limit, 10)} OFFSET ${offset}
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM cuentas_por_cobrar cxc
+      WHERE cxc.cliente_id = $1
+        AND cxc.tenant_id = $2
+        AND cxc.tipo_movimiento = 'CARGO'
+        AND cxc.remision_id IS NOT NULL
+        ${adminFilter}
+        ${pagoFilter}
+    `;
+
+    const [cxcResult, countResult] = await Promise.all([
+      db.query(query, params),
+      db.query(countQuery, params)
+    ]);
+
+    const remisiones = cxcResult.rows.map(row => ({
+      cxcId: row.cxcid,
+      pedidoId: row.pedido_id,
+      remisionId: row.remision_id,
+      remisionFolio: row.remision_folio,
+      remisionFecha: row.remision_fecha,
+      remisionEstado: row.remision_estado,
+      monto: parseFloat(row.monto || 0),
+      descripcion: row.descripcion,
+      fechaMovimiento: row.fecha_movimiento,
+      pagado: row.pagado || false,
+      fechaPago: row.fecha_pago,
+      montoPagado: parseFloat(row.monto_pagado || 0),
+      numeroFactura: row.numero_factura,
+      // Información del pedido
+      pedidoTotal: parseFloat(row.pedido_total || 0),
+      pedidoEnvio: parseFloat(row.pedido_envio || 0),
+      pedidoDescuento: parseFloat(row.pedido_descuento || 0),
+      porcentajePedido: parseFloat(row.porcentaje_pedido || 0),
+      // Vencimiento
+      fechaVencimiento: row.fecha_vencimiento,
+      diasAtraso: parseInt(row.dias_atraso || 0, 10),
+      estaVencido: parseInt(row.dias_atraso || 0, 10) > 0
+    }));
+
+    // Calcular totales
+    const totalDeuda = remisiones.reduce((sum, r) => sum + r.monto, 0);
+    const totalPagado = remisiones.reduce((sum, r) => sum + r.montoPagado, 0);
+    const totalPendiente = totalDeuda - totalPagado;
+
+    return res.json({
+      success: true,
+      data: {
+        remisiones,
+        totales: {
+          total_deuda: parseFloat(totalDeuda.toFixed(2)),
+          total_pagado: parseFloat(totalPagado.toFixed(2)),
+          total_pendiente: parseFloat(totalPendiente.toFixed(2)),
+          cantidad_remisiones: remisiones.length
+        },
+        pagination: {
+          page: parseInt(page, 10),
+          limit: parseInt(limit, 10),
+          total: parseInt(countResult.rows[0].total, 10),
+          totalPages: Math.ceil(countResult.rows[0].total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    logger.error('Error al obtener CxC por remisión:', {
+      error: error.message,
+      requestId: req.requestId,
+      tenantId: req.tenant?.tenant_id
+    });
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Error al obtener cuentas por cobrar' 
+    });
+  }
+};
+
 module.exports = {
   getCxcSummary,
   registrarAbonoCxC,
@@ -674,5 +828,6 @@ module.exports = {
   actualizarConfigFactura,
   validarNumeroFactura,
   getMovimientosCliente,
-  getEstadoCuentaCliente
+  getEstadoCuentaCliente,
+  getCxCPorRemision
 };
