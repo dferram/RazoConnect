@@ -49,6 +49,9 @@
         cargarEstadoCuenta(),
         cargarRemisiones()
       ]);
+      
+      // Cargar movimientos del mes actual
+      await cargarMovimientosMes(currentMonth, currentYear);
     } catch (error) {
       console.error('Error cargando datos iniciales:', error);
       Swal.fire('Error', 'No se pudieron cargar los datos del cliente', 'error');
@@ -57,12 +60,12 @@
 
   async function cargarEstadoCuenta() {
     try {
-      const response = await apiCall(`/admin/cxc/estado-cuenta/${clienteId}`, 'GET');
+      const response = await API.apiCall(`/admin/cxc/estado-cuenta/${clienteId}`, { method: 'GET' });
       
-      if (response.success && response.data) {
-        clienteData = response.data;
-        renderizarDatosCliente(response.data);
-        renderizarMetricas(response.data);
+      if (response.ok && response.data?.success) {
+        clienteData = response.data.data;
+        renderizarDatosCliente(response.data.data);
+        renderizarMetricas(response.data.data);
       }
     } catch (error) {
       console.error('Error cargando estado de cuenta:', error);
@@ -73,16 +76,17 @@
     try {
       mostrarCargando(true);
       
-      const response = await apiCall(
+      const response = await API.apiCall(
         `/admin/cxc/estado-cuenta-mensual/${clienteId}?mes=${mes}&anio=${anio}`,
-        'GET'
+        { method: 'GET' }
       );
 
-      if (response.success && response.data) {
-        mesesDisponibles = response.data.mesesDisponibles || [];
+      if (response.ok && response.data?.success) {
+        const data = response.data.data;
+        mesesDisponibles = data.mesesDisponibles || [];
         renderizarTabsMeses();
-        renderizarResumenPeriodo(response.data.saldos);
-        renderizarMovimientos(response.data.movimientos);
+        renderizarResumenPeriodo(data.saldos);
+        renderizarMovimientos(data.movimientos);
         
         // Habilitar botón de PDF
         const btnPDF = document.getElementById('btnDescargarPDF');
@@ -101,13 +105,13 @@
 
   async function cargarRemisiones() {
     try {
-      const response = await apiCall(
+      const response = await API.apiCall(
         `/admin/cxc/cliente/${clienteId}/remisiones?incluir_pagadas=false&limit=100`,
-        'GET'
+        { method: 'GET' }
       );
 
-      if (response.success && response.data) {
-        renderizarRemisiones(response.data);
+      if (response.ok && response.data?.success) {
+        renderizarRemisiones(response.data.data);
       }
     } catch (error) {
       console.error('Error cargando remisiones:', error);
@@ -116,7 +120,7 @@
 
   // ─── Renderizado ──────────────────────────────────────────────────────────
   function renderizarDatosCliente(data) {
-    const { cliente, credito } = data;
+    const { cliente, balance } = data;
     
     // Avatar
     const avatar = document.getElementById('clienteAvatar');
@@ -127,7 +131,8 @@
     // Nombre
     const nombre = document.getElementById('clienteNombre');
     if (nombre) {
-      nombre.textContent = cliente.nombre;
+      const nombreCompleto = `${cliente.nombre} ${cliente.apellido || ''}`.trim();
+      nombre.textContent = nombreCompleto;
     }
 
     // Meta
@@ -142,13 +147,13 @@
     // Límite de crédito
     const limite = document.getElementById('limiteCredito');
     if (limite) {
-      limite.textContent = formatCurrency(credito.limiteCredito);
+      limite.textContent = formatCurrency(cliente.limite_credito);
     }
 
     // Estado
     const estadoEl = document.getElementById('estadoCredito');
     if (estadoEl) {
-      const esActivo = credito.estadoCredito === 'ACTIVO';
+      const esActivo = cliente.estado_credito === 'ACTIVO';
       estadoEl.innerHTML = `
         <span class="cxc-estado-badge ${esActivo ? 'cxc-estado-activo' : 'cxc-estado-suspendido'}">
           <i class="bi ${esActivo ? 'bi-check-circle' : 'bi-x-circle'}"></i>
@@ -159,40 +164,40 @@
   }
 
   function renderizarMetricas(data) {
-    const { credito } = data;
+    const { balance, cliente } = data;
 
     // Saldo deudor
     const saldoEl = document.getElementById('saldoDeudor');
     if (saldoEl) {
-      saldoEl.textContent = formatCurrency(credito.saldoTotal);
+      saldoEl.textContent = formatCurrency(balance.saldoTotal);
     }
 
     // Cargo confirmado
     const cargoEl = document.getElementById('cargoConfirmado');
     if (cargoEl) {
-      cargoEl.textContent = formatCurrency(credito.cargoConfirmado);
+      cargoEl.textContent = formatCurrency(balance.cargoConfirmado);
     }
 
     // Reserva pendiente
     const reservaEl = document.getElementById('reservaPendiente');
     if (reservaEl) {
-      reservaEl.textContent = formatCurrency(credito.reservaPendiente);
+      reservaEl.textContent = formatCurrency(balance.reservaPendiente);
     }
 
     // Crédito disponible
     const disponibleEl = document.getElementById('creditoDisponible');
     if (disponibleEl) {
-      disponibleEl.textContent = formatCurrency(credito.creditoDisponible);
+      disponibleEl.textContent = formatCurrency(balance.creditoDisponible);
     }
 
     // Barra de utilización
-    renderizarBarraUtilizacion(credito);
+    renderizarBarraUtilizacion(balance, cliente);
   }
 
-  function renderizarBarraUtilizacion(credito) {
-    const limite = credito.limiteCredito || 1;
-    const cargo = credito.cargoConfirmado || 0;
-    const reserva = credito.reservaPendiente || 0;
+  function renderizarBarraUtilizacion(balance, cliente) {
+    const limite = cliente.limite_credito || 1;
+    const cargo = balance.cargoConfirmado || 0;
+    const reserva = balance.reservaPendiente || 0;
     
     const pctCargo = (cargo / limite) * 100;
     const pctReserva = (reserva / limite) * 100;
@@ -216,9 +221,8 @@
     const container = document.getElementById('monthTabs');
     if (!container) return;
 
-    // Si no hay meses disponibles, cargar el mes actual
+    // Si no hay meses disponibles, no hacer nada (ya se cargó en cargarDatosIniciales)
     if (mesesDisponibles.length === 0) {
-      cargarMovimientosMes(currentMonth, currentYear);
       return;
     }
 
@@ -248,8 +252,7 @@
       });
     });
 
-    // Cargar movimientos del mes activo
-    cargarMovimientosMes(currentMonth, currentYear);
+    // NO cargar movimientos aquí - ya se cargaron en cargarDatosIniciales
   }
 
   function renderizarResumenPeriodo(saldos) {
@@ -331,19 +334,18 @@
 
       const url = `/admin/cxc/estado-cuenta-mensual/${clienteId}/pdf?mes=${currentMonth}&anio=${currentYear}`;
       
-      const response = await fetch(API_BASE_URL + url, {
+      // Usar API.apiCall con responseType blob
+      const response = await API.apiCall(url, { 
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'X-Tenant-ID': localStorage.getItem('tenantId') || '1'
-        }
+        responseType: 'blob'
       });
 
       if (!response.ok) {
         throw new Error('Error al generar el PDF');
       }
 
-      const blob = await response.blob();
+      // response.data ya es el blob
+      const blob = response.data;
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = downloadUrl;

@@ -34,7 +34,14 @@ async function getEstadoCuentaMensual(req, res) {
     const client = await db.pool.connect();
 
     try {
+        // Usar helper de estados para verificar acceso
+        const estadosHelper = require('../utils/estadosHelper');
+        const { adminId: adminIdFiltro, shouldFilter } = estadosHelper.getAdminIdFromContext(req.user);
+
         // Información del cliente y crédito
+        const adminFilter = shouldFilter ? 'AND ae.admin_id = $3' : '';
+        const params = shouldFilter ? [clienteId, tenant_id, adminIdFiltro] : [clienteId, tenant_id];
+
         const { rows: [clienteInfo] } = await client.query(`
             SELECT
                 c.clienteid,
@@ -50,11 +57,11 @@ async function getEstadoCuentaMensual(req, res) {
                 cc.ultima_actualizacion
             FROM clientes c
             INNER JOIN cliente_creditos cc ON cc.cliente_id = c.clienteid
-            INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id
+            LEFT JOIN administrador_estados ae ON ae.estado_id = c.estado_id
             WHERE c.clienteid = $1
               AND c.tenant_id = $2
-              AND ae.admin_id = $3
-        `, [clienteId, tenant_id, adminId]);
+              ${adminFilter}
+        `, params);
 
         if (!clienteInfo) {
             return res.status(404).json({
@@ -174,7 +181,9 @@ async function getEstadoCuentaMensual(req, res) {
                     ajuste: mov.tipo_movimiento === 'AJUSTE' ? parseFloat(mov.monto) : null,
                     saldo: parseFloat(mov.saldo_despues_movimiento),
                     metodoPago: mov.metodo_pago,
+                    remisionId: mov.remision_id,
                     remisionFolio: mov.remision_folio,
+                    pedidoId: mov.pedido_id,
                     pedidoNumero: mov.pedido_numero,
                     registradoPor: mov.registrado_por
                 })),

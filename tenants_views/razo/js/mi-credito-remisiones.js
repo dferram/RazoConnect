@@ -347,19 +347,18 @@
 
       const url = `/cliente/mi-estado-cuenta/pdf?mes=${currentMonth}&anio=${currentYear}`;
       
-      const response = await fetch(API_BASE_URL + url, {
+      // Usar API.apiCall con responseType blob
+      const response = await API.apiCall(url, {
         method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'X-Tenant-ID': localStorage.getItem('tenantId') || '1'
-        }
+        responseType: 'blob'
       });
 
       if (!response.ok) {
         throw new Error('Error al generar el PDF');
       }
 
-      const blob = await response.blob();
+      // response.data ya es el blob
+      const blob = response.data;
       const downloadUrl = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = downloadUrl;
