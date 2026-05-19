@@ -534,7 +534,6 @@ const getPedidoDetalle = async (req, res) => {
         pv.color_hex,
         COALESCE(
           (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND admin_id = $3 AND tenant_id = $2 LIMIT 1),
-          pv.stock,
           0
         ) as stock,
         pr.nombreproducto,
@@ -578,7 +577,6 @@ const getPedidoDetalle = async (req, res) => {
             pv.color_hex,
             COALESCE(
               (SELECT cantidad FROM stock_admin WHERE variante_id = pv.varianteid AND admin_id = $3 AND tenant_id = $2 LIMIT 1),
-              pv.stock,
               0
             ) as stock,
             pr.nombreproducto,
