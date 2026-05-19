@@ -112,12 +112,8 @@ async function getEstadoCuentaMensual(req, res) {
             } else if (['ABONO', 'PAGO'].includes(mov.tipo_movimiento)) {
                 acc.totalAbonos += monto;
             } else if (mov.tipo_movimiento === 'AJUSTE') {
-                // Los ajustes pueden ser positivos o negativos
-                if (monto > 0) {
-                    acc.totalAbonos += monto;
-                } else {
-                    acc.totalCargos += Math.abs(monto);
-                }
+                // AJUSTE no suma a cargos ni abonos, es una corrección contable
+                acc.totalAjustes += monto;
             }
             return acc;
         }, { totalCargos: 0, totalAbonos: 0 });
@@ -174,7 +170,8 @@ async function getEstadoCuentaMensual(req, res) {
                     descripcion: mov.descripcion,
                     referencia: mov.referencia_id || mov.referencia,
                     cargo: ['CARGO', 'RESERVA'].includes(mov.tipo_movimiento) ? parseFloat(mov.monto) : null,
-                    abono: ['ABONO', 'PAGO', 'AJUSTE'].includes(mov.tipo_movimiento) ? parseFloat(mov.monto) : null,
+                    abono: ['ABONO', 'PAGO'].includes(mov.tipo_movimiento) ? parseFloat(mov.monto) : null,
+                    ajuste: mov.tipo_movimiento === 'AJUSTE' ? parseFloat(mov.monto) : null,
                     saldo: parseFloat(mov.saldo_despues_movimiento),
                     metodoPago: mov.metodo_pago,
                     remisionFolio: mov.remision_folio,
@@ -298,11 +295,13 @@ async function getEstadoCuentaCliente(req, res) {
             const monto = parseFloat(mov.monto);
             if (['CARGO', 'RESERVA'].includes(mov.tipo_movimiento)) {
                 acc.totalCargos += monto;
-            } else if (['ABONO', 'PAGO', 'AJUSTE'].includes(mov.tipo_movimiento)) {
+            } else if (['ABONO', 'PAGO'].includes(mov.tipo_movimiento)) {
                 acc.totalAbonos += monto;
+            } else if (mov.tipo_movimiento === 'AJUSTE') {
+                acc.totalAjustes += monto;
             }
             return acc;
-        }, { totalCargos: 0, totalAbonos: 0 });
+        }, { totalCargos: 0, totalAbonos: 0, totalAjustes: 0 });
 
         // Meses disponibles
         const { rows: mesesDisponibles } = await client.query(`
@@ -350,7 +349,8 @@ async function getEstadoCuentaCliente(req, res) {
                     descripcion: mov.descripcion,
                     referencia: mov.referencia_id,
                     cargo: ['CARGO', 'RESERVA'].includes(mov.tipo_movimiento) ? parseFloat(mov.monto) : null,
-                    abono: ['ABONO', 'PAGO', 'AJUSTE'].includes(mov.tipo_movimiento) ? parseFloat(mov.monto) : null,
+                    abono: ['ABONO', 'PAGO'].includes(mov.tipo_movimiento) ? parseFloat(mov.monto) : null,
+                    ajuste: mov.tipo_movimiento === 'AJUSTE' ? parseFloat(mov.monto) : null,
                     saldo: parseFloat(mov.saldo_despues_movimiento),
                     metodoPago: mov.metodo_pago,
                     remisionFolio: mov.remision_folio,
@@ -510,6 +510,7 @@ async function generarPDFEstadoCuenta(req, res) {
         // Movimientos
         let totalCargos = 0;
         let totalAbonos = 0;
+        let totalAjustes = 0;
 
         movimientos.forEach((mov, index) => {
             if (y > 700) {
@@ -519,10 +520,12 @@ async function generarPDFEstadoCuenta(req, res) {
 
             const monto = parseFloat(mov.monto);
             const esCargo = ['CARGO', 'RESERVA'].includes(mov.tipo_movimiento);
-            const esAbono = ['ABONO', 'PAGO', 'AJUSTE'].includes(mov.tipo_movimiento);
+            const esAbono = ['ABONO', 'PAGO'].includes(mov.tipo_movimiento);
+            const esAjuste = mov.tipo_movimiento === 'AJUSTE';
 
             if (esCargo) totalCargos += monto;
             if (esAbono) totalAbonos += monto;
+            if (esAjuste) totalAjustes += monto;
 
             // Fila alternada
             if (index % 2 === 0) {
@@ -697,6 +700,7 @@ async function generarPDFEstadoCuentaCliente(req, res) {
 
         let totalCargos = 0;
         let totalAbonos = 0;
+        let totalAjustes = 0;
 
         movimientos.forEach((mov, index) => {
             if (y > 700) {
@@ -706,10 +710,12 @@ async function generarPDFEstadoCuentaCliente(req, res) {
 
             const monto = parseFloat(mov.monto);
             const esCargo = ['CARGO', 'RESERVA'].includes(mov.tipo_movimiento);
-            const esAbono = ['ABONO', 'PAGO', 'AJUSTE'].includes(mov.tipo_movimiento);
+            const esAbono = ['ABONO', 'PAGO'].includes(mov.tipo_movimiento);
+            const esAjuste = mov.tipo_movimiento === 'AJUSTE';
 
             if (esCargo) totalCargos += monto;
             if (esAbono) totalAbonos += monto;
+            if (esAjuste) totalAjustes += monto;
 
             if (index % 2 === 0) {
                 doc.rect(50, y - 2, 512, 18).fill('#F9F9F9');
