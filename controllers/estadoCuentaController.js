@@ -765,9 +765,47 @@ async function generarPDFEstadoCuentaCliente(req, res) {
     }
 }
 
+/**
+ * Descarga PDF del estado de cuenta mensual (Admin)
+ * @route GET /api/admin/cxc/estado-cuenta/:clienteId/pdf
+ */
+async function descargarPDFEstadoCuentaAdmin(req, res) {
+    const { clienteId } = req.params;
+    const { mes, anio } = req.query;
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.adminid;
+
+    if (!clienteId || !mes || !anio) {
+        return res.status(400).json({
+            success: false,
+            message: 'clienteId, mes y año son requeridos'
+        });
+    }
+
+    try {
+        const fechaConsulta = new Date(parseInt(anio), parseInt(mes) - 1, 1);
+        const nombreMes = format(fechaConsulta, 'MMMM yyyy', { locale: es });
+        
+        // Generar PDF usando la función existente
+        await generarPDFEstadoCuenta(req, res);
+    } catch (error) {
+        logger.error('Error generando PDF estado de cuenta admin:', {
+            error: error.message,
+            requestId: req.requestId,
+            tenantId: req.tenant?.tenant_id,
+            clienteId
+        });
+        return res.status(500).json({
+            success: false,
+            message: 'Error al generar el PDF'
+        });
+    }
+}
+
 module.exports = {
     getEstadoCuentaMensual,
     getEstadoCuentaCliente,
     generarPDFEstadoCuenta,
-    generarPDFEstadoCuentaCliente
+    generarPDFEstadoCuentaCliente,
+    descargarPDFEstadoCuentaAdmin
 };
