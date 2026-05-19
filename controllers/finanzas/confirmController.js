@@ -12,6 +12,7 @@
 const db = require('../../db');
 const logger = require('../../utils/logger');
 const { calcularEstadoPedidoCorrect } = require('../../utils/pedidoStatus');
+const cxcService = require('../../services/cxcService');
 // const EstadosPedidoService = require('../../services/EstadosPedidoService'); // DESACTIVADO TEMPORALMENTE
 
 /**
@@ -268,64 +269,70 @@ const confirmarSurtidoFinanzas = async (req, res) => {
     });
 
     // === CXC GENERATION: Cargo para pedidos a crédito ===
+    // ⚠️ NUEVA ARQUITECTURA: La CxC DEBE estar vinculada a una remisión
     if (pedido.es_credito && montoConfirmado > 0) {
-      const { rows: [creditoInfo] } = await client.query(
-        `SELECT credito_id, saldo_deudor
-         FROM cliente_creditos
-         WHERE cliente_id = $1 AND tenant_id = $2
-         FOR UPDATE`,
-        [pedido.clienteid, tenant_id]
+      // PASO 1: Localizar la remisión asociada a los detalles confirmados
+      // Buscar la remisión más reciente que contenga estos detalles
+      const remisionQuery = await client.query(
+        `SELECT DISTINCT r.remision_id, r.folio
+         FROM remisiones r
+         INNER JOIN detalles_remision dr ON r.remision_id = dr.remision_id
+         WHERE r.pedido_id = $1 
+           AND dr.detalle_pedido_id = ANY($2::int[])
+           AND r.tenant_id = $3
+         ORDER BY r.fecha_emision DESC
+         LIMIT 1`,
+        [pedidoId, detalleIds, tenant_id]
       );
 
-      if (creditoInfo) {
-        const saldoActual = parseFloat(creditoInfo.saldo_deudor || 0);
+      if (remisionQuery.rows.length === 0) {
+        // REGLA ESTRICTA: No se puede generar CxC sin remisión
+        await client.query('ROLLBACK');
+        return res.status(400).json({
+          success: false,
+          message: 'No se puede confirmar surtido. Inventarios debe generar la remisión primero.',
+          sugerencia: 'El flujo correcto es: Inventarios genera remisión → Finanzas confirma'
+        });
+      }
 
-        await client.query(
-          `INSERT INTO credito_movimientos
-             (credito_id, tipo_movimiento, monto, referencia_id, descripcion,
-              saldo_despues_movimiento, tenant_id, pedido_id, admin_id)
-           VALUES ($1, 'AJUSTE', $2, $3, $4, $5, $6, $7, $8)`,
-          [
-            creditoInfo.credito_id,
-            (-montoConfirmado).toFixed(2),
-            `PED-${pedidoId}`,
-            `Lib. reserva parcial - Pedido #${pedidoId} (${productosConfirmados} prods. facturados)`,
-            (saldoActual - montoConfirmado).toFixed(2),
-            tenant_id, pedidoId, userId
-          ]
-        );
+      const remisionId = remisionQuery.rows[0].remision_id;
+      const folioRemision = remisionQuery.rows[0].folio;
 
-        await client.query(
-          `INSERT INTO credito_movimientos
-             (credito_id, tipo_movimiento, monto, referencia_id, descripcion,
-              saldo_despues_movimiento, tenant_id, pedido_id, admin_id)
-           VALUES ($1, 'CARGO', $2, $3, $4, $5, $6, $7, $8)`,
-          [
-            creditoInfo.credito_id,
-            montoConfirmado.toFixed(2),
-            `PED-${pedidoId}`,
-            `Cargo confirmado finanzas - Pedido #${pedidoId} (${productosConfirmados} prods.)`,
-            saldoActual.toFixed(2),
-            tenant_id, pedidoId, userId
-          ]
-        );
+      // PASO 2: Usar el servicio de CxC para generar el cargo con cálculo proporcional
+      try {
+        const resultado = await cxcService.generarCxCParaRemision(client, {
+          pedido_id: pedidoId,
+          cliente_id: pedido.clienteid,
+          remision_id: remisionId,
+          detalle_ids: detalleIds,
+          tenant_id: tenant_id,
+          admin_id: userId,
+          descripcion: `Remisión ${folioRemision} confirmada por finanzas - Pedido #${pedidoId}`
+        });
 
-        await client.query(
-          `INSERT INTO cuentas_por_cobrar
-             (pedido_id, cliente_id, remision_id, tipo_movimiento, monto, descripcion, tenant_id, admin_id)
-           VALUES ($1, $2, NULL, 'CARGO', $3, $4, $5, $6)`,
-          [
-            pedidoId,
-            pedido.clienteid,
-            montoConfirmado.toFixed(2),
-            `Facturado por finanzas - Pedido #${pedidoId}`,
-            tenant_id, userId
-          ]
-        );
-
-        logger.info('✅ [CXC] Cargo generado por confirmación de finanzas', {
-          pedidoId, clienteId: pedido.clienteid,
-          montoConfirmado, productosConfirmados, tenantId: tenant_id
+        logger.info('✅ [CXC] Cargo generado con cálculo proporcional', {
+          pedidoId,
+          remisionId,
+          folioRemision,
+          clienteId: pedido.clienteid,
+          montoCxc: resultado.calculo.total_cxc,
+          subtotal: resultado.calculo.subtotal,
+          envioProporcional: resultado.calculo.envio_proporcional,
+          descuentoProporcional: resultado.calculo.descuento_proporcional,
+          productosConfirmados,
+          tenantId: tenant_id
+        });
+      } catch (cxcError) {
+        logger.error('❌ Error generando CxC:', {
+          error: cxcError.message,
+          pedidoId,
+          remisionId
+        });
+        await client.query('ROLLBACK');
+        return res.status(500).json({
+          success: false,
+          message: 'Error al generar la cuenta por cobrar',
+          error: process.env.NODE_ENV === 'development' ? cxcError.message : undefined
         });
       }
     }
