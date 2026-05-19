@@ -47,7 +47,6 @@ const cxcAdminController = require("../controllers/cxcAdminController");
 const agentesAdminController = require("../controllers/agentesAdminController");
 const comisionesAdminController = require("../controllers/comisionesAdminController");
 const pedidosAdminController = require("../controllers/pedidosAdminController");
-const pdfController = require("../controllers/pdfController");
 const cxpAdminController = require("../controllers/cxpAdminController");
 const movimientosInventarioController = require("../controllers/movimientosInventarioController");
 const medidasAdminController = require("../controllers/medidasAdminController");
@@ -524,23 +523,26 @@ router.post(
 
 // Generar PDF de remisión para pedido (admin)
 // Supports ?mostrarPrecios=false query param for inventarios role
+// Supports ?selectedItems=1,2,3 para marcar items específicos
+const pdfAdminController = require('../controllers/pdf/pdfAdminController');
 router.get(
   "/pedidos/:id/pdf",
   authenticate,
   authorizeRole(['super_admin', 'admin', 'inventarios', 'finanzas', 'gerente_comercial', 'gerente_finanzas']),
   heavyOperationLimiter,
-  pdfController.generarPDFPedido
+  pdfAdminController.generarPDFAdmin
 );
 
 // Generar PDF de verificación PRE-CONFIRMACIÓN para inventarios
 // Shows 3 tables: Marcados | Con Stock No Marcados | Bajo Pedido
 // For warehouse verification before system confirmation
+const pdfVerificacionController = require('../controllers/pdf/pdfVerificacionController');
 router.get(
   "/pedidos/:id/pdf-verificacion",
   authenticate,
   authorizeRole(['super_admin', 'admin', 'inventarios', 'jefe_almacen']),
   heavyOperationLimiter,
-  pdfController.generarPDFVerificacion
+  pdfVerificacionController.generarPDFVerificacion
 );
 
 // Generar factura PDF para pedido (admin)

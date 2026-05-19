@@ -22,7 +22,7 @@ const {
 } = require("../controllers/clientes/perfilController");
 const { authenticate } = require("../middlewares/authMiddleware");
 const verifyTenantContext = require("../middlewares/verifyTenantContext");
-const { generarPDFEstadoCuenta } = require("../controllers/pdfController");
+const { generarPDFEstadoCuenta } = require("../controllers/pdf/pdfEstadoCuentaController");
 const { heavyOperationLimiter } = require("../middlewares/rateLimiter");
 const estadoCuentaController = require("../controllers/estadoCuentaController");
 
