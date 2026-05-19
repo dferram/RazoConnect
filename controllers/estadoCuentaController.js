@@ -34,7 +34,14 @@ async function getEstadoCuentaMensual(req, res) {
     const client = await db.pool.connect();
 
     try {
+        // Usar helper de estados para verificar acceso
+        const estadosHelper = require('../utils/estadosHelper');
+        const { adminId: adminIdFiltro, shouldFilter } = estadosHelper.getAdminIdFromContext(req.user);
+
         // Información del cliente y crédito
+        const adminFilter = shouldFilter ? 'AND ae.admin_id = $3' : '';
+        const params = shouldFilter ? [clienteId, tenant_id, adminIdFiltro] : [clienteId, tenant_id];
+
         const { rows: [clienteInfo] } = await client.query(`
             SELECT
                 c.clienteid,
@@ -50,11 +57,11 @@ async function getEstadoCuentaMensual(req, res) {
                 cc.ultima_actualizacion
             FROM clientes c
             INNER JOIN cliente_creditos cc ON cc.cliente_id = c.clienteid
-            INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id
+            LEFT JOIN administrador_estados ae ON ae.estado_id = c.estado_id
             WHERE c.clienteid = $1
               AND c.tenant_id = $2
-              AND ae.admin_id = $3
-        `, [clienteId, tenant_id, adminId]);
+              ${adminFilter}
+        `, params);
 
         if (!clienteInfo) {
             return res.status(404).json({
@@ -112,12 +119,8 @@ async function getEstadoCuentaMensual(req, res) {
             } else if (['ABONO', 'PAGO'].includes(mov.tipo_movimiento)) {
                 acc.totalAbonos += monto;
             } else if (mov.tipo_movimiento === 'AJUSTE') {
-                // Los ajustes pueden ser positivos o negativos
-                if (monto > 0) {
-                    acc.totalAbonos += monto;
-                } else {
-                    acc.totalCargos += Math.abs(monto);
-                }
+                // AJUSTE no suma a cargos ni abonos, es una corrección contable
+                acc.totalAjustes += monto;
             }
             return acc;
         }, { totalCargos: 0, totalAbonos: 0 });
@@ -174,10 +177,13 @@ async function getEstadoCuentaMensual(req, res) {
                     descripcion: mov.descripcion,
                     referencia: mov.referencia_id || mov.referencia,
                     cargo: ['CARGO', 'RESERVA'].includes(mov.tipo_movimiento) ? parseFloat(mov.monto) : null,
-                    abono: ['ABONO', 'PAGO', 'AJUSTE'].includes(mov.tipo_movimiento) ? parseFloat(mov.monto) : null,
+                    abono: ['ABONO', 'PAGO'].includes(mov.tipo_movimiento) ? parseFloat(mov.monto) : null,
+                    ajuste: mov.tipo_movimiento === 'AJUSTE' ? parseFloat(mov.monto) : null,
                     saldo: parseFloat(mov.saldo_despues_movimiento),
                     metodoPago: mov.metodo_pago,
+                    remisionId: mov.remision_id,
                     remisionFolio: mov.remision_folio,
+                    pedidoId: mov.pedido_id,
                     pedidoNumero: mov.pedido_numero,
                     registradoPor: mov.registrado_por
                 })),
@@ -298,11 +304,13 @@ async function getEstadoCuentaCliente(req, res) {
             const monto = parseFloat(mov.monto);
             if (['CARGO', 'RESERVA'].includes(mov.tipo_movimiento)) {
                 acc.totalCargos += monto;
-            } else if (['ABONO', 'PAGO', 'AJUSTE'].includes(mov.tipo_movimiento)) {
+            } else if (['ABONO', 'PAGO'].includes(mov.tipo_movimiento)) {
                 acc.totalAbonos += monto;
+            } else if (mov.tipo_movimiento === 'AJUSTE') {
+                acc.totalAjustes += monto;
             }
             return acc;
-        }, { totalCargos: 0, totalAbonos: 0 });
+        }, { totalCargos: 0, totalAbonos: 0, totalAjustes: 0 });
 
         // Meses disponibles
         const { rows: mesesDisponibles } = await client.query(`
@@ -350,7 +358,8 @@ async function getEstadoCuentaCliente(req, res) {
                     descripcion: mov.descripcion,
                     referencia: mov.referencia_id,
                     cargo: ['CARGO', 'RESERVA'].includes(mov.tipo_movimiento) ? parseFloat(mov.monto) : null,
-                    abono: ['ABONO', 'PAGO', 'AJUSTE'].includes(mov.tipo_movimiento) ? parseFloat(mov.monto) : null,
+                    abono: ['ABONO', 'PAGO'].includes(mov.tipo_movimiento) ? parseFloat(mov.monto) : null,
+                    ajuste: mov.tipo_movimiento === 'AJUSTE' ? parseFloat(mov.monto) : null,
                     saldo: parseFloat(mov.saldo_despues_movimiento),
                     metodoPago: mov.metodo_pago,
                     remisionFolio: mov.remision_folio,
@@ -510,6 +519,7 @@ async function generarPDFEstadoCuenta(req, res) {
         // Movimientos
         let totalCargos = 0;
         let totalAbonos = 0;
+        let totalAjustes = 0;
 
         movimientos.forEach((mov, index) => {
             if (y > 700) {
@@ -519,10 +529,12 @@ async function generarPDFEstadoCuenta(req, res) {
 
             const monto = parseFloat(mov.monto);
             const esCargo = ['CARGO', 'RESERVA'].includes(mov.tipo_movimiento);
-            const esAbono = ['ABONO', 'PAGO', 'AJUSTE'].includes(mov.tipo_movimiento);
+            const esAbono = ['ABONO', 'PAGO'].includes(mov.tipo_movimiento);
+            const esAjuste = mov.tipo_movimiento === 'AJUSTE';
 
             if (esCargo) totalCargos += monto;
             if (esAbono) totalAbonos += monto;
+            if (esAjuste) totalAjustes += monto;
 
             // Fila alternada
             if (index % 2 === 0) {
@@ -697,6 +709,7 @@ async function generarPDFEstadoCuentaCliente(req, res) {
 
         let totalCargos = 0;
         let totalAbonos = 0;
+        let totalAjustes = 0;
 
         movimientos.forEach((mov, index) => {
             if (y > 700) {
@@ -706,10 +719,12 @@ async function generarPDFEstadoCuentaCliente(req, res) {
 
             const monto = parseFloat(mov.monto);
             const esCargo = ['CARGO', 'RESERVA'].includes(mov.tipo_movimiento);
-            const esAbono = ['ABONO', 'PAGO', 'AJUSTE'].includes(mov.tipo_movimiento);
+            const esAbono = ['ABONO', 'PAGO'].includes(mov.tipo_movimiento);
+            const esAjuste = mov.tipo_movimiento === 'AJUSTE';
 
             if (esCargo) totalCargos += monto;
             if (esAbono) totalAbonos += monto;
+            if (esAjuste) totalAjustes += monto;
 
             if (index % 2 === 0) {
                 doc.rect(50, y - 2, 512, 18).fill('#F9F9F9');
@@ -759,9 +774,47 @@ async function generarPDFEstadoCuentaCliente(req, res) {
     }
 }
 
+/**
+ * Descarga PDF del estado de cuenta mensual (Admin)
+ * @route GET /api/admin/cxc/estado-cuenta/:clienteId/pdf
+ */
+async function descargarPDFEstadoCuentaAdmin(req, res) {
+    const { clienteId } = req.params;
+    const { mes, anio } = req.query;
+    const tenant_id = req.tenant?.tenant_id || 1;
+    const adminId = req.user?.admin_responsable_id ?? req.user?.adminid;
+
+    if (!clienteId || !mes || !anio) {
+        return res.status(400).json({
+            success: false,
+            message: 'clienteId, mes y año son requeridos'
+        });
+    }
+
+    try {
+        const fechaConsulta = new Date(parseInt(anio), parseInt(mes) - 1, 1);
+        const nombreMes = format(fechaConsulta, 'MMMM yyyy', { locale: es });
+        
+        // Generar PDF usando la función existente
+        await generarPDFEstadoCuenta(req, res);
+    } catch (error) {
+        logger.error('Error generando PDF estado de cuenta admin:', {
+            error: error.message,
+            requestId: req.requestId,
+            tenantId: req.tenant?.tenant_id,
+            clienteId
+        });
+        return res.status(500).json({
+            success: false,
+            message: 'Error al generar el PDF'
+        });
+    }
+}
+
 module.exports = {
     getEstadoCuentaMensual,
     getEstadoCuentaCliente,
     generarPDFEstadoCuenta,
-    generarPDFEstadoCuentaCliente
+    generarPDFEstadoCuentaCliente,
+    descargarPDFEstadoCuentaAdmin
 };
