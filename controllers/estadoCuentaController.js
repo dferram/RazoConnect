@@ -393,7 +393,6 @@ async function generarPDFEstadoCuenta(req, res) {
     const { clienteId } = req.params;
     const { mes, anio } = req.query;
     const tenant_id = req.tenant?.tenant_id || 1;
-    const adminId = req.user?.admin_responsable_id ?? req.user?.adminid;
 
     const fechaConsulta = mes && anio 
         ? new Date(parseInt(anio), parseInt(mes) - 1, 1)
@@ -405,7 +404,14 @@ async function generarPDFEstadoCuenta(req, res) {
     const client = await db.pool.connect();
 
     try {
+        // Usar helper de estados para verificar acceso
+        const estadosHelper = require('../utils/estadosHelper');
+        const { adminId: adminIdFiltro, shouldFilter } = estadosHelper.getAdminIdFromContext(req.user);
+
         // Obtener datos del estado de cuenta
+        const adminFilter = shouldFilter ? 'AND ae.admin_id = $3' : '';
+        const params = shouldFilter ? [clienteId, tenant_id, adminIdFiltro] : [clienteId, tenant_id];
+
         const { rows: [clienteInfo] } = await client.query(`
             SELECT
                 c.clienteid,
@@ -420,11 +426,11 @@ async function generarPDFEstadoCuenta(req, res) {
                 cc.dias_gracia
             FROM clientes c
             INNER JOIN cliente_creditos cc ON cc.cliente_id = c.clienteid
-            INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id
+            LEFT JOIN administrador_estados ae ON ae.estado_id = c.estado_id
             WHERE c.clienteid = $1
               AND c.tenant_id = $2
-              AND ae.admin_id = $3
-        `, [clienteId, tenant_id, adminId]);
+              ${adminFilter}
+        `, params);
 
         if (!clienteInfo) {
             return res.status(404).json({

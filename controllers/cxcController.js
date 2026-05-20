@@ -309,38 +309,47 @@ async function exportarLoteCxC(req, res) {
 async function getMetricasCobranza(req, res) {
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
-    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
 
     try {
+        // Usar helper de estados para verificar acceso
+        const estadosHelper = require('../utils/estadosHelper');
+        const { adminId: adminIdFiltro, shouldFilter } = estadosHelper.getAdminIdFromContext(req.user);
+
+        const adminFilter = shouldFilter ? 'AND ae.admin_id = $2' : '';
+        const params = shouldFilter ? [tenant_id, adminIdFiltro] : [tenant_id];
+
         // Ejecutar consultas en paralelo
         const [porCobrar, enGestion, clientesMora] = await Promise.all([
             client.query(`
                 SELECT COALESCE(SUM(cc.saldo_deudor), 0) as total
                 FROM cliente_creditos cc
                 INNER JOIN clientes c ON c.clienteid = cc.cliente_id AND c.tenant_id = $1
-                INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id AND ae.admin_id = $2
+                LEFT JOIN administrador_estados ae ON ae.estado_id = c.estado_id
                 WHERE cc.saldo_deudor > 0
                     AND cc.tenant_id = $1
-            `, [tenant_id, adminId]),
+                    ${adminFilter}
+            `, params),
 
             client.query(`
                 SELECT COALESCE(SUM(cc.saldo_deudor), 0) as total
                 FROM cliente_creditos cc
                 INNER JOIN clientes c ON c.clienteid = cc.cliente_id AND c.tenant_id = $1
-                INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id AND ae.admin_id = $2
+                LEFT JOIN administrador_estados ae ON ae.estado_id = c.estado_id
                 WHERE cc.saldo_deudor > 0
                     AND cc.ultima_actualizacion >= date_trunc('month', CURRENT_DATE)
                     AND cc.tenant_id = $1
-            `, [tenant_id, adminId]),
+                    ${adminFilter}
+            `, params),
 
             client.query(`
                 SELECT COUNT(*) as total
                 FROM cliente_creditos cc
                 INNER JOIN clientes c ON c.clienteid = cc.cliente_id AND c.tenant_id = $1
-                INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id AND ae.admin_id = $2
+                LEFT JOIN administrador_estados ae ON ae.estado_id = c.estado_id
                 WHERE cc.estado_credito = 'SUSPENDIDO'
                     AND cc.tenant_id = $1
-            `, [tenant_id, adminId])
+                    ${adminFilter}
+            `, params)
         ]);
 
         res.json({
@@ -373,23 +382,36 @@ async function getMetricasCobranza(req, res) {
 async function getClientesCredito(req, res) {
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
-    const adminId = req.user?.admin_responsable_id ?? req.user?.id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
 
+    // Usar helper de estados para verificar acceso
+    const estadosHelper = require('../utils/estadosHelper');
+    const { adminId: adminIdFiltro, shouldFilter } = estadosHelper.getAdminIdFromContext(req.user);
+
     try {
-        // Total de registros - ⚠️ CRITICAL: Filter by admin_id and tenant_id
+        const adminFilter = shouldFilter ? 'AND ae.admin_id = $2' : '';
+        const baseParams = shouldFilter ? [tenant_id, adminIdFiltro] : [tenant_id];
+
+        // Total de registros
         const { rows: [count] } = await client.query(`
             SELECT COUNT(*) as total
             FROM cliente_creditos cc
             JOIN clientes c ON c.clienteid = cc.cliente_id
+            LEFT JOIN administrador_estados ae ON ae.estado_id = c.estado_id
             WHERE cc.saldo_deudor > 0
               AND cc.tenant_id = $1
-              AND cc.admin_id = $2
-        `, [tenant_id, adminId]);
+              ${adminFilter}
+        `, baseParams);
 
-        // Datos paginados - ⚠️ CRITICAL: Filter by admin_id and tenant_id
+        // Datos paginados
+        const paginationParams = shouldFilter 
+            ? [tenant_id, adminIdFiltro, limit, offset]
+            : [tenant_id, limit, offset];
+        const limitParam = shouldFilter ? '$3' : '$2';
+        const offsetParam = shouldFilter ? '$4' : '$3';
+
         const { rows } = await client.query(`
             SELECT
                 cc.credito_id,
@@ -403,12 +425,13 @@ async function getClientesCredito(req, res) {
                 COALESCE(cc.ultimo_movimiento, cc.fecha_creacion) as ultimo_movimiento
             FROM cliente_creditos cc
             JOIN clientes c ON c.clienteid = cc.cliente_id
+            LEFT JOIN administrador_estados ae ON ae.estado_id = c.estado_id
             WHERE cc.saldo_deudor > 0
               AND cc.tenant_id = $1
-              AND cc.admin_id = $2
+              ${adminFilter}
             ORDER BY cc.estado_credito DESC, cc.saldo_deudor DESC
-            LIMIT $3 OFFSET $4
-        `, [tenant_id, adminId, limit, offset]);
+            LIMIT ${limitParam} OFFSET ${offsetParam}
+        `, paginationParams);
 
         const totalPages = Math.ceil(count.total / limit);
 
@@ -445,11 +468,16 @@ async function getClientesCredito(req, res) {
 
 async function obtenerHistorialMovimientos(req, res) {
     const tenant_id = req.tenant?.tenant_id || 1;
-    const adminId = req.user?.admin_responsable_id ?? req.user?.adminid;
     const limit = parseInt(req.query.limit) || 100;
 
+    // Usar helper de estados para verificar acceso
+    const estadosHelper = require('../utils/estadosHelper');
+    const { adminId: adminIdFiltro, shouldFilter } = estadosHelper.getAdminIdFromContext(req.user);
+
     try {
-        // ⚠️ CRITICAL: Filter by admin_id and tenant_id
+        const adminFilter = shouldFilter ? 'AND ae.admin_id = $3' : '';
+        const params = shouldFilter ? [limit, tenant_id, adminIdFiltro] : [limit, tenant_id];
+
         const { rows } = await db.query(`
             SELECT
                 cm.movimiento_id,
@@ -465,11 +493,14 @@ async function obtenerHistorialMovimientos(req, res) {
                 c.email,
                 cc.credito_id
             FROM credito_movimientos cm
-            INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id AND cc.admin_id = $2 AND cc.tenant_id = $3
+            INNER JOIN cliente_creditos cc ON cc.credito_id = cm.credito_id AND cc.tenant_id = $2
             INNER JOIN clientes c ON c.clienteid = cc.cliente_id
+            LEFT JOIN administrador_estados ae ON ae.estado_id = c.estado_id
+            WHERE 1=1
+              ${adminFilter}
             ORDER BY cm.fecha_movimiento DESC
             LIMIT $1
-        `, [limit, adminId, tenant_id]);
+        `, params);
 
         return res.json({
             success: true,
@@ -495,28 +526,22 @@ async function obtenerHistorialMovimientos(req, res) {
 async function getSummaryAging(req, res) {
     const client = await db.pool.connect();
     const tenant_id = req.tenant?.tenant_id || 1;
-    const userId = req.user?.id || req.user?.adminid;
 
-    // ⚠️ CRÍTICO: Obtener admin_responsable_id si el usuario es un rol subordinado (finanzas, compras, etc)
-    const adminResponsableResult = await client.query(
-      `SELECT admin_responsable_id FROM administradores WHERE adminid = $1 AND tenant_id = $2 LIMIT 1`,
-      [userId, tenant_id]
-    );
-    const userAdminId = adminResponsableResult.rows.length > 0 && adminResponsableResult.rows[0].admin_responsable_id
-      ? adminResponsableResult.rows[0].admin_responsable_id
-      : userId;
+    // Usar helper de estados para verificar acceso
+    const estadosHelper = require('../utils/estadosHelper');
+    const { adminId: adminIdFiltro, shouldFilter } = estadosHelper.getAdminIdFromContext(req.user);
 
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
-    // ⚠️ CRITICAL: REMOVED req.query.admin_id - use authenticated user's context only
     const fechaInicio = req.query.fechaInicio;
     const fechaFin = req.query.fechaFin;
 
     try {
         // Construir parámetros de query dinámicamente
-        let queryParams = [tenant_id, userAdminId];
-        let paramIndex = 3;
+        const adminFilter = shouldFilter ? 'AND ae.admin_id = $2' : '';
+        let queryParams = shouldFilter ? [tenant_id, adminIdFiltro] : [tenant_id];
+        let paramIndex = shouldFilter ? 3 : 2;
         let additionalFilters = '';
 
         // Agregar filtros de fecha si se proporcionan
@@ -536,7 +561,7 @@ async function getSummaryAging(req, res) {
         const offsetIndex = paramIndex + 1;
         queryParams.push(limit, offset);
 
-        // Obtener cartera activa con aging - ⚠️ CRITICAL: Filter by client's admin (from estado)
+        // Obtener cartera activa con aging
         const { rows } = await client.query(`
             WITH pedidos_aging AS (
                 SELECT
@@ -553,12 +578,12 @@ async function getSummaryAging(req, res) {
                     END as dias_vencido
                 FROM pedidos p
                 INNER JOIN clientes c ON c.clienteid = p.clienteid
-                INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id
+                LEFT JOIN administrador_estados ae ON ae.estado_id = c.estado_id
                 WHERE p.es_credito = true
                     AND p.saldo_pendiente > 0
                     AND p.estatus NOT IN ('Cancelado', 'Rechazado')
                     AND p.tenant_id = $1
-                    AND ae.admin_id = $2
+                    ${adminFilter}
                     ${additionalFilters}
             )
             SELECT
@@ -595,12 +620,12 @@ async function getSummaryAging(req, res) {
                 COALESCE(MAX(pa.dias_vencido), 0) as "maxDiasVencido"
             FROM cliente_creditos cc
             INNER JOIN clientes c ON c.clienteid = cc.cliente_id
-            INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id
+            LEFT JOIN administrador_estados ae ON ae.estado_id = c.estado_id
             LEFT JOIN pedidos_aging pa ON pa.clienteid = c.clienteid
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-                AND ae.admin_id = $2
+                ${adminFilter}
             GROUP BY cc.credito_id, c.clienteid, c.nombre, c.apellido, c.email,
                      cc.limite_credito, cc.saldo_deudor, cc.estado_credito, cc.ultima_actualizacion
             ORDER BY cc.saldo_deudor DESC
@@ -608,8 +633,8 @@ async function getSummaryAging(req, res) {
         `, queryParams);
 
         // Total de registros con filtros aplicados
-        let countQueryParams = [tenant_id, userAdminId];
-        let countParamIndex = 3;
+        let countQueryParams = shouldFilter ? [tenant_id, adminIdFiltro] : [tenant_id];
+        let countParamIndex = shouldFilter ? 3 : 2;
         let countFilters = '';
 
         if (fechaInicio) {
@@ -641,17 +666,17 @@ async function getSummaryAging(req, res) {
             SELECT COUNT(DISTINCT cc.credito_id) as total
             FROM cliente_creditos cc
             INNER JOIN clientes c ON c.clienteid = cc.cliente_id
-            INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id
+            LEFT JOIN administrador_estados ae ON ae.estado_id = c.estado_id
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-                AND ae.admin_id = $2
+                ${adminFilter}
                 ${countFilters}
         `, countQueryParams);
 
-        // Métricas agregadas con filtros aplicados - ⚠️ CRITICAL: Use authenticated user's admin_id
-        let metricsParams = [tenant_id, userAdminId];
-        let metricsParamIndex = 3;
+        // Métricas agregadas con filtros aplicados
+        let metricsParams = shouldFilter ? [tenant_id, adminIdFiltro] : [tenant_id];
+        let metricsParamIndex = shouldFilter ? 3 : 2;
         let metricsFilters = '';
 
         if (fechaInicio) {
@@ -686,11 +711,11 @@ async function getSummaryAging(req, res) {
                 COUNT(*) as conteo_clientes
             FROM cliente_creditos cc
             INNER JOIN clientes c ON c.clienteid = cc.cliente_id
-            INNER JOIN administrador_estados ae ON ae.estado_id = c.estado_id
+            LEFT JOIN administrador_estados ae ON ae.estado_id = c.estado_id
             WHERE cc.saldo_deudor > 0
                 AND cc.tenant_id = $1
                 AND c.tenant_id = $1
-                AND ae.admin_id = $2
+                ${adminFilter}
                 ${metricsFilters}
         `, metricsParams);
 
