@@ -119,13 +119,13 @@ async function generarPDFAdmin(req, res) {
                 t.cantidad AS tamano_cantidad,
                 (
                   SELECT json_agg(json_build_object(
-                    'ronda', COALESCE(dr.ronda_surtido, 1),
-                    'cantidad', dr.cantidad_paquetes_surtidos,
-                    'admin_id', dr.admin_id
-                  ) ORDER BY dr.ronda_surtido)
-                  FROM detalles_remision dr
-                  INNER JOIN remisiones r ON dr.remision_id = r.remision_id
-                  WHERE dr.detalle_pedido_id = dp.detalleid
+                    'cantidad', psd.cantidad,
+                    'admin_id', psd.admin_id,
+                    'created_at', psd.created_at
+                  ) ORDER BY psd.created_at)
+                  FROM pedido_surtido_detalle psd
+                  WHERE psd.detalle_id = dp.detalleid
+                    AND psd.pedido_id = dp.pedidoid
                 ) as rondas_surtido
             FROM detallesdelpedido dp
             INNER JOIN producto_variantes pv ON dp.varianteid = pv.varianteid
@@ -362,19 +362,83 @@ async function generarPDFAdmin(req, res) {
 
             yPosition += 20;
 
+            // Cuadro de resumen financiero (estilo naranja)
+            const boxX = 350;
+            const boxWidth = 212;
+            const boxHeight = pedido.costoenvio > 0 ? 80 : 68;
+
+            const spaceNeeded = boxHeight + 50;
+            if (yPosition + spaceNeeded > 750) {
+                doc.addPage();
+                yPosition = 50;
+            }
+
+            doc.save();
+            doc.roundedRect(boxX, yPosition, boxWidth, boxHeight, 5)
+               .fillAndStroke('#FFF7ED', '#F97316');
+            doc.restore();
+
+            // Box Title
             doc.fontSize(11)
                .font('Helvetica-Bold')
-               .fillColor('#333333')
-               .text('RESUMEN FINANCIERO', 50, yPosition);
+               .fillColor('#F97316')
+               .text('RESUMEN FINANCIERO', boxX + 5, yPosition + 8, { width: boxWidth - 10, align: 'center' });
 
-            yPosition += 20;
+            // Separator line
+            doc.moveTo(boxX + 10, yPosition + 22)
+               .lineTo(boxX + boxWidth - 10, yPosition + 22)
+               .strokeColor('#F97316')
+               .lineWidth(0.5)
+               .stroke();
 
-            doc.fontSize(10)
+            let lineY = yPosition + 28;
+
+            // Subtotal
+            doc.fontSize(9)
                .font('Helvetica')
-               .text(`Subtotal: $${parseFloat(pedido.montototal - (pedido.costoenvio || 0)).toFixed(2)}`, 350, yPosition)
-               .text(`Envío: $${parseFloat(pedido.costoenvio || 0).toFixed(2)}`, 350, yPosition + 15)
+               .fillColor('#666666')
+               .text('Subtotal:', boxX + 10, lineY);
+
+            doc.font('Helvetica-Bold')
+               .fillColor('#333333')
+               .text(`$${parseFloat(pedido.montototal - (pedido.costoenvio || 0)).toFixed(2)}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+
+            lineY += 12;
+
+            // Shipping (if applicable)
+            if (pedido.costoenvio > 0) {
+                doc.fontSize(9)
+                   .font('Helvetica')
+                   .fillColor('#666666')
+                   .text('Envío:', boxX + 10, lineY);
+                
+                doc.font('Helvetica-Bold')
+                   .fillColor('#333333')
+                   .text(`$${parseFloat(pedido.costoenvio || 0).toFixed(2)}`, boxX + boxWidth - 90, lineY, { width: 80, align: 'right' });
+                
+                lineY += 12;
+            }
+
+            // Separator before total
+            doc.moveTo(boxX + 10, lineY)
+               .lineTo(boxX + boxWidth - 10, lineY)
+               .strokeColor('#F97316')
+               .lineWidth(1)
+               .stroke();
+
+            lineY += 8;
+
+            // Total
+            doc.fontSize(11)
                .font('Helvetica-Bold')
-               .text(`TOTAL: $${parseFloat(pedido.montototal).toFixed(2)}`, 350, yPosition + 35);
+               .fillColor('#F97316')
+               .text('TOTAL:', boxX + 10, lineY);
+
+            doc.fontSize(12)
+               .fillColor('#F97316')
+               .text(`$${parseFloat(pedido.montototal).toFixed(2)} MXN`, boxX + boxWidth - 110, lineY, { width: 100, align: 'right' });
+
+            yPosition += boxHeight + 25;
         }
 
         doc.end();
