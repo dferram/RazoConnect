@@ -524,6 +524,7 @@ router.post(
 // Generar PDF de remisión para pedido (admin)
 // Supports ?mostrarPrecios=false query param for inventarios role
 // Supports ?selectedItems=1,2,3 para marcar items específicos
+// Supports ?soloParaCxC=true para mostrar solo productos Facturados y Surtidos (para remisión de finanzas)
 const pdfAdminController = require('../controllers/pdf/pdfAdminController');
 router.get(
   "/pedidos/:id/pdf",

@@ -378,18 +378,25 @@ const rechazarPedidoFinanzas = async (req, res) => {
         });
       }
 
-      // 3. Resetear cantidadsurtida
+      // 3. Resetear cantidadsurtida Y estado_producto
       await client.query(
         `UPDATE detallesdelpedido
-         SET cantidadsurtida = 0
+         SET cantidadsurtida = 0,
+             estado_producto = 'Pendiente'
          WHERE pedidoid = $1
            AND detalleid = ANY($2::int[])
            AND tenant_id = $3`,
         [pedidoId, detalleIds, tenant_id]
       );
 
-      // 4. NO actualizar estados automáticamente - mantener estados manuales
-      // Los estados de productos se actualizarán cuando almacén los revise
+      // 4. Eliminar registros de pedido_surtido_detalle para los productos rechazados
+      await client.query(
+        `DELETE FROM pedido_surtido_detalle
+         WHERE pedido_id = $1
+           AND detalle_id = ANY($2::int[])
+           AND tenant_id = $3`,
+        [pedidoId, detalleIds, tenant_id]
+      );
       
       // 5. Marcar pedido en Revisión de almacén
       logger.info('🔄 Actualizando estado del pedido a "Revisión de almacén":', {

@@ -51,11 +51,15 @@ async function generarPDFAdmin(req, res) {
         mostrarPrecios = false;
     }
 
+    // Solo para CxC: mostrar únicamente productos Facturados y Surtidos
+    const soloParaCxC = req.query.soloParaCxC === 'true';
+
     logger.info('PDF Admin: Request iniciada', {
         pedidoId,
         userId,
         userRole,
         mostrarPrecios,
+        soloParaCxC,
         selectedItems: selectedItemIds.length,
         tenantId: tenant_id,
         requestId: req.requestId
@@ -317,6 +321,7 @@ async function generarPDFAdmin(req, res) {
         };
 
         // Renderizar secciones
+        // Si soloParaCxC es true, solo mostrar Facturados y Surtidos
         if (itemsFacturados.length > 0) {
             yPosition = renderTableHeader('FACTURADO', yPosition, '#1F2937');
             yPosition = renderItems(itemsFacturados, yPosition, '#F3F4F6');
@@ -329,28 +334,31 @@ async function generarPDFAdmin(req, res) {
             yPosition += 15;
         }
 
-        if (itemsConStockMarcados.length > 0) {
-            yPosition = renderTableHeader('CON STOCK - MARCADO PARA SURTIR', yPosition, '#10B981');
-            yPosition = renderItems(itemsConStockMarcados, yPosition, '#F0FDF4');
-            yPosition += 15;
-        }
+        // Solo mostrar el resto si NO es PDF para CxC
+        if (!soloParaCxC) {
+            if (itemsConStockMarcados.length > 0) {
+                yPosition = renderTableHeader('CON STOCK - MARCADO PARA SURTIR', yPosition, '#10B981');
+                yPosition = renderItems(itemsConStockMarcados, yPosition, '#F0FDF4');
+                yPosition += 15;
+            }
 
-        if (itemsConStockNoMarcados.length > 0) {
-            yPosition = renderTableHeader('CON STOCK - SIN MARCAR', yPosition, '#3B82F6');
-            yPosition = renderItems(itemsConStockNoMarcados, yPosition, '#EFF6FF');
-            yPosition += 15;
-        }
+            if (itemsConStockNoMarcados.length > 0) {
+                yPosition = renderTableHeader('CON STOCK - SIN MARCAR', yPosition, '#3B82F6');
+                yPosition = renderItems(itemsConStockNoMarcados, yPosition, '#EFF6FF');
+                yPosition += 15;
+            }
 
-        if (itemsBajoPedido.length > 0) {
-            yPosition = renderTableHeader('BAJO PEDIDO', yPosition, '#DC2626');
-            yPosition = renderItems(itemsBajoPedido, yPosition, '#FEF2F2');
-            yPosition += 15;
-        }
+            if (itemsBajoPedido.length > 0) {
+                yPosition = renderTableHeader('BAJO PEDIDO', yPosition, '#DC2626');
+                yPosition = renderItems(itemsBajoPedido, yPosition, '#FEF2F2');
+                yPosition += 15;
+            }
 
-        if (itemsPendientes.length > 0) {
-            yPosition = renderTableHeader('PENDIENTE', yPosition, '#6B7280');
-            yPosition = renderItems(itemsPendientes, yPosition, '#F9FAFB');
-            yPosition += 15;
+            if (itemsPendientes.length > 0) {
+                yPosition = renderTableHeader('PENDIENTE', yPosition, '#6B7280');
+                yPosition = renderItems(itemsPendientes, yPosition, '#F9FAFB');
+                yPosition += 15;
+            }
         }
 
         // Total (solo si mostrarPrecios)
